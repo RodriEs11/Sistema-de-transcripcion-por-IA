@@ -1,0 +1,90 @@
+TRANSCRIPCIÓN · aplicación para las PC del trabajo (info-01, info-02, info-03)
+=============================================================================
+
+QUÉ HACE
+- Cuando abrís un informe en el sistema de gestión, toma sola el audio que el sistema deja
+  en la carpeta temporal y lo envía al Servidor. No bloquea el archivo: el sistema lo puede
+  seguir usando y borrar al cerrar el informe.
+- Muestra la pantalla de revisión del Servidor dentro de la ventana (la misma de siempre).
+- Avisa cuando un informe está listo. El Word se guarda en la carpeta Descargas de esta PC.
+- Si se corta internet, guarda los audios cifrados en esta PC y los envía solos después.
+
+ANTES DE COPIARLA (en el Servidor, una sola vez)
+1. Doble clic en configurar_acceso.bat → opción 1 → elegí la contraseña.
+   Eso crea el archivo conexion.json dentro de esta carpeta.
+2. Copiá ESTA CARPETA COMPLETA (cliente) a un pendrive.
+
+EN CADA PC DEL TRABAJO
+1. Copiá la carpeta a Documentos (por ejemplo Documentos\Transcripcion).
+   No se instala nada ni hace falta ser administrador.
+2. Doble clic en Transcripcion.exe.
+3. Escribí el nombre de la PC (info-01, info-02 o info-03) y la contraseña → Conectar.
+4. Listo. Si cerrás la ventana sigue funcionando (ícono junto al reloj).
+   Con "Abrir al iniciar Windows" arranca sola cada día.
+
+MODO COMPACTO Y MODO OSCURO (versión 1.1)
+- Botón "Compacto" en la barra de arriba (o en el ícono junto al reloj): la ventana se
+  achica a una columna al costado de la pantalla, siempre visible encima del sistema de
+  gestión, y muestra solo la cola de audios con sus avisos (marcas de cada color, datos
+  que faltan en el informe, partes sin transcribir).
+- Clic en un audio "para revisar" = vuelve al tamaño normal y lo abre.
+- En la ventana compacta, arriba a la derecha (desde la versión 1.3): el ícono de dos
+  flechas agranda la ventana y el de tres rayas abre las opciones.
+- La ventana compacta se puede mover y achicar o agrandar: la próxima vez aparece donde
+  la dejaste. Si cerrás la aplicación en modo compacto, abre en modo compacto.
+- El botón de luna/sol de la pantalla cambia a modo oscuro o claro (también la barra de
+  arriba de la aplicación).
+
+AUTOCORRECCIÓN DE WORD (versión 1.5)
+- La aplicación lee las autocorrecciones CON FORMATO del Word de esta PC (las que están en
+  el Normal.dotm del usuario de Windows) y las usa en el informe: escribís el activador
+  (por ejemplo ECOABD) y después espacio, Enter o un signo, y aparece el texto completo.
+- Tiene que estar escrito igual que en Word, con las mismas mayúsculas y minúsculas.
+- Solo funciona con lo que escribís a mano. Ctrl+Z enseguida vuelve a lo que escribiste.
+- Las negritas, colores y centrado de la autocorrección salen en el Word y en
+  "Copiar para Word" (en el informe se ve el texto; F9 muestra cómo queda).
+- Si agregás o cambiás una autocorrección en Word, se toma sola en unos segundos.
+  También: Opciones → "Volver a leer la autocorrección de Word".
+- La lista queda en esta PC: no se manda al Servidor. Cada PC (y cada usuario de Windows)
+  usa la suya.
+
+PANTALLA A GUSTO Y CARGAR AUDIO (versión 1.6)
+- El ancho de la lista de la izquierda, y el reparto entre el informe y el dictado, se
+  cambian arrastrando la línea que los separa. Doble clic en la línea: vuelve al tamaño
+  original. Cada usuario de Windows guarda sus medidas en esta PC.
+- "Cargar audio" (arriba de la lista, o en Opciones): arrastrá el audio o elegilo. Lo
+  guarda la aplicación en esta PC y lo envía igual que los audios del sistema, así que
+  funciona aunque no haya conexión con el Servidor: se envía solo cuando vuelve.
+- Agregar médico, cambiar el nombre del paciente y las confirmaciones abren una ventanita
+  propia de la aplicación (ya no la del navegador).
+- Aplicación creada por Rodrigo Espíndola (figura en Opciones, debajo de la versión).
+
+ACTUALIZACIONES (desde la versión 1.2 se actualiza sola)
+- La app se mantiene igual a la carpeta sistema\cliente del Servidor. Para actualizar todas
+  las PC alcanza con poner el Transcripcion.exe nuevo en esa carpeta del Servidor.
+- Cada PC baja sola lo que cambió, lo prueba (que abra y que funcione con el .NET de esa PC)
+  y lo instala cuando nadie la está usando: con la ventana escondida o minimizada, o sin
+  tocar el teclado ni el mouse unos minutos. Antes de cerrar guarda el borrador del informe.
+- Si querés instalarla en el momento, aparece el botón azul "Actualizar" arriba.
+- Si la versión nueva no pasa la prueba o no llega a abrir, vuelve sola a la anterior, no la
+  reintenta y lo avisa en la ventana del Servidor.
+- La carpeta de la app tiene que permitir escribir (Documentos sí). Si no, lo avisa en el Servidor
+  y hay que actualizar a mano.
+- Una sola vez, para pasar de la 1.0 o 1.1 a la 1.2: cerrá la aplicación (clic derecho en el ícono
+  junto al reloj → Salir) y reemplazá Transcripcion.exe por el nuevo. No hace falta volver a poner
+  la contraseña.
+
+SI ALGO NO ANDA
+- "Windows protegió su PC": tocá "Más información" → "Ejecutar de todas formas".
+  Aparece solo si la carpeta se bajó de internet; copiada desde un pendrive no suele aparecer.
+- "Esta aplicación está bloqueada por el administrador": sistemas no permite programas propios.
+  Alternativa sin programa: abrí en Edge la dirección del Servidor (la muestra su ventana),
+  entrá con el nombre de la PC y la contraseña, y usá "Cargar audio"
+  (en la ventana para elegir el archivo, escribí %temp% y Enter).
+- Dice "Buscando el Servidor…" todo el tiempo: el Servidor puede estar apagado o sin internet,
+  o la red del trabajo bloquea el canal de avisos. Opciones → "Escribir la dirección del Servidor":
+  al pegarla y tocar Aceptar, se conecta enseguida.
+- Para ver qué audios se enviaron: Opciones → "Ver registro de envíos".
+
+Lo que guarda en esta PC (carpeta %LOCALAPPDATA%\Transcripcion): la configuración, la llave
+de esta PC cifrada con tu usuario de Windows, el registro y los audios pendientes (cifrados).

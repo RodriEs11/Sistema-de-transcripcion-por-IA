@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    App de escritorio para las PC del trabajo (Windows Forms + WebView2, .NET Framework 4.8).
+    Compilar en Windows:  dotnet build -c Release
+    Salida:               bin\Release\net48\  (Transcripcion.exe, DLL de WebView2 y runtimes\)
+    Ver docs/compilacion.md
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>Transcripcion</AssemblyName>
+    <RootNamespace>Transcripcion</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <AppConfig>..\cliente\Transcripcion.exe.config</AppConfig>
+    <!-- La versión y los créditos se declaran en Programa.cs (atributos [assembly: ...]). -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <Prefer32Bit>false</Prefer32Bit>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3856.49" />
+  </ItemGroup>
+</Project>

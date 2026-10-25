@@ -1,0 +1,291 @@
+// Transcripción: aplicación de escritorio para las PC del trabajo (info-01, info-02, info-03).
+// Toma los audios que el sistema de gestión deja en %TEMP%, los envía al Servidor por el túnel
+// de Cloudflare y muestra la interfaz de revisión del Servidor dentro de la ventana.
+// No se instala: es una carpeta con Transcripcion.exe. Usa .NET Framework 4.8 y WebView2 (Edge),
+// que ya vienen con Windows 10/11.
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Net;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
+using System.Web.Script.Serialization;
+using System.Windows.Forms;
+using Microsoft.Win32;
+
+[assembly: System.Runtime.Versioning.TargetFramework(".NETFramework,Version=v4.8", FrameworkDisplayName = ".NET Framework 4.8")]
+[assembly: System.Reflection.AssemblyTitle("Transcripción")]
+[assembly: System.Reflection.AssemblyProduct("Transcripción")]
+[assembly: System.Reflection.AssemblyDescription("Envía los audios del sistema de gestión al Servidor de transcripción")]
+[assembly: System.Reflection.AssemblyCompany("Rodrigo Espíndola")]
+[assembly: System.Reflection.AssemblyCopyright("Creada por Rodrigo Espíndola")]
+[assembly: System.Reflection.AssemblyVersion("1.7.0.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.7.0.0")]
+
+namespace Transcripcion
+{
+    static class Programa
+    {
+        public const string VERSION = "1.7";
+        public static EventWaitHandle SenalMostrar;
+
+        [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] static extern IntPtr LoadLibrary(string ruta);
+
+        [STAThread]
+        static void Main(string[] args)
+        {
+            if (args.Length > 0 && args[0] == "--autoprueba")
+            {   // la usa la versión anterior para probar esta antes de instalarla (ver Actualizador.cs)
+                Environment.Exit(Actualizador.Autoprueba(args.Length > 1 ? args[1] : ""));
+                return;
+            }
+            try { Iniciar(args); }
+            catch (Exception ex)
+            {   // nunca cerrarse en silencio: mostrar qué pasó y dejarlo anotado
+                Registro.Escribir("ERROR al iniciar: " + ex);
+                // si es una versión recién instalada que no abre, volver sola a la anterior
+                if (Actualizador.VolverAtras(ex.Message, args)) return;
+                try { File.WriteAllText(Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "error_al_iniciar.txt"), DateTime.Now + "\r\n" + ex, Encoding.UTF8); } catch { }
+                MessageBox.Show("Transcripción no pudo abrirse:\n\n" + ex.Message + "\n\nEl detalle quedó en error_al_iniciar.txt, junto a Transcripcion.exe.",
+                    "Transcripción", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        static void Iniciar(string[] args)
+        {
+            bool nueva;
+            int ia = Array.IndexOf(args, "--actualizada");
+            bool recienActualizada = ia >= 0 && ia + 1 < args.Length;
+            if (recienActualizada) Actualizador.EsperarQueTermine(args[ia + 1]);
+            SenalMostrar = new EventWaitHandle(false, EventResetMode.AutoReset, "Transcripcion-cliente-mostrar", out nueva);
+            for (int i = 0; !nueva && recienActualizada && i < 30; i++)
+            {   // la versión anterior todavía se está cerrando
+                SenalMostrar.Dispose();
+                Thread.Sleep(1000);
+                SenalMostrar = new EventWaitHandle(false, EventResetMode.AutoReset, "Transcripcion-cliente-mostrar", out nueva);
+            }
+            if (!nueva)
+            {   // ya está abierta: pedirle que se muestre y salir
+                SenalMostrar.Set();
+                return;
+            }
+            if (!recienActualizada && Actualizador.HayQueVolverAtras())
+            {   // la última actualización se cerró antes de abrir su ventana
+                SenalMostrar.Dispose();
+                Registro.Escribir("Actualización: la versión nueva no terminó de abrir la vez anterior; se vuelve a la anterior.");
+                if (Actualizador.VolverAtras("se cerró antes de abrir su ventana", args)) return;
+                SenalMostrar = new EventWaitHandle(false, EventResetMode.AutoReset, "Transcripcion-cliente-mostrar", out nueva);
+            }
+            try { SetProcessDPIAware(); } catch { }
+            // TLS 1.2 y 1.3 para hablar con Cloudflare
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | (SecurityProtocolType)12288;
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.ThreadException += (s, e) => Registro.Escribir("ERROR " + e.Exception);
+            AppDomain.CurrentDomain.UnhandledException += (s, e) => Registro.Escribir("ERROR " + e.ExceptionObject);
+            CargarWebView2Loader();
+            Config.Cargar();
+            Registro.Escribir("Inicio versión " + VERSION + " en " + Environment.MachineName + (recienActualizada ? " (recién actualizada)" : ""));
+            Actualizador.AlIniciar();
+
+            if (!Config.Vinculada)
+            {
+                using (var f = new VentanaVincular())
+                    if (f.ShowDialog() != DialogResult.OK) return;
+            }
+            bool oculta = Array.IndexOf(args, "--oculta") >= 0;
+            Application.Run(new VentanaPrincipal(oculta));
+            if (Actualizador.Saliendo) Environment.Exit(0);   // que la versión nueva no tenga que esperar
+        }
+
+        // El cargador nativo de WebView2 depende de si Windows es de 64 o 32 bits.
+        static void CargarWebView2Loader()
+        {
+            string cpu = (Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE") ?? "").ToUpperInvariant();
+            string arq = cpu == "ARM64" ? "win-arm64" : (Environment.Is64BitProcess ? "win-x64" : "win-x86");
+            string ruta = Path.Combine(Config.CarpetaPrograma, "runtimes", arq, "native", "WebView2Loader.dll");
+            try { if (File.Exists(ruta)) LoadLibrary(ruta); }
+            catch (Exception ex) { Registro.Escribir("No pude cargar WebView2Loader: " + ex.Message); }
+        }
+
+        public static void IniciarConWindows(bool si)
+        {
+            try
+            {
+                using (var k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true))
+                {
+                    if (si) k.SetValue("Transcripcion", "\"" + Application.ExecutablePath + "\" --oculta");
+                    else k.DeleteValue("Transcripcion", false);
+                }
+            }
+            catch (Exception ex) { Registro.Escribir("No se pudo cambiar el inicio con Windows: " + ex.Message); }
+        }
+
+        public static bool IniciaConWindows()
+        {
+            try
+            {
+                using (var k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", false))
+                    return k != null && k.GetValue("Transcripcion") != null;
+            }
+            catch { return false; }
+        }
+
+        public static string CarpetaDescargas()
+        {
+            try
+            {
+                IntPtr p;
+                if (SHGetKnownFolderPath(new Guid("374DE290-123F-4565-9164-39C4925E467B"), 0, IntPtr.Zero, out p) == 0)
+                {
+                    string r = Marshal.PtrToStringUni(p);
+                    Marshal.FreeCoTaskMem(p);
+                    if (!string.IsNullOrEmpty(r)) return r;
+                }
+            }
+            catch { }
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+        }
+
+        [DllImport("shell32.dll")]
+        static extern int SHGetKnownFolderPath([MarshalAs(UnmanagedType.LPStruct)] Guid id, uint flags, IntPtr token, out IntPtr ruta);
+    }
+
+    // ------------------------------------------------------------------ configuración
+    static class Config
+    {
+        public static readonly string CarpetaPrograma = Path.GetDirectoryName(Application.ExecutablePath);
+        public static readonly string Carpeta = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Transcripcion");
+        static string Archivo { get { return Path.Combine(Carpeta, "config.json"); } }
+
+        public static string Pc = "", Url = "", Tema = "", Aviso = "https://ntfy.sh";
+        public static bool Pausado = false;
+        public static bool Compacto = false, Oscuro = false;      // modo compacto y tema (los elige la persona)
+        public static string BordesCompacto = "";                  // "x,y,ancho,alto" de la ventana compacta
+        public static string HuellaApp = "", HuellaFallida = "";    // versión de la app que ya está al día / que falló acá
+        static readonly object cerrojoGuardar = new object();
+        static string llaveCifrada = "";
+        static readonly byte[] Entropia = Encoding.UTF8.GetBytes("Transcripcion-llave-v1");
+        public static readonly JavaScriptSerializer Json = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
+
+        // .NET Framework 4.8 solo tiene TrimEnd(params char[]): se pasa el arreglo explícito
+        public static readonly char[] Barra = { '/' };
+
+        public static bool Vinculada { get { return Pc != "" && llaveCifrada != ""; } }
+
+        // La llave se guarda cifrada con la cuenta de Windows de esta persona (DPAPI).
+        public static string Llave
+        {
+            get
+            {
+                if (llaveCifrada == "") return "";
+                try
+                {
+                    return Encoding.UTF8.GetString(ProtectedData.Unprotect(
+                        Convert.FromBase64String(llaveCifrada), Entropia, DataProtectionScope.CurrentUser));
+                }
+                catch { return ""; }
+            }
+            set
+            {
+                llaveCifrada = string.IsNullOrEmpty(value) ? "" : Convert.ToBase64String(ProtectedData.Protect(
+                    Encoding.UTF8.GetBytes(value), Entropia, DataProtectionScope.CurrentUser));
+            }
+        }
+
+        public static void Cargar()
+        {
+            Directory.CreateDirectory(Carpeta);
+            try
+            {   // conexion.json viene del Servidor, junto al .exe
+                string c = Path.Combine(CarpetaPrograma, "conexion.json");
+                if (File.Exists(c))
+                {
+                    var d = Json.Deserialize<Dictionary<string, object>>(File.ReadAllText(c, Encoding.UTF8));
+                    if (d.ContainsKey("tema")) Tema = d["tema"] + "";
+                    if (d.ContainsKey("aviso")) Aviso = (d["aviso"] + "").TrimEnd(Barra);
+                }
+            }
+            catch (Exception ex) { Registro.Escribir("conexion.json ilegible: " + ex.Message); }
+            try
+            {
+                if (File.Exists(Archivo))
+                {
+                    var d = Json.Deserialize<Dictionary<string, object>>(File.ReadAllText(Archivo, Encoding.UTF8));
+                    object v;
+                    if (d.TryGetValue("pc", out v)) Pc = v + "";
+                    if (d.TryGetValue("url", out v)) Url = v + "";
+                    if (d.TryGetValue("llave", out v)) llaveCifrada = v + "";
+                    if (d.TryGetValue("pausado", out v)) Pausado = v is bool && (bool)v;
+                    if (d.TryGetValue("compacto", out v)) Compacto = v is bool && (bool)v;
+                    if (d.TryGetValue("oscuro", out v)) Oscuro = v is bool && (bool)v;
+                    if (d.TryGetValue("bordes_compacto2", out v)) BordesCompacto = v + "";   // desde la 1.4 (la de antes era más ancha)
+                    if (d.TryGetValue("app_huella", out v)) HuellaApp = v + "";
+                    if (d.TryGetValue("app_huella_fallida", out v)) HuellaFallida = v + "";
+                    if (Tema == "" && d.TryGetValue("tema", out v)) Tema = v + "";
+                }
+            }
+            catch (Exception ex) { Registro.Escribir("config.json ilegible: " + ex.Message); }
+            if (Llave == "") llaveCifrada = "";   // copiada de otro usuario: no sirve
+        }
+
+        public static void Guardar()
+        {
+            lock (cerrojoGuardar)
+            {
+                var d = new Dictionary<string, object> {
+                    { "pc", Pc }, { "url", Url }, { "llave", llaveCifrada }, { "pausado", Pausado }, { "tema", Tema },
+                    { "compacto", Compacto }, { "oscuro", Oscuro }, { "bordes_compacto2", BordesCompacto },
+                    { "app_huella", HuellaApp }, { "app_huella_fallida", HuellaFallida } };
+                Directory.CreateDirectory(Carpeta);
+                string tmp = Archivo + ".tmp";
+                File.WriteAllText(tmp, Json.Serialize(d), Encoding.UTF8);
+                if (File.Exists(Archivo)) File.Delete(Archivo);
+                File.Move(tmp, Archivo);
+            }
+        }
+
+        public static void GuardarSeguro()
+        {
+            try { Guardar(); }
+            catch (Exception ex) { Registro.Escribir("No pude guardar la configuración: " + ex.Message); }
+        }
+
+        public static void Desvincular()
+        {
+            llaveCifrada = "";
+            Guardar();
+        }
+    }
+
+    // ------------------------------------------------------------------ registro
+    static class Registro
+    {
+        static readonly object cerrojo = new object();
+        public static string Archivo { get { return Path.Combine(Config.Carpeta, "registro.txt"); } }
+
+        public static void Escribir(string texto)
+        {
+            try
+            {
+                lock (cerrojo)
+                {
+                    Directory.CreateDirectory(Config.Carpeta);
+                    var fi = new FileInfo(Archivo);
+                    if (fi.Exists && fi.Length > 1024 * 1024)
+                    {
+                        string viejo = Archivo + ".anterior";
+                        if (File.Exists(viejo)) File.Delete(viejo);
+                        File.Move(Archivo, viejo);
+                    }
+                    File.AppendAllText(Archivo, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "  " + texto + Environment.NewLine, Encoding.UTF8);
+                }
+            }
+            catch { }
+        }
+    }
+}
