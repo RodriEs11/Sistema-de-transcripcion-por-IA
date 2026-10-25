@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Administración del servidor</title>
+<script>try{var t=localStorage.getItem('tema');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t;}catch(e){}</script>
+<style>
+:root{
+  color-scheme:light;--aviso:#8a6500;--aviso-bg:#fdf3d6;
+  --bg:#f3f2ef;--panel:#fbfbfa;--hoja:#ffffff;--tx:#1d1d1b;--mu:#6d6c66;--bd:#e0dfda;--bd2:#cfcdc6;
+  --ac:#1f5fbf;--ac-tx:#ffffff;--ac-suave:#e6eefb;--ok:#2e7d4f;--ok-suave:#e3f2e8;--err:#b3261e;--err-bg:#fbe9e7;
+  --sombra:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);--nuevo:#1f5fbf;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  color-scheme:dark;--aviso:#f0c24b;--aviso-bg:#2f2810;
+  --bg:#141413;--panel:#1b1b1a;--hoja:#222220;--tx:#ebeae5;--mu:#a19f98;--bd:#33322e;--bd2:#45443f;
+  --ac:#7aa7f0;--ac-tx:#0e1a2e;--ac-suave:#1c2a40;--ok:#6fcf97;--ok-suave:#173524;--err:#ff8a80;--err-bg:#3a1b18;
+  --sombra:none;--nuevo:#7aa7f0;
+}}
+:root[data-theme=dark]{
+  color-scheme:dark;--aviso:#f0c24b;--aviso-bg:#2f2810;
+  --bg:#141413;--panel:#1b1b1a;--hoja:#222220;--tx:#ebeae5;--mu:#a19f98;--bd:#33322e;--bd2:#45443f;
+  --ac:#7aa7f0;--ac-tx:#0e1a2e;--ac-suave:#1c2a40;--ok:#6fcf97;--ok-suave:#173524;--err:#ff8a80;--err-bg:#3a1b18;
+  --sombra:none;--nuevo:#7aa7f0;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 "Segoe UI",system-ui,sans-serif}
+button,input,select{font:inherit;color:var(--tx)}
+input{background:var(--panel);border:1px solid var(--bd2);border-radius:7px;padding:7px 10px;min-width:0}
+input:focus-visible,button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+button,.boton{background:var(--panel);border:1px solid var(--bd2);border-radius:7px;padding:6px 11px;cursor:pointer;white-space:nowrap;
+  text-decoration:none;display:inline-flex;align-items:center;gap:6px;color:var(--tx)}
+button:hover,.boton:hover{border-color:var(--ac)}
+button.prim{background:var(--ac);color:var(--ac-tx);border-color:var(--ac);font-weight:600}
+button.peligro{color:var(--err)}
+button.peligro:hover{border-color:var(--err)}
+button.chico{padding:3px 9px;font-size:12.5px}
+button:disabled{opacity:.5;cursor:default}
+button:disabled:hover{border-color:var(--bd2)}
+.ico{width:32px;height:32px;padding:0;justify-content:center;border-color:transparent;background:none}
+.ico svg{width:18px;height:18px}
+.ico svg.solo-claro,.ico svg.solo-oscuro{display:none}
+:root[data-tema-efectivo=light] .ico svg.solo-claro,:root[data-tema-efectivo=dark] .ico svg.solo-oscuro{display:block}
+
+header{position:sticky;top:0;z-index:2;background:var(--panel);border-bottom:1px solid var(--bd)}
+.barra{max-width:1120px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.barra h1{font-size:17px;margin:0}
+.barra .sub{color:var(--mu);font-size:12.5px}
+.barra .sep{flex:1}
+main{max-width:1120px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:16px}
+
+/* resumen */
+.resumen{display:grid;grid-template-columns:repeat(auto-fit,minmax(142px,1fr));gap:10px}
+.tile{background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:11px 13px;box-shadow:var(--sombra);min-width:0}
+.tile .et{font-size:11.5px;color:var(--mu);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.tile .v{font-weight:600;margin-top:3px;display:flex;align-items:center;gap:7px;overflow-wrap:anywhere}
+.tile .d{font-size:12.5px;color:var(--mu);margin-top:1px;overflow-wrap:anywhere}
+.punto{width:9px;height:9px;border-radius:50%;flex:none;background:var(--mu)}
+.punto.ok{background:var(--ok)}.punto.av{background:var(--aviso)}.punto.err{background:var(--err)}
+.punto.vivo{box-shadow:0 0 0 3px var(--ok-suave)}
+
+/* tarjetas */
+.dos{display:grid;grid-template-columns:1.35fr 1fr;gap:16px}
+@media (max-width:900px){.dos{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:12px;box-shadow:var(--sombra);min-width:0}
+.card > .cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:13px 16px;border-bottom:1px solid var(--bd)}
+.card > .cab h2{font-size:15px;margin:0}
+.card > .cab .sep{flex:1}
+.card > .cab .cuenta{color:var(--mu);font-size:12.5px}
+.card > .cuerpo{padding:14px 16px}
+.nota{color:var(--mu);font-size:12.5px;margin:10px 0 0}
+.nota code,.cod{font:12px ui-monospace,Consolas,monospace;background:var(--bg);border:1px solid var(--bd);padding:1px 5px;border-radius:5px}
+.estado-grande{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:12px 0 0;font-size:13.5px}
+.dl dt{color:var(--mu)}
+.dl dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.url{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.url a{color:var(--ac);font:12.5px ui-monospace,Consolas,monospace;overflow-wrap:anywhere}
+.acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.explica{margin:10px 0 0;padding:9px 11px;border-radius:8px;font-size:13px;background:var(--bg);border:1px solid var(--bd)}
+.explica.av{background:var(--aviso-bg);border-color:var(--aviso)}
+.explica.err{background:var(--err-bg);border-color:var(--err)}
+
+/* tabla de PC */
+.tabla-env{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-weight:600;color:var(--mu);font-size:12px;padding:9px 16px;border-bottom:1px solid var(--bd);white-space:nowrap}
+td{padding:10px 16px;border-bottom:1px solid var(--bd);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td .pcnom{font-weight:600;white-space:nowrap}
+td .sec{display:block;color:var(--mu);font-size:12px}
+.etq{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:10px;border:1px solid var(--bd2);color:var(--mu);white-space:nowrap}
+.etq.ok{color:var(--ok);border-color:var(--ok);background:var(--ok-suave)}
+.etq.av{color:var(--aviso);border-color:var(--aviso);background:var(--aviso-bg)}
+.etq.err{color:var(--err);border-color:var(--err);background:var(--err-bg)}
+.conex{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.vacio{color:var(--mu);padding:18px 16px;font-size:13.5px}
+.vacio b{color:var(--tx);display:block;margin-bottom:2px}
+
+/* contraseña */
+form.clave{display:flex;flex-direction:column;gap:9px;margin-top:12px}
+form.clave label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+form.clave .fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.err-txt{color:var(--err);font-size:12.5px;min-height:1em}
+
+/* registro */
+.filtro{display:inline-flex;background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:2px}
+.filtro button{border:0;background:none;padding:4px 10px;border-radius:6px;font-size:12.5px;color:var(--mu)}
+.filtro button[aria-pressed=true]{background:var(--panel);color:var(--tx);font-weight:600;box-shadow:0 0 0 1px var(--bd2)}
+.eventos{list-style:none;margin:0;padding:0}
+.ev{display:grid;grid-template-columns:76px 66px minmax(0,1fr);gap:4px 12px;padding:10px 16px;border-bottom:1px solid var(--bd);align-items:baseline}
+.ev:last-child{border-bottom:0}
+.ev .hora{font-variant-numeric:tabular-nums;color:var(--mu);font-size:12.5px;white-space:nowrap}
+.ev .niv{font-size:11px;font-weight:700;letter-spacing:.03em;padding:1px 6px;border-radius:4px;justify-self:start}
+.ev.error .niv{color:var(--err);background:var(--err-bg)}
+.ev.aviso .niv{color:var(--aviso);background:var(--aviso-bg)}
+.ev .txt{min-width:0;overflow-wrap:anywhere}
+.ev .area{font-size:11.5px;color:var(--mu);font-weight:600;margin-right:6px}
+.ev.nuevo .hora{color:var(--nuevo);font-weight:600}
+.ev .det{margin:3px 0 0;padding:0;list-style:none;color:var(--mu);font-size:12.5px}
+.ev details{margin-top:4px;font-size:12px}
+.ev summary{cursor:pointer;color:var(--mu)}
+.ev pre{margin:6px 0 0;padding:8px 10px;background:var(--bg);border:1px solid var(--bd);border-radius:7px;overflow:auto;max-height:260px;
+  font:11.5px/1.45 ui-monospace,Consolas,monospace;white-space:pre}
+.mas{padding:10px 16px}
+@media (max-width:640px){.ev{grid-template-columns:62px minmax(0,1fr)}.ev .niv{grid-column:1}.ev .txt{grid-column:2;grid-row:1/span 2}
+  th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5){display:none}}
+
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:9px 14px;border-radius:9px;
+  font-size:13.5px;max-width:min(560px,calc(100vw - 32px));box-shadow:0 6px 24px rgba(0,0,0,.25);display:none;z-index:5}
+#toast.err{background:var(--err);color:#fff}
+.sin-conexion{display:none;background:var(--err-bg);border:1px solid var(--err);color:var(--tx);border-radius:10px;padding:10px 14px;font-size:13.5px}
+.sin-conexion b{color:var(--err)}
+.cargando{color:var(--mu);padding:30px 0;text-align:center}
+
+/* páginas del panel: se cambia de una a otra en la misma pestaña */
+.pestanas{max-width:1120px;margin:0 auto;padding:0 20px;display:flex;gap:4px}
+.pestanas a{border-bottom:2px solid transparent;padding:8px 12px 9px;color:var(--mu);font-weight:600;text-decoration:none;
+  display:inline-flex;align-items:center;gap:6px}
+.pestanas a:hover{color:var(--tx);border-color:var(--bd2)}
+.pestanas a[aria-current=page]{color:var(--tx);border-color:var(--ac)}
+
+/* desde una PC del trabajo no se abren carpetas de la PC del servidor */
+.panel-remoto [data-abrir]{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <div class="barra">
+    <h1>Administración del servidor</h1>
+    <span class="sub" id="sub">Solo en esta PC · se actualiza sola</span>
+    <span class="sep"></span>
+    <button id="bSalirPanel" class="chico" hidden title="Cierra la sesión del panel en esta PC y vuelve a los informes">Salir del panel</button>
+    <a class="boton" href="/">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      Volver a los informes</a>
+    <button id="bTema" class="ico" title="Cambiar entre modo claro y oscuro" aria-label="Cambiar entre modo claro y oscuro">
+      <svg class="solo-claro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      <svg class="solo-oscuro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+    </button>
+  </div>
+  <nav class="pestanas" aria-label="Páginas del panel">
+    <a href="/admin" aria-current="page">Estado del servidor</a><a href="/admin/estadisticas">Estadísticas</a>
+  </nav>
+</header>
+<main>
+  <div class="sin-conexion" id="sinConexion" role="status"><b>Sin conexión con el servidor.</b>
+    ¿Se cerró la ventana del servidor? Abrí <span class="cod">iniciar_servidor.bat</span> (o <span class="cod">interfaz.bat</span>); esta página se reconecta sola.</div>
+  <div class="cargando" id="cargando">Cargando…</div>
+
+  <section class="resumen" id="resumen" aria-label="Resumen" hidden></section>
+
+  <div class="dos" id="fila1" hidden>
+    <section class="card" aria-labelledby="tTunel">
+      <div class="cab"><h2 id="tTunel">Túnel para las PC del trabajo</h2></div>
+      <div class="cuerpo" id="tunel"></div>
+    </section>
+    <section class="card" aria-labelledby="tClave">
+      <div class="cab"><h2 id="tClave">Contraseña del acceso remoto</h2></div>
+      <div class="cuerpo">
+        <div id="claveEstado"></div>
+        <form class="clave" id="fClave" autocomplete="off" novalidate>
+          <label>Contraseña nueva<input type="password" id="c1" minlength="8" autocomplete="new-password" placeholder="mínimo 8 caracteres"></label>
+          <label>Repetila<input type="password" id="c2" minlength="8" autocomplete="new-password"></label>
+          <div class="err-txt" id="cErr" aria-live="polite"></div>
+          <div class="fila"><button class="prim" id="bClave" type="submit">Guardar contraseña</button></div>
+        </form>
+        <p class="nota">Se usa para vincular una PC nueva o para entrar desde un navegador. Las PC ya vinculadas
+          siguen funcionando cuando la cambiás.</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="tPanelRem" id="secPanel" hidden>
+    <div class="cab"><h2 id="tPanelRem">Panel desde las PC del trabajo</h2><span class="sep"></span><span class="cuenta" id="panelCuenta"></span></div>
+    <div class="cuerpo">
+      <div id="panelEstado"></div>
+      <div id="panelLocal">
+        <form class="clave" id="fClaveAdm" autocomplete="off" novalidate>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:9px">
+            <label>Contraseña del panel<input type="password" id="a1" minlength="10" autocomplete="new-password" placeholder="mínimo 10 caracteres"></label>
+            <label>Repetila<input type="password" id="a2" minlength="10" autocomplete="new-password"></label>
+          </div>
+          <div class="err-txt" id="aErr" aria-live="polite"></div>
+          <div class="fila"><button class="prim" id="bClaveAdm" type="submit">Habilitar con esta contraseña</button>
+            <button type="button" class="peligro" id="bQuitarAdm" hidden>Deshabilitar desde el trabajo</button></div>
+        </form>
+        <p class="nota">Con esta contraseña se abre este mismo panel desde la app de cualquier PC del trabajo ya vinculada
+          (engranaje al pie de la lista de informes). Tiene que ser distinta de la del acceso remoto. Desde el trabajo no se puede
+          cambiar esta contraseña ni abrir carpetas de esta PC. La sesión se cierra sola a los 30 minutos sin usarla o a las 8 horas.</p>
+      </div>
+      <p class="nota" id="panelRemotoNota" hidden>Esta contraseña y sus sesiones solo se manejan en la PC del servidor.</p>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="tPcs" id="secPcs" hidden>
+    <div class="cab"><h2 id="tPcs">PC del trabajo</h2><span class="cuenta" id="pcsCuenta"></span><span class="sep"></span>
+      <span class="cuenta" id="appOficial"></span>
+      <button class="chico" data-abrir="cliente" title="Abrir sistema\cliente: ahí se pone el Transcripcion.exe nuevo y todas las PC se actualizan solas">Abrir carpeta de la app</button></div>
+    <div id="pcs"></div>
+  </section>
+
+  <section class="card" aria-labelledby="tReg" id="secReg" hidden>
+    <div class="cab"><h2 id="tReg">Últimos errores y avisos</h2><span class="cuenta" id="regCuenta"></span><span class="sep"></span>
+      <div class="filtro" role="group" aria-label="Mostrar">
+        <button data-f="todos" aria-pressed="true">Todos</button><button data-f="error" aria-pressed="false">Errores</button><button data-f="aviso" aria-pressed="false">Avisos</button>
+      </div>
+      <button class="chico" data-abrir="registro_hoy" title="Abre el archivo de hoy con el Bloc de notas">Abrir el registro de hoy</button>
+      <button class="chico" data-abrir="registros" title="Abre la carpeta registros (un archivo por día y actividad.csv)">Abrir carpeta</button>
+    </div>
+    <ul class="eventos" id="eventos"></ul>
+    <div class="mas" id="mas" hidden><button class="chico" id="bMas">Ver más</button></div>
+  </section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const leerLS = k => { try { return localStorage.getItem(k); } catch(e){ return null; } };
+const grabarLS = (k, v) => { try { localStorage.setItem(k, v); } catch(e){} };
+let E = null, filtro = 'todos', cuantos = 25, ultimo = {};
+const VISTO_ANTES = +(leerLS('adminVisto') || 0);       // para marcar los eventos nuevos desde la última visita
+
+/* ---------- tema (el mismo que la página de informes) */
+function aplicarTema(){
+  const t = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  document.documentElement.dataset.temaEfectivo = t;
+}
+$('#bTema').onclick = () => {
+  const t = document.documentElement.dataset.temaEfectivo === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t; grabarLS('tema', t); aplicarTema();
+};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', aplicarTema);
+aplicarTema();
+
+/* ---------- utilidades */
+function hace(seg){
+  if(seg == null) return '';
+  seg = Math.max(0, Math.round(seg));
+  if(seg < 10) return 'recién';
+  if(seg < 60) return `hace ${seg} s`;
+  const m = Math.round(seg / 60); if(m < 60) return `hace ${m} min`;
+  const h = Math.floor(seg / 3600); if(h < 24) return `hace ${h} h ${Math.round((seg % 3600) / 60)} min`;
+  const d = Math.floor(seg / 86400); return d === 1 ? 'hace 1 día' : `hace ${d} días`;
+}
+function duracion(seg){
+  const m = Math.floor(seg / 60), h = Math.floor(m / 60);
+  return h ? `${h} h ${m % 60} min` : m ? `${m} min` : 'menos de 1 min';
+}
+const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : (varios || uno + 's')}`;
+function fechaCorta(s){         // "2026-10-24 23:47" -> "24/10 23:47"
+  const m = /^(\d{4})-(\d\d)-(\d\d)(?: (\d\d:\d\d))?/.exec(s || ''); return m ? `${m[3]}/${m[2]}${m[4] ? ' ' + m[4] : ''}` : (s || '');
+}
+function fechaDe(t){ const d = new Date(t * 1000); return d.toLocaleDateString('es-AR', {day:'2-digit', month:'2-digit'}) + ' ' + d.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'}); }
+let toastT;
+function toast(msg, error){
+  const t = $('#toast'); t.textContent = msg; t.className = error ? 'err' : ''; t.style.display = 'block';
+  clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', error ? 9000 : 6000);
+}
+async function accion(ruta, datos, boton){
+  if(boton) boton.disabled = true;
+  try {
+    const r = await fetch('/api/admin/' + ruta, {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Panel': '1'}, body: JSON.stringify(datos || {})});
+    const j = await r.json().catch(() => ({}));
+    if(r.status === 401 && j.entrar_panel){ location.reload(); return null; }
+    if(!r.ok) throw new Error(j.error || 'Error ' + r.status);
+    if(j.msg) toast(j.msg);
+    cargar();
+    return j;
+  } catch(e){ toast(e.message, true); return null; }
+  finally { if(boton) boton.disabled = false; }
+}
+function poner(id, html){ if(ultimo[id] !== html){ ultimo[id] = html; $(id).innerHTML = html; } }
+
+/* ---------- resumen */
+const T_TUNEL = {
+  apagado: ['', 'Apagado', 'Solo esta PC. Para el trabajo abrí iniciar_servidor.bat.'],
+  sin_contrasena: ['av', 'Falta la contraseña', 'Configurala acá al lado para abrir el túnel.'],
+  detenido: ['av', 'Detenido', 'Todavía no se abrió.'],
+  abriendo: ['av', 'Abriéndose…', 'Esperando a Cloudflare.'],
+  conectando: ['av', 'Conectando…', 'Ya tiene dirección; falta la confirmación de Cloudflare.'],
+  activo: ['ok', 'Activo', ''],
+  reconectando: ['err', 'Reconectando…', 'Se cortó y se vuelve a abrir solo.'],
+  sin_cloudflared: ['err', 'Falta cloudflared.exe', 'Ejecutá iniciar_servidor.bat para descargarlo.'],
+};
+function tile(et, punto, v, d){ return `<div class="tile"><div class="et">${et}</div><div class="v">${punto != null ? `<span class="punto ${punto}"></span>` : ''}${v}</div>${d ? `<div class="d">${d}</div>` : ''}</div>`; }
+function armarResumen(e){
+  const ia = e.ia.estado === 'ok' ? ['ok', 'Lista', esc(e.ia.trabajando || e.ia.modelo)]
+           : e.ia.estado === 'caida' ? ['err', 'Ollama cerrado', 'Abrí Ollama: los audios esperan en la cola.']
+           : ['err', 'Falta el modelo', esc(e.ia.modelo)];
+  const tu = T_TUNEL[e.tunel.estado] || ['', e.tunel.estado, ''];
+  const conect = e.pcs.filter(p => p.conectada).length, h = e.hoy, c = e.casos;
+  const tuDet = e.tunel.estado === 'activo' && e.tunel.desde ? 'abierto ' + hace(e.ahora - e.tunel.desde) : tu[2];
+  poner('#resumen',
+    tile('Servidor', 'ok', 'Encendido', `hace ${duracion(e.ahora - e.servidor.desde)} · versión ${esc(e.servidor.version)}${e.servidor.simulado ? ' · <b>modo prueba</b>' : ''}`)
+    + tile('IA', ia[0], ia[1], ia[2])
+    + tile('Túnel', tu[0], tu[1], tuDet)
+    + tile('PC conectadas', conect ? 'ok vivo' : '', conect ? `${conect} ${conect === 1 ? 'conectada' : 'conectadas'} ahora` : 'Ninguna ahora', e.pcs.length ? plural(e.pcs.length, 'PC vinculada', 'PC vinculadas') : 'Todavía no se vinculó ninguna')
+    + tile('Casos', c.error ? 'err' : c.listo ? 'av' : 'ok', c.error ? plural(c.error, 'con error') : `${c.listo} para revisar`,
+           `${c.error ? `${c.listo} para revisar · ` : ''}${c.en_proceso} en proceso · ${c.nuevo} sin procesar`)
+    + tile('Hoy', h.errores ? 'err' : null, `${plural(h.generados, 'informe')} · ${plural(h.guardados, 'guardado')}`,
+           `${plural(h.recibidos, 'audio recibido', 'audios recibidos')}${h.errores ? ` · <b>${plural(h.errores, 'error', 'errores')}</b>` : ''}`)
+    + tile('Placa de video', e.gpu_tono === 'aviso' ? 'av' : null, e.whisper.trabajando ? 'Whisper trabajando' : 'Whisper en espera', esc(e.gpu || 'sin datos (nvidia-smi no responde)')));
+}
+
+/* ---------- túnel */
+function armarTunel(e){
+  const t = e.tunel, tu = T_TUNEL[t.estado] || ['', t.estado, ''];
+  let h = `<div class="estado-grande"><span class="punto ${tu[0]}"></span>${tu[1]}</div>`;
+  if(t.estado === 'apagado'){
+    h += `<p class="explica">El servidor se abrió solo para esta PC (con <span class="cod">interfaz.bat</span>). Para que lo usen las PC del trabajo, cerrá esta ventana del servidor y abrí <span class="cod">iniciar_servidor.bat</span>.</p>`;
+  } else if(t.estado === 'sin_contrasena'){
+    h += `<p class="explica av">Todavía no hay contraseña para el acceso remoto, así que el túnel no se abrió. Guardala en el recuadro de <b>Contraseña</b> y el túnel se abre solo.</p>`;
+  } else if(t.estado === 'sin_cloudflared'){
+    h += `<p class="explica err">No encuentro <span class="cod">cloudflared.exe</span> en la carpeta sistema. Ejecutá <span class="cod">iniciar_servidor.bat</span>: lo descarga y abre el servidor con el túnel.</p>`;
+  } else {
+    h += '<dl class="dl">';
+    h += `<dt>Dirección</dt><dd>${t.url ? `<div class="url"><a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.url)}</a><button class="chico" id="bCopiarUrl">Copiar</button></div>` : '<span style="color:var(--mu)">esperando a Cloudflare…</span>'}</dd>`;
+    if(t.estado === 'activo' && t.desde) h += `<dt>Activo</dt><dd>${hace(e.ahora - t.desde)}${t.centro ? ` · centro de Cloudflare ${esc(t.centro)}` : ''}</dd>`;
+    h += `<dt>Publicada</dt><dd>${t.publicada ? `${hace(e.ahora - t.publicada)} en ntfy.sh: las apps del trabajo la encuentran solas` : (t.error_pub ? `<span style="color:var(--err)">no se pudo publicar</span>` : 'todavía no')}</dd>`;
+    if(t.reinicios) h += `<dt>Reinicios</dt><dd>${plural(t.reinicios, 'vez', 'veces')} desde que se abrió el servidor</dd>`;
+    h += '</dl>';
+    if(t.error_pub && !t.publicada) h += `<p class="explica av">ntfy.sh respondió: ${esc(t.error_pub)}. Si las apps no se conectan solas, escribí la dirección a mano en cada app (menú de la app → <i>Escribir la dirección del Servidor…</i>).</p>`;
+    if(t.estado === 'reconectando') h += `<p class="explica err">El túnel se cortó y se está volviendo a abrir solo. Si tarda más de un minuto, probá <b>Reiniciar túnel</b>.</p>`;
+  }
+  const puede = t.modo && !['apagado', 'sin_contrasena', 'sin_cloudflared'].includes(t.estado);
+  h += `<div class="acciones"><button id="bReiniciar" ${puede ? '' : 'disabled'} title="Cierra y vuelve a abrir el túnel. La dirección cambia y se publica sola; las apps del trabajo se reconectan en unos segundos.">Reiniciar túnel</button>`
+     + `<button id="bPublicar" ${t.url ? '' : 'disabled'} title="Vuelve a publicar la dirección en ntfy.sh para que las apps la encuentren">Volver a publicar la dirección</button></div>`;
+  if(puede) h += `<p class="nota">Reiniciar sirve cuando las PC del trabajo no se conectan aunque el servidor ande. La dirección cambia y las apps la encuentran solas.</p>`;
+  poner('#tunel', h);
+  const c = $('#bCopiarUrl'); if(c) c.onclick = () => navigator.clipboard.writeText(t.url).then(() => toast('Dirección copiada.'), () => toast('No se pudo copiar.', true));
+  $('#bReiniciar').onclick = ev => {
+    const rem = E.visor && E.visor.remoto;
+    if(confirm('¿Reiniciar el túnel?\n\nLas PC del trabajo se desconectan unos segundos y la dirección cambia (se publica sola).'
+               + (rem ? '\n\nVos también estás entrando por el túnel: la app se reconecta sola y vas a tener que volver a escribir la contraseña del panel.' : '')))
+      accion('tunel/reiniciar', {}, ev.currentTarget);
+  };
+  $('#bPublicar').onclick = ev => accion('tunel/publicar', {}, ev.currentTarget);
+}
+
+/* ---------- contraseña */
+function armarClave(e){
+  poner('#claveEstado', e.contrasena
+    ? '<div class="estado-grande"><span class="punto ok"></span>Configurada</div>'
+    : '<div class="estado-grande"><span class="punto av"></span>Todavía no configurada</div>');
+  $('#bClave').textContent = e.contrasena ? 'Cambiar contraseña' : 'Guardar contraseña';
+}
+$('#fClave').onsubmit = async ev => {
+  ev.preventDefault();
+  const c1 = $('#c1').value, c2 = $('#c2').value, err = $('#cErr');
+  err.textContent = '';
+  if(c1.length < 8){ err.textContent = 'Usá al menos 8 caracteres.'; $('#c1').focus(); return; }
+  if(c1 !== c2){ err.textContent = 'Las dos no coinciden.'; $('#c2').focus(); return; }
+  if(E && E.contrasena && !confirm('¿Cambiar la contraseña?\n\nLas PC ya vinculadas siguen funcionando. La nueva sirve para vincular PC nuevas y para entrar desde un navegador.')) return;
+  const r = await accion('contrasena', {contrasena: c1}, $('#bClave'));
+  if(r){ $('#c1').value = ''; $('#c2').value = ''; }
+};
+
+/* ---------- panel desde el trabajo */
+function armarPanel(e){
+  const a = e.admin_remoto, rem = e.visor && e.visor.remoto;
+  $('#panelLocal').hidden = rem; $('#panelRemotoNota').hidden = !rem;
+  $('#panelCuenta').textContent = a.sesiones.length ? plural(a.sesiones.length, 'sesión abierta', 'sesiones abiertas') : '';
+  let h = a.configurada
+    ? `<div class="estado-grande"><span class="punto ok"></span>Habilitado</div><p class="nota" style="margin-top:4px">Con contraseña${a.desde ? ' desde el ' + esc(fechaCorta(a.desde)) : ''}.</p>`
+    : '<div class="estado-grande"><span class="punto"></span>No habilitado</div><p class="nota" style="margin-top:4px">Por ahora el panel se abre solo en esta PC.</p>';
+  if(a.sesiones.length){
+    h += '<ul class="eventos" style="margin-top:10px;border:1px solid var(--bd);border-radius:8px">' + a.sesiones.map(x =>
+      `<li class="ev" style="grid-template-columns:minmax(0,1fr) auto"><span><b>${esc(x.pc)}</b>${e.visor && e.visor.remoto && x.pc === e.visor.pc ? ' <span class="etq">vos</span>' : ''}</span>`
+      + `<span class="hora">entró ${hace(e.ahora - x.desde)} · usado ${hace(e.ahora - x.ult)}</span></li>`).join('') + '</ul>';
+    if(!rem) h += '<div class="acciones"><button class="chico" id="bCerrarSesAdm" title="Las PC del trabajo tendrán que volver a escribir la contraseña del panel">Cerrar estas sesiones</button></div>';
+  }
+  poner('#panelEstado', h);
+  const c = $('#bCerrarSesAdm'); if(c) c.onclick = ev => { if(confirm('¿Cerrar las sesiones del panel abiertas en las PC del trabajo?')) accion('sesiones_admin/cerrar', {}, ev.currentTarget); };
+  $('#bClaveAdm').textContent = a.configurada ? 'Cambiar contraseña' : 'Habilitar con esta contraseña';
+  $('#bQuitarAdm').hidden = !a.configurada;
+}
+$('#fClaveAdm').onsubmit = async ev => {
+  ev.preventDefault();
+  const c1 = $('#a1').value, c2 = $('#a2').value, err = $('#aErr');
+  err.textContent = '';
+  if(c1.length < 10){ err.textContent = 'Usá al menos 10 caracteres: con esta contraseña se maneja todo el servidor.'; $('#a1').focus(); return; }
+  if(c1 !== c2){ err.textContent = 'Las dos no coinciden.'; $('#a2').focus(); return; }
+  const ya = E && E.admin_remoto.configurada;
+  if(!confirm(ya ? '¿Cambiar la contraseña del panel?\n\nLas sesiones abiertas en el trabajo se cierran y tendrán que escribir la nueva.'
+                 : '¿Habilitar el panel desde las PC del trabajo?\n\nQuien sepa esta contraseña va a poder ver todo esto, reiniciar el túnel, anular PC y cambiar la contraseña del acceso remoto desde la app del trabajo.')) return;
+  const r = await accion('contrasena_admin', {contrasena: c1}, $('#bClaveAdm'));
+  if(r){ $('#a1').value = ''; $('#a2').value = ''; }
+};
+$('#bQuitarAdm').onclick = ev => {
+  if(confirm('¿Deshabilitar el panel desde las PC del trabajo?\n\nSe cierran las sesiones abiertas y el engranaje desaparece en la app del trabajo. Lo podés volver a habilitar cuando quieras.'))
+    accion('contrasena_admin/quitar', {}, ev.currentTarget);
+};
+
+/* ---------- PC */
+function armarPcs(e){
+  $('#pcsCuenta').textContent = e.pcs.length ? plural(e.pcs.length, 'PC') : '';
+  $('#appOficial').textContent = e.app.version ? `App en sistema\\cliente: versión ${e.app.version}` : (e.app.archivos ? 'App en sistema\\cliente: sin número de versión' : 'No hay app en sistema\\cliente');
+  if(!e.pcs.length){
+    poner('#pcs', `<div class="vacio"><b>Todavía no se vinculó ninguna PC.</b>En cada PC del trabajo abrí <span class="cod">Transcripcion.exe</span>, escribí el nombre de la PC (ej. info-01) y la contraseña. Aparecen acá solas.</div>`);
+    return;
+  }
+  let h = '<div class="tabla-env"><table><thead><tr><th scope="col">PC</th><th scope="col">Conexión</th><th scope="col">App</th><th scope="col">Médico de sus audios</th><th scope="col">Vinculada</th><th scope="col"><span class="sr" style="position:absolute;left:-9999px">Acciones</span></th></tr></thead><tbody>';
+  for(const p of e.pcs){
+    const con = p.conectada ? '<span class="conex"><span class="punto ok vivo"></span>Conectada ahora</span>'
+      : p.ultima ? `<span class="conex"><span class="punto"></span>Última vez ${hace(e.ahora - p.ultima)}</span><span class="sec">${fechaDe(p.ultima)}</span>`
+      : '<span class="conex"><span class="punto"></span>Sin conexiones registradas</span>';
+    const rev = (p.revisando.length ? `<span class="sec">Revisando ${p.revisando.map(esc).join(', ')}</span>` : '')
+      + (p.panel ? '<span class="sec"><span class="etq av">usando el panel</span></span>' : '');
+    const app = p.version ? `${esc(p.version)} ${p.desactualizada ? '<span class="etq av" title="Se actualiza sola cuando nadie la está usando">por actualizar</span>' : '<span class="etq ok">al día</span>'}`
+      : (p.llaves ? '<span style="color:var(--mu)">sin datos</span>' : '<span class="etq">navegador</span>');
+    const vinc = p.llaves ? fechaCorta(p.vinculada) + (p.llaves > 1 ? `<span class="sec">${p.llaves} vinculaciones · última ${fechaCorta(p.ultima_vinculacion)}</span>` : '')
+      : '<span style="color:var(--mu)">entró con contraseña</span>' + (p.sesiones ? `<span class="sec">${plural(p.sesiones, 'sesión abierta', 'sesiones abiertas')}</span>` : '');
+    const puedeAnular = p.llaves || p.sesiones;
+    h += `<tr><td><span class="pcnom">${esc(p.pc)}</span></td><td>${con}${rev}</td><td>${app}</td><td>${p.medico ? esc(p.medico) : '<span style="color:var(--mu)">sin especificar</span>'}</td><td>${vinc}</td>`
+       + `<td style="text-align:right">${puedeAnular ? `<button class="chico peligro" data-anular="${esc(p.pc)}" title="Quita el permiso de esta PC. Para volver a usarla hay que vincularla con la contraseña.">Anular</button>` : ''}</td></tr>`;
+  }
+  h += '</tbody></table></div>';
+  poner('#pcs', h);
+  document.querySelectorAll('[data-anular]').forEach(b => b.onclick = () => {
+    const pc = b.dataset.anular;
+    const yo = E.visor && E.visor.remoto && E.visor.pc === pc;
+    if(confirm(`¿Anular ${pc}?\n\nEsa PC deja de poder enviar audios y ver informes hasta que la vuelvas a vincular con la contraseña. Usalo si la PC se perdió, se cambió o ya no se usa.`
+               + (yo ? '\n\nOJO: es la PC que estás usando ahora. Se va a desconectar enseguida.' : '')))
+      accion('pc/anular', {pc}, b);
+  });
+}
+
+/* ---------- registro */
+function diaDe(f){ const hoy = new Date(E.ahora * 1000), ay = new Date(E.ahora * 1000 - 86400000);
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return f === iso(hoy) ? 'Hoy' : f === iso(ay) ? 'Ayer' : fechaCorta(f); }
+function tiempoEv(ev){ const [y, m, d] = ev.fecha.split('-').map(Number), [hh, mm, ss] = ev.hora.split(':').map(Number); return new Date(y, m - 1, d, hh, mm, ss).getTime() / 1000; }
+function armarRegistro(e){
+  const r = e.registro;
+  $('#regCuenta').textContent = `Hoy: ${plural(r.errores_hoy, 'error', 'errores')} · ${plural(r.avisos_hoy, 'aviso')}`;
+  const lista = r.eventos.filter(ev => filtro === 'todos' || ev.nivel === filtro);
+  if(!lista.length){
+    poner('#eventos', `<li class="vacio"><b>${filtro === 'error' ? 'Sin errores' : filtro === 'aviso' ? 'Sin avisos' : 'Sin errores ni avisos'} entre ayer y hoy.</b>Todo lo que pasa queda en la carpeta registros (un archivo por día).</li>`);
+    $('#mas').hidden = true; return;
+  }
+  let h = '';
+  for(const ev of lista.slice(0, cuantos)){
+    const nuevo = VISTO_ANTES && tiempoEv(ev) > VISTO_ANTES;
+    h += `<li class="ev ${ev.nivel}${nuevo ? ' nuevo' : ''}"><span class="hora" title="${nuevo ? 'Nuevo desde tu última visita a este panel' : ''}">${diaDe(ev.fecha)} ${ev.hora.slice(0, 5)}</span>`
+       + `<span class="niv">${ev.nivel === 'error' ? 'ERROR' : 'AVISO'}</span>`
+       + `<div class="txt"><span class="area">${esc(ev.area)}</span>${esc(ev.msg)}`
+       + (ev.det.length ? `<ul class="det">${ev.det.map(d => `<li>· ${esc(d)}</li>`).join('')}</ul>` : '')
+       + (ev.tb.length ? `<details><summary>Detalle técnico</summary><pre>${esc(ev.tb.join('\n'))}</pre></details>` : '')
+       + '</div></li>';
+  }
+  // no re-armar mientras haya un "Detalle técnico" abierto (se cerraría solo)
+  if(document.querySelector('#eventos details[open]') && ultimo['#eventos']) return;
+  poner('#eventos', h);
+  $('#mas').hidden = lista.length <= cuantos;
+}
+document.querySelectorAll('.filtro button').forEach(b => b.onclick = () => {
+  filtro = b.dataset.f; cuantos = 25;
+  document.querySelectorAll('.filtro button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  ultimo['#eventos'] = null; if(E) armarRegistro(E);
+});
+$('#bMas').onclick = () => { cuantos += 25; ultimo['#eventos'] = null; armarRegistro(E); };
+document.querySelectorAll('[data-abrir]').forEach(b => b.onclick = () => accion('abrir', {que: b.dataset.abrir}, b));
+
+/* ---------- usado desde una PC del trabajo (con la contraseña del panel) */
+function modoRemoto(v, subNormal){
+  const rem = !!(v && v.remoto);
+  document.documentElement.classList.toggle('panel-remoto', rem);
+  $('#bSalirPanel').hidden = !rem;
+  $('#sub').textContent = rem ? `Desde ${v.pc} · la sesión del panel se cierra sola tras 30 min sin usarla` : subNormal;
+}
+$('#bSalirPanel').onclick = async () => {
+  try { await fetch('/api/admin/salir', {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Panel': '1'}, body: '{}'}); } catch(e){}
+  location.href = '/';
+};
+
+/* ---------- carga */
+async function cargar(){
+  let e;
+  try {
+    const r = await fetch('/api/admin/estado', {cache: 'no-store'});
+    if(r.status === 403 || r.status === 401){ location.reload(); return; }     // sesión del panel vencida: pide la contraseña
+    e = await r.json();
+  } catch(err){ $('#sinConexion').style.display = 'block'; $('#sub').textContent = 'Sin conexión · reintentando'; return; }
+  $('#sinConexion').style.display = 'none';
+  E = e;
+  $('#cargando').hidden = true;
+  ['#resumen', '#fila1', '#secPanel', '#secPcs', '#secReg'].forEach(s => $(s).hidden = false);
+  modoRemoto(e.visor, 'Solo en esta PC · se actualiza sola');
+  armarResumen(e); armarTunel(e); armarClave(e); armarPanel(e); armarPcs(e); armarRegistro(e);
+}
+addEventListener('pagehide', () => { if(E) grabarLS('adminVisto', String(Math.round(E.ahora))); });
+cargar(); setInterval(cargar, 3000);
+
+if(location.hash === '#estadisticas') location.replace('/admin/estadisticas');   // dirección vieja
+</script>
+</body>
+</html>
