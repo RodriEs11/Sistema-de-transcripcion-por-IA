@@ -1,0 +1,56 @@
+# Vocabulario que se le "sugiere" a Whisper para que escriba bien los terminos.
+# Una palabra o expresion por linea. Las lineas con # se ignoran.
+# Podes agregar terminos que veas mal escritos en el reporte.
+Mamografía digital bilateral con prolongaciones axilares
+técnica de Eklund
+impregnación adiposa
+parénquima fibroglandular
+fibronodulillar
+microcalcificaciones anárquicas
+conos axilares
+ACR
+Bi-Rads
+hipoecogénica
+márgenes circunscriptos
+periareolar
+cuadrante superoexterno
+Ecografía ginecológica transvaginal
+útero en AVF
+endometrio trilaminar
+núcleo miomatoso intramural
+subseroso
+DIU
+fondo de saco de Douglas
+anexiales
+Ecografía tiroidea
+adenomegalias
+Espinograma
+espondilosis
+espondilouncoartrosis
+espacios intersomáticos
+retrolistesis
+anterolistesis
+lordosis cervical fisiológica
+curvaturas escolióticas
+sinistroconvexa
+dextroconvexa
+interfacetarios
+alineación somática posterior
+gonartrosis
+coxartrosis
+osteoproductivos
+femorotibiales
+coxofemorales
+glenohumeral
+flebolitos pelvianos
+entesopáticos
+crestas ilíacas
+hallux valgus
+metatarsiano
+varianza cubital
+radiocarpiano
+senos costofrénicos y cardiofrénicos
+consolidativos
+engrosamientos pleurales biapicales
+tractos bipulmonares
+basculación pelviana
