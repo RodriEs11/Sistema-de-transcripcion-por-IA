@@ -59,8 +59,8 @@ aside{border-right:1px solid var(--bd);background:var(--panel);display:flex;flex
 .fila2 > .divisor{align-self:stretch}
 body.redimensionando,body.redimensionando *{cursor:col-resize!important;user-select:none!important}
 body.redimensionando iframe,body.redimensionando #editor,body.redimensionando #dictado{pointer-events:none}
-.marca{padding:14px 16px 10px;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
-.marca small{font-weight:400;color:var(--mu);font-size:12px;margin-left:auto}
+.marca{padding:14px 12px 10px 16px;font-weight:700;font-size:15px;display:flex;align-items:center;gap:4px}
+.marca small{font-weight:400;color:var(--mu);font-size:12px;margin:0 2px 0 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .punto{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
 .punto.mal{background:var(--err)}
 .tabs{margin:0 12px 10px;display:flex;gap:4px;padding:3px;background:var(--bg);border-radius:9px}
@@ -321,11 +321,160 @@ body.compacto #bCompacto .agr{display:block}body.compacto #bCompacto .cmp{displa
 #vpPaleta label:hover{background:var(--bg)}
 #vpPaleta input[type=color]{width:22px;height:20px;padding:0;border:0;background:none}
 #vpFmtEstado{color:var(--mu);font-size:12px;margin-left:auto}
+/* ---------- barra del informe compacta (pensada para 1366 × 768): dos filas que nunca se enciman.
+   Fila 1: paciente, médico y audio. Fila 2: marcas y acciones; si no entra, ajustarBarra() la achica por pasos
+   (clases n1…n6 en #filaAcciones) en lugar de partirla en varias líneas. */
+.barra{padding:8px 14px;gap:6px}
+.barra .fila{flex-wrap:nowrap;min-width:0}
+.f1{gap:8px}
+.f1 .tit-caso{flex:0 1 auto;min-width:90px;max-width:44%}
+.f1 .tit-caso h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto;font-size:15.5px}
+.f1 .tit-audio{flex:0 1000 auto}
+.barra{container-type:inline-size}
+@container (max-width:900px){ .f1 .tit-audio{display:none} }
+@container (max-width:760px){ #tiempo{display:none} .barra select.med{min-width:96px} }
+.barra select.med{flex:0 1 190px;min-width:110px;max-width:190px}
+.f1 .player{flex:1 1 320px;flex-wrap:nowrap;gap:5px}
+.f1 .player button{padding:5px 9px}
+#bPlay{width:38px}
+#prog{min-width:50px}
+#tiempo{min-width:0;white-space:nowrap}
+.f2{gap:6px}
+.f2 > *{flex:none}
+.f2 > .sep{flex:1 1 0;min-width:2px}
+.f2 button{display:inline-flex;align-items:center;gap:6px}
+.f2 button svg{width:16px;height:16px;flex:none}
+.f2 button.ico{padding:5px;color:var(--mu)}
+.f2 button.ico svg{width:18px;height:18px}
+.f2 button.ico[aria-expanded=true]{color:var(--ac);border-color:var(--ac);background:var(--ac-suave)}
+.f2 kbd{margin-left:0}
+#pend{white-space:nowrap}
+.et-corta{display:none}
+.f2.n1 .nivel-1,.f2.n4 .nivel-4{display:none!important}
+.f2.n2 kbd{display:none}
+.f2.n3 #bVista .et,.f2.n6 #bCopiar .et{display:none}
+.f2.n3 #bVista,.f2.n6 #bCopiar{padding:6px 8px}
+.f2.n5 #bSig .et,.f2.n5 #pend .et-larga{display:none}
+.f2.n5 #bSig .et-corta,.f2.n5 #pend .et-corta{display:inline}
+.f2.n7 #bFin .et{display:none}
+.f2.n7 #bFin .et-corta{display:inline}
+.f2.n8{flex-wrap:wrap}
+.mas{position:relative}
+#bMas{padding:5px 8px;color:var(--mu)}
+#bMas .et{display:none}
+#bMas[aria-expanded=true]{color:var(--ac);border-color:var(--ac);background:var(--ac-suave)}
+.menu{position:absolute;right:0;top:calc(100% + 5px);z-index:7;background:var(--panel);border:1px solid var(--bd2);border-radius:10px;
+  box-shadow:0 8px 28px rgba(0,0,0,.18);padding:4px;min-width:210px;animation:cfEntra .12s ease-out}
+.menu button{display:flex;align-items:center;gap:8px;width:100%;border:0;background:transparent;text-align:left;padding:7px 10px;border-radius:7px;font-size:13.5px}
+.menu button:hover,.menu button:focus-visible{background:var(--bg);outline:none}
+.menu button.peligro-txt{color:var(--err)}
+.menu button svg{width:15px;height:15px;flex:none}
+.menu[hidden],.mas[hidden],.pop[hidden]{display:none}
+/* referencias de colores y atajos: en pantallas chicas se ocultan solos (siempre están en el botón «?») */
+.barra .ley{gap:6px 10px}
+body[data-leyenda=no] #leyenda,body[data-atajos=no] .dict .ayuda{display:none}
+@media (max-height:820px),(max-width:1440px){
+  body:not([data-leyenda=si]) #leyenda{display:none}
+  body:not([data-atajos=si]) .dict .ayuda{display:none}
+}
+@media (max-height:820px){ .cols{padding:10px 12px} .hoja{padding:26px 36px} .dict h2{padding:7px 12px} }
+/* tamaño del texto en pantalla (no cambia el Word) */
+body[data-letra=chica] #editor{font-size:14px} body[data-letra=chica] #dictado{font-size:13px;line-height:1.6}
+body[data-letra=grande] #editor{font-size:18px} body[data-letra=grande] #dictado{font-size:16px}
+/* ventanita de ayuda (colores y atajos) */
+.pop{position:fixed;z-index:9;width:min(400px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;background:var(--panel);color:var(--tx);
+  border:1px solid var(--bd2);border-radius:11px;box-shadow:0 10px 34px rgba(0,0,0,.22);padding:12px 16px 14px;font-size:13px;line-height:1.4;animation:cfEntra .12s ease-out}
+.pop h3{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--mu);margin:4px 0 8px}
+.pop h3 + *{margin-top:0}
+.pop-colores{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:6px}
+.pop-colores li{display:grid;grid-template-columns:16px 1fr;gap:9px;align-items:start}
+.pop-colores i{width:16px;height:16px;border-radius:4px;margin-top:1px}
+.pop-nota{margin:0 0 12px;color:var(--mu);font-size:12.5px}
+.pop-atajos{display:grid;grid-template-columns:max-content 1fr;gap:6px 12px;margin:0}
+.pop-atajos dt{white-space:nowrap;color:var(--mu)} .pop-atajos dd{margin:0}
+.pop kbd{margin-left:0}
+/* ---------- lista oculta: queda un riel angosto a la izquierda */
+.ico-pie{flex:none!important;line-height:0;padding:3px 7px!important;color:var(--mu)}
+.ico-pie svg{width:16px;height:16px}
+.ico-pie:hover{color:var(--tx)}
+.riel{display:none}
+.app.plegada{grid-template-columns:48px 1fr}
+.app.plegada aside > :not(.riel){display:none!important}
+.app.plegada .riel{display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 0 12px;height:100%;min-height:0}
+.riel .ico svg{width:18px;height:18px}
+.riel-ia{display:grid;place-items:center;width:28px;height:20px}
+.riel-pend{min-width:26px;height:22px;padding:0 6px;border-radius:11px;border:1px solid var(--ac);color:var(--ac);background:var(--ac-suave);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
+.riel-pend[hidden]{display:none}
+.riel .sep{flex:1}
+@media (max-width:1000px){
+  .app.plegada{grid-template-columns:1fr}
+  .app.plegada .riel{flex-direction:row;height:auto;padding:6px 12px}
+  .barra .fila.f1{flex-wrap:wrap}.f1 .tit-caso{max-width:100%}
+}
+/* ---------- configuración */
+#config{position:fixed;inset:0;z-index:15;background:rgba(0,0,0,.38);display:grid;place-items:center;padding:16px}
+#config[hidden]{display:none}
+.cfg-caja{background:var(--panel);border:1px solid var(--bd2);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,.3);width:min(780px,100%);
+  height:min(600px,100%);display:flex;flex-direction:column;min-height:0;animation:cfEntra .14s ease-out;overflow:hidden}
+.cfg-cab{display:flex;align-items:center;gap:10px;padding:14px 14px 12px 20px;border-bottom:1px solid var(--bd)}
+.cfg-cab h2{font-size:17px;margin:0}
+.cfg-sub{color:var(--mu);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cfg-cab .ico svg{width:18px;height:18px}
+.cfg-cuerpo{flex:1;min-height:0;display:grid;grid-template-columns:180px 1fr}
+.cfg-tabs{display:flex;flex-direction:column;gap:2px;padding:12px 10px;border-right:1px solid var(--bd);background:var(--bg);overflow:auto}
+.cfg-tabs button{text-align:left;border-color:transparent;background:transparent;color:var(--mu);padding:7px 10px;font-size:13.5px}
+.cfg-tabs button:hover{color:var(--tx);border-color:transparent;background:var(--panel)}
+.cfg-tabs button:focus-visible,.riel button:focus-visible,.marca .ico:focus-visible,.f2 button:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+.cfg-tabs button[aria-selected=true]{background:var(--panel);color:var(--tx);font-weight:600;border-color:var(--bd2)}
+.cfg-tabs button[hidden]{display:none}
+.cfg-paneles{overflow:auto;min-height:0;padding:6px 22px 14px}
+.cfg-panel[hidden]{display:none}
+.cfg-fila{display:flex;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid var(--bd)}
+.cfg-fila:last-child{border-bottom:0}
+.cfg-fila[hidden]{display:none}
+.cfg-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cfg-txt b{font-weight:600;font-size:13.8px}
+.cfg-txt small{color:var(--mu);font-size:12.3px;line-height:1.4}
+.cfg-txt small.ruta{font:12px ui-monospace,Consolas,monospace;color:var(--tx);overflow-wrap:anywhere}
+.cfg-txt small.mal{color:var(--err)} .cfg-txt small.bien{color:var(--ok)}
+.cfg-fila > select,.cfg-fila > button,.cfg-fila > .segm,.cfg-fila > .interruptor,.cfg-botones{flex:none}
+.cfg-botones{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:52%}
+.cfg-fila > select{min-width:150px}
+.ico-txt{display:inline-grid;place-items:center;width:15px;height:15px;border:1.4px solid currentColor;border-radius:50%;font-size:10px;font-weight:700;line-height:1;vertical-align:-2px}
+button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:var(--err)}
+.cfg-pie{display:flex;align-items:center;gap:10px;padding:10px 14px 12px 20px;border-top:1px solid var(--bd)}
+.cfg-nota{color:var(--mu);font-size:12.5px}
+.cfg-guardado{color:var(--ok);font-size:12.5px;opacity:0;transition:opacity .2s}
+.cfg-guardado.ver{opacity:1}
+/* grupo de opciones (tipo botones pegados) */
+.segm{display:inline-flex;padding:2px;border:1px solid var(--bd2);border-radius:9px;background:var(--bg);gap:2px}
+.segm button{border-color:transparent;background:transparent;padding:4px 10px;font-size:13px;color:var(--mu);border-radius:7px}
+.segm button:hover{color:var(--tx);border-color:transparent}
+.segm button[aria-checked=true]{background:var(--panel);color:var(--tx);border-color:var(--bd2);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+/* interruptor */
+.interruptor{position:relative;display:inline-block;width:40px;height:22px;flex:none;cursor:pointer}
+.interruptor input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.interruptor span{position:absolute;inset:0;border-radius:11px;background:var(--bd2);transition:background .15s;pointer-events:none}
+.interruptor span::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.interruptor input:checked + span{background:var(--ac)}
+.interruptor input:checked + span::after{transform:translateX(18px)}
+.interruptor input:focus-visible + span{outline:2px solid var(--ac);outline-offset:2px}
+.interruptor input:disabled + span{opacity:.5}
+@media (max-width:620px){
+  .cfg-cuerpo{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .cfg-tabs{flex-direction:row;border-right:0;border-bottom:1px solid var(--bd);padding:8px;overflow-x:auto}
+  .cfg-tabs button{white-space:nowrap}
+  .cfg-paneles{padding:4px 14px 12px}
+  .cfg-fila{flex-wrap:wrap;gap:8px 12px}
+  .cfg-botones{max-width:none;justify-content:flex-start}
+  .cfg-caja{height:100%}
+  .cfg-nota{display:none}
+}
 </style>
 </head>
 <body>
 <div class="app">
-  <aside>
+  <aside id="lista">
     <div class="marca">Informes <small><span class="punto" id="pOllama"></span> <span id="tOllama">IA</span></small>
       <button id="bTema" class="ico" title="Cambiar a modo oscuro / claro" aria-label="Cambiar modo oscuro o claro">
         <svg class="solo-tema-claro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -334,6 +483,9 @@ body.compacto #bCompacto .agr{display:block}body.compacto #bCompacto .cmp{displa
       <button id="bCompacto" class="ico" title="Modo compacto: solo la cola y los avisos" aria-label="Modo compacto">
         <svg class="cmp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg>
         <svg class="agr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>
+      </button>
+      <button id="bOcultarLista" class="ico" title="Ocultar la lista de informes (más lugar para el informe)" aria-label="Ocultar la lista de informes" aria-controls="lista" aria-expanded="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M16 10l-2 2 2 2"/></svg>
       </button></div>
     <div class="tabs" id="tabs"><button data-f="mia" id="tabMia">Esta PC</button><button data-f="todas" id="tabTodas">Todas</button></div>
     <div id="estadoSrv" class="estado-srv" role="status" hidden></div>
@@ -343,16 +495,31 @@ body.compacto #bCompacto .agr{display:block}body.compacto #bCompacto .cmp{displa
     <div class="limpiar" id="limpiar" hidden><button id="bLimpiar" type="button"></button></div>
     <ul id="casos"></ul>
     <div class="pie"><button id="bVerPlant" class="chico">Plantillas</button><button id="bVerMed" class="chico">Médicos</button>
+      <button id="bConfig" class="chico ico-pie" title="Configuración" aria-label="Configuración">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+      </button>
       <button id="bAdmin" class="chico" hidden title="Administración del servidor: PC vinculadas, túnel, errores y estadísticas" aria-label="Administración del servidor">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
       </button></div>
     <div class="divisor" id="divLista" role="separator" aria-orientation="vertical" aria-label="Ancho de la lista" tabindex="0" title="Arrastrá para cambiar el ancho · doble clic: tamaño original"></div>
+    <!-- lista oculta: queda este riel angosto para volver a mostrarla -->
+    <div class="riel" id="riel">
+      <button id="bMostrarLista" class="ico" title="Mostrar la lista de informes" aria-label="Mostrar la lista de informes" aria-controls="lista" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M14 10l2 2-2 2"/></svg>
+      </button>
+      <span class="riel-ia" id="rielIa" title="IA lista"><span class="punto" id="rielPunto"></span></span>
+      <button id="rielPend" class="riel-pend" hidden title="Informes para revisar" aria-label="Informes para revisar"></button>
+      <span class="sep"></span>
+      <button id="rielConfig" class="ico" title="Configuración" aria-label="Configuración">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+      </button>
+    </div>
   </aside>
   <main>
     <div id="vacio" aria-live="polite"><div class="vac-card"><span class="spin"></span> Cargando los casos…</div></div>
     <section id="caso" hidden style="display:flex;flex-direction:column;flex:1;min-height:0">
-      <div class="barra">
-        <div class="fila">
+      <div class="barra" id="barraCaso">
+        <div class="fila f1">
           <div class="tit-caso"><h1 id="titulo"></h1><span id="tituloAudio" class="tit-audio"></span>
             <button id="bPaciente" class="ico" title="Corregir el nombre del paciente (solo se muestra en la lista, no va al informe)" aria-label="Corregir el nombre del paciente">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button></div>
@@ -366,19 +533,28 @@ body.compacto #bCompacto .agr{display:block}body.compacto #bCompacto .cmp{displa
             <select id="vel" title="Velocidad de reproducción"><option value="0.25">0.25×</option><option value="0.5">0.50×</option><option value="0.75">0.75×</option><option value="1" selected>1.00×</option><option value="1.25">1.25×</option><option value="1.5">1.50×</option><option value="1.75">1.75×</option><option value="2">2.00×</option><option value="2.25">2.25×</option><option value="2.5">2.50×</option></select>
           </div>
         </div>
-        <div class="fila">
-          <span id="pend">0 marcas</span>
-          <button id="bSig" title="Ir a la siguiente marca y escuchar ese momento">Siguiente marca<kbd>F2</kbd></button>
-          <button id="bAcep" title="La marca seleccionada está bien: quitarla">Está bien<kbd>F8</kbd></button>
+        <!-- Una sola fila de acciones: si no entra, se achica por pasos (ajustarBarra): primero pasan al menú «Más»
+             las acciones que se usan poco, después se ocultan las teclas, los botones quedan solo con ícono, etc. -->
+        <div class="fila f2" id="filaAcciones">
+          <span id="pend"><span class="et-larga">0 marcas</span></span>
+          <button id="bSig" title="Ir a la siguiente marca y escuchar ese momento (F2)"><span class="et">Siguiente marca</span><span class="et-corta">Siguiente</span><kbd>F2</kbd></button>
+          <button id="bAcep" title="La marca seleccionada está bien: quitarla (F8)"><span class="et">Está bien</span><kbd>F8</kbd></button>
+          <button id="bAyuda" class="ico" type="button" title="Qué significa cada color y atajos de teclado" aria-label="Colores y atajos de teclado" aria-haspopup="dialog" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17.2h.01"/></svg></button>
           <span class="sep"></span>
-          <button id="bBorrarCaso" class="chico" hidden title="Borrar este informe: el audio, el informe y el Word (lo que aprendió la IA se conserva)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg> Borrar</button>
-          <button id="bRegen" class="chico" title="Volver a generar el informe (se pierden los cambios)">Regenerar</button>
-          <button id="bCerrar" title="Guarda los cambios como borrador y deja el estudio libre para que lo abra otra PC">Cerrar estudio</button>
-          <button id="bVista" title="Ver cómo queda en Word: hoja, márgenes, Tahoma 12 y negritas">Vista previa<kbd>F9</kbd></button>
-          <button id="bCopiar" title="Copia el texto con formato Tahoma 12 para pegar en tu Word">Copiar para Word</button>
-          <button id="bFin" class="prim" title="Crea el Word en la carpeta Informes y guarda tu corrección para que la IA aprenda">Guardar Word y aprender</button>
+          <button id="bBorrarCaso" class="chico secundaria nivel-1" hidden title="Borrar este informe: el audio, el informe y el Word (lo que aprendió la IA se conserva)" data-menu="Borrar este informe…"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg> Borrar</button>
+          <button id="bRegen" class="chico secundaria nivel-1" title="Volver a generar el informe (se pierden los cambios)" data-menu="Regenerar el informe…">Regenerar</button>
+          <button id="bCerrar" class="secundaria nivel-4" title="Guarda los cambios como borrador y deja el estudio libre para que lo abra otra PC" data-menu="Cerrar estudio">Cerrar estudio</button>
+          <div class="mas" id="masCaja" hidden>
+            <button id="bMas" type="button" title="Más acciones" aria-label="Más acciones" aria-haspopup="menu" aria-expanded="false">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span class="et">Más</span></button>
+            <div id="menuMas" class="menu" role="menu" hidden></div>
+          </div>
+          <button id="bVista" class="con-ico" title="Vista previa como Word (F9): hoja, márgenes, Tahoma 12 y negritas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h4"/></svg><span class="et">Vista previa</span><kbd>F9</kbd></button>
+          <button id="bCopiar" class="con-ico" title="Copiar para Word: copia el texto con formato Tahoma 12 para pegar en tu Word"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2"/></svg><span class="et">Copiar para Word</span></button>
+          <button id="bFin" class="prim con-ico" title="Guardar Word y aprender: crea el Word en la carpeta Informes y guarda tu corrección para que la IA aprenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="et">Guardar Word y aprender</span><span class="et-corta">Guardar Word</span></button>
         </div>
-        <div class="ley"><span style="background:var(--rojo)">dato no dictado / completar</span><span style="background:var(--amarillo)">dudoso</span><span style="background:var(--turq-bg);box-shadow:inset 0 -2px 0 var(--turq)">no dictado junto al hallazgo</span><span style="background:var(--gris-bg);color:var(--gris)">frase de plantilla no dictada</span><span>· pasá el mouse sobre una marca (o usá <kbd>F2</kbd>) para ver qué se dictó · editar una marca la da por revisada</span></div>
+        <div class="ley" id="leyenda"><span style="background:var(--rojo)">dato no dictado / completar</span><span style="background:var(--amarillo)">dudoso</span><span style="background:var(--turq-bg);box-shadow:inset 0 -2px 0 var(--turq)">no dictado junto al hallazgo</span><span style="background:var(--gris-bg);color:var(--gris)">frase de plantilla no dictada</span><span>· pasá el mouse sobre una marca (o usá <kbd>F2</kbd>) para ver qué se dictó · editar una marca la da por revisada</span></div>
       </div>
       <div class="cols">
         <div class="hojawrap"><div id="nuevoEst"></div><div id="avisos"></div><div class="hoja"><div id="editor" contenteditable="true" spellcheck="true" lang="es"></div></div></div>
@@ -423,6 +599,106 @@ body.compacto #bCompacto .agr{display:block}body.compacto #bCompacto .cmp{displa
     <div class="botones"><button id="cfNo" type="button">Cancelar</button><button id="cfSi" type="button" class="peligro">Borrar</button></div></div>
 </div>
 <div id="toast"><span id="toastTxt"></span><span id="toastBtns"></span></div>
+<!-- ayuda del editor (botón «?»): qué significa cada color y los atajos de teclado -->
+<div id="ayudaPop" class="pop" role="dialog" aria-label="Colores y atajos de teclado" hidden>
+  <h3>Qué significa cada color</h3>
+  <ul class="pop-colores">
+    <li><i style="background:var(--rojo)"></i><span><b>Rojo</b> · número, hora, nivel o Bi-Rads distinto de lo dictado, o falta completar</span></li>
+    <li><i style="background:var(--amarillo)"></i><span><b>Amarillo</b> · la IA no entendió o Whisper oyó con poca seguridad</span></li>
+    <li><i style="background:var(--turq-bg);box-shadow:inset 0 -2px 0 var(--turq)"></i><span><b>Turquesa</b> · no se dictó junto a ese hallazgo</span></li>
+    <li><i style="background:var(--gris-bg);border:1px solid var(--gris)"></i><span><b>Gris</b> · frase de plantilla que el médico no dictó</span></li>
+  </ul>
+  <p class="pop-nota">Pasá el mouse sobre una marca (o usá <kbd>F2</kbd>) para ver qué se dictó. Editar una marca la da por revisada.</p>
+  <h3>Atajos de teclado</h3>
+  <dl class="pop-atajos">
+    <dt><kbd>F4</kbd></dt><dd>reproducir / pausa (también <kbd>Ctrl</kbd>+<kbd>Espacio</kbd>)</dd>
+    <dt><kbd>F3</kbd></dt><dd>volver <span class="salto-txt">3</span> segundos</dd>
+    <dt><kbd>F2</kbd></dt><dd>siguiente marca · <kbd>Shift</kbd>+<kbd>F2</kbd> anterior</dd>
+    <dt><kbd>F8</kbd></dt><dd>la marca está bien</dd>
+    <dt><kbd>F9</kbd></dt><dd>vista previa como Word</dd>
+    <dt><kbd>Ctrl</kbd>+<kbd>S</kbd></dt><dd>guardar el borrador</dd>
+    <dt><kbd>Alt</kbd>+clic</dt><dd>en una línea del informe: escucharla</dd>
+    <dt>clic</dt><dd>en una palabra del dictado: escucharla · en la onda: saltar ahí · arrastrar sobre la onda: escuchar mientras se mueve</dd>
+  </dl>
+</div>
+<!-- Configuración general: lo de la página se guarda en esta PC (por usuario de Windows en la app);
+     lo de la aplicación del trabajo (sección «Esta PC» y «Conexión») lo guarda la app. -->
+<div id="config" role="dialog" aria-modal="true" aria-labelledby="cfgTit" hidden>
+  <div class="cfg-caja">
+    <div class="cfg-cab"><h2 id="cfgTit">Configuración</h2><span id="cfgSub" class="cfg-sub"></span><span class="sep"></span>
+      <button id="cfgX" class="ico" type="button" title="Cerrar (Esc)" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="cfg-cuerpo">
+      <div class="cfg-tabs" role="tablist" aria-label="Secciones" aria-orientation="vertical">
+        <button role="tab" type="button" data-tab="pantalla" id="tab-pantalla" aria-controls="cfg-pantalla">Pantalla</button>
+        <button role="tab" type="button" data-tab="audio" id="tab-audio" aria-controls="cfg-audio">Audio y revisión</button>
+        <button role="tab" type="button" data-tab="pc" id="tab-pc" aria-controls="cfg-pc" class="solo-app">Esta PC</button>
+        <button role="tab" type="button" data-tab="conexion" id="tab-conexion" aria-controls="cfg-conexion" class="solo-app">Conexión</button>
+        <button role="tab" type="button" data-tab="acerca" id="tab-acerca" aria-controls="cfg-acerca">Acerca de</button>
+      </div>
+      <div class="cfg-paneles">
+        <section class="cfg-panel" id="cfg-pantalla" role="tabpanel" aria-labelledby="tab-pantalla" data-panel="pantalla">
+          <div class="cfg-fila"><div class="cfg-txt"><b>Tema</b><small>Claro, oscuro o el mismo que tiene Windows.</small></div>
+            <div class="segm" data-pref="tema" role="radiogroup" aria-label="Tema"><button type="button" role="radio" data-v="light">Claro</button><button type="button" role="radio" data-v="dark">Oscuro</button><button type="button" role="radio" data-v="">Como Windows</button></div></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Lista de informes</b><small>Ocultala para que el informe y el dictado tengan más lugar. También se oculta y se muestra con el botón de arriba de la lista.</small></div>
+            <label class="interruptor" title="Mostrar la lista de informes"><input type="checkbox" id="cfgLista"><span></span></label></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Tamaño del texto</b><small>Del informe y del dictado en la pantalla. No cambia el Word (siempre Tahoma 12).</small></div>
+            <div class="segm" data-pref="letra" role="radiogroup" aria-label="Tamaño del texto"><button type="button" role="radio" data-v="chica">Chico</button><button type="button" role="radio" data-v="">Normal</button><button type="button" role="radio" data-v="grande">Grande</button></div></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Referencias de colores arriba del informe</b><small>En pantallas chicas se ocultan solas. Siempre están en el botón <span class="ico-txt">?</span> de la barra.</small></div>
+            <select data-pref="leyenda" aria-label="Referencias de colores"><option value="">Automático</option><option value="si">Mostrar siempre</option><option value="no">Ocultar</option></select></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Atajos de teclado debajo del dictado</b><small>En pantallas chicas se ocultan solos. También están en el botón <span class="ico-txt">?</span>.</small></div>
+            <select data-pref="atajos" aria-label="Atajos de teclado"><option value="">Automático</option><option value="si">Mostrar siempre</option><option value="no">Ocultar</option></select></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Ancho de los paneles</b><small>Vuelve la lista, el informe y el dictado al tamaño original.</small></div>
+            <button type="button" id="cfgPaneles">Restablecer</button></div>
+        </section>
+        <section class="cfg-panel" id="cfg-audio" role="tabpanel" aria-labelledby="tab-audio" data-panel="audio" hidden>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Velocidad al abrir un informe</b><small>Después se puede cambiar en cada informe, junto al audio.</small></div>
+            <select data-pref="velInicial" aria-label="Velocidad al abrir un informe"><option value="">La última que usé</option><option value="0.75">0.75×</option><option value="1">1.00× (normal)</option><option value="1.25">1.25×</option><option value="1.5">1.50×</option><option value="1.75">1.75×</option><option value="2">2.00×</option></select></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Saltos de los botones − y +</b><small>Cuánto retroceden o adelantan los botones del audio y <kbd>F3</kbd>.</small></div>
+            <div class="segm" data-pref="salto" role="radiogroup" aria-label="Saltos"><button type="button" role="radio" data-v="2">2 s</button><button type="button" role="radio" data-v="">3 s</button><button type="button" role="radio" data-v="5">5 s</button><button type="button" role="radio" data-v="10">10 s</button></div></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Al reanudar, volver un poco</b><small>Después de una pausa, el audio retrocede para no perder la palabra en la que paraste.</small></div>
+            <div class="segm" data-pref="retroceso" role="radiogroup" aria-label="Retroceso al reanudar"><button type="button" role="radio" data-v="0">No</button><button type="button" role="radio" data-v="">1 s</button><button type="button" role="radio" data-v="2">2 s</button><button type="button" role="radio" data-v="3">3 s</button></div></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>El dictado sigue al audio</b><small>Mientras suena, el dictado se desplaza solo hasta la palabra que se escucha.</small></div>
+            <label class="interruptor" title="El dictado sigue al audio"><input type="checkbox" data-pref-si="seguir"><span></span></label></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Explicación de las marcas al pasar el mouse</b><small>Si se desactiva, la explicación aparece solo con <kbd>F2</kbd>.</small></div>
+            <label class="interruptor" title="Explicación al pasar el mouse"><input type="checkbox" data-pref-si="explicar"><span></span></label></div>
+        </section>
+        <section class="cfg-panel" id="cfg-pc" role="tabpanel" aria-labelledby="tab-pc" data-panel="pc" hidden>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Abrir al iniciar Windows</b><small>Arranca escondida, junto al reloj, y ya toma los audios.</small></div>
+            <label class="interruptor"><input type="checkbox" data-app="inicio"><span></span></label></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Tomar los audios del sistema automáticamente</b><small id="cfgCarpetaAudios">Los que el sistema de gestión deja en la carpeta temporal.</small></div>
+            <label class="interruptor"><input type="checkbox" data-app="tomar"><span></span></label></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Avisar cuando un informe queda listo</b><small>Notificación de Windows cuando un audio de esta PC queda para revisar.</small></div>
+            <label class="interruptor"><input type="checkbox" data-app="avisar"><span></span></label></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Modo compacto</b><small>Ventana chica, siempre visible al costado, con la cola y los avisos.</small></div>
+            <button type="button" data-app-accion="compacto" id="cfgCompacto">Pasar a modo compacto</button></div>
+          <div class="cfg-fila cfg-bloque"><div class="cfg-txt"><b>Carpeta de los Word descargados</b><small class="ruta" id="cfgCarpetaWord">—</small></div>
+            <div class="cfg-botones"><button type="button" data-app-accion="abrirWord">Abrir</button><button type="button" data-app-accion="cambiarWord">Cambiar…</button><button type="button" data-app-accion="wordPorDefecto" id="cfgWordDefecto" hidden>Usar Descargas</button></div></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Registro de envíos</b><small id="cfgPendientes">Qué audios se tomaron y se enviaron, y los errores.</small></div>
+            <div class="cfg-botones"><button type="button" data-app-accion="registro">Ver registro</button></div></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Autocorrección de Word</b><small id="cfgAutoc">Las entradas con formato del Normal.dotm de esta PC.</small></div>
+            <button type="button" data-app-accion="autocorreccion">Volver a leer</button></div>
+        </section>
+        <section class="cfg-panel" id="cfg-conexion" role="tabpanel" aria-labelledby="tab-conexion" data-panel="conexion" hidden>
+          <div class="cfg-fila cfg-bloque"><div class="cfg-txt"><b>Servidor</b><small class="ruta" id="cfgServidor">—</small><small id="cfgEstadoSrv"></small></div>
+            <div class="cfg-botones"><button type="button" id="cfgDireccion">Cambiar dirección…</button><button type="button" data-app-accion="recargar">Volver a cargar la pantalla</button></div></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Esta PC</b><small id="cfgPc">—</small></div>
+            <button type="button" id="cfgDesvincular" class="peligro-suave">Desconectar del Servidor…</button></div>
+        </section>
+        <section class="cfg-panel" id="cfg-acerca" role="tabpanel" aria-labelledby="tab-acerca" data-panel="acerca" hidden>
+          <div class="cfg-fila solo-app"><div class="cfg-txt"><b>Aplicación del trabajo</b><small id="cfgVersion">—</small><small>Creada por Rodrigo Espíndola</small></div>
+            <button type="button" data-app-accion="actualizar" id="cfgActualizar" class="prim" hidden>Actualizar ahora</button></div>
+          <div class="cfg-fila" id="cfgFilaAdmin" hidden><div class="cfg-txt"><b>Administración del servidor</b><small>PC vinculadas, túnel, errores y estadísticas.</small></div>
+            <button type="button" id="cfgAdmin">Abrir</button></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Colores y atajos de teclado</b><small>Qué significa cada marca y las teclas del editor.</small></div>
+            <button type="button" id="cfgAyuda">Ver</button></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Volver a la configuración original de la pantalla</b><small>Tema, tamaños, lista y audio. No toca los informes ni lo que aprendió la IA.</small></div>
+            <button type="button" id="cfgOriginal">Restablecer todo</button></div>
+        </section>
+      </div>
+    </div>
+    <div class="cfg-pie"><span class="cfg-nota">Los cambios se guardan solos en esta PC.</span><span class="cfg-guardado" id="cfgGuardado" aria-live="polite">✓ Guardado</span><span class="sep"></span><button type="button" class="prim" id="cfgListo">Listo</button></div>
+  </div>
+</div>
 <div id="vp" role="dialog" aria-modal="true" aria-labelledby="vpTit">
   <div class="vp-barra">
     <h2 id="vpTit">Vista previa como Word</h2><span id="vpInfo"></span><span class="sep"></span>
@@ -554,6 +830,7 @@ function ponerEstadoSrv(){
     h = `<b>A Ollama le falta el modelo ${esc(SRV.modelo || '')}</b>` + (MI.remoto ? 'Hay que instalarlo en la PC del servidor.' : 'Instalalo abriendo una consola y escribiendo')
       + (MI.remoto ? '' : ` <code>ollama pull ${esc(SRV.modelo || '')}</code>.`) + ' Los audios esperan en la cola mientras tanto.';
   } else { p.className = 'punto'; t.textContent = 'IA lista'; }
+  $('#rielPunto').className = p.className; $('#rielIa').title = t.textContent === 'IA' ? '' : t.textContent;   // riel de la lista oculta
   box.className = 'estado-srv' + (clase ? ' ' + clase : '');
   if(box.innerHTML !== h) box.innerHTML = h;
   box.hidden = !h;
@@ -570,6 +847,7 @@ async function cargarLista(){
   $('#tabMia').textContent = 'Esta PC · ' + mios.length; $('#tabTodas').textContent = 'Todas · ' + j.casos.length;
   const lista = filtro === 'mia' ? mios : j.casos;
   armarVacio(lista, j.casos);
+  actualizarRiel(lista);
   const rev = lista.filter(c => c.estado==='revisado' && c.puede_borrar && !c.bloqueado_por);
   $('#limpiar').hidden = !rev.length;
   if(rev.length){ const bl = $('#bLimpiar');
@@ -853,9 +1131,10 @@ async function abrirCaso2(n){
   actual = n; palabras = c.palabras; activa = null;
   $('#bBorrarCaso').hidden = !((casosCache.find(x => x.nombre===n) || {}).puede_borrar);
   document.querySelectorAll('#casos li').forEach(li => li.classList.toggle('sel', li.dataset.n===n));
-  mostrar('caso'); llenarMedicos($('#medCaso'), c.medico, 'Médico: sin especificar');
+  mostrar('caso'); requestAnimationFrame(ajustarBarra); llenarMedicos($('#medCaso'), c.medico, 'Médico: sin especificar');
   armarNuevoEstudio(c.estudios_nuevos || []);
   ponerTitulo(c.paciente, c.titulo || (casosCache.find(x => x.nombre===n) || {}).titulo || n, c.revisado, {estudios: c.estudios, dur: c.dur});
+  if(PREF.leer('velInicial')) $('#vel').value = PREF.leer('velInicial');      // Configuración → velocidad al abrir
   audio.src = '/audio/' + encodeURIComponent(n); audio.playbackRate = +$('#vel').value;
   ocultarExplica(); reiniciarSync();
   if(c.borrador){ editor.innerHTML = c.borrador; adaptarBorrador(); } else armarEditor(c.lineas);
@@ -909,9 +1188,12 @@ function armarAvisos(){
 const marcasPend = () => [...editor.querySelectorAll('mark, .ln[data-linea]')];
 function actualizarPend(){
   const n = marcasPend().length + omis.filter(o => !omisOk.includes(o.dato)).length, p = $('#pend');
-  p.textContent = n ? `${n} ${n===1?'marca pendiente':'marcas pendientes'}` : 'Sin marcas pendientes';
+  // texto largo y corto: la barra usa el corto cuando no hay lugar (ver ajustarBarra)
+  p.innerHTML = n ? `<span class="et-larga">${n} ${n===1?'marca pendiente':'marcas pendientes'}</span><span class="et-corta">${n} ${n===1?'marca':'marcas'}</span>`
+                  : '<span class="et-larga">Sin marcas pendientes</span><span class="et-corta">Sin marcas</span>';
+  p.title = n ? `${n} ${n===1?'marca pendiente':'marcas pendientes'} de revisar` : 'No quedan marcas por revisar';
   p.classList.toggle('cero', !n);
-  dibujarOnda();
+  dibujarOnda(); ajustarBarra();
 }
 function tiempoDe(el){
   if(el.dataset.t) return +el.dataset.t;
@@ -969,11 +1251,11 @@ editor.addEventListener('paste', e => { e.preventDefault(); document.execCommand
 /* ------------------------------------------------ audio */
 const bPlay = $('#bPlay');
 bPlay.onclick = () => audio.paused ? audio.play() : audio.pause();
-$('#bAtras').onclick = () => audio.currentTime = Math.max(0, audio.currentTime-3);
-$('#bAdel').onclick = () => audio.currentTime = Math.min(audio.duration||0, audio.currentTime+3);
-$('#vel').onchange = e => audio.playbackRate = +e.target.value;
+$('#bAtras').onclick = () => audio.currentTime = Math.max(0, audio.currentTime - PREF.salto());
+$('#bAdel').onclick = () => audio.currentTime = Math.min(audio.duration||0, audio.currentTime + PREF.salto());
+$('#vel').onchange = e => { audio.playbackRate = +e.target.value; grabarLS('velUltima', e.target.value); };
 $('#prog').oninput = e => { if(audio.duration) audio.currentTime = e.target.value/1000*audio.duration; };
-audio.addEventListener('play', () => { bPlay.textContent='❚❚'; if(Date.now()-ultimaPausa < 60000 && ultimaPausa) audio.currentTime = Math.max(0, audio.currentTime-1); });
+audio.addEventListener('play', () => { bPlay.textContent='❚❚'; const r = PREF.retroceso(); if(r && Date.now()-ultimaPausa < 60000 && ultimaPausa) audio.currentTime = Math.max(0, audio.currentTime-r); });
 audio.addEventListener('pause', () => { bPlay.textContent='▶'; ultimaPausa = Date.now(); });
 let palActual = -1;
 audio.addEventListener('timeupdate', () => {
@@ -995,6 +1277,7 @@ dict.addEventListener('click', e => { const sp = e.target.closest('span[data-i]'
 
 /* ------------------------------------------------ teclado */
 document.addEventListener('keydown', e => {
+  if(!$('#config').hidden) return;                 // con la configuración abierta no actúan los atajos
   if(vpAbierta()){
     if(e.key==='Escape' && $('#vpPaleta').classList.contains('abierta')){ e.preventDefault(); cerrarPaleta(); return; }
     if(e.key==='Escape' || e.key==='F9'){ e.preventDefault(); cerrarVistaPrevia(); return; }
@@ -1713,6 +1996,7 @@ window.ponerCompacto = function(si){          // la aplicación del trabajo tamb
   if(!EN_APP) grabarLS('compacto', si ? '1' : '');
   $('#bCompacto').title = si ? 'Agrandar la ventana' : 'Modo compacto: solo la cola y los avisos';
   if(!si) requestAnimationFrame(dibujarOnda);
+  aplicarLista();                              // en el modo compacto la lista siempre se ve
 };
 function agrandar(){
   if(EN_APP) try { chrome.webview.postMessage({accion:'agrandar'}); } catch(e){}
@@ -1896,6 +2180,7 @@ const marcaBajo = t => t.closest && (t.closest('mark') || t.closest('.ln[data-li
 editor.addEventListener('mouseover', e => {
   const el = marcaBajo(e.target);
   if(!el || !editor.contains(el) || el === explicaDe || (explicaFija && explicaDe)) return;
+  if(!PREF.explicar()) return;                     // Configuración: explicación solo con F2
   clearTimeout(tExplica);
   tExplica = setTimeout(() => mostrarExplica(el, false), el.tagName==='MARK' ? 250 : 600);
 });
@@ -2183,6 +2468,267 @@ audio.addEventListener('play', () => { cancelAnimationFrame(rafOnda);
 audio.addEventListener('pause', () => { cancelAnimationFrame(rafOnda); dibujarOnda(); });
 audio.addEventListener('loadedmetadata', dibujarOnda);
 audio.addEventListener('emptied', () => { $('#prog').value = 0; $('#tiempo').textContent = '0:00 / 0:00'; });
+
+/* ================================================ barra del informe adaptable
+   La fila de acciones nunca se parte en dos: si no entra, se achica por pasos hasta que entre.
+   n1: Borrar y Regenerar pasan al menú «Más» · n2: sin las teclas (F2, F8, F9) · n3: Vista previa solo con ícono
+   n4: Cerrar estudio al menú · n5: textos cortos (Siguiente, N marcas) · n6: Copiar para Word solo con ícono
+   n7: «Guardar Word» · n8: como último recurso, se deja partir en dos líneas.
+   Los atajos siguen en los títulos de los botones y en el botón «?». */
+const NIVELES_BARRA = 8;
+function enMas(){
+  return [...document.querySelectorAll('#filaAcciones .secundaria')].filter(b => !b.hidden && getComputedStyle(b).display === 'none');
+}
+function ajustarBarra(){
+  const fila = $('#filaAcciones');
+  if($('#caso').hidden || !fila.clientWidth) return;
+  for(let n = 0; n <= NIVELES_BARRA; n++){
+    for(let k = 1; k <= NIVELES_BARRA; k++) fila.classList.toggle('n' + k, k <= n);
+    $('#masCaja').hidden = !enMas().length;
+    if(fila.scrollWidth <= fila.clientWidth + 1) break;
+  }
+  if($('#masCaja').hidden) cerrarMas();
+}
+new ResizeObserver(() => ajustarBarra()).observe($('#barraCaso'));
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarBarra);
+
+/* menú «Más»: las acciones que no entraron en la barra */
+function abrirMas(){
+  const m = $('#menuMas'); m.innerHTML = '';
+  for(const b of enMas()){
+    const x = document.createElement('button'); x.type = 'button'; x.setAttribute('role', 'menuitem');
+    const ic = b.querySelector('svg');
+    x.innerHTML = (ic ? ic.outerHTML : '<svg viewBox="0 0 24 24" aria-hidden="true"></svg>') + esc(b.dataset.menu || b.textContent.trim());
+    if(b.id === 'bBorrarCaso') x.className = 'peligro-txt';
+    x.title = b.title;
+    x.onclick = () => { cerrarMas(); b.click(); };
+    m.appendChild(x);
+  }
+  if(!m.children.length) return;
+  m.hidden = false; $('#bMas').setAttribute('aria-expanded', 'true');
+  m.firstElementChild.focus();
+}
+function cerrarMas(){ const m = $('#menuMas'); if(m.hidden) return; m.hidden = true; $('#bMas').setAttribute('aria-expanded', 'false'); }
+$('#bMas').onclick = () => $('#menuMas').hidden ? abrirMas() : cerrarMas();
+$('#menuMas').addEventListener('keydown', e => {
+  const items = [...$('#menuMas').children], i = items.indexOf(document.activeElement);
+  if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); e.stopPropagation();
+    items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus(); }
+  else if(e.key === 'Escape' || e.key === 'Tab'){ e.preventDefault(); e.stopPropagation(); cerrarMas(); $('#bMas').focus(); }
+});
+
+/* ventanita «?»: colores y atajos */
+function abrirAyuda(ancla){
+  const p = $('#ayudaPop'), b = ancla || $('#bAyuda');
+  p.hidden = false;
+  const r = b.getBoundingClientRect(), w = p.offsetWidth, h = p.offsetHeight;
+  if(r.width){
+    p.style.left = Math.max(12, Math.min(r.left, innerWidth - w - 12)) + 'px';
+    p.style.top = (r.bottom + 6 + h < innerHeight - 12 ? r.bottom + 6 : Math.max(12, innerHeight - h - 12)) + 'px';
+  } else { p.style.left = Math.max(12, (innerWidth - w) / 2) + 'px'; p.style.top = Math.max(12, (innerHeight - h) / 2) + 'px'; }
+  $('#bAyuda').setAttribute('aria-expanded', 'true');
+}
+function cerrarAyuda(){ const p = $('#ayudaPop'); if(p.hidden) return; p.hidden = true; $('#bAyuda').setAttribute('aria-expanded', 'false'); }
+$('#bAyuda').onclick = () => $('#ayudaPop').hidden ? abrirAyuda() : cerrarAyuda();
+document.addEventListener('mousedown', e => {
+  if(!$('#menuMas').hidden && !e.target.closest('#masCaja')) cerrarMas();
+  if(!$('#ayudaPop').hidden && !e.target.closest('#ayudaPop,#bAyuda')) cerrarAyuda();
+});
+addEventListener('resize', cerrarAyuda);
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && !$('#ayudaPop').hidden && $('#config').hidden){ e.preventDefault(); e.stopPropagation(); cerrarAyuda(); }
+}, true);
+
+/* ================================================ preferencias de la pantalla (se guardan en esta PC)
+   En la app quedan en el perfil de WebView2 de cada usuario de Windows; en el navegador, en ese navegador. */
+const PREF = {
+  leer: k => leerLS('pref_' + k),
+  poner(k, v){ grabarLS('pref_' + k, v); aplicarPrefs(); },
+  salto: () => +PREF.leer('salto') || 3,
+  retroceso: () => { const v = PREF.leer('retroceso'); return v === '' ? 1 : +v; },
+  explicar: () => PREF.leer('explicar') !== 'no',
+};
+function aplicarPrefs(){
+  for(const k of ['leyenda', 'atajos', 'letra']){ const v = PREF.leer(k); if(v) document.body.dataset[k] = v; else delete document.body.dataset[k]; }
+  const s = PREF.salto();
+  $('#bAtras').textContent = '−' + s + 's'; $('#bAtras').title = `Atrás ${s} segundos (F3)`;
+  $('#bAdel').textContent = '+' + s + 's'; $('#bAdel').title = `Adelante ${s} segundos`;
+  document.querySelectorAll('.salto-txt').forEach(x => x.textContent = s);
+  $('#seguir').checked = PREF.leer('seguir') !== 'no';
+  requestAnimationFrame(() => { ajustarBarra(); dibujarOnda(); });
+}
+$('#seguir').addEventListener('change', e => { grabarLS('pref_seguir', e.target.checked ? '' : 'no'); pintarConfig(); });
+{ const v = PREF.leer('velInicial') || leerLS('velUltima');
+  if(v && [...$('#vel').options].some(o => o.value === v)) $('#vel').value = v; }
+
+/* ================================================ ocultar / mostrar la lista de informes */
+const listaOculta = () => leerLS('listaOculta') === '1';
+function aplicarLista(){
+  const ocultar = listaOculta() && !esCompacto();
+  document.querySelector('.app').classList.toggle('plegada', ocultar);
+  $('#bOcultarLista').setAttribute('aria-expanded', String(!ocultar));
+  $('#bMostrarLista').setAttribute('aria-expanded', String(!ocultar));
+  if(typeof pintarConfig === 'function' && !$('#config').hidden) pintarConfig();
+  requestAnimationFrame(() => { ajustarBarra(); dibujarOnda(); });
+}
+function ponerLista(mostrar){
+  grabarLS('listaOculta', mostrar ? '' : '1'); ocultarExplica(); aplicarLista();
+  (mostrar ? $('#bOcultarLista') : $('#bMostrarLista')).focus({preventScroll: true});
+}
+function actualizarRiel(lista){
+  const n = (lista || []).filter(c => c.estado === 'listo').length, b = $('#rielPend');
+  b.hidden = !n; b.textContent = n;
+  b.title = n === 1 ? '1 informe para revisar' : n + ' informes para revisar';
+}
+$('#bOcultarLista').onclick = () => ponerLista(false);
+$('#bMostrarLista').onclick = () => ponerLista(true);
+$('#rielPend').onclick = () => ponerLista(true);
+
+/* ================================================ configuración
+   Pantalla y Audio: preferencias de esta página (PREF). Esta PC y Conexión: las guarda la aplicación del trabajo;
+   la app manda su estado con ponerConfigApp() / abrirConfiguracion() y recibe los cambios con
+   postMessage({accion:'cfg', que, valor}). En el navegador (o con una app vieja) esas secciones no aparecen. */
+const CFG = {app: null, tab: 'pantalla', previo: null};
+function hacerApp(que, valor){ if(EN_APP) try { chrome.webview.postMessage({accion: 'cfg', que, valor}); } catch(e){} }
+function mostrarGuardado(){ const g = $('#cfgGuardado'); g.classList.add('ver'); clearTimeout(g._t); g._t = setTimeout(() => g.classList.remove('ver'), 1400); }
+function elegirTab(t){
+  const tabs = [...document.querySelectorAll('.cfg-tabs [role=tab]')].filter(b => !b.hidden);
+  if(!tabs.some(b => b.dataset.tab === t)) t = 'pantalla';
+  CFG.tab = t;
+  for(const b of document.querySelectorAll('.cfg-tabs [role=tab]')){
+    const si = b.dataset.tab === t; b.setAttribute('aria-selected', String(si)); b.tabIndex = si ? 0 : -1; }
+  document.querySelectorAll('.cfg-panel').forEach(p => p.hidden = p.dataset.panel !== t);
+  $('.cfg-paneles').scrollTop = 0;
+}
+function pintarConfig(){
+  const A = CFG.app;
+  document.querySelectorAll('#config .solo-app').forEach(x => x.hidden = !A);
+  $('#cfgSub').textContent = A ? '· ' + A.pc : MI.remoto ? '· ' + MI.pc : '· PC del servidor';
+  // pantalla y audio
+  const tema = leerLS('tema');
+  document.querySelectorAll('#config .segm').forEach(g => {
+    const v = g.dataset.pref === 'tema' ? (tema === 'dark' || tema === 'light' ? tema : '') : PREF.leer(g.dataset.pref);
+    g.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === v)));
+  });
+  document.querySelectorAll('#config select[data-pref]').forEach(s => s.value = PREF.leer(s.dataset.pref));
+  document.querySelectorAll('#config [data-pref-si]').forEach(c => c.checked = PREF.leer(c.dataset.prefSi) !== 'no');
+  $('#cfgLista').checked = !listaOculta(); $('#cfgLista').disabled = esCompacto();
+  $('#cfgFilaAdmin').hidden = $('#bAdmin').hidden;
+  if(!A) return;
+  // aplicación del trabajo
+  document.querySelectorAll('#config [data-app]').forEach(c => c.checked = !!A[c.dataset.app]);
+  $('#cfgCarpetaAudios').textContent = 'Los que el sistema de gestión deja en ' + (A.carpetaAudios || 'la carpeta temporal') + '.';
+  $('#cfgCompacto').textContent = A.compacto ? 'Volver al tamaño normal' : 'Pasar a modo compacto';
+  $('#cfgCarpetaWord').textContent = A.carpetaWord || '—';
+  $('#cfgWordDefecto').hidden = !A.wordPropia;
+  const pend = A.pendientes || 0, cp = $('#cfgPendientes');
+  cp.textContent = pend ? (pend === 1 ? '1 audio guardado en esta PC' : pend + ' audios guardados en esta PC') + ', esperando para enviarse.'
+                        : 'Qué audios se tomaron y se enviaron, y los errores. No queda ninguno por enviar.';
+  cp.className = pend ? 'mal' : '';
+  const ac = A.autoc || {}, ca = $('#cfgAutoc');
+  ca.textContent = ac.error ? ac.error : (ac.n || 0) + ' entradas con formato del Normal.dotm de esta PC.';
+  ca.className = ac.error ? 'mal' : '';
+  $('#cfgServidor').textContent = A.servidor || 'Sin dirección';
+  $('#cfgEstadoSrv').textContent = A.estado || ''; $('#cfgEstadoSrv').className = A.conectado ? 'bien' : 'mal';
+  $('#cfgPc').textContent = 'Conectada como ' + A.pc + '. Si se desconecta, hay que volver a escribir la contraseña.';
+  $('#cfgVersion').textContent = 'Versión ' + A.version + (A.actualizacion ? ' · hay una versión nueva (' + A.actualizacion + ') lista para instalar' : ' · al día');
+  $('#cfgActualizar').hidden = !A.actualizacion;
+  $('#cfgActualizar').textContent = A.actualizacion ? 'Actualizar a la ' + A.actualizacion : 'Actualizar ahora';
+}
+function abrirConfig(tab, pedirEstado = true){
+  cerrarMas(); cerrarAyuda(); ocultarExplica();
+  if(EN_APP && pedirEstado) try { chrome.webview.postMessage({accion: 'configuracion'}); } catch(e){}
+  const d = $('#config');
+  if(d.hidden) CFG.previo = document.activeElement;
+  pintarConfig(); elegirTab(tab || CFG.tab);
+  d.hidden = false;
+  const t = document.querySelector('.cfg-tabs [aria-selected=true]'); if(t) t.focus();
+}
+function cerrarConfig(){
+  const d = $('#config'); if(d.hidden) return;
+  d.hidden = true;
+  try { CFG.previo && CFG.previo.focus && CFG.previo.focus({preventScroll: true}); } catch(e){}
+}
+window.abrirConfiguracion = function(estado, tab){       // la app la llama desde Opciones → Configuración…
+  if(estado) CFG.app = estado;
+  abrirConfig(tab, !estado);
+  return true;
+};
+window.ponerConfigApp = function(estado){ CFG.app = estado || null; if(!$('#config').hidden){ pintarConfig(); elegirTab(CFG.tab); } };
+$('#bConfig').onclick = () => abrirConfig();
+$('#rielConfig').onclick = () => abrirConfig();
+$('#cfgX').onclick = cerrarConfig; $('#cfgListo').onclick = cerrarConfig;
+$('#config').addEventListener('mousedown', e => { if(e.target === $('#config')) cerrarConfig(); });
+document.querySelectorAll('.cfg-tabs [role=tab]').forEach(b => b.onclick = () => elegirTab(b.dataset.tab));
+$('.cfg-tabs').addEventListener('keydown', e => {
+  if(!['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+  e.preventDefault();
+  const tabs = [...document.querySelectorAll('.cfg-tabs [role=tab]')].filter(b => !b.hidden), i = tabs.findIndex(b => b.dataset.tab === CFG.tab);
+  const j = (i + (e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
+  elegirTab(tabs[j].dataset.tab); tabs[j].focus();
+});
+document.addEventListener('keydown', e => {          // con la configuración abierta no actúan los atajos del informe
+  if($('#config').hidden || $('#confirma').classList.contains('abierto')) return;
+  if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); cerrarConfig(); return; }
+  if(e.key === 'Tab'){
+    const foc = [...$('#config').querySelectorAll('button,select,input')].filter(x => !x.disabled && x.offsetParent && x.tabIndex !== -1);
+    const i = foc.indexOf(document.activeElement);
+    if(e.shiftKey && i <= 0){ e.preventDefault(); foc[foc.length - 1].focus(); }
+    else if(!e.shiftKey && i === foc.length - 1){ e.preventDefault(); foc[0].focus(); }
+  }
+}, true);
+// controles de Pantalla y Audio
+document.querySelectorAll('#config .segm').forEach(g => g.addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(g.dataset.pref === 'tema'){
+    if(b.dataset.v){ document.documentElement.dataset.theme = b.dataset.v; grabarLS('tema', b.dataset.v); }
+    else { delete document.documentElement.dataset.theme; try { localStorage.removeItem('tema'); } catch(e){} }
+    aplicarTema();
+  } else PREF.poner(g.dataset.pref, b.dataset.v);
+  pintarConfig(); mostrarGuardado();
+}));
+document.querySelectorAll('#config select[data-pref]').forEach(s => s.onchange = () => {
+  PREF.poner(s.dataset.pref, s.value);
+  if(s.dataset.pref === 'velInicial' && s.value){ $('#vel').value = s.value; audio.playbackRate = +s.value; }
+  mostrarGuardado();
+});
+document.querySelectorAll('#config [data-pref-si]').forEach(c => c.onchange = () => { PREF.poner(c.dataset.prefSi, c.checked ? '' : 'no'); mostrarGuardado(); });
+$('#cfgLista').onchange = e => { grabarLS('listaOculta', e.target.checked ? '' : '1'); aplicarLista(); mostrarGuardado(); };
+$('#cfgPaneles').onclick = () => {
+  [$('#divLista'), $('#divCols'), document.querySelector('.div-lista2')].forEach(d => d && d.dispatchEvent(new Event('dblclick')));
+  mostrarGuardado(); toast('Los paneles volvieron al tamaño original.');
+};
+$('#cfgAyuda').onclick = () => { cerrarConfig(); abrirAyuda($('#caso').hidden ? document.body : null); };
+$('#cfgAdmin').onclick = () => { cerrarConfig(); $('#bAdmin').click(); };
+$('#cfgOriginal').onclick = async () => {
+  if(!await confirmar('¿Volver a la configuración original de la pantalla?',
+      '<p>Tema, tamaño del texto, lista, anchos de los paneles y opciones del audio vuelven a como venían. No se toca ningún informe.</p>', 'Restablecer', 'prim')) return;
+  try { Object.keys(localStorage).filter(k => k.startsWith('pref_')).forEach(k => localStorage.removeItem(k));
+        ['tema', 'listaOculta', 'velUltima'].forEach(k => localStorage.removeItem(k)); } catch(e){}
+  delete document.documentElement.dataset.theme;
+  $('#vel').value = '1'; audio.playbackRate = 1;
+  $('#cfgPaneles').onclick();
+  aplicarTema(); aplicarPrefs(); aplicarLista(); pintarConfig(); mostrarGuardado();
+};
+// controles de la aplicación del trabajo
+document.querySelectorAll('#config [data-app]').forEach(c => c.onchange = () => { hacerApp(c.dataset.app, c.checked); mostrarGuardado(); });
+document.querySelectorAll('#config [data-app-accion]').forEach(b => b.onclick = () => {
+  const que = b.dataset.appAccion;
+  if(que === 'compacto' || que === 'recargar' || que === 'actualizar') cerrarConfig();
+  hacerApp(que, true);
+});
+$('#cfgDireccion').onclick = async () => {
+  const v = await pedirTexto({titulo: 'Dirección del Servidor', html: '<p>Pegá la dirección que muestra la ventana del Servidor (termina en <b>trycloudflare.com</b>).</p>',
+    etiqueta: 'Dirección', valor: (CFG.app && CFG.app.servidor) || '', placeholder: 'https://…trycloudflare.com', boton: 'Conectar',
+    validar: t => /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}(:\d+)?(\/\S*)?$/i.test(t) ? '' : 'No parece una dirección. Copiala completa, por ejemplo https://algo.trycloudflare.com'});
+  if(v) { hacerApp('direccion', v); toast('Probando la dirección nueva…'); }
+};
+$('#cfgDesvincular').onclick = async () => {
+  if(!await confirmar('¿Desconectar esta PC del Servidor?',
+      '<p>Esta PC deja de estar autorizada y vas a tener que volver a escribir la contraseña para usarla.</p>', 'Desconectar')) return;
+  cerrarConfig(); hacerApp('desvincular', true);
+};
+aplicarPrefs(); aplicarLista();
 
 aplicarTema();
 </script>
