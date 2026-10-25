@@ -1,0 +1,2189 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Informes por dictado</title>
+<script>try{var t=localStorage.getItem('tema');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t;}catch(e){}</script>
+<style>
+:root{
+  color-scheme:light;--aviso:#8a6500;
+  --bg:#f3f2ef;--panel:#fbfbfa;--hoja:#ffffff;--tx:#1d1d1b;--mu:#6d6c66;--bd:#e0dfda;--bd2:#cfcdc6;
+  --ac:#1f5fbf;--ac-tx:#ffffff;--ac-suave:#e6eefb;--ok:#2e7d4f;--ok-suave:#e3f2e8;--err:#b3261e;
+  --rojo:#f7c4be;--amarillo:#fbe49c;--gris:#9b9a94;--gris-bg:#f0efec;--turq:#1d9a9a;--turq-bg:#dcf3f3;
+  --actual:#ffe28a;--sombra:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --eco:#dbe7fb;--rojo-f:#c8372d;--amar-f:#b58900;--onda:#c4c2bb;
+}
+/* modo oscuro: el del sistema, salvo que se elija otro con el botón (se guarda en esta PC) */
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  color-scheme:dark;--aviso:#f0c24b;
+  --bg:#141413;--panel:#1b1b1a;--hoja:#222220;--tx:#ebeae5;--mu:#a19f98;--bd:#33322e;--bd2:#45443f;
+  --ac:#7aa7f0;--ac-tx:#0e1a2e;--ac-suave:#1c2a40;--ok:#6fcf97;--ok-suave:#173524;--err:#ff8a80;
+  --rojo:#6e2a24;--amarillo:#5e4c14;--gris:#7c7b75;--gris-bg:#2a2a27;--turq:#4fc4c4;--turq-bg:#163636;
+  --actual:#6b5a14;--sombra:none;--eco:#2a3552;--rojo-f:#ff8a80;--amar-f:#f0c24b;--onda:#55544e;
+}}
+:root[data-theme=dark]{
+  color-scheme:dark;--aviso:#f0c24b;
+  --bg:#141413;--panel:#1b1b1a;--hoja:#222220;--tx:#ebeae5;--mu:#a19f98;--bd:#33322e;--bd2:#45443f;
+  --ac:#7aa7f0;--ac-tx:#0e1a2e;--ac-suave:#1c2a40;--ok:#6fcf97;--ok-suave:#173524;--err:#ff8a80;
+  --rojo:#6e2a24;--amarillo:#5e4c14;--gris:#7c7b75;--gris-bg:#2a2a27;--turq:#4fc4c4;--turq-bg:#163636;
+  --actual:#6b5a14;--sombra:none;--eco:#2a3552;--rojo-f:#ff8a80;--amar-f:#f0c24b;--onda:#55544e;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 "Segoe UI",system-ui,sans-serif}
+button,select,input,textarea{font:inherit;color:var(--tx)}
+select,input:not([type=checkbox]):not([type=range]),textarea{background:var(--panel);color:var(--tx);border:1px solid var(--bd2);border-radius:7px}
+select{padding:5px 6px}
+option,optgroup{background:var(--panel);color:var(--tx)}
+::placeholder{color:var(--mu);opacity:1}
+button{background:var(--panel);border:1px solid var(--bd2);border-radius:7px;padding:6px 11px;cursor:pointer;white-space:nowrap}
+button:hover{border-color:var(--ac)}
+button.prim{background:var(--ac);color:var(--ac-tx);border-color:var(--ac);font-weight:600}
+button.chico{padding:3px 8px;font-size:12.5px}
+button:disabled{opacity:.5;cursor:default}
+kbd{font:11px/1 ui-monospace,Consolas,monospace;border:1px solid var(--bd2);border-bottom-width:2px;border-radius:4px;padding:1px 4px;margin-left:4px;color:var(--mu)}
+.app{display:grid;grid-template-columns:var(--ancho-lista,270px) 1fr;height:100vh}
+/* ---------- lista */
+aside{border-right:1px solid var(--bd);background:var(--panel);display:flex;flex-direction:column;min-height:0;min-width:0;position:relative}
+/* ---------- divisores para ajustar el ancho de los paneles (arrastrar; doble clic = tamaño original) */
+.divisor{cursor:col-resize;touch-action:none;user-select:none;position:relative;outline:none}
+.divisor::after{content:"";position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;border-radius:2px;background:transparent;transition:background .12s}
+.divisor:hover::after,.divisor:focus-visible::after,.divisor.arrastrando::after{background:var(--ac)}
+.divisor .agarre{position:absolute;top:50%;left:50%;width:6px;height:34px;margin:-17px 0 0 -3px;border-radius:4px;background:var(--bd2);opacity:.9;pointer-events:none;transition:opacity .12s}
+.divisor:hover .agarre,.divisor.arrastrando .agarre{opacity:0}
+#divLista{position:absolute;top:0;bottom:0;right:-5px;width:10px;z-index:4}
+#divLista .agarre{display:none}
+#divCols{align-self:stretch}
+.fila2 > .divisor{align-self:stretch}
+body.redimensionando,body.redimensionando *{cursor:col-resize!important;user-select:none!important}
+body.redimensionando iframe,body.redimensionando #editor,body.redimensionando #dictado{pointer-events:none}
+.marca{padding:14px 16px 10px;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
+.marca small{font-weight:400;color:var(--mu);font-size:12px;margin-left:auto}
+.punto{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
+.punto.mal{background:var(--err)}
+.tabs{margin:0 12px 10px;display:flex;gap:4px;padding:3px;background:var(--bg);border-radius:9px}
+.tabs button{flex:1;border-color:transparent;background:transparent;padding:4px 8px;font-size:13px;color:var(--mu)}
+.tabs button.on{background:var(--panel);border-color:var(--bd2);color:var(--tx);font-weight:600}
+#casos li.bloq{opacity:.7;cursor:not-allowed}
+.drop{margin:0 12px 10px;border:1.5px dashed var(--bd2);border-radius:10px;padding:14px;text-align:center;color:var(--mu);cursor:pointer;font-size:13px}
+.drop:hover,.drop.sobre{border-color:var(--ac);background:var(--ac-suave);color:var(--tx)}
+.drop b{color:var(--tx);display:block;font-size:14px}
+#casos{list-style:none;margin:0;padding:0 8px 12px;overflow:auto;flex:1}
+#casos li{padding:8px 10px;border-radius:8px;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center}
+#casos li:hover{background:var(--bg)}
+#casos li.sel{background:var(--ac-suave)}
+#casos .n{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#casos .e{font-size:12px;color:var(--mu);grid-column:1/-1;overflow-wrap:anywhere}
+#casos .est{font-size:12px;color:var(--tx);opacity:.82;grid-column:1/-1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#casos .est .dur{font-variant-numeric:tabular-nums;color:var(--mu)}
+.badge{font-size:11.5px;border-radius:10px;padding:1px 8px;border:1px solid var(--bd2);color:var(--mu)}
+.badge.listo{border-color:var(--ac);color:var(--ac)}
+.badge.revisado{border-color:var(--ok);color:var(--ok);background:var(--ok-suave)}
+.badge.trabajando{border-color:var(--turq);color:var(--turq)}
+.badge.error{border-color:var(--err);color:var(--err)}
+@keyframes gira{to{transform:rotate(360deg)}}
+.spin{display:inline-block;width:10px;height:10px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:gira .8s linear infinite;vertical-align:-1px;margin-right:4px}
+/* ---------- principal */
+main{min-width:0;min-height:0;display:flex;flex-direction:column}
+#vacio{margin:auto;color:var(--mu);width:min(520px,100%);padding:24px 20px}
+#vacio h2{color:var(--tx);font-size:19px;margin:0 0 6px;line-height:1.3}
+#vacio p{margin:0 0 10px;overflow-wrap:anywhere}
+.vac-card{background:var(--panel);border:1px solid var(--bd);border-radius:12px;padding:22px 24px;box-shadow:var(--sombra)}
+.vac-card + .vac-card{margin-top:12px}
+.vac-ico{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--ac-suave);color:var(--ac);margin-bottom:12px}
+.vac-ico svg{width:22px;height:22px}
+.vac-ico.ok{background:var(--ok-suave);color:var(--ok)}
+.vac-ico.err{background:var(--rojo);color:var(--err)}
+.vac-ico .recorte{stroke:var(--rojo)}   /* el corte de la barra del ícono "sin conexión" toma el color del fondo */
+.vac-ico.av{background:var(--amarillo);color:var(--aviso)}
+.vac-pasos{list-style:none;counter-reset:p;margin:14px 0 16px;padding:0;display:flex;flex-direction:column;gap:9px}
+.vac-pasos li{counter-increment:p;display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:start;color:var(--tx)}
+.vac-pasos li::before{content:counter(p);width:22px;height:22px;border-radius:50%;background:var(--bg);border:1px solid var(--bd2);display:grid;place-items:center;font-size:12px;font-weight:600;color:var(--mu)}
+.vac-bot{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.vac-nota{font-size:12.5px;margin-top:12px}
+.vac-titulo{color:var(--tx);font-weight:600}
+.tit-caso{display:flex;align-items:center;gap:4px;min-width:0;margin-right:6px}
+.tit-caso h1{margin:0!important}
+.tit-audio{font-size:12px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#bPaciente svg{width:14px;height:14px}
+#casos .n .sinnom{font-weight:400;color:var(--mu)}
+/* etapas de un audio en proceso: transcribir -> armar el informe -> para revisar */
+.etapas{display:flex;align-items:center;gap:6px;margin:14px 0 6px;font-size:12.5px;flex-wrap:wrap}
+.etapas > span{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:14px;border:1px solid var(--bd2);color:var(--mu);background:var(--bg)}
+.etapas > span.hecho{color:var(--ok);border-color:var(--ok);background:var(--ok-suave)}
+.etapas > span.ahora{color:var(--tx);border-color:var(--turq);background:var(--turq-bg);font-weight:600}
+.etapas > span.espera{color:var(--aviso);border-color:var(--aviso);background:var(--panel);font-weight:600}
+.etapas i{width:10px;height:1px;background:var(--bd2)}
+/* estado del servidor y de la IA, arriba de la lista */
+.estado-srv{margin:0 12px 10px;padding:9px 11px;border-radius:9px;font-size:12.5px;line-height:1.4;border:1px solid var(--err);background:var(--panel)}
+.estado-srv b{display:block;color:var(--err);font-size:13px;margin-bottom:2px}
+.estado-srv.av{border-color:var(--aviso)}
+.estado-srv.av b{color:var(--aviso)}
+.estado-srv code{font:12px ui-monospace,Consolas,monospace;background:var(--bg);padding:0 4px;border-radius:4px}
+.estado-srv small{display:block;color:var(--mu);margin-top:3px;font-size:11.5px}
+.punto.av{background:var(--amar-f)}
+#casos li.vacia{cursor:default;color:var(--mu);display:block;font-size:13px;line-height:1.45}
+#casos li.vacia b{color:var(--tx);display:block;margin-bottom:2px}
+#casos li.abriendo{opacity:.75}
+.barra{background:var(--panel);border-bottom:1px solid var(--bd);padding:10px 16px;display:flex;flex-direction:column;gap:8px}
+.fila{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fila h1{font-size:16px;margin:0 8px 0 0}
+.player{display:flex;align-items:center;gap:6px;flex:1;min-width:0;flex-wrap:wrap}
+#prog{min-width:120px}
+#bPlay{width:40px;font-size:15px}
+#prog{flex:1;accent-color:var(--ac)}
+#tiempo{font-variant-numeric:tabular-nums;color:var(--mu);font-size:13px;min-width:92px;text-align:right}
+#pend{font-weight:600;padding:4px 10px;border-radius:7px;background:var(--rojo)}
+#pend.cero{background:var(--ok-suave);color:var(--ok)}
+.sep{flex:1}
+.ley{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--mu)}
+.ley span{padding:0 6px;border-radius:3px}
+.cols{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,var(--fr-hoja,1.35fr)) 16px minmax(0,var(--fr-dict,1fr));padding:16px;overflow:hidden}
+.hojawrap{overflow:auto;min-height:0}
+.hoja{background:var(--hoja);border:1px solid var(--bd);border-radius:6px;box-shadow:var(--sombra);padding:36px 44px;min-height:100%}
+#editor{font-family:Tahoma,Verdana,sans-serif;font-size:16px;line-height:1.4;outline:none;white-space:pre-wrap;min-height:300px}
+#editor .ln{min-height:1.4em;border-left:3px solid transparent;margin-left:-11px;padding-left:8px}
+#editor .ln.tit{font-weight:700;text-align:center}
+#editor .l-plantilla{color:var(--gris);border-left-color:var(--gris);background:var(--gris-bg)}
+#editor .l-verificar{border-left-color:var(--turq);background:var(--turq-bg)}
+#editor mark{color:inherit;border-radius:3px;padding:0 1px;cursor:pointer}
+#editor .m-numero,#editor .m-completar{background:var(--rojo)}
+#editor .m-completar{font-weight:700}
+#editor .m-dudoso,#editor .m-bajaconf{background:var(--amarillo)}
+#editor .m-verificar{background:var(--turq-bg);box-shadow:inset 0 -2px 0 var(--turq)}
+#editor .activa{outline:2px solid var(--ac);outline-offset:1px}
+.dict{background:var(--panel);border:1px solid var(--bd);border-radius:8px;display:flex;flex-direction:column;min-height:0}
+.dict h2{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--mu);margin:0;padding:10px 14px;border-bottom:1px solid var(--bd);display:flex;gap:8px;align-items:center}
+.dict h2 label{margin-left:auto;text-transform:none;letter-spacing:0;font-size:12px;display:flex;gap:4px;align-items:center}
+#dictado{padding:12px 14px;overflow:auto;font-size:14.5px;line-height:1.7;flex:1;min-height:0}
+#dictado span{cursor:pointer;border-radius:3px}
+#dictado span:hover{outline:1px solid var(--bd2)}
+#dictado .baja{text-decoration:underline wavy var(--err) 1px;text-underline-offset:3px}
+#dictado .actual{background:var(--actual)}
+.selmed{margin:0 12px 10px;display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mu)}
+.selmed select,.barra select.med{border:1px solid var(--bd2);border-radius:7px;padding:5px 6px;background:var(--panel);color:var(--tx)}
+.pie{border-top:1px solid var(--bd);padding:10px 12px;display:flex;gap:8px}
+.pie button{flex:1}
+.pie #bAdmin{flex:none;padding:3px 8px;line-height:0;color:var(--mu)}
+.pie #bAdmin:hover{color:var(--tx)}
+.pie #bAdmin svg{width:16px;height:16px}
+.vista{flex:1;min-height:0;display:none;flex-direction:column;padding:16px 20px;gap:12px;overflow:auto}
+.vista h2{margin:0;font-size:18px}
+.vista .fila2{display:grid;grid-template-columns:var(--ancho-lista2,240px) 16px minmax(0,1fr);min-height:0;flex:1}
+.lista2{list-style:none;margin:0;padding:0;border:1px solid var(--bd);border-radius:8px;background:var(--panel);overflow:auto}
+.lista2 li{padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--bd);font-size:13px}
+.lista2 li.sel{background:var(--ac-suave);font-weight:600}
+.edit2{display:flex;flex-direction:column;gap:8px;min-height:0}
+.edit2 input{border:1px solid var(--bd2);border-radius:7px;padding:7px 9px;background:var(--hoja);font-weight:600}
+.edit2 textarea{flex:1;min-height:340px;border:1px solid var(--bd2);border-radius:7px;padding:10px 12px;background:var(--hoja);color:var(--tx);font:13.5px/1.5 ui-monospace,Consolas,monospace;resize:vertical}
+.nota{font-size:12.5px;color:var(--mu);background:var(--panel);border:1px solid var(--bd);border-radius:8px;padding:8px 12px}
+#nuevoEst{display:none;margin:0 0 12px;padding:10px 12px;border:1px solid var(--aviso);border-radius:8px;background:var(--panel);font-size:13px}
+#nuevoEst b{color:var(--aviso)}
+@media (max-width:1000px){.vista .fila2{grid-template-columns:1fr;gap:16px}}
+#avisos{display:none;margin:0 0 12px;padding:10px 12px;border:1px solid var(--err);border-radius:8px;background:var(--panel);font-size:13px}
+#avisos b{color:var(--err)}
+#avisos .chip{display:inline-flex;align-items:center;gap:4px;margin:4px 6px 0 0;padding:2px 4px 2px 9px;border-radius:12px;background:var(--rojo);font-variant-numeric:tabular-nums}
+#avisos .chip button{border:0;background:transparent;padding:0 5px;font-size:12px;line-height:1.4}
+#avisos .chip button:hover{background:rgba(0,0,0,.08)}
+#dictado .rec{text-decoration:underline dotted var(--turq) 2px;text-underline-offset:3px}
+.ayuda{font-size:12px;color:var(--mu);padding:8px 14px;border-top:1px solid var(--bd)}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:9px;box-shadow:var(--sombra);display:none;gap:10px;align-items:center;z-index:9;max-width:90vw}
+#toast button{background:transparent;color:inherit;border-color:currentColor}
+@media (max-width:1000px){.app{grid-template-columns:1fr;height:auto}aside{max-height:40vh;border-right:0;border-bottom:1px solid var(--bd)}
+  .cols{grid-template-columns:1fr;gap:16px;overflow:visible}.hoja{padding:22px 18px}main{min-height:60vh}
+  .divisor{display:none}}
+/* ---------- botones de icono (tema, compacto) */
+.ico{padding:4px 6px;line-height:0;color:var(--mu);background:transparent;border-color:transparent}
+.ico:hover{color:var(--tx);border-color:var(--bd2);background:var(--panel)}
+.ico svg{width:16px;height:16px;display:block}
+.marca .ico:first-of-type{margin-left:2px}
+.ico svg.solo-tema-claro,.ico svg.solo-tema-oscuro{display:none}
+:root[data-tema-efectivo=dark] .ico svg.solo-tema-oscuro,:root[data-tema-efectivo=light] .ico svg.solo-tema-claro{display:block}
+/* ---------- resumen de avisos en la lista */
+#casos .av{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11.5px;color:var(--mu);align-items:center}
+#casos .av .c{display:inline-flex;align-items:center;gap:3px;font-variant-numeric:tabular-nums}
+#casos .av .c i{width:9px;height:9px;border-radius:3px;display:inline-block}
+#casos .av .txt{display:none;width:100%}
+#casos .av .txt b{color:var(--err);font-weight:600}
+/* ---------- borrar informes */
+#casos .der{display:flex;align-items:center;gap:4px;justify-self:end}
+#casos .borrar{width:22px;height:22px;padding:0;display:inline-grid;place-items:center;border-color:transparent;background:transparent;color:var(--mu);border-radius:6px;visibility:hidden}
+#casos li:hover .borrar,#casos li.sel .borrar,#casos .borrar:focus-visible{visibility:visible}
+#casos .borrar:hover,#casos .borrar:focus-visible{color:var(--err);border-color:var(--err);background:var(--panel)}
+#casos .borrar svg,.limpiar svg,#bBorrarCaso svg{width:14px;height:14px;display:block}
+.limpiar{margin:-4px 12px 4px;display:flex;justify-content:flex-end}
+.limpiar button{display:inline-flex;align-items:center;gap:5px;border-color:transparent;background:transparent;color:var(--mu);font-size:12px;padding:2px 6px}
+.limpiar button:hover{color:var(--err);border-color:var(--err);background:var(--panel)}
+#bBorrarCaso{display:inline-flex;align-items:center;gap:5px}
+#bBorrarCaso:hover{color:var(--err);border-color:var(--err)}
+.limpiar[hidden],#bBorrarCaso[hidden]{display:none}
+button.peligro{background:var(--err);border-color:var(--err);color:var(--hoja);font-weight:600}
+button.peligro:hover{filter:brightness(1.08);border-color:var(--err)}
+#confirma{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.38);display:none;place-items:center;padding:16px}
+#confirma.abierto{display:grid}
+#confirma .caja{background:var(--panel);border:1px solid var(--bd2);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.28);padding:20px 22px 16px;width:min(430px,100%)}
+#confirma h2{font-size:16px;margin:0 0 10px;line-height:1.3;overflow-wrap:anywhere}
+#confirma p{margin:0 0 8px;color:var(--mu);font-size:13.5px;line-height:1.45}
+#confirma p b{color:var(--tx)}
+#confirma p.cf-pend{color:var(--tx);background:var(--amarillo);border-radius:7px;padding:7px 10px}
+#confirma ul{margin:0 0 8px;padding-left:18px;font-size:13px;max-height:150px;overflow:auto}
+#confirma .botones{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+#confirma .caja{animation:cfEntra .14s ease-out}
+@keyframes cfEntra{from{opacity:0;transform:translateY(6px) scale(.98)}}
+#confirma label.cf-campo{display:block;margin:4px 0 0}
+#confirma label.cf-campo span{display:block;font-size:12.5px;color:var(--mu);margin-bottom:4px}
+#cfInput{width:100%;padding:8px 10px;border-radius:8px;background:var(--hoja);font-size:14px}
+#cfInput:focus{outline:2px solid var(--ac);outline-offset:-1px;border-color:var(--ac)}
+#cfInput[aria-invalid=true]{border-color:var(--err);outline-color:var(--err)}
+#cfAviso{min-height:18px;margin:6px 0 0;font-size:12.5px;color:var(--mu)}
+#cfAviso.mal{color:var(--err)}
+#confirma[hidden]{display:none!important}
+/* ---------- audios esperando conexión para enviarse (solo en el navegador; en la app los guarda la app) */
+.espera-envio{margin:0 12px 10px;padding:8px 11px;border-radius:9px;font-size:12.5px;line-height:1.4;border:1px solid var(--aviso);background:var(--panel)}
+.espera-envio b{display:block;color:var(--aviso);font-size:13px;margin-bottom:2px}
+.espera-envio[hidden]{display:none}
+/* ---------- modo compacto: solo la cola y los avisos */
+body.compacto .app{grid-template-columns:1fr}
+body.compacto main,body.compacto .drop,body.compacto .selmed,body.compacto .pie,body.compacto .divisor{display:none!important}
+body.compacto aside{border-right:0;height:100vh;max-height:none}
+body.compacto .marca{padding:10px 12px 8px}
+body.compacto .tabs{margin:0 10px 8px}
+body.compacto #casos{padding:0 6px 10px}
+body.compacto #casos li{border:1px solid var(--bd);margin-bottom:5px;background:var(--hoja)}
+body.compacto #casos li:hover{border-color:var(--ac)}
+body.compacto #casos .av .txt{display:block}
+#bCompacto .agr{display:none}
+body.compacto #bCompacto .agr{display:block}body.compacto #bCompacto .cmp{display:none}
+/* ---------- forma de onda */
+.onda{position:relative;border-top:1px solid var(--bd);height:68px;flex:none;cursor:pointer}
+.onda canvas{position:absolute;inset:0;width:100%;height:100%}
+.onda{touch-action:none;user-select:none}.onda.arrastrando,.onda.arrastrando canvas{cursor:grabbing!important}
+#ondaTip{position:absolute;bottom:100%;margin-bottom:4px;transform:translateX(-50%);background:var(--tx);color:var(--bg);font-size:12px;
+  padding:4px 8px;border-radius:6px;pointer-events:none;white-space:nowrap;display:none;max-width:320px;overflow:hidden;text-overflow:ellipsis;z-index:3}
+/* ---------- sincronización informe <-> dictado */
+#dictado .eco{background:var(--eco);box-shadow:0 0 0 1px var(--eco)}
+#dictado .eco.actual{background:var(--actual)}
+#editor .ln.sonando{box-shadow:inset 3px 0 0 var(--ac)}
+#lineaInfo{margin-left:6px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--mu);display:flex;align-items:center;gap:4px}
+#lineaInfo button{padding:0 6px;font-size:11.5px;line-height:1.5}
+/* ---------- explicación de cada marca */
+#explica{position:fixed;z-index:8;max-width:400px;min-width:220px;background:var(--panel);color:var(--tx);border:1px solid var(--bd2);
+  border-radius:9px;box-shadow:0 6px 24px rgba(0,0,0,.18);padding:9px 12px 8px;font-size:13px;line-height:1.4;display:none}
+#explica .ex-tit{display:flex;align-items:center;gap:7px;font-weight:600;margin-bottom:3px}
+#explica .ex-tit i{width:10px;height:10px;border-radius:3px;flex:none}
+#explica .ex-mot{font-variant-numeric:tabular-nums}
+#explica .ex-mot b{background:var(--gris-bg);border:1px solid var(--bd);border-radius:4px;padding:0 4px;font-weight:700}
+#explica .ex-dic{margin-top:6px;padding-top:6px;border-top:1px solid var(--bd);color:var(--mu);font-size:12.5px}
+#explica .ex-dic b{color:var(--tx);font-weight:600}
+#explica .ex-ayuda{margin-top:5px;font-size:11.5px;color:var(--mu)}
+/* ---------- vista previa como Word: la hoja siempre blanca, como en Word */
+#vp{position:fixed;inset:0;z-index:10;background:var(--bg);display:none;flex-direction:column}
+#vp.abierta{display:flex}
+.vp-barra{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--bd)}
+.vp-barra h2{font-size:15px;margin:0}
+#vpInfo{color:var(--mu);font-size:12.5px}
+#vpAviso{display:none;margin:12px auto 0;max-width:760px;width:calc(100% - 32px);padding:8px 12px;border:1px solid var(--aviso);border-radius:8px;background:var(--panel);font-size:13px;align-items:center;gap:10px;flex-wrap:wrap}
+#vpAviso b{color:var(--aviso)}
+#vpHojas{flex:1;overflow:auto;padding:22px 16px 40px}
+.vp-escala{display:flex;flex-direction:column;align-items:center;gap:8px;width:max-content;min-width:100%}
+.vp-pag{background:#fff;color:#000;box-shadow:0 1px 3px rgba(0,0,0,.18),0 8px 28px rgba(0,0,0,.10);flex:none;box-sizing:border-box;overflow:hidden}
+:root[data-tema-efectivo=dark] .vp-pag{box-shadow:0 0 0 1px #4a4945}
+.vp-cuerpo{overflow:hidden}
+.vp-pag p{margin:0;white-space:pre-wrap;overflow-wrap:break-word;line-height:normal}
+.vp-enc{user-select:none}
+.vp-num{font-size:11.5px;color:var(--mu);margin-bottom:14px}
+.vp-ed{outline:none;caret-color:#000}
+.vp-ed ::selection{background:#b4d0f7}
+/* barra de formato (como la de Word, en chico) */
+.vp-fmt{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 16px;background:var(--panel);border-bottom:1px solid var(--bd)}
+.vp-fmt .grupo{display:flex;gap:2px;padding-right:8px;margin-right:4px;border-right:1px solid var(--bd)}
+.vp-fmt .grupo:last-of-type{border-right:0}
+.vp-fmt button{width:32px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-color:transparent;background:transparent;border-radius:6px}
+.vp-fmt button:hover{border-color:var(--bd2);background:var(--bg)}
+.vp-fmt button.on{background:var(--ac-suave);border-color:var(--ac);color:var(--ac)}
+.vp-fmt button svg{width:17px;height:17px}
+.vp-fmt .tx{font:700 15px/1 Georgia,"Times New Roman",serif}
+.vp-fmt button.ancho{width:auto;padding:0 9px;font-size:12.5px;gap:5px}
+.vp-color{position:relative}
+#vpColorBtn{width:auto;padding:0 6px;gap:3px}
+#vpColorBtn .letra{display:flex;flex-direction:column;align-items:center;font:700 15px/1 Georgia,serif}
+#vpColorBtn .letra i{display:block;width:16px;height:4px;margin-top:2px;border-radius:1px;background:#c00000}
+#vpPaleta{position:absolute;top:34px;left:0;z-index:12;background:var(--panel);border:1px solid var(--bd2);border-radius:9px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:8px;display:none;width:214px}
+#vpPaleta.abierta{display:block}
+#vpPaleta .cols5{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:6px 0 8px}
+#vpPaleta .cols5 button{width:100%;height:26px;border-radius:5px;border:1px solid rgba(0,0,0,.18)}
+#vpPaleta .cols5 button:hover{outline:2px solid var(--ac);outline-offset:1px}
+#vpPaleta .fila{display:flex;align-items:center;gap:8px;width:100%;justify-content:flex-start;padding:0 6px;height:28px;font-size:13px}
+#vpPaleta .fila i{width:16px;height:16px;border-radius:3px;border:1px solid rgba(0,0,0,.25);display:inline-block}
+#vpPaleta label{display:flex;align-items:center;gap:8px;padding:0 6px;height:28px;font-size:13px;cursor:pointer;border-radius:6px}
+#vpPaleta label:hover{background:var(--bg)}
+#vpPaleta input[type=color]{width:22px;height:20px;padding:0;border:0;background:none}
+#vpFmtEstado{color:var(--mu);font-size:12px;margin-left:auto}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="marca">Informes <small><span class="punto" id="pOllama"></span> <span id="tOllama">IA</span></small>
+      <button id="bTema" class="ico" title="Cambiar a modo oscuro / claro" aria-label="Cambiar modo oscuro o claro">
+        <svg class="solo-tema-claro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="solo-tema-oscuro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+      </button>
+      <button id="bCompacto" class="ico" title="Modo compacto: solo la cola y los avisos" aria-label="Modo compacto">
+        <svg class="cmp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg>
+        <svg class="agr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>
+      </button></div>
+    <div class="tabs" id="tabs"><button data-f="mia" id="tabMia">Esta PC</button><button data-f="todas" id="tabTodas">Todas</button></div>
+    <div id="estadoSrv" class="estado-srv" role="status" hidden></div>
+    <div id="esperaEnvio" class="espera-envio" role="status" hidden></div>
+    <label class="drop" id="drop"><b>Cargar audio</b><span id="dropTxt">arrastralo acá o hacé clic para elegirlo</span><input type="file" id="archivos" multiple accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden></label>
+    <label class="selmed"><span id="medSubirTxt">Médico de los audios que subas</span><select id="medSubir"></select></label>
+    <div class="limpiar" id="limpiar" hidden><button id="bLimpiar" type="button"></button></div>
+    <ul id="casos"></ul>
+    <div class="pie"><button id="bVerPlant" class="chico">Plantillas</button><button id="bVerMed" class="chico">Médicos</button>
+      <button id="bAdmin" class="chico" hidden title="Administración del servidor: PC vinculadas, túnel, errores y estadísticas" aria-label="Administración del servidor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button></div>
+    <div class="divisor" id="divLista" role="separator" aria-orientation="vertical" aria-label="Ancho de la lista" tabindex="0" title="Arrastrá para cambiar el ancho · doble clic: tamaño original"></div>
+  </aside>
+  <main>
+    <div id="vacio" aria-live="polite"><div class="vac-card"><span class="spin"></span> Cargando los casos…</div></div>
+    <section id="caso" hidden style="display:flex;flex-direction:column;flex:1;min-height:0">
+      <div class="barra">
+        <div class="fila">
+          <div class="tit-caso"><h1 id="titulo"></h1><span id="tituloAudio" class="tit-audio"></span>
+            <button id="bPaciente" class="ico" title="Corregir el nombre del paciente (solo se muestra en la lista, no va al informe)" aria-label="Corregir el nombre del paciente">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button></div>
+          <select id="medCaso" class="med" title="Médico que dictó este audio"></select>
+          <div class="player">
+            <button id="bAtras" title="Atrás 3 segundos (F3)">−3s</button>
+            <button id="bPlay" title="Reproducir / pausar (F4)">▶</button>
+            <button id="bAdel" title="Adelante 3 segundos">+3s</button>
+            <input type="range" id="prog" min="0" max="1000" value="0" aria-label="Posición">
+            <span id="tiempo">0:00 / 0:00</span>
+            <select id="vel" title="Velocidad de reproducción"><option value="0.25">0.25×</option><option value="0.5">0.50×</option><option value="0.75">0.75×</option><option value="1" selected>1.00×</option><option value="1.25">1.25×</option><option value="1.5">1.50×</option><option value="1.75">1.75×</option><option value="2">2.00×</option><option value="2.25">2.25×</option><option value="2.5">2.50×</option></select>
+          </div>
+        </div>
+        <div class="fila">
+          <span id="pend">0 marcas</span>
+          <button id="bSig" title="Ir a la siguiente marca y escuchar ese momento">Siguiente marca<kbd>F2</kbd></button>
+          <button id="bAcep" title="La marca seleccionada está bien: quitarla">Está bien<kbd>F8</kbd></button>
+          <span class="sep"></span>
+          <button id="bBorrarCaso" class="chico" hidden title="Borrar este informe: el audio, el informe y el Word (lo que aprendió la IA se conserva)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg> Borrar</button>
+          <button id="bRegen" class="chico" title="Volver a generar el informe (se pierden los cambios)">Regenerar</button>
+          <button id="bCerrar" title="Guarda los cambios como borrador y deja el estudio libre para que lo abra otra PC">Cerrar estudio</button>
+          <button id="bVista" title="Ver cómo queda en Word: hoja, márgenes, Tahoma 12 y negritas">Vista previa<kbd>F9</kbd></button>
+          <button id="bCopiar" title="Copia el texto con formato Tahoma 12 para pegar en tu Word">Copiar para Word</button>
+          <button id="bFin" class="prim" title="Crea el Word en la carpeta Informes y guarda tu corrección para que la IA aprenda">Guardar Word y aprender</button>
+        </div>
+        <div class="ley"><span style="background:var(--rojo)">dato no dictado / completar</span><span style="background:var(--amarillo)">dudoso</span><span style="background:var(--turq-bg);box-shadow:inset 0 -2px 0 var(--turq)">no dictado junto al hallazgo</span><span style="background:var(--gris-bg);color:var(--gris)">frase de plantilla no dictada</span><span>· pasá el mouse sobre una marca (o usá <kbd>F2</kbd>) para ver qué se dictó · editar una marca la da por revisada</span></div>
+      </div>
+      <div class="cols">
+        <div class="hojawrap"><div id="nuevoEst"></div><div id="avisos"></div><div class="hoja"><div id="editor" contenteditable="true" spellcheck="true" lang="es"></div></div></div>
+        <div class="divisor" id="divCols" role="separator" aria-orientation="vertical" aria-label="Ancho del informe y del dictado" tabindex="0" title="Arrastrá para repartir el ancho entre el informe y el dictado · doble clic: tamaño original"><span class="agarre"></span></div>
+        <div class="dict">
+          <h2>Dictado <span id="lineaInfo"></span><label><input type="checkbox" id="seguir" checked> seguir el audio</label></h2>
+          <div id="dictado"></div>
+          <div class="onda" id="ondaCaja" title=""><canvas id="onda"></canvas><div id="ondaTip"></div></div>
+          <div class="ayuda"><kbd>F4</kbd> reproducir/pausa · <kbd>F3</kbd> atrás 3s · <kbd>F2</kbd> siguiente marca · <kbd>Shift</kbd>+<kbd>F2</kbd> anterior · <kbd>F8</kbd> está bien · <kbd>F9</kbd> vista previa como Word · <kbd>Alt</kbd>+clic en una línea = escucharla · clic en una palabra del dictado = escucharla · el cursor en el informe resalta su parte del dictado · clic en la onda = saltar ahí · arrastrar sobre la onda = escuchar mientras se mueve</div>
+        </div>
+      </div>
+    </section>
+    <section class="vista" id="vPlant">
+      <div class="fila"><h2>Plantillas de estudios</h2><span class="sep"></span>
+        <button id="bImportar" title="Lee los Word de Dataset\Informes word como informes de referencia de estilo">Importar informes Word</button>
+        <label class="chico" style="border:1px solid var(--bd2);border-radius:7px;padding:6px 11px;cursor:pointer;background:var(--panel)" title="Arma una plantilla a partir de un Word (.docx) para que la revises">Desde un Word…<input type="file" id="plWord" accept=".docx,.doc" hidden></label>
+        <button id="bNuevoEst">+ Nuevo estudio</button><button id="bGuardarPl" class="prim">Guardar cambios</button></div>
+      <div class="nota">La IA lee estas plantillas en cada informe. Formato: <b>TITULO:</b> cómo va el título ·
+        <b>TEXTO FIJO:</b> párrafo que va siempre · <b>PROTOCOLO NORMAL:</b> las viñetas que se escriben cuando el médico dice
+        "protocolo normal" (una por línea, empezando con -) · <b>FRASES HABITUALES:</b> viñetas frecuentes · <b>NOTAS:</b> cómo se dicta,
+        en qué orden van las medidas, etc. Antes de guardar se hace una copia de la versión anterior.</div>
+      <div class="fila2"><ul class="lista2" id="listaPl"></ul><div class="divisor div-lista2" role="separator" aria-orientation="vertical" aria-label="Ancho de la lista" tabindex="0" title="Arrastrá para cambiar el ancho · doble clic: tamaño original"><span class="agarre"></span></div>
+        <div class="edit2"><input id="plNombre" placeholder="Nombre del estudio (ej. ECOGRAFÍA ABDOMINAL)">
+          <textarea id="plCuerpo" spellcheck="false"></textarea>
+          <div class="fila"><span class="sep"></span><button id="bBorrarPl" class="chico">Eliminar este estudio</button></div></div></div>
+    </section>
+    <section class="vista" id="vMed">
+      <div class="fila"><h2>Médicos</h2><span class="sep"></span><button id="bNuevoMed">+ Agregar médico</button><button id="bGuardarMed" class="prim">Guardar notas</button></div>
+      <div class="nota">Anotá cómo dicta cada médico: la IA lo tiene en cuenta en sus informes, y además usa como ejemplo
+        informes anteriores del mismo médico. Ej: "Dice 'eco' por ecografía. Dicta las medidas del útero como tres números
+        seguidos. Al final dice 'BI-RADS' y el número. Suele decir 'perdón' y repetir la frase corregida."</div>
+      <div class="fila2"><ul class="lista2" id="listaMed"></ul><div class="divisor div-lista2" role="separator" aria-orientation="vertical" aria-label="Ancho de la lista" tabindex="0" title="Arrastrá para cambiar el ancho · doble clic: tamaño original"><span class="agarre"></span></div>
+        <div class="edit2"><input id="medNombre" readonly><textarea id="medNotas" placeholder="Cómo dicta este médico…"></textarea></div></div>
+    </section>
+  </main>
+</div>
+<audio id="audio" preload="auto"></audio>
+<div id="confirma" role="alertdialog" aria-modal="true" aria-labelledby="cfTit" aria-describedby="cfTxt">
+  <div class="caja"><h2 id="cfTit"></h2><div id="cfTxt"></div>
+    <label class="cf-campo" id="cfCampo" hidden><span id="cfEtiq"></span><input id="cfInput" type="text" autocomplete="off" spellcheck="false" maxlength="80"></label>
+    <p id="cfAviso" hidden></p>
+    <div class="botones"><button id="cfNo" type="button">Cancelar</button><button id="cfSi" type="button" class="peligro">Borrar</button></div></div>
+</div>
+<div id="toast"><span id="toastTxt"></span><span id="toastBtns"></span></div>
+<div id="vp" role="dialog" aria-modal="true" aria-labelledby="vpTit">
+  <div class="vp-barra">
+    <h2 id="vpTit">Vista previa como Word</h2><span id="vpInfo"></span><span class="sep"></span>
+    <select id="vpZoom" title="Tamaño de la vista"><option value="ajustar">Ajustar al ancho</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option></select>
+    <button id="vpCopiar" class="prim" title="Copia el texto con formato Tahoma 12 para pegar en tu Word">Copiar para Word</button>
+    <button id="vpCerrar" title="Volver al informe">Volver al informe<kbd>Esc</kbd></button>
+  </div>
+  <div class="vp-fmt" id="vpFmt" role="toolbar" aria-label="Formato del texto">
+    <div class="grupo">
+      <button type="button" data-cmd="bold" title="Negrita (Ctrl+B)"><span class="tx">N</span></button>
+      <button type="button" data-cmd="italic" title="Cursiva (Ctrl+K o Ctrl+I)"><span class="tx" style="font-style:italic;font-weight:400">K</span></button>
+      <button type="button" data-cmd="underline" title="Subrayado (Ctrl+S o Ctrl+U)"><span class="tx" style="text-decoration:underline;font-weight:400">S</span></button>
+      <div class="vp-color">
+        <button type="button" id="vpColorBtn" title="Color del texto"><span class="letra">A<i id="vpColorMuestra"></i></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div id="vpPaleta" role="menu">
+          <button type="button" class="fila" data-c="auto"><i style="background:#000"></i>Automático (negro)</button>
+          <div class="cols5"><button type="button" data-c="#000000" title="Negro" style="background:#000000"></button><button type="button" data-c="#C00000" title="Rojo oscuro" style="background:#C00000"></button><button type="button" data-c="#FF0000" title="Rojo" style="background:#FF0000"></button><button type="button" data-c="#ED7D31" title="Naranja" style="background:#ED7D31"></button><button type="button" data-c="#BF8F00" title="Dorado" style="background:#BF8F00"></button><button type="button" data-c="#00B050" title="Verde" style="background:#00B050"></button><button type="button" data-c="#375623" title="Verde oscuro" style="background:#375623"></button><button type="button" data-c="#0070C0" title="Azul" style="background:#0070C0"></button><button type="button" data-c="#002060" title="Azul oscuro" style="background:#002060"></button><button type="button" data-c="#7030A0" title="Violeta" style="background:#7030A0"></button></div>
+          <label title="Elegir cualquier color">Más colores… <input type="color" id="vpColorLibre" value="#c00000"></label>
+        </div>
+      </div>
+    </div>
+    <div class="grupo">
+      <button type="button" data-al="left" title="Alinear a la izquierda (Ctrl+L)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h10M4 14h16M4 18h10"/></svg></button>
+      <button type="button" data-al="center" title="Centrar (Ctrl+E)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 10h10M4 14h16M7 18h10"/></svg></button>
+      <button type="button" data-al="right" title="Alinear a la derecha (Ctrl+R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M10 10h10M4 14h16M10 18h10"/></svg></button>
+      <button type="button" data-al="justify" title="Justificar (Ctrl+J)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
+    </div>
+    <div class="grupo">
+      <button type="button" id="vpDeshacer" title="Deshacer (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+      <button type="button" id="vpRehacer" title="Rehacer (Ctrl+Y)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+      <button type="button" id="vpLimpiar" class="ancho" title="Volver al formato normal lo seleccionado (sin selección: todo el informe)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/><path d="m15 14 6 6M21 14l-6 6" stroke-width="1.8"/></svg>Quitar formato</button>
+    </div>
+    <span id="vpFmtEstado" title="El texto se corrige en el informe; acá solo se cambia el formato. Si después cambiás el texto de un párrafo, ese párrafo vuelve al formato normal.">Seleccioná texto y elegí el formato · el texto se corrige en el informe</span>
+  </div>
+  <div id="vpAviso"></div>
+  <div id="vpHojas"></div>
+</div>
+<div id="explica" role="tooltip"><div class="ex-tit"><i></i><span></span></div><div class="ex-mot"></div><div class="ex-dic"></div>
+  <div class="ex-ayuda">Si está bien: <kbd>F8</kbd> · si está mal: escribí encima</div></div>
+<script>
+const $ = s => document.querySelector(s);
+const audio = $('#audio'), editor = $('#editor'), dict = $('#dictado');
+let omis = [], omisOk = [];
+let actual = null, palabras = [], activa = null, tBorrador = null, ultimaPausa = 0, casosCache = [];
+let explicaDe = null, explicaFija = false, tExplica = null;                 // explicación de la marca
+let onda = null, rafOnda = 0;                                               // forma de onda
+let cacheRango = new Map(), lineaCursor = null, rangoCursor = null, lineaSonando = null, codTok = null;  // sincronización
+
+/* ------------------------------------------------ util */
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const mmss = t => isFinite(t) ? Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0') : '0:00';
+/* Cuando el servidor no está, lo que responde no es del servidor: el túnel devuelve una página de error (HTML)
+   o directamente no hay respuesta. Nunca se intenta leer eso como JSON: se convierte en un error claro. */
+const MSG_SIN_CONEXION = 'Sin conexión con el servidor';
+class SinConexion extends Error { constructor(){ super(MSG_SIN_CONEXION); this.sinConexion = true; } }
+async function pedir(ruta, opciones){
+  let r;
+  try { r = await fetch(ruta, opciones); }
+  catch(e){ throw new SinConexion(); }                            // sin red / el servidor no contesta
+  const txt = await r.text().catch(() => '');
+  let j = null;
+  if((r.headers.get('content-type') || '').includes('json') || /^\s*[\[{]/.test(txt)) { try { j = JSON.parse(txt); } catch(e){} }
+  if(j === null){
+    // una página HTML o una respuesta vacía en lugar de los datos: es el túnel o un servidor caído (502, 503, 530...)
+    if(!r.ok || /^\s*</.test(txt)) throw new SinConexion();
+    j = {};
+  }
+  if(r.status===401 && j.entrar){ location.href = '/entrar'; throw new Error('Sesión vencida'); }
+  if(!r.ok) throw new Error(j.error || ('Error '+r.status));
+  return j;
+}
+function api(ruta, datos){
+  return pedir(ruta, datos===undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(datos)});
+}
+function toast(msg, botones=[], ms=4500){
+  $('#toastTxt').textContent = msg; const b = $('#toastBtns'); b.innerHTML='';
+  botones.forEach(([t,f])=>{const x=document.createElement('button');x.className='chico';x.textContent=t;x.onclick=()=>{f();ocultar()};b.appendChild(x)});
+  const el=$('#toast'); el.style.display='flex'; clearTimeout(el._t);
+  const ocultar=()=>el.style.display='none'; if(ms) el._t=setTimeout(ocultar, ms);
+}
+
+/* ------------------------------------------------ lista */
+const TACHO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
+const ETIQ = {nuevo:'nuevo', 'en cola':'en cola', transcribiendo:'transcribiendo', generando:'generando', listo:'para revisar', revisado:'revisado', error:'error'};
+/* PC desde la que se usa la página: "Servidor" en esta PC, info-01... por el túnel */
+let MI = {pc:'Servidor', remoto:false, medico:''};
+let filtro = (()=>{ try { return localStorage.getItem('filtroCasos') || ''; } catch(e){ return ''; } })();
+function ponerFiltro(f){ filtro = f; try { localStorage.setItem('filtroCasos', f); } catch(e){}
+  $('#tabMia').classList.toggle('on', f==='mia'); $('#tabTodas').classList.toggle('on', f!=='mia'); cargarLista(); }
+async function cargarMiPc(){
+  try { MI = await api('/api/mi_pc'); } catch(e){ return; }
+  $('#tabMia').textContent = 'Esta PC';
+  if(MI.remoto){ $('#medSubirTxt').textContent = 'Médico de los audios nuevos de esta PC'; document.title = 'Informes · ' + MI.pc; }
+  ponerFiltro(filtro || (MI.remoto ? 'mia' : 'todas'));
+  $('#bAdmin').hidden = !!MI.remoto && !MI.admin;   // en el trabajo, solo si el panel está habilitado (pide su contraseña)
+  if(typeof cargarMedicos === 'function') cargarMedicos();
+}
+/* ------------------------------------------------ estado del servidor y de la IA */
+let SRV = {ok: null, desde: Date.now(), ultimoOk: 0, ia: 'ok', modelo: ''}, abriendo = null;
+const EN_PROC = ['en cola','transcribiendo','generando'];
+function minutos(s){ if(s == null) return ''; if(s < 45) return 'menos de 1 min'; const m = Math.round(s/60); return m < 60 ? `~${m} min` : `~${Math.floor(m/60)} h ${m%60} min`; }
+function haceCuanto(ms){ const s = Math.round(ms/1000); return s < 60 ? `${s} s` : s < 3600 ? `${Math.round(s/60)} min` : `${Math.floor(s/3600)} h`; }
+const esperaIA = c => c.estado==='en cola' && (c.msg||'').startsWith('Esperando a la IA') && SRV.ia !== 'ok';
+function textoEspera(c){        // "Transcribiendo… · listo en ~2 min" / "En cola · 1 audio antes · listo en ~3 min"
+  if(esperaIA(c)) return 'Transcrito · espera a que la IA esté lista';
+  const e = c.espera, partes = [c.msg ? c.msg.replace(/…$/, '') : ETIQ[c.estado]];
+  if(e && e.adelante && c.estado==='en cola') partes.push(e.adelante + (e.adelante===1 ? ' audio antes' : ' audios antes'));
+  if(e && SRV.ia === 'ok') partes.push('listo en ' + minutos(e.eta));
+  return partes.join(' · ');
+}
+function ponerEstadoSrv(){
+  const box = $('#estadoSrv'), p = $('#pOllama'), t = $('#tOllama');
+  let h = '', clase = '';
+  if(SRV.ok === false){
+    p.className = 'punto mal'; t.textContent = 'sin conexión';
+    h = '<b>Sin conexión con el servidor</b>' + (MI.remoto
+        ? 'La PC del servidor puede estar apagada, sin internet o con su ventana cerrada.' + (EN_APP && APP ? ' Podés seguir grabando y cargando audios: quedan guardados en esta PC y se envían solos cuando vuelva.'
+            : EN_APP ? ' Los audios que grabes quedan guardados en esta PC y se envían solos cuando vuelva.'
+            : ' Podés cargar audios igual: esperan en esta página y se envían solos cuando vuelva.')
+        : '¿Se cerró la ventana del servidor? Abrí <code>iniciar_servidor.bat</code> (o <code>interfaz.bat</code>) y esta página se reconecta sola.')
+      + `<small>Reintentando cada 2 s · ${SRV.ultimoOk ? 'última conexión hace ' + haceCuanto(Date.now() - SRV.ultimoOk) : 'todavía no se pudo conectar'}</small>`;
+  } else if(SRV.ia === 'caida'){
+    p.className = 'punto av'; t.textContent = 'IA no lista'; clase = 'av';
+    h = '<b>La IA no está lista: Ollama está cerrado</b>' + (MI.remoto
+        ? 'Hay que abrir Ollama en la PC del servidor. Mientras tanto los audios llegan, se transcriben y esperan en la cola: se terminan solos cuando se abra.'
+        : 'Abrí Ollama (el ícono de la llama) y esperá unos segundos. Mientras tanto los audios se transcriben y esperan en la cola: se terminan solos.');
+  } else if(SRV.ia === 'sin_modelo'){
+    p.className = 'punto av'; t.textContent = 'IA sin modelo'; clase = 'av';
+    h = `<b>A Ollama le falta el modelo ${esc(SRV.modelo || '')}</b>` + (MI.remoto ? 'Hay que instalarlo en la PC del servidor.' : 'Instalalo abriendo una consola y escribiendo')
+      + (MI.remoto ? '' : ` <code>ollama pull ${esc(SRV.modelo || '')}</code>.`) + ' Los audios esperan en la cola mientras tanto.';
+  } else { p.className = 'punto'; t.textContent = 'IA lista'; }
+  box.className = 'estado-srv' + (clase ? ' ' + clase : '');
+  if(box.innerHTML !== h) box.innerHTML = h;
+  box.hidden = !h;
+}
+
+async function cargarLista(){
+  let j; try { j = await api('/api/casos'); }
+  catch(e){ if(SRV.ok !== false){ SRV.ok = false; SRV.desde = Date.now(); } ponerEstadoSrv(); armarVacio(null); return; }
+  SRV = {...SRV, ok: true, ultimoOk: Date.now(), ia: j.ia_estado || (j.ollama ? 'ok' : 'caida'), modelo: j.modelo || ''};
+  ponerEstadoSrv();
+  if(enEspera.length) enviarEnEspera();
+  casosCache = j.casos;
+  const mios = j.casos.filter(c => c.origen === MI.pc);
+  $('#tabMia').textContent = 'Esta PC · ' + mios.length; $('#tabTodas').textContent = 'Todas · ' + j.casos.length;
+  const lista = filtro === 'mia' ? mios : j.casos;
+  armarVacio(lista, j.casos);
+  const rev = lista.filter(c => c.estado==='revisado' && c.puede_borrar && !c.bloqueado_por);
+  $('#limpiar').hidden = !rev.length;
+  if(rev.length){ const bl = $('#bLimpiar');
+    bl.innerHTML = TACHO + (MI.remoto ? 'Borrar revisados de esta PC · ' : 'Borrar revisados · ') + rev.length;
+    bl.title = 'Borra los informes ya guardados' + (MI.remoto ? ' que llegaron desde esta PC' : '') + ' (audio, informe y Word). Lo que aprendió la IA se conserva.';
+    bl.onclick = () => borrarCasos(rev); }
+  const ul = $('#casos'); ul.innerHTML = '';
+  if(!lista.length){
+    ul.innerHTML = '<li class="vacia">' + (filtro==='mia'
+      ? '<b>Todavía no llegaron audios de esta PC.</b>' + (MI.remoto ? 'Los que grabes aparecen acá solos.' : 'Arrastrá audios arriba para empezar.')
+        + (j.casos.length ? ` Hay ${j.casos.length} en <a href="#" id="verTodas">Todas</a>.` : '')
+      : '<b>Todavía no hay audios.</b>' + (MI.remoto ? 'Los que se graben aparecen acá solos.' : 'Arrastrá audios arriba para empezar.')) + '</li>';
+    const v = $('#verTodas'); if(v) v.onclick = e => { e.preventDefault(); ponerFiltro('todas'); };
+  }
+  for(const c of lista){
+    const li = document.createElement('li'); li.dataset.n = c.nombre;
+    if(c.nombre === actual) li.classList.add('sel');
+    const trab = EN_PROC.includes(c.estado);
+    const cls = trab ? 'trabajando' : c.estado;
+    let det = trab ? textoEspera(c) : (c.msg || '');
+    if(c.estado==='error'){ const m = c.msg || 'error desconocido'; det = 'No se pudo procesar: ' + (m.length > 110 ? m.slice(0, 107) + '…' : m); }
+    if(c.estado==='listo' && c.marcas!=null){
+      const a = c.avisos, n = a ? a.rojo + a.amarillo + a.turq + a.gris + a.faltan.length + a.huecos.length : c.marcas;
+      det = n ? n + (n===1?' marca':' marcas') + ' para revisar' : 'Sin marcas pendientes'; }
+    if(c.estado==='nuevo') det = 'Sin procesar';
+    if(c.medico) det = (det ? det + ' · ' : '') + c.medico;
+    if(filtro !== 'mia' && c.origen !== MI.pc) det = c.origen + (det ? ' · ' + det : '');
+    if(c.bloqueado_por){ det = 'Lo está revisando ' + c.bloqueado_por; li.classList.add('bloq'); }
+    if(c.titulo && c.titulo !== c.nombre){ const d = new Date(c.fecha*1000);
+      det = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + (det ? ' · ' + det : ''); }
+    const etiq = c.nombre === abriendo ? 'abriendo' : esperaIA(c) ? 'esperando IA' : (ETIQ[c.estado]||c.estado);
+    if(c.nombre === abriendo) li.classList.add('abriendo');
+    const audio = c.titulo || c.nombre;
+    li.innerHTML = `<span class="n" title="${esc(c.paciente ? c.paciente + ' · audio ' + audio : 'Audio ' + audio + (c.estado==='nuevo' || trab ? '' : ' · no se encontró el nombre del paciente en el dictado'))}">${c.paciente ? esc(c.paciente) : '<span class="sinnom">' + esc(audio) + '</span>'}</span><span class="der">${c.puede_borrar && !c.bloqueado_por && c.nombre!==abriendo ? `<button type="button" class="borrar" title="Borrar este informe" aria-label="Borrar este informe">${TACHO}</button>` : ''}<span class="badge ${cls}">${trab && !esperaIA(c) || c.nombre===abriendo ?'<span class="spin"></span>':''}${etiq}</span></span>${lineaEstudio(c)}<span class="e">${esc(det)}</span>` + htmlAvisos(c);
+    if(c.estado==='nuevo' || c.estado==='error'){
+      const b=document.createElement('button'); b.className='chico'; b.textContent= c.estado==='error'?'Reintentar':'Procesar';
+      b.style.gridColumn='1/-1'; b.style.justifySelf='start';
+      b.onclick = async ev => { ev.stopPropagation(); await api('/api/procesar',{nombre:c.nombre}); cargarLista(); };
+      li.appendChild(b);
+    }
+    const bb = li.querySelector('.borrar');
+    if(bb) bb.onclick = ev => { ev.stopPropagation(); borrarCasos([c]); };
+    li.onclick = () => {
+      if(c.bloqueado_por){ toast('Este caso lo está revisando ' + c.bloqueado_por + '.'); return; }
+      if(!['listo','revisado'].includes(c.estado)) return;
+      if(esCompacto()) agrandar();          // en modo compacto, un clic agranda la ventana y abre el caso
+      abrirCaso(c.nombre); };
+    ul.appendChild(li);
+  }
+}
+/* ------------------------------------------------ pantalla principal cuando no hay un caso abierto */
+const ICO = {
+  audio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+  doc:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>',
+  reloj: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  ok:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  alerta:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.5"/></svg>',
+  /* sin conexión: la señal wifi entera (tres arcos concéntricos y el punto, sin cortes) y una insignia con una
+     cruz abajo a la derecha. La cruz va del color del fondo del ícono (clase "recorte"). */
+  corte: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.01 7.51a12 12 0 0 1 16.98 0M4.84 10.34a8 8 0 0 1 11.32 0M7.67 13.17a4 4 0 0 1 5.66 0"/><circle cx="10.5" cy="16.4" r="1.4" fill="currentColor" stroke="none"/><circle cx="18.6" cy="18.6" r="4.6" fill="currentColor" stroke="none"/><path class="recorte" d="M16.9 16.9l3.4 3.4M20.3 16.9l-3.4 3.4" stroke-width="1.8"/></svg>'};
+const hhmm = t => { const d = new Date(t*1000); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); };
+const nombreDe = c => '«' + esc(c.paciente || c.titulo || c.nombre) + '»';
+function etapas(c){           // Transcribir -> Armar el informe -> Para revisar, con la etapa actual resaltada
+  const paso = c.estado==='generando' || (c.estado==='en cola' && (c.msg||'').startsWith('Esperando a la IA')) ? 1
+             : c.estado==='transcribiendo' ? 0 : -1;
+  const est = i => i < paso ? 'hecho' : i === paso ? (esperaIA(c) ? 'espera' : 'ahora') : '';
+  const txt = ['Transcribir el audio', 'Armar el informe', 'Para revisar'];
+  return '<div class="etapas">' + txt.map((t, i) => `<span class="${est(i)}">${est(i)==='ahora' ? '<span class="spin"></span>' : est(i)==='hecho' ? '✓ ' : ''}${t}</span>`).join('<i></i>') + '</div>';
+}
+let vacioHtml = '';
+function armarVacio(lista, todos){
+  const box = $('#vacio');
+  if(box.hidden) return;
+  let h;
+  const card = (ico, clase, cuerpo) => `<div class="vac-card"><div class="vac-ico ${clase}">${ICO[ico]}</div>${cuerpo}</div>`;
+  if(abriendo){
+    const c = casosCache.find(x => x.nombre === abriendo) || {nombre: abriendo};
+    h = `<div class="vac-card"><span class="spin"></span> Abriendo ${nombreDe(c)}…</div>`;
+  } else if(lista === null){
+    h = card('corte', 'err', '<h2>Sin conexión con el servidor</h2><p>' + (MI.remoto
+        ? 'La PC del servidor puede estar apagada, sin internet o con su ventana cerrada. Cuando vuelva, esta pantalla se actualiza sola.'
+        : 'La ventana del servidor parece cerrada. Abrí <b>iniciar_servidor.bat</b> (o <b>interfaz.bat</b>) y esta página se reconecta sola.')
+      + '</p><p class="vac-nota"><span class="spin"></span> Reintentando cada 2 segundos…</p>');
+  } else {
+    const listos = lista.filter(c => c.estado==='listo' && !c.bloqueado_por).sort((a, b) => a.fecha - b.fecha);
+    const enProc = lista.filter(c => EN_PROC.includes(c.estado)).sort((a, b) => ((a.espera||{}).eta ?? 1e9) - ((b.espera||{}).eta ?? 1e9));
+    const errores = lista.filter(c => c.estado==='error'), nuevos = lista.filter(c => c.estado==='nuevo');
+    const prox = enProc[0], proxTxt = prox ? (esperaIA(prox) ? 'cuando la IA esté lista' : (prox.espera ? 'en ' + minutos(prox.espera.eta) : 'en unos minutos')) : '';
+    const extra = [];
+    if(enProc.length) extra.push(`${enProc.length} ${enProc.length===1 ? 'audio en proceso' : 'audios en proceso'}: el próximo estará listo ${proxTxt}.`);
+    if(errores.length) extra.push(`${errores.length} con error (botón <b>Reintentar</b> en la lista).`);
+    if(nuevos.length) extra.push(`${nuevos.length} ${nuevos.length===1 ? 'audio sin procesar' : 'audios sin procesar'} (botón <b>Procesar</b> en la lista).`);
+    const otros = todos ? todos.length - lista.length : 0;
+    if(!lista.length){
+      const pasos = MI.remoto
+        ? ['Grabá el audio como siempre: la aplicación lo envía sola al servidor.', 'El servidor lo transcribe y la IA arma el informe (unos minutos).', 'Cuando en la lista diga <b>para revisar</b>, hacé clic y revisalo mientras lo escuchás.']
+        : ['Arrastrá uno o varios audios a la lista de la izquierda (o tocá <b>Elegir audios</b>).', 'Se transcriben y la IA arma el informe sola (unos minutos por audio).', 'Cuando diga <b>para revisar</b>, hacé clic y revisalo mientras lo escuchás.'];
+      h = card('audio', '', `<h2>${filtro==='mia' && MI.remoto ? 'Todavía no llegaron audios de esta PC' : 'Todavía no hay audios'}</h2>`
+        + '<ol class="vac-pasos">' + pasos.map(p => `<li><span>${p}</span></li>`).join('') + '</ol>'
+        + '<div class="vac-bot">' + (MI.remoto ? '' : '<button class="prim" data-acc="elegir">Elegir audios…</button>')
+        + (otros > 0 ? `<button data-acc="todas">Ver los de todas las PC (${otros})</button>` : '') + '</div>');
+    } else if(listos.length){
+      const c = listos[0], a = c.avisos, n = a ? a.rojo + a.amarillo + a.turq + a.gris + a.faltan.length + a.huecos.length : (c.marcas || 0);
+      h = card('doc', '', `<h2>${listos.length===1 ? 'Hay 1 informe para revisar' : `Hay ${listos.length} informes para revisar`}</h2>`
+        + `<p>${listos.length > 1 ? 'El más antiguo' : 'Es'}: <span class="vac-titulo">${nombreDe(c)}</span> · ${hhmm(c.fecha)}${c.medico ? ' · ' + esc(c.medico) : ''} · ${n ? n + (n===1 ? ' marca' : ' marcas') + ' para revisar' : 'sin marcas'}.</p>`
+        + `<div class="vac-bot"><button class="prim" data-acc="abrir" data-n="${esc(c.nombre)}">Abrir ${nombreDe(c)}</button></div>`
+        + (extra.length ? `<p class="vac-nota">${extra.join(' ')}</p>` : ''));
+    } else if(enProc.length){
+      h = card('reloj', '', `<h2>${enProc.length===1 ? 'Procesando 1 audio' : `Procesando ${enProc.length} audios`}</h2>`
+        + `<p><span class="vac-titulo">${nombreDe(prox)}</span> estará listo ${proxTxt}.</p>` + etapas(prox)
+        + `<p class="vac-nota">No hace falta esperar en esta pantalla: cuando termine aparece en la lista como <b>para revisar</b>.`
+        + (errores.length ? ` ${errores.length} con error (botón <b>Reintentar</b> en la lista).` : '') + '</p>');
+    } else if(errores.length){
+      const c = errores[0];
+      h = card('alerta', 'err', `<h2>${errores.length===1 ? 'Un audio no se pudo procesar' : `${errores.length} audios no se pudieron procesar`}</h2>`
+        + `<p>${nombreDe(c)}: ${esc(c.msg || 'error desconocido')}</p>`
+        + `<div class="vac-bot"><button class="prim" data-acc="reintentar">${errores.length===1 ? 'Reintentar' : 'Reintentar todos'}</button></div>`
+        + '<p class="vac-nota">El detalle del error queda en la ventana del servidor y en la carpeta registros.</p>');
+    } else if(nuevos.length){
+      h = card('audio', '', `<h2>${nuevos.length===1 ? 'Hay 1 audio sin procesar' : `Hay ${nuevos.length} audios sin procesar`}</h2>`
+        + '<p>Estos audios están en la carpeta de audios nuevos pero todavía no se mandaron a procesar.</p>'
+        + `<div class="vac-bot"><button class="prim" data-acc="procesar">${nuevos.length===1 ? 'Procesar' : 'Procesar todos'}</button></div>`);
+    } else {
+      const bloq = lista.filter(c => c.bloqueado_por);
+      h = card('ok', 'ok', '<h2>Todo revisado</h2><p>No quedan informes pendientes' + (filtro==='mia' && otros > 0 ? ' de esta PC' : '') + '. '
+        + (MI.remoto ? 'Los audios nuevos que grabes aparecen en la lista solos.' : 'Arrastrá audios nuevos a la lista cuando quieras.') + '</p>'
+        + (bloq.length ? `<p class="vac-nota">${bloq.length} ${bloq.length===1 ? 'caso lo está' : 'casos los están'} revisando en otra PC.</p>` : ''));
+    }
+  }
+  if(h === vacioHtml) return;
+  vacioHtml = h; box.innerHTML = h;
+  box.querySelectorAll('[data-acc]').forEach(b => b.onclick = async () => {
+    const acc = b.dataset.acc;
+    if(acc==='elegir') $('#archivos').click();
+    else if(acc==='todas') ponerFiltro('todas');
+    else if(acc==='abrir') abrirCaso(b.dataset.n);
+    else {
+      b.disabled = true;
+      const est = acc==='reintentar' ? 'error' : 'nuevo';
+      const ns = casosCache.filter(c => c.estado===est && (filtro!=='mia' || c.origen===MI.pc)).map(c => c.nombre);
+      for(const n of ns){ try { await api('/api/procesar', {nombre: n}); } catch(e){ toast(e.message); } }
+      cargarLista();
+    }
+  });
+}
+$('#bAdmin').onclick = async () => { if(actual) await guardarBorrador(); location.href = '/admin'; };
+$('#tabMia').onclick = () => ponerFiltro('mia'); $('#tabTodas').onclick = () => ponerFiltro('todas');
+setInterval(cargarLista, 2000); cargarLista(); cargarMiPc();
+
+/* ------------------------------------------------ bloqueo: un caso abierto no se abre en otra PC */
+function soltarCaso(n){ if(!n) return; try { navigator.sendBeacon('/api/caso/soltar', JSON.stringify({nombre:n, rev: tomarRev()})); } catch(e){} }
+setInterval(async () => { if(!actual) return;
+  const rv = tomarRev();
+  try { const b = await api('/api/caso/bloquear', {nombre: actual, rev: rv});
+    if(!b.ok) toast('Atención: ' + b.por + ' abrió este caso. Tus cambios ya no se guardan.', [], 9000); } catch(e){ revPend += rv; } }, 15000);
+
+/* ------------------------------------------------ tiempo de revisión (para las estadísticas del panel de administración)
+   Cuenta los segundos con un caso abierto en que se está trabajando: hubo teclado, mouse o rueda en el último minuto,
+   o el audio está sonando. No cuenta con la ventana minimizada, escondida o en modo compacto. Se manda al servidor
+   con cada renovación del bloqueo (15 s), al cerrar el caso y al guardar. */
+let revPend = 0, revUltimaAccion = Date.now();
+['keydown', 'mousedown', 'mousemove', 'wheel', 'touchstart'].forEach(ev =>
+  document.addEventListener(ev, () => { revUltimaAccion = Date.now(); }, {passive: true, capture: true}));
+setInterval(() => {
+  if(!actual || document.hidden || document.body.classList.contains('compacto')) return;
+  if(!audio.paused || Date.now() - revUltimaAccion < 60000) revPend++;
+}, 1000);
+function tomarRev(){ const s = revPend; revPend = 0; return s; }
+addEventListener('pagehide', () => soltarCaso(actual));
+
+/* ------------------------------------------------ cargar audios
+   Un audio cargado nunca se pierde ni da error por falta de conexión:
+   - En la app del trabajo (1.6 o más nueva) el audio se le pasa a la app, que lo guarda cifrado en esta PC y lo
+     envía con la misma cola que los audios del sistema: funciona igual con o sin conexión, y se envía solo cuando
+     el servidor vuelve (aunque se cierre la ventana).
+   - En el navegador se envía directo. Si no hay conexión queda esperando en esta página (con un aviso arriba de
+     la lista) y se envía solo apenas el servidor vuelve. Si se intenta cerrar la página, se avisa antes. */
+const EXT_AUDIO = ['.wav','.mp3','.m4a','.ogg','.flac','.wma','.aac','.opus'];
+const MAX_AUDIO = 100 * 1024 * 1024;
+let APP = null;                                          // la app del trabajo lo completa al cargar la página
+window.ponerApp = function(d){ APP = d || null; };
+const enEspera = [];                                     // navegador sin conexión: {f, medico}
+let enviandoEspera = false;
+const ext = n => (n.match(/\.[^.]+$/) || [''])[0].toLowerCase();
+const tamTxt = b => b >= 1048576 ? (b/1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b/1024)) + ' KB';
+function validarAudio(f){
+  if(!EXT_AUDIO.includes(ext(f.name))) return `«${f.name}» no es un audio que se pueda procesar (se aceptan ${EXT_AUDIO.join(' ').replace(/\./g, '')}).`;
+  if(!f.size) return `«${f.name}» está vacío.`;
+  if(f.size > MAX_AUDIO) return `«${f.name}» es demasiado grande (${tamTxt(f.size)}; el máximo es 100 MB).`;
+  return '';
+}
+async function subir(files){
+  const lista = [...files], malos = [];
+  const buenos = lista.filter(f => { const m = validarAudio(f); if(m) malos.push(m); return !m; });
+  if(malos.length) toast(malos.join(' '), [], 8000);
+  if(!buenos.length) return;
+  if(EN_APP && APP && APP.cola){ for(const f of buenos) await pasarALaApp(f); return; }
+  let enviados = 0, guardados = 0;
+  for(const f of buenos){
+    if(SRV.ok === false){ enEspera.push({f, medico: $('#medSubir').value}); guardados++; continue; }
+    try { await enviarAudio(f, $('#medSubir').value); enviados++; }
+    catch(e){
+      if(e.sinConexion){ marcarSinConexion(); enEspera.push({f, medico: $('#medSubir').value}); guardados++; }
+      else toast(`No se pudo cargar «${f.name}»: ${e.message}`, [], 8000);
+    }
+  }
+  if(guardados) toast(guardados === 1 ? `Sin conexión con el servidor: «${buenos.find(f => enEspera.some(x => x.f === f)).name}» queda esperando y se envía solo cuando vuelva.`
+                                       : `Sin conexión con el servidor: ${guardados} audios quedan esperando y se envían solos cuando vuelva.`, [], 8000);
+  else if(enviados) toast(enviados === 1 ? `Audio cargado: «${buenos[0].name}» · procesando…` : `${enviados} audios cargados · procesando…`);
+  ponerEspera();
+  cargarLista();
+}
+function enviarAudio(f, medico){
+  return pedir('/api/subir?archivo='+encodeURIComponent(f.name)+'&medico='+encodeURIComponent(medico || ''), {method:'POST', body:f});
+}
+function marcarSinConexion(){ if(SRV.ok !== false){ SRV.ok = false; SRV.desde = Date.now(); } ponerEstadoSrv(); }
+function ponerEspera(){
+  const box = $('#esperaEnvio'), n = enEspera.length;
+  box.hidden = !n || EN_APP && !!APP;
+  if(!n) return;
+  box.innerHTML = `<b>${n === 1 ? '1 audio esperando para enviarse' : n + ' audios esperando para enviarse'}</b>`
+    + `${n === 1 ? 'Se envía solo' : 'Se envían solos'} cuando vuelva la conexión con el servidor. No cierres esta página mientras tanto.`;
+}
+async function enviarEnEspera(){                         // se llama cuando el servidor vuelve a responder
+  if(enviandoEspera || !enEspera.length) return;
+  enviandoEspera = true; let ok = 0;
+  try {
+    while(enEspera.length){
+      const x = enEspera[0];
+      try { await enviarAudio(x.f, x.medico); ok++; enEspera.shift(); }
+      catch(e){ if(e.sinConexion){ marcarSinConexion(); break; } toast(`No se pudo cargar «${x.f.name}»: ${e.message}`, [], 8000); enEspera.shift(); }
+    }
+  } finally { enviandoEspera = false; ponerEspera(); }
+  if(ok){ toast(ok === 1 ? 'Volvió la conexión: se envió el audio que estaba esperando.' : `Volvió la conexión: se enviaron los ${ok} audios que estaban esperando.`); cargarLista(); }
+}
+addEventListener('beforeunload', e => { if(enEspera.length){ e.preventDefault(); e.returnValue = ''; } });
+/* app del trabajo: el audio va en base64 por el canal de mensajes de WebView2; la app contesta con audioEnCola() */
+const esperandoApp = new Map();
+let idApp = 0;
+function leerBase64(f){
+  return new Promise((res, rej) => { const fr = new FileReader();
+    fr.onload = () => res(String(fr.result).replace(/^data:[^,]*,/, '')); fr.onerror = () => rej(fr.error || new Error('no se pudo leer el archivo')); fr.readAsDataURL(f); });
+}
+async function pasarALaApp(f){
+  const id = 'a' + (++idApp);
+  let datos;
+  try { datos = await leerBase64(f); } catch(e){ toast(`No se pudo leer «${f.name}»: ${e.message}`, [], 8000); return; }
+  const respuesta = new Promise(res => { esperandoApp.set(id, res); setTimeout(() => { if(esperandoApp.delete(id)) res(null); }, 20000); });
+  try { chrome.webview.postMessage({accion:'audio', id, nombre: f.name, datos}); }
+  catch(e){ esperandoApp.delete(id); toast(`No se pudo pasar «${f.name}» a la aplicación: ${e.message}`, [], 8000); return; }
+  datos = null;
+  const r = await respuesta;
+  if(!r) toast(`La aplicación no confirmó «${f.name}». Probá de nuevo con Opciones → Cargar audio.`, [], 9000);
+  else if(!r.ok) toast(`No se pudo cargar «${f.name}»: ${r.msg}`, [], 9000);
+  else toast(r.msg === 'guardado' ? `Sin conexión: «${f.name}» quedó guardado en esta PC y se envía solo cuando vuelva.`
+                                  : `Audio cargado: «${f.name}» · enviando al servidor…`, [], 6000);
+  setTimeout(cargarLista, 1500);
+}
+window.audioEnCola = function(id, ok, msg){ const res = esperandoApp.get(id); if(res){ esperandoApp.delete(id); res({ok, msg}); } };
+const drop = $('#drop');
+$('#archivos').onchange = e => { const fs = [...e.target.files]; e.target.value = ''; subir(fs); };
+['dragenter','dragover'].forEach(ev => document.addEventListener(ev, e => { if(e.dataTransfer?.types?.includes('Files')){ e.preventDefault(); drop.classList.add('sobre'); }}));
+['dragleave','drop'].forEach(ev => document.addEventListener(ev, e => { if(ev==='dragleave' && e.relatedTarget) return; drop.classList.remove('sobre'); }));
+document.addEventListener('drop', e => { if(e.dataTransfer?.files?.length){ e.preventDefault(); subir(e.dataTransfer.files); }});
+
+/* ------------------------------------------------ abrir caso */
+async function abrirCaso(n){
+  if(abriendo) return;
+  abriendo = n; marcarAbriendo(n); vacioHtml = ''; armarVacio([], []);
+  try { await abrirCaso2(n); } finally { abriendo = null; marcarAbriendo(null); vacioHtml = ''; if(!actual) cargarLista(); }
+}
+function marcarAbriendo(n){
+  document.querySelectorAll('#casos li').forEach(li => { const si = li.dataset.n === n; li.classList.toggle('abriendo', si);
+    if(si){ const bd = li.querySelector('.badge'); if(bd) bd.innerHTML = '<span class="spin"></span>abriendo'; } });
+}
+async function abrirCaso2(n){
+  let b; try { b = await api('/api/caso/bloquear', {nombre: n}); } catch(e){ toast(e.message); return; }
+  if(!b.ok){ toast('Este caso lo está revisando ' + b.por + '.'); return; }
+  if(actual && actual!==n){ guardarBorrador(true); soltarCaso(actual); }
+  let c; try{ c = await api('/api/caso?nombre='+encodeURIComponent(n)); }catch(e){ toast('No se pudo abrir el caso: ' + e.message); return; }
+  actual = n; palabras = c.palabras; activa = null;
+  $('#bBorrarCaso').hidden = !((casosCache.find(x => x.nombre===n) || {}).puede_borrar);
+  document.querySelectorAll('#casos li').forEach(li => li.classList.toggle('sel', li.dataset.n===n));
+  mostrar('caso'); llenarMedicos($('#medCaso'), c.medico, 'Médico: sin especificar');
+  armarNuevoEstudio(c.estudios_nuevos || []);
+  ponerTitulo(c.paciente, c.titulo || (casosCache.find(x => x.nombre===n) || {}).titulo || n, c.revisado, {estudios: c.estudios, dur: c.dur});
+  audio.src = '/audio/' + encodeURIComponent(n); audio.playbackRate = +$('#vel').value;
+  ocultarExplica(); reiniciarSync();
+  if(c.borrador){ editor.innerHTML = c.borrador; adaptarBorrador(); } else armarEditor(c.lineas);
+  armarDictado(c.palabras);
+  omis = c.omisiones || []; omisOk = c.omisiones_ok || []; armarAvisos();
+  actualizarPend(); editor.scrollTop = 0;
+  cargarOnda(n);
+}
+function armarEditor(lineas){
+  editor.innerHTML = '';
+  for(const l of lineas){
+    const d = document.createElement('div'); d.className='ln';
+    if(l.titulo) d.classList.add('tit');
+    if(l.seg!=null) d.dataset.seg = l.seg;
+    if(l.linea){ d.classList.add('l-'+l.linea); d.dataset.linea=l.linea; d.dataset.motivo=l.motivo||''; }
+    let vacia = true;
+    for(const s of l.segs){
+      if(!s.t) continue;
+      if(s.t.trim()) vacia = false;
+      if(s.tipo){
+        const m = document.createElement('mark'); m.className='m-'+s.tipo; m.textContent=s.t; m.dataset.motivo=s.motivo||'';
+        if(s.seg!=null) m.dataset.t = s.seg; d.appendChild(m);
+      } else d.appendChild(document.createTextNode(s.t));
+    }
+    if(vacia && !d.childNodes.length) d.appendChild(document.createElement('br'));
+    editor.appendChild(d);
+  }
+}
+function armarDictado(ps){
+  dict.innerHTML = ps.map((w,i)=>`<span data-i="${i}" class="${w.conf<0.5?'baja':''}${w.recuperada?' rec':''}" title="${w.ini.toFixed(1)}s · confianza ${w.conf.toFixed(2)}${w.recuperada?' · recuperada en la segunda pasada de Whisper':''}">${esc(w.p)}</span>`).join('');
+}
+function armarAvisos(){
+  const box = $('#avisos'), pend = omis.filter(o => !omisOk.includes(o.dato));
+  if(!pend.length){ box.style.display='none'; box.innerHTML=''; return; }
+  box.style.display='block';
+  box.innerHTML = '<b>Dictado pero no está en el informe:</b> revisá si falta agregarlo. ';
+  for(const o of pend){
+    const c = document.createElement('span'); c.className='chip';
+    c.innerHTML = `${esc(o.dato)} <button title="Escuchar">▶</button><button title="Está bien, no hace falta">✕</button>`;
+    c.title = o.hueco ? 'Hay voz en el audio que Whisper no transcribió. Escuchalo y agregá lo que falte.'
+                      : `Se dictó «${o.dato}»${o.seg!=null ? ' (cerca de ' + mmss(o.seg) + ')' : ''} y no aparece en el informe.`;
+    const [bE, bX] = c.querySelectorAll('button');
+    bE.onclick = () => escuchar(o.seg);
+    bX.onclick = () => { omisOk.push(o.dato); armarAvisos(); actualizarPend(); programarBorrador(); };
+    if(o.hueco) c.style.background = 'var(--amarillo)';
+    box.appendChild(c);
+  }
+}
+
+/* ------------------------------------------------ marcas */
+const marcasPend = () => [...editor.querySelectorAll('mark, .ln[data-linea]')];
+function actualizarPend(){
+  const n = marcasPend().length + omis.filter(o => !omisOk.includes(o.dato)).length, p = $('#pend');
+  p.textContent = n ? `${n} ${n===1?'marca pendiente':'marcas pendientes'}` : 'Sin marcas pendientes';
+  p.classList.toggle('cero', !n);
+  dibujarOnda();
+}
+function tiempoDe(el){
+  if(el.dataset.t) return +el.dataset.t;
+  const ln = el.closest('.ln'); return ln && ln.dataset.seg ? +ln.dataset.seg : null;
+}
+function escuchar(t){ if(t==null || !audio.src) return; audio.currentTime = Math.max(0, t-1); audio.play(); }
+function seleccionar(el, sonar=true){
+  if(activa) activa.classList.remove('activa');
+  activa = el; el.classList.add('activa');
+  el.scrollIntoView({block:'center', behavior:'smooth'});
+  const r = document.createRange(), s = getSelection();
+  if(el.tagName==='MARK') r.selectNodeContents(el); else { r.setStart(el, 0); r.collapse(true); }
+  editor.focus({preventScroll:true}); s.removeAllRanges(); s.addRange(r);
+  if(sonar) escuchar(tiempoDe(el));
+  setTimeout(() => { if(activa===el) mostrarExplica(el, true); }, 260);   // después del scroll suave
+}
+function siguiente(dir=1){
+  const ms = marcasPend(); if(!ms.length){ toast('No quedan marcas pendientes.'); return; }
+  let i = activa ? ms.indexOf(activa) : -1;
+  if(i<0 && activa){ i = ms.findIndex(m => activa.compareDocumentPosition(m) & Node.DOCUMENT_POSITION_FOLLOWING) - (dir>0?1:0); }
+  i = (i + dir + ms.length) % ms.length;
+  seleccionar(ms[i]);
+}
+function resolver(el){
+  if(!el) return;
+  if(el.tagName==='MARK'){ const p = el.parentNode; while(el.firstChild) p.insertBefore(el.firstChild, el); p.removeChild(el); }
+  else { el.classList.remove('l-plantilla','l-verificar','activa'); delete el.dataset.linea; delete el.dataset.motivo; el.removeAttribute('title'); }
+  if(el===activa) activa = null;
+  if(explicaDe===el) ocultarExplica();
+  actualizarPend(); programarBorrador();
+}
+function marcaEnCursor(){
+  const s = getSelection(); if(!s.rangeCount) return null;
+  const n = s.anchorNode, el = n && (n.nodeType===1 ? n : n.parentElement);
+  if(!el || !editor.contains(el)) return null;
+  return el.closest('mark') || el.closest('.ln[data-linea]');
+}
+function aceptar(){
+  const el = (activa && editor.contains(activa)) ? activa : marcaEnCursor();
+  if(!el){ toast('Poné el cursor sobre una marca (o usá F2).'); return; }
+  resolver(el); siguiente(1);
+}
+editor.addEventListener('click', e => {
+  const m = e.target.closest('mark');
+  if(e.altKey){ const ln = e.target.closest('.ln'); if(ln){ const r = rangoDe(ln); escuchar(r ? palabras[r[0]].ini : tiempoDe(ln)); } return; }
+  if(m){ if(activa) activa.classList.remove('activa'); activa = m; m.classList.add('activa'); escuchar(tiempoDe(m)); }
+});
+editor.addEventListener('input', () => {
+  if(explicaFija) ocultarExplica();
+  const el = marcaEnCursor(); if(el) resolver(el);
+  else { actualizarPend(); programarBorrador(); }
+});
+editor.addEventListener('paste', e => { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')); });
+
+/* ------------------------------------------------ audio */
+const bPlay = $('#bPlay');
+bPlay.onclick = () => audio.paused ? audio.play() : audio.pause();
+$('#bAtras').onclick = () => audio.currentTime = Math.max(0, audio.currentTime-3);
+$('#bAdel').onclick = () => audio.currentTime = Math.min(audio.duration||0, audio.currentTime+3);
+$('#vel').onchange = e => audio.playbackRate = +e.target.value;
+$('#prog').oninput = e => { if(audio.duration) audio.currentTime = e.target.value/1000*audio.duration; };
+audio.addEventListener('play', () => { bPlay.textContent='❚❚'; if(Date.now()-ultimaPausa < 60000 && ultimaPausa) audio.currentTime = Math.max(0, audio.currentTime-1); });
+audio.addEventListener('pause', () => { bPlay.textContent='▶'; ultimaPausa = Date.now(); });
+let palActual = -1;
+audio.addEventListener('timeupdate', () => {
+  const t = audio.currentTime;
+  $('#tiempo').textContent = mmss(t)+' / '+mmss(audio.duration);
+  if(audio.duration) $('#prog').value = t/audio.duration*1000;
+  let lo=0, hi=palabras.length-1, i=-1;
+  while(lo<=hi){ const m=(lo+hi)>>1; if(palabras[m].ini<=t){ i=m; lo=m+1; } else hi=m-1; }
+  if(i!==palActual){
+    dict.querySelector('.actual')?.classList.remove('actual'); palActual=i;
+    const sp = i>=0 ? dict.children[i] : null;
+    if(sp){ sp.classList.add('actual');
+      if($('#seguir').checked){ const r=sp.getBoundingClientRect(), c=dict.getBoundingClientRect(); if(r.top<c.top+20||r.bottom>c.bottom-20) sp.scrollIntoView({block:'center',behavior:'smooth'}); } }
+    if(!audio.paused) marcarLineaSonando(i);
+  }
+  if(audio.paused) dibujarOnda();
+});
+dict.addEventListener('click', e => { const sp = e.target.closest('span[data-i]'); if(sp){ audio.currentTime = palabras[+sp.dataset.i].ini; audio.play(); }});
+
+/* ------------------------------------------------ teclado */
+document.addEventListener('keydown', e => {
+  if(vpAbierta()){
+    if(e.key==='Escape' && $('#vpPaleta').classList.contains('abierta')){ e.preventDefault(); cerrarPaleta(); return; }
+    if(e.key==='Escape' || e.key==='F9'){ e.preventDefault(); cerrarVistaPrevia(); return; }
+    tecladoFormato(e);
+    return;
+  }
+  if($('#caso').hidden) return;
+  if(e.key==='F9'){ e.preventDefault(); abrirVistaPrevia(); return; }
+  if(e.key==='Escape' && explicaDe){ ocultarExplica(); return; }
+  if(e.key==='F4' || (e.ctrlKey && e.code==='Space')){ e.preventDefault(); bPlay.click(); }
+  else if(e.key==='F3'){ e.preventDefault(); $('#bAtras').click(); }
+  else if(e.key==='F2'){ e.preventDefault(); siguiente(e.shiftKey?-1:1); }
+  else if(e.key==='F8'){ e.preventDefault(); aceptar(); }
+  else if(e.ctrlKey && e.key.toLowerCase()==='s'){ e.preventDefault(); guardarBorrador(); toast('Borrador guardado.'); }
+});
+$('#bSig').onclick = () => siguiente(1);
+$('#bAcep').onclick = aceptar;
+
+/* ------------------------------------------------ texto final / borrador */
+function textoFinal(){
+  const lineas = [];
+  editor.childNodes.forEach(n => {
+    if(n.nodeType===3){ lineas.push(...n.textContent.split('\n')); }
+    else if(n.nodeType===1){ (n.innerText ?? n.textContent).replace(/\n$/,'').split('\n').forEach(x => lineas.push(x)); }
+  });
+  return lineas.map(l => l.replace(/ /g,' ').replace(/\s+$/,'')).join('\n').replace(/^\n+|\n+$/g,'');
+}
+function programarBorrador(){ clearTimeout(tBorrador); tBorrador = setTimeout(guardarBorrador, 1500); }
+function guardarBorrador(){
+  if(!actual) return; clearTimeout(tBorrador);
+  return api('/api/borrador', {nombre: actual, html: htmlLimpio(), omisiones_ok: omisOk}).catch(()=>{});
+}
+/* Cerrar el estudio: guarda el borrador, lo libera para las otras PC y vuelve a la lista */
+async function cerrarCaso(){
+  if(!actual) return;
+  const n = actual, tit = $('#titulo').dataset.t || n;
+  audio.pause();
+  await guardarBorrador();
+  actual = null; activa = null; ocultarExplica(); onda = null;
+  { const rv = tomarRev(); try { await api('/api/caso/soltar', {nombre: n, rev: rv}); } catch(e){ revPend += rv; soltarCaso(n); } }
+  audio.removeAttribute('src'); audio.load();
+  mostrar('vacio');
+  document.querySelectorAll('#casos li').forEach(li => li.classList.remove('sel'));
+  toast('Cerraste ' + tit + '. Tus cambios quedaron guardados y el estudio está libre.');
+  cargarLista();
+}
+$('#bCerrar').onclick = cerrarCaso;
+
+/* ------------------------------------------------ borrar informes (audio, informe y Word; lo aprendido queda) */
+/* Ventanas propias (en lugar de las del navegador, que en la app se ven como "La página dice…").
+   confirmar(titulo, html, boton, clase) → true/false · clase 'peligro' (rojo, por defecto) o 'prim' (azul).
+   pedirTexto({titulo, html, etiqueta, valor, placeholder, boton, vacio, validar}) → el texto, o null si se cancela.
+   validar(texto) devuelve '' si está bien o el mensaje a mostrar debajo del campo. */
+function modal(o){
+  return new Promise(res => {
+    const d = $('#confirma'), si = $('#cfSi'), no = $('#cfNo'), inp = $('#cfInput'), aviso = $('#cfAviso'), previo = document.activeElement;
+    const conCampo = !!o.campo;
+    $('#cfTit').textContent = o.titulo; $('#cfTxt').innerHTML = o.html || '';
+    si.textContent = o.boton || 'Aceptar'; si.className = o.clase || 'peligro';
+    d.setAttribute('role', conCampo ? 'dialog' : 'alertdialog');
+    $('#cfCampo').hidden = !conCampo; aviso.hidden = !conCampo; aviso.textContent = o.nota || ''; aviso.className = '';
+    if(conCampo){ $('#cfEtiq').textContent = o.etiqueta || ''; inp.value = o.valor || ''; inp.placeholder = o.placeholder || ''; inp.removeAttribute('aria-invalid'); }
+    const revisar = () => {
+      const t = inp.value.trim(), m = !t && !o.vacio ? (o.faltaTxt || 'Escribí un nombre.') : o.validar ? o.validar(t) : '';
+      return m;
+    };
+    const fin = v => { d.classList.remove('abierto'); document.removeEventListener('keydown', tecla, true); inp.oninput = null;
+      try { previo && previo.focus && previo.focus({preventScroll:true}); } catch(e){} res(v); };
+    const aceptar = () => {
+      if(!conCampo) return fin(true);
+      const m = revisar();
+      if(m){ aviso.textContent = m; aviso.className = 'mal'; inp.setAttribute('aria-invalid', 'true'); inp.focus(); return; }
+      fin(inp.value.trim());
+    };
+    const tecla = e => {
+      e.stopPropagation();                         // que no actúen los atajos del informe (F2, F4...)
+      if(e.key==='Escape'){ e.preventDefault(); fin(conCampo ? null : false); }
+      else if(e.key==='Enter' && document.activeElement===inp){ e.preventDefault(); aceptar(); }
+      else if(e.key==='Tab'){
+        e.preventDefault();
+        const orden = conCampo ? [inp, no, si] : [no, si], i = orden.indexOf(document.activeElement);
+        orden[(i + (e.shiftKey ? orden.length - 1 : 1)) % orden.length].focus();
+      }
+    };
+    if(conCampo) inp.oninput = () => {
+      if(inp.getAttribute('aria-invalid')){ inp.removeAttribute('aria-invalid'); aviso.className = ''; }
+      aviso.textContent = o.alEscribir ? o.alEscribir(inp.value.trim()) : (o.nota || '');
+    };
+    no.onclick = () => fin(conCampo ? null : false); si.onclick = aceptar;
+    d.onmousedown = e => { if(e.target===d) fin(conCampo ? null : false); };
+    document.addEventListener('keydown', tecla, true);
+    d.classList.add('abierto');
+    if(conCampo){ inp.focus(); inp.select(); }
+    else (o.clase === 'prim' ? si : no).focus();   // al borrar, por seguridad, el foco queda en Cancelar
+  });
+}
+function confirmar(titulo, html, boton, clase){ return modal({titulo, html, boton: boton || 'Borrar', clase: clase || 'peligro'}); }
+function pedirTexto(o){ return modal({...o, campo: true, clase: 'prim'}); }
+async function dejarCasoAbierto(){                 // cierra el caso abierto sin aviso (para poder borrarlo)
+  const n = actual; if(!n) return;
+  audio.pause(); await guardarBorrador();
+  actual = null; activa = null; ocultarExplica(); onda = null;
+  audio.removeAttribute('src'); audio.load();      // suelta el audio para que se pueda borrar
+  mostrar('vacio'); document.querySelectorAll('#casos li').forEach(li => li.classList.remove('sel'));
+  { const rv = tomarRev(); try { await api('/api/caso/soltar', {nombre: n, rev: rv}); } catch(e){ revPend += rv; soltarCaso(n); } }
+}
+async function borrarCasos(cs){
+  cs = cs.filter(Boolean); if(!cs.length) return;
+  const uno = cs.length === 1, c = cs[0], nom = x => esc(x.paciente || x.titulo || x.nombre);
+  const pend = cs.filter(x => x.estado !== 'revisado');
+  let html = uno
+    ? `<p>Se borran el audio, el informe y el Word de <b>${nom(c)}</b>${c.estudios ? ' (' + esc(c.estudios) + ')' : ''}.</p>`
+    : `<p>Se borran el audio, el informe y el Word de estos <b>${cs.length} informes</b> ya revisados:</p><ul>${cs.map(x => '<li>' + nom(x) + (x.estudios ? ' · ' + esc(x.estudios) : '') + '</li>').join('')}</ul>`;
+  if(pend.length) html += uno
+    ? `<p class="cf-pend"><b>${c.estado==='listo' ? 'Este informe todavía no se guardó.' : c.estado==='error' ? 'Este audio no se pudo procesar.' : 'Este audio todavía no tiene informe.'}</b> Si lo borrás, se pierde${c.estado==='listo' ? ' lo que corregiste' : ''} y no se va a poder recuperar.</p>`
+    : `<p class="cf-pend"><b>${pend.length === 1 ? '1 todavía no se guardó' : pend.length + ' todavía no se guardaron'}.</b> Si los borrás, se pierden.</p>`;
+  html += '<p>Lo que la IA aprendió de tus correcciones se conserva. <b>No se puede deshacer.</b></p>';
+  if(!await confirmar(uno ? 'Borrar «' + (c.paciente || c.titulo || c.nombre) + '»' : `Borrar ${cs.length} informes revisados`,
+                      html, uno ? 'Borrar' : `Borrar ${cs.length}`)) return;
+  if(cs.some(x => x.nombre === actual)) await dejarCasoAbierto();
+  let r;
+  try { r = await api('/api/borrar', {nombres: cs.map(x => x.nombre)}); }
+  catch(e){ toast(e.message, [], 8000); cargarLista(); return; }
+  const ok = r.borrados.length, mal = r.fallidos || [];
+  const hecho = ok === 1 ? (uno ? 'Informe borrado.' : 'Se borró 1 informe.') : `Se borraron ${ok} informes.`;
+  if(mal.length) toast((ok ? hecho + ' ' : '') + (mal.length === 1 ? mal[0].error : `${mal.length} no se pudieron borrar: ${mal[0].error}`), [], 9000);
+  else toast(hecho);
+  cargarLista();
+}
+$('#bBorrarCaso').onclick = () => { const c = casosCache.find(x => x.nombre === actual); if(c) borrarCasos([c]); };
+
+/* ------------------------------------------------ nombre del paciente (solo para mostrar, no va al informe) */
+function lineaEstudio(c){      // "Mamografía + Eco mamaria · 1:40" debajo del nombre
+  if(!c.estudios && !c.dur) return '';
+  return `<span class="est" title="${esc([c.estudios ? 'Estudios: ' + c.estudios : '', c.dur ? 'audio de ' + mmss(c.dur) : ''].filter(Boolean).join(' · '))}">`
+    + (c.estudios ? esc(c.estudios) : '') + (c.estudios && c.dur ? ' · ' : '') + (c.dur ? `<span class="dur">${mmss(c.dur)}</span>` : '') + '</span>';
+}
+function ponerTitulo(pac, audio, revisado, info){
+  const h = $('#titulo'), t = pac || audio;
+  if(info) h.dataset.info = JSON.stringify(info); else info = JSON.parse(h.dataset.info || '{}');
+  h.textContent = t + (revisado ? ' ✓' : ''); h.dataset.t = t; h.dataset.pac = pac || ''; h.dataset.audio = audio;
+  h.title = pac ? 'Paciente (sacado del dictado)' : 'No se encontró el nombre del paciente en el dictado';
+  const extra = [info.estudios, info.dur ? mmss(info.dur) : '', pac ? 'audio ' + audio : ''].filter(Boolean);
+  $('#tituloAudio').textContent = extra.length ? '· ' + extra.join(' · ') : '';
+  $('#tituloAudio').title = info.estudios ? 'Estudios detectados en el informe' : '';
+}
+$('#bPaciente').onclick = async () => {
+  if(!actual) return;
+  const h = $('#titulo'), n = actual;
+  const v = await pedirTexto({titulo: 'Nombre del paciente', html: '<p>Solo se muestra en la lista; no va al informe.</p>',
+    etiqueta: 'Nombre', valor: h.dataset.pac || '', placeholder: 'Ej.: Pérez, María', boton: 'Guardar', vacio: true,
+    nota: 'Dejalo vacío para volver a sacarlo del dictado.'});
+  if(v === null) return;
+  try {
+    const r = await api('/api/paciente', {nombre: n, paciente: v});
+    if(actual === n) ponerTitulo(r.paciente, h.dataset.audio, h.textContent.endsWith('✓'));
+    toast(r.paciente ? 'Paciente: ' + r.paciente : 'No se encontró el nombre en el dictado.'); cargarLista();
+  } catch(e){ toast(e.message); }
+};
+window.addEventListener('beforeunload', () => { if(actual) navigator.sendBeacon('/api/borrador', new Blob([JSON.stringify({nombre:actual, html:htmlLimpio()})], {type:'application/json'})); });
+
+let FORMATO = {palabras_titulo: [], negrita_titulos: true, prefijos: [], exactas: []};
+api('/api/formato').then(f => FORMATO = f).catch(()=>{});
+const sinAcentos = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+function enNegrita(l){
+  const x = l.trim(); if(!x) return false;
+  if(FORMATO.prefijos.some(p => x.startsWith(p))) return true;
+  if((FORMATO.exactas || []).includes(x.replace(/:$/, ''))) return true;
+  if(!FORMATO.negrita_titulos || x.startsWith('-') || /[.:]$/.test(x) || x.length>110) return false;
+  const w = (sinAcentos(x.toLowerCase()).match(/[a-z]+/) || [''])[0];
+  return FORMATO.palabras_titulo.includes(w);
+}
+/* Copia con formato. Las negritas y los renglones vacíos salen del servidor (el mismo código que arma el Word);
+   si no responde, se arma acá con la regla aproximada. */
+async function copiarParaWord(){
+  const t = textoFinal();
+  let pars = null;
+  await guardarFormato();
+  try { pars = (await api('/api/vista_previa', {texto: t, nombre: actual})).parrafos; } catch(e){}
+  if(!pars) pars = t.split('\n').map(l => l.trim() ? {t: l, b: enNegrita(l)} : null);
+  const fuente = (VP && VP.fuente) || 'Tahoma', tam = (VP && VP.tamano) || 12;
+  const est = `margin:0;font-family:${fuente};font-size:${tam}pt`;
+  const run = r => { let h = esc(r.t); if(r.u) h = '<u>'+h+'</u>'; if(r.i) h = '<i>'+h+'</i>'; if(r.b) h = '<b>'+h+'</b>';
+    return r.c ? `<span style="color:${r.c}">${h}</span>` : h; };
+  const html = `<div style="font-family:${fuente};font-size:${tam}pt">` + pars.map(p => !p ? `<p style="${est}">&nbsp;</p>`
+    : `<p style="${est};text-align:${p.a || 'left'}">${(p.r && p.r.length ? p.r : [{t: p.t, b: p.b}]).map(run).join('')}</p>`).join('') + '</div>';
+  const plano = pars.map(p => p ? p.t : '').join('\n');
+  try{
+    await navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([html],{type:'text/html'}), 'text/plain': new Blob([plano],{type:'text/plain'})})]);
+  }catch(e){
+    try { await navigator.clipboard.writeText(plano); } catch(e2){ toast('No se pudo copiar: ' + e2.message); return; }
+  }
+  const n = marcasPend().length;
+  toast(n ? `Copiado (ojo: quedan ${n} marcas sin revisar).` : 'Copiado. Pegalo en tu Word con Ctrl+V.');
+}
+$('#bCopiar').onclick = copiarParaWord;
+
+/* ------------------------------------------------ vista previa como Word */
+let VP = null;                         // último resultado de /api/vista_previa
+const vpAbierta = () => $('#vp').classList.contains('abierta');
+const cmPx = cm => cm * 96 / 2.54;
+async function abrirVistaPrevia(){
+  if(!actual) return;
+  await guardarFormato();
+  try { VP = await api('/api/vista_previa', {texto: textoFinal(), nombre: actual}); }
+  catch(e){ toast('No se pudo armar la vista previa: ' + e.message); return; }
+  audio.pause(); ocultarExplica();
+  VP.caso = actual; FMT.deshacer = []; FMT.rehacer = []; FMT.pendiente = false;
+  $('#vp').classList.add('abierta');
+  $('#vpZoom').value = leerLS('zoomVp') || 'ajustar';
+  avisoVistaPrevia();
+  paginar(VP);
+  estadoBotonesFmt(); mostrarEstadoFmt();
+  const ed = $('#vpHojas .vp-ed'); if(ed) ed.focus({preventScroll:true});
+}
+function cerrarVistaPrevia(){ cerrarPaleta(); guardarFormato(); $('#vp').classList.remove('abierta'); editor.focus({preventScroll:true}); }
+function avisoVistaPrevia(){
+  const box = $('#vpAviso'), n = marcasPend().length + omis.filter(o => !omisOk.includes(o.dato)).length;
+  const completar = textoFinal().includes('[COMPLETAR');
+  if(!n && !completar){ box.style.display = 'none'; return; }
+  box.innerHTML = '<b>' + (completar ? 'Falta completar un dato' + (n ? ` y quedan ${n} ${n===1?'marca':'marcas'} sin revisar` : '')
+                                      : `Quedan ${n} ${n===1?'marca':'marcas'} sin revisar`) + '.</b> La vista previa muestra el texto como está ahora.';
+  const b = document.createElement('button'); b.className = 'chico'; b.textContent = completar ? 'Ir al dato' : 'Ir a la siguiente marca';
+  b.onclick = () => { cerrarVistaPrevia(); const m = completar && editor.querySelector('.m-completar'); m ? seleccionar(m) : siguiente(1); };
+  box.appendChild(b); box.style.display = 'flex';
+}
+function paginar(d){
+  const pg = d.pagina, cont = $('#vpHojas');
+  cont.innerHTML = '';
+  const esc1 = document.createElement('div'); esc1.className = 'vp-escala'; cont.appendChild(esc1);
+  const alto = pg.alto_cm - pg.margen_superior_cm - pg.margen_inferior_cm;
+  let cuerpo = null, ed = null, hojas = [];
+  const nueva = () => {
+    const h = document.createElement('div'); h.className = 'vp-pag';
+    Object.assign(h.style, {width: pg.ancho_cm+'cm', height: pg.alto_cm+'cm',
+      padding: `${pg.margen_superior_cm}cm ${pg.margen_derecho_cm}cm ${pg.margen_inferior_cm}cm ${pg.margen_izquierdo_cm}cm`,
+      fontFamily: `${d.fuente}, Verdana, sans-serif`, fontSize: d.tamano + 'pt'});
+    cuerpo = document.createElement('div'); cuerpo.className = 'vp-cuerpo'; cuerpo.style.height = alto + 'cm';
+    ed = document.createElement('div'); ed.className = 'vp-ed'; ed.contentEditable = 'true'; ed.spellcheck = false;
+    h.appendChild(cuerpo); esc1.appendChild(h);
+    const num = document.createElement('div'); num.className = 'vp-num'; esc1.appendChild(num);
+    hojas.push(num);
+  };
+  const parrafo = parrafoVp;
+  nueva();
+  if(d.encabezado > 0){        // los renglones vacíos de arriba, donde va el encabezado
+    const enc = document.createElement('div'); enc.className = 'vp-enc';
+    for(let i=0; i<d.encabezado; i++) enc.appendChild(parrafo(null));
+    cuerpo.appendChild(enc);
+  }
+  cuerpo.appendChild(ed);
+  for(const p of d.parrafos){
+    const el = parrafo(p); ed.appendChild(el);
+    if(cuerpo.scrollHeight > cuerpo.clientHeight + 1 && ed.children.length > 1){ ed.removeChild(el); nueva(); cuerpo.appendChild(ed); ed.appendChild(el); }
+  }
+  hojas.forEach((x, i) => x.textContent = hojas.length > 1 ? `Página ${i+1} de ${hojas.length}` : '');
+  const cm = x => String(Math.round(x * 10) / 10).replace('.', ',');
+  $('#vpInfo').textContent = hojas.length === 1 ? '1 página' : `${hojas.length} páginas`;
+  zoomVistaPrevia();
+  for(const e of document.querySelectorAll('#vpHojas .vp-ed')){
+    e.addEventListener('beforeinput', bloquearTexto);
+    e.addEventListener('drop', ev => ev.preventDefault());
+  }
+}
+function zoomVistaPrevia(){
+  const esc1 = $('#vpHojas .vp-escala'); if(!esc1 || !VP) return;
+  const v = $('#vpZoom').value;
+  const z = v === 'ajustar' ? Math.min(1.25, Math.max(0.3, ($('#vpHojas').clientWidth - 32) / cmPx(VP.pagina.ancho_cm))) : +v;
+  esc1.style.zoom = z;
+}
+
+/* ------------------------------------------------ editor de formato de la vista previa
+   El texto no se cambia acá (se corrige en el informe, donde están las marcas y el aprendizaje):
+   solo negrita, cursiva, subrayado, color y alineación. Se guarda por caso (<caso>.formato.json) y lo usan
+   el Word, "Copiar para Word" y la próxima vista previa. Un párrafo cuyo texto cambió vuelve al formato normal. */
+const FMT = {deshacer: [], rehacer: [], pendiente: false, guardando: null, tAviso: 0, color: ''};
+function parrafoVp(p){
+  const el = document.createElement('p');
+  if(!p){ el.appendChild(document.createElement('br')); return el; }
+  if(p.a) el.style.textAlign = p.a;
+  for(const r of (p.r && p.r.length ? p.r : [{t: p.t, b: p.b}])){
+    let n = document.createTextNode(r.t);
+    const env = tag => { const e = document.createElement(tag); e.appendChild(n); n = e; };
+    if(r.u) env('u'); if(r.i) env('i'); if(r.b) env('b');
+    if(r.c){ const sp = document.createElement('span'); sp.style.color = r.c; sp.appendChild(n); n = sp; }
+    el.appendChild(n);
+  }
+  if(!el.textContent) el.appendChild(document.createElement('br'));
+  return el;
+}
+const parrafosVp = () => [...document.querySelectorAll('#vpHojas .vp-ed > p')];
+function colorHex(c){
+  const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c || ''); if(!m) return '';
+  return '#' + [m[1], m[2], m[3]].map(x => (+x).toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+function formatoDe(nodo, p){
+  const cs = getComputedStyle(nodo);
+  let u = false;
+  for(let a = nodo; a && a !== p.parentElement; a = a.parentElement) if(getComputedStyle(a).textDecorationLine.includes('underline')){ u = true; break; }
+  const c = colorHex(cs.color);
+  return {b: (parseInt(cs.fontWeight) || 400) >= 600, i: cs.fontStyle === 'italic', u, c: c === '#000000' ? '' : c};
+}
+/* lo que se ve en las hojas -> lista de párrafos con su formato */
+function leerModelo(){
+  const els = parrafosVp(), base = VP.parrafos;
+  if(els.length !== base.length) return base;
+  return base.map((p, k) => {
+    if(!p) return null;
+    const el = els[k], runs = [], w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    for(let n; (n = w.nextNode());){
+      if(!n.data) continue;
+      const f = formatoDe(n.parentElement, el), u = runs[runs.length - 1];
+      if(u && u.b === f.b && u.i === f.i && u.u === f.u && u.c === f.c) u.t += n.data; else runs.push({t: n.data, ...f});
+    }
+    if(runs.map(r => r.t).join('') !== p.t) return p;         // el texto no cambia acá; si algo raro pasó, queda como estaba
+    const al = el.style.textAlign, q = {...p, a: al === 'left' || al === 'start' ? '' : al,
+      r: runs.map(r => { const x = {t: r.t}; if(r.b) x.b = 1; if(r.i) x.i = 1; if(r.u) x.u = 1; if(r.c) x.c = r.c; return x; })};
+    return esNormal(q) ? {...p, a: p.a0 || '', r: null} : q;
+  });
+}
+var esNormal = p => !p || ((p.a || '') === (p.a0 || '') && (!p.r || (p.r.length === 1 && !!p.r[0].b === !!p.b && !p.r[0].i && !p.r[0].u && !p.r[0].c)));
+/* posición del cursor/selección como (párrafo, letra): sobrevive a volver a armar las hojas */
+function posicion(nodo, off){
+  let el = (nodo.nodeType === 1 ? nodo : nodo.parentElement).closest('.vp-ed > p');
+  if(!el && nodo.nodeType === 1 && nodo.classList.contains('vp-ed')){      // p. ej. triple clic: termina "entre" párrafos
+    const hijos = nodo.children; if(!hijos.length) return null;
+    if(off < hijos.length){ el = hijos[off]; nodo = el; off = 0; }
+    else { el = hijos[hijos.length - 1]; return {k: parrafosVp().indexOf(el), o: el.textContent.length}; }
+  }
+  if(!el) return null;
+  const r = document.createRange(); r.setStart(el, 0);
+  try { r.setEnd(nodo, off); } catch(e){ return null; }
+  return {k: parrafosVp().indexOf(el), o: r.toString().length};
+}
+function selVp(){
+  const s = getSelection(); if(!s.rangeCount) return null;
+  const r = s.getRangeAt(0);
+  if(!r.commonAncestorContainer || !(r.commonAncestorContainer.nodeType === 1 ? r.commonAncestorContainer : r.commonAncestorContainer.parentElement).closest('#vpHojas')) return null;
+  const a = posicion(r.startContainer, r.startOffset), b = posicion(r.endContainer, r.endOffset);
+  return a && b ? {a, b} : null;
+}
+function puntoEn(pos){
+  const el = parrafosVp()[pos.k]; if(!el) return null;
+  let resta = pos.o; const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  for(let n; (n = w.nextNode());){ if(resta <= n.data.length) return [n, resta]; resta -= n.data.length; }
+  return [el, el.childNodes.length];
+}
+function restaurarSel(sel){
+  if(!sel) return; const a = puntoEn(sel.a), b = puntoEn(sel.b); if(!a || !b) return;
+  const ed = a[0].parentElement.closest('.vp-ed'); if(ed) ed.focus({preventScroll:true});
+  getSelection().setBaseAndExtent(a[0], a[1], b[0], b[1]);
+}
+/* aplicar un cambio: guardar para deshacer, cambiar, leer, volver a armar las hojas (el formato puede mover el corte de página) */
+function cambiarFormato(fn){
+  if(!VP) return;
+  const sel = selVp(), antes = JSON.stringify(VP.parrafos);
+  if(fn(sel) === false) return;
+  const nuevo = leerModelo();
+  if(JSON.stringify(nuevo) === antes){ restaurarSel(sel); estadoBotonesFmt(); return; }
+  FMT.deshacer.push(antes); if(FMT.deshacer.length > 100) FMT.deshacer.shift(); FMT.rehacer = [];
+  ponerModelo(nuevo, sel);
+}
+function ponerModelo(modelo, sel){
+  const sc = $('#vpHojas').scrollTop;
+  VP.parrafos = modelo; paginar(VP); $('#vpHojas').scrollTop = sc;
+  restaurarSel(sel); estadoBotonesFmt();
+  FMT.pendiente = true; mostrarEstadoFmt('Guardando…');
+  clearTimeout(FMT.t); FMT.t = setTimeout(guardarFormato, 700);
+}
+function deshacerFmt(atras){
+  const de = atras ? FMT.deshacer : FMT.rehacer, a = atras ? FMT.rehacer : FMT.deshacer;
+  if(!de.length) return;
+  const sel = selVp(); a.push(JSON.stringify(VP.parrafos)); ponerModelo(JSON.parse(de.pop()), sel);
+}
+async function guardarFormato(){
+  clearTimeout(FMT.t);
+  if(FMT.guardando) await FMT.guardando;
+  if(!FMT.pendiente || !VP || !VP.caso) return;
+  FMT.pendiente = false;
+  const pars = VP.parrafos, normal = pars.every(esNormal);
+  const formato = normal ? null : {v: 1, parrafos: pars.filter(Boolean).map(p => ({t: p.t, a: p.a || '', r: p.r || [{t: p.t, ...(p.b ? {b: 1} : {})}]}))};
+  FMT.guardando = api('/api/formato_caso', {nombre: VP.caso, formato})
+    .then(() => mostrarEstadoFmt(normal ? 'Formato normal' : 'Formato guardado · va al Word y a "Copiar para Word"'))
+    .catch(e => { FMT.pendiente = true; mostrarEstadoFmt('No se pudo guardar el formato: ' + e.message); })
+    .finally(() => { FMT.guardando = null; });
+  await FMT.guardando;
+}
+function mostrarEstadoFmt(txt){
+  const el = $('#vpFmtEstado');
+  if(txt){ el.textContent = txt; return; }
+  el.textContent = VP && !VP.parrafos.every(esNormal) ? 'Este informe tiene formato elegido a mano · va al Word y a "Copiar para Word"'
+                                                    : 'Seleccioná texto y elegí el formato · el texto se corrige en el informe';
+}
+function bloquearTexto(e){
+  if(/^format|^history/.test(e.inputType)){ e.preventDefault(); return; }   // Ctrl+B/I/U y deshacer los maneja la barra
+  e.preventDefault();
+  if(Date.now() - FMT.tAviso > 4000){ FMT.tAviso = Date.now();
+    toast('El texto se corrige en el informe (Esc para volver). En la vista previa se cambia solo el formato.'); }
+}
+function hayTexto(sel){
+  if(sel && (sel.a.k !== sel.b.k || sel.a.o !== sel.b.o)) return true;
+  toast('Primero seleccioná el texto que querés cambiar.'); return false;
+}
+function estilo(cmd, valor){
+  return sel => {
+    if(!hayTexto(sel)) return false;
+    restaurarSel(sel);
+    document.execCommand('styleWithCSS', false, cmd === 'foreColor');
+    document.execCommand(cmd, false, valor);
+  };
+}
+const hastaPar = sel => sel.b.k > sel.a.k && sel.b.o === 0 ? sel.b.k - 1 : sel.b.k;   // la selección que termina al inicio del párrafo siguiente no lo incluye
+function alinearParrafos(al){
+  return sel => {
+    const els = parrafosVp(); if(!sel){ toast('Poné el cursor en el párrafo (o seleccioná varios).'); return false; }
+    for(let k = sel.a.k; k <= hastaPar(sel); k++) if(VP.parrafos[k] && els[k]) els[k].style.textAlign = al;
+  };
+}
+const sinSeleccion = sel => !sel || (sel.a.k === sel.b.k && sel.a.o === sel.b.o);
+function quitarFormato(sel){
+  const todo = sinSeleccion(sel);
+  const els = parrafosVp(), desde = todo ? 0 : sel.a.k, hasta = todo ? els.length - 1 : hastaPar(sel);
+  for(let k = desde; k <= hasta; k++){ const p = VP.parrafos[k]; if(p) els[k].replaceWith(parrafoVp({t: p.t, b: p.b, a: p.a0})); }
+}
+function estadoBotonesFmt(){
+  const sel = selVp();
+  for(const b of document.querySelectorAll('#vpFmt [data-cmd]')){
+    let on = false; try { on = !!sel && document.queryCommandState(b.dataset.cmd); } catch(e){}
+    b.classList.toggle('on', on);
+  }
+  const el = sel && parrafosVp()[sel.a.k], al = el ? (el.style.textAlign || 'left') : '';
+  for(const b of document.querySelectorAll('#vpFmt [data-al]')) b.classList.toggle('on', !!el && b.dataset.al === al);
+  $('#vpDeshacer').disabled = !FMT.deshacer.length; $('#vpRehacer').disabled = !FMT.rehacer.length;
+  if(!FMT.color) FMT.color = leerLS('vpColor') || '#C00000';
+  $('#vpColorMuestra').style.background = FMT.color;
+}
+function tecladoFormato(e){
+  if(!(e.ctrlKey || e.metaKey) || e.altKey) return;
+  const k = e.key.toLowerCase(), acc = {b: 'bold', n: 'bold', i: 'italic', k: 'italic', u: 'underline', s: 'underline'}[k],
+        al = {l: 'left', e: 'center', r: 'right', j: 'justify'}[k];
+  if(acc){ e.preventDefault(); cambiarFormato(estilo(acc)); }
+  else if(al && !e.shiftKey){ e.preventDefault(); cambiarFormato(alinearParrafos(al)); }
+  else if(k === 'z' && !e.shiftKey){ e.preventDefault(); deshacerFmt(true); }
+  else if(k === 'y' || (k === 'z' && e.shiftKey)){ e.preventDefault(); deshacerFmt(false); }
+}
+/* la barra no le saca el foco (ni la selección) a la hoja */
+$('#vpFmt').addEventListener('mousedown', e => { if(e.target.closest('button') && !e.target.closest('#vpPaleta label')) e.preventDefault(); });
+document.querySelectorAll('#vpFmt [data-cmd]').forEach(b => b.onclick = () => cambiarFormato(estilo(b.dataset.cmd)));
+document.querySelectorAll('#vpFmt [data-al]').forEach(b => b.onclick = () => cambiarFormato(alinearParrafos(b.dataset.al)));
+$('#vpDeshacer').onclick = () => deshacerFmt(true);
+$('#vpRehacer').onclick = () => deshacerFmt(false);
+$('#vpLimpiar').onclick = async () => {
+  if(sinSeleccion(selVp()) && !await confirmar('¿Quitar el formato de todo el informe?',
+      '<p>Vuelve al formato normal: títulos centrados y en negrita, el resto sin formato.</p>', 'Quitar formato', 'prim')) return;
+  cambiarFormato(quitarFormato);
+};
+let selPaleta = null;
+function cerrarPaleta(){ $('#vpPaleta').classList.remove('abierta'); }
+$('#vpColorBtn').onclick = () => {
+  const p = $('#vpPaleta');
+  if(p.classList.contains('abierta')){ cerrarPaleta(); return; }
+  selPaleta = selVp(); p.classList.add('abierta');
+};
+function ponerColor(c){
+  cerrarPaleta();
+  if(c !== '#000000'){ FMT.color = c; grabarLS('vpColor', c); }
+  restaurarSel(selPaleta);
+  cambiarFormato(estilo('foreColor', c));
+}
+$('#vpPaleta').addEventListener('click', e => { const b = e.target.closest('button[data-c]'); if(b) ponerColor(b.dataset.c === 'auto' ? '#000000' : b.dataset.c); });
+$('#vpColorLibre').addEventListener('change', e => ponerColor(e.target.value.toUpperCase()));
+document.addEventListener('mousedown', e => { if(vpAbierta() && !e.target.closest('.vp-color')) cerrarPaleta(); });
+document.addEventListener('selectionchange', () => { if(vpAbierta()) estadoBotonesFmt(); });
+$('#bVista').onclick = abrirVistaPrevia;
+$('#vpCerrar').onclick = cerrarVistaPrevia;
+$('#vpCopiar').onclick = copiarParaWord;
+$('#vpZoom').onchange = e => { grabarLS('zoomVp', e.target.value); zoomVistaPrevia(); };
+addEventListener('resize', () => { if(vpAbierta() && $('#vpZoom').value === 'ajustar') zoomVistaPrevia(); });
+$('#bFin').onclick = async () => {
+  const n = marcasPend().length + omis.filter(o => !omisOk.includes(o.dato)).length, t = textoFinal();
+  if(t.includes('[COMPLETAR')){ toast('Todavía hay un [COMPLETAR] en el informe.'); const m = editor.querySelector('.m-completar'); if(m) seleccionar(m,false); return; }
+  if(n && !await confirmar(n === 1 ? 'Queda 1 marca sin revisar' : `Quedan ${n} marcas sin revisar`,
+      '<p>¿Guardar el Word igual? La IA aprende de lo que quede como está.</p>', 'Guardar igual', 'prim')) return;
+  try{
+    await guardarFormato();
+    const rv = tomarRev();
+    const r = await api('/api/finalizar', {nombre: actual, texto: t, rev: rv}).catch(e => { revPend += rv; throw e; });
+    guardarBorrador();
+    $('#titulo').textContent = ($('#titulo').dataset.t || actual) + ' ✓';
+    if(MI.remoto){
+      const a = document.createElement('a'); a.href = '/api/word?nombre=' + encodeURIComponent(actual);
+      a.download = ($('#titulo').dataset.t || actual) + '.docx'; document.body.appendChild(a); a.click(); a.remove();
+      toast(`Word descargado en esta PC · corregiste el ${r.pct}% de las palabras. La IA ya lo usa como ejemplo.`, [], 9000);
+    } else
+    toast(`Word guardado · corregiste el ${r.pct}% de las palabras. La IA ya lo usa como ejemplo.`, [['Abrir Word', () => api('/api/abrir', {nombre: actual})]], 9000);
+    cargarLista();
+  }catch(e){ toast(e.message); }
+};
+$('#bRegen').onclick = async () => {
+  if(!await confirmar('¿Volver a generar el informe con la IA?', '<p>Se pierden los cambios que hiciste en este informe.</p>', 'Regenerar')) return;
+  await api('/api/procesar', {nombre: actual});
+  audio.pause(); mostrar('vacio'); soltarCaso(actual); actual = null; cargarLista();
+};
+
+/* ------------------------------------------------ vistas */
+function mostrar(v){
+  $('#vacio').hidden = v!=='vacio';
+  for(const [id,k] of [['#caso','caso'],['#vPlant','plant'],['#vMed','med']]){ const el=$(id); el.hidden = v!==k; el.style.display = v===k ? 'flex' : 'none'; }
+  if(v==='vacio' && typeof cargarLista === 'function'){ vacioHtml = ''; cargarLista(); }   // la pantalla vacía se arma con la lista
+}
+mostrar('vacio');
+
+/* ------------------------------------------------ medicos */
+let medicos = [];
+const NUEVO_MED = '__nuevo__';
+const leerLS = k => { try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } };
+const grabarLS = (k,v) => { try { localStorage.setItem(k, v); } catch(e){} };
+async function cargarMedicos(){
+  try { medicos = (await api('/api/medicos')).medicos; } catch(e){ medicos = []; }
+  llenarMedicos($('#medSubir'), MI.medico, 'Sin especificar');
+  if(actual) llenarMedicos($('#medCaso'), $('#medCaso').value, 'Médico: sin especificar');
+}
+function llenarMedicos(sel, valor, vacio){
+  sel.innerHTML = `<option value="">${esc(vacio)}</option>` + medicos.map(m => `<option>${esc(m.nombre)}</option>`).join('') + `<option value="${NUEVO_MED}">+ Agregar médico…</option>`;
+  sel.value = medicos.some(m => m.nombre===valor) ? valor : '';
+}
+async function nuevoMedico(){
+  const igual = t => medicos.find(m => sinAcentos(m.nombre).toLowerCase().replace(/\s+/g, ' ') === sinAcentos(t).toLowerCase().replace(/\s+/g, ' '));
+  const nota = 'Así va a aparecer en las listas para elegir el médico de cada audio.';
+  const n = await pedirTexto({
+    titulo: 'Agregar médico',
+    html: '<p>La IA usa sus notas y sus informes anteriores para respetar su forma de dictar.</p>',
+    etiqueta: 'Nombre del médico', placeholder: 'Ej.: Dra. Pérez', boton: 'Agregar', nota,
+    faltaTxt: 'Escribí el nombre del médico.',
+    alEscribir: t => { const m = t && igual(t); return m ? `Ya existe «${m.nombre}»: se elige ese.` : nota; },
+    validar: t => t.length < 2 ? 'El nombre es demasiado corto.' : ''
+  });
+  if(!n) return null;
+  const ya = igual(n);
+  if(ya) return ya.nombre;
+  try {
+    const r = await api('/api/medico', {medico: n, notas: ''});
+    await cargarMedicos(); toast(`Médico agregado: ${r.medico}`); return r.medico;
+  } catch(e){ toast(e.sinConexion ? 'Sin conexión con el servidor: no se pudo agregar el médico. Probá de nuevo cuando vuelva.' : 'No se pudo agregar el médico: ' + e.message, [], 8000); return null; }
+}
+$('#medSubir').onchange = async e => {
+  if(e.target.value===NUEVO_MED){ const n = await nuevoMedico(); llenarMedicos(e.target, n||'', 'Sin especificar'); }
+  MI.medico = e.target.value;
+  try { await api('/api/mi_medico', {medico: e.target.value}); } catch(err){ toast(err.message); }
+};
+$('#medCaso').onchange = async e => {
+  let v = e.target.value;
+  if(v===NUEVO_MED){ v = await nuevoMedico() || ''; llenarMedicos(e.target, v, 'Médico: sin especificar'); }
+  await api('/api/caso_medico', {nombre: actual, medico: v});
+  toast(v ? `Médico: ${v}. Para que la IA use sus notas y sus informes anteriores, tocá "Regenerar".` : 'Médico quitado.', [], 6000);
+  cargarLista();
+};
+let medSel = null;
+function armarListaMed(){
+  const ul = $('#listaMed'); ul.innerHTML = medicos.length ? '' : '<li style="cursor:default;color:var(--mu)">Todavía no hay médicos.</li>';
+  for(const m of medicos){
+    const li = document.createElement('li'); li.textContent = m.nombre; if(m.nombre===medSel) li.classList.add('sel');
+    li.onclick = () => { medSel = m.nombre; $('#medNombre').value = m.nombre; $('#medNotas').value = m.notas; armarListaMed(); };
+    ul.appendChild(li);
+  }
+}
+$('#bVerMed').onclick = async () => { if(actual) guardarBorrador(); await cargarMedicos(); mostrar('med');
+  if(!medSel && medicos[0]){ medSel = medicos[0].nombre; }
+  const m = medicos.find(x=>x.nombre===medSel); $('#medNombre').value = m ? m.nombre : ''; $('#medNotas').value = m ? m.notas : ''; armarListaMed(); };
+$('#bNuevoMed').onclick = async () => { const n = await nuevoMedico(); if(n){ medSel = n; $('#bVerMed').click(); } };
+$('#bGuardarMed').onclick = async () => {
+  if(!medSel){ toast('Elegí o agregá un médico.'); return; }
+  await api('/api/medico', {medico: medSel, notas: $('#medNotas').value}); await cargarMedicos(); armarListaMed(); toast('Notas guardadas.');
+};
+cargarMedicos();
+
+/* ------------------------------------------------ plantillas */
+let secs = [], plSel = -1;
+function volcarPl(){ if(plSel>=0 && secs[plSel]){ secs[plSel].nombre = $('#plNombre').value; secs[plSel].cuerpo = $('#plCuerpo').value; } }
+function armarListaPl(){
+  const ul = $('#listaPl'); ul.innerHTML = '';
+  secs.forEach((x,i) => { const li = document.createElement('li'); li.textContent = x.nombre || '(sin nombre)'; if(i===plSel) li.classList.add('sel');
+    li.onclick = () => { volcarPl(); plSel = i; $('#plNombre').value = x.nombre; $('#plCuerpo').value = x.cuerpo; armarListaPl(); }; ul.appendChild(li); });
+}
+async function abrirPlantillas(nueva){
+  if(actual) guardarBorrador();
+  secs = (await api('/api/plantillas')).secciones; plSel = secs.length ? 0 : -1;
+  if(nueva){ secs.push(nueva); plSel = secs.length-1; }
+  mostrar('plant');
+  $('#plNombre').value = plSel>=0 ? secs[plSel].nombre : ''; $('#plCuerpo').value = plSel>=0 ? secs[plSel].cuerpo : '';
+  armarListaPl();
+  if(nueva) toast('Revisá la plantilla nueva: dejá en PROTOCOLO NORMAL solo lo que es normal o fijo, y tocá "Guardar cambios".', [], 9000);
+}
+$('#bVerPlant').onclick = () => abrirPlantillas();
+$('#plWord').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if(!f) return;
+  try{
+    const j = await pedir('/api/plantilla_word?archivo='+encodeURIComponent(f.name), {method:'POST', body:f});
+    volcarPl(); secs.push(j); plSel = secs.length-1; $('#plNombre').value = j.nombre; $('#plCuerpo').value = j.cuerpo; armarListaPl();
+    toast('Plantilla armada desde el Word: revisala. Si es la forma de un médico, agregá al nombre "(estilo Apellido)". Después "Guardar cambios".', [], 10000);
+  }catch(err){ toast(err.message, [], 8000); }
+};
+$('#bImportar').onclick = async () => {
+  try{ const r = await api('/api/importar', {});
+    toast(`Importados ${r.ok.length} informes de referencia.` + (r.mal.length ? ` No se pudieron leer: ${r.mal.join(', ')}` : '') +
+          ' La IA los usa para copiar el estilo de esos estudios.', [], 8000);
+  }catch(e){ toast(e.message); }
+};
+$('#plNombre').oninput = () => { volcarPl(); const li = $('#listaPl').children[plSel]; if(li) li.textContent = $('#plNombre').value || '(sin nombre)'; };
+$('#bNuevoEst').onclick = () => { volcarPl(); secs.push({nombre: 'ESTUDIO NUEVO', cuerpo: 'TITULO: \nTEXTO FIJO:\n\nPROTOCOLO NORMAL:\n-\nFRASES HABITUALES:\n-\nNOTAS (cómo se dicta, orden de las medidas, etc.):\n- '}); plSel = secs.length-1;
+  $('#plNombre').value = secs[plSel].nombre; $('#plCuerpo').value = secs[plSel].cuerpo; armarListaPl(); $('#plNombre').select(); };
+$('#bBorrarPl').onclick = async () => { if(plSel<0 || !await confirmar(`¿Eliminar la plantilla «${secs[plSel].nombre}»?`,
+    '<p>Se guarda una copia de la versión anterior al tocar <b>Guardar cambios</b>.</p>', 'Eliminar')) return;
+  secs.splice(plSel,1); plSel = Math.min(plSel, secs.length-1);
+  $('#plNombre').value = plSel>=0 ? secs[plSel].nombre : ''; $('#plCuerpo').value = plSel>=0 ? secs[plSel].cuerpo : ''; armarListaPl(); };
+$('#bGuardarPl').onclick = async () => { volcarPl();
+  try{ await api('/api/plantillas', {secciones: secs}); toast('Plantillas guardadas. Se usan desde el próximo informe.'); }catch(e){ toast(e.message); } };
+
+/* ------------------------------------------------ estudio sin plantilla */
+function armarNuevoEstudio(titulos){
+  const box = $('#nuevoEst');
+  if(!titulos.length){ box.style.display='none'; box.innerHTML=''; return; }
+  box.style.display='block';
+  box.innerHTML = '<b>Estudio sin plantilla:</b> ' + titulos.map(t => '«'+esc(t)+'»').join(', ') +
+    '. La IA lo armó sin modelo: revisalo con más cuidado. Cuando esté corregido, creá su plantilla para los próximos. ';
+  for(const t of titulos){ const b = document.createElement('button'); b.className='chico'; b.textContent = 'Crear plantilla de «'+t+'»';
+    b.onclick = () => abrirPlantillas(plantillaDesdeInforme(t)); box.appendChild(b); }
+}
+function plantillaDesdeInforme(titulo){
+  const ls = textoFinal().split('\n'); let i = ls.findIndex(l => l.trim()===titulo.trim()), cuerpo = [];
+  if(i>=0){ for(let j=i+1;j<ls.length;j++){ const l = ls[j].trim();
+      if(/^lo saluda/i.test(l) || /^categorizaci/i.test(l)) break;
+      if(l && !l.startsWith('-') && cuerpo.length) break;
+      if(l.startsWith('-')) cuerpo.push(l.replace(/\d+(?:[.,]\d+)?/g, '<N>')); } }   // las medidas del paciente no van en la plantilla
+  const nombre = titulo.replace(/\(.*?\)/g,'').trim().toUpperCase();
+  return {nombre, cuerpo: `TITULO: ${titulo}\nPROTOCOLO NORMAL (revisá: dejá solo lo que se escribe cuando es normal):\n${cuerpo.join('\n') || '-'}\nFRASES HABITUALES:\n-\nNOTAS (cómo se dicta, orden de las medidas, etc.):\n- `};
+}
+
+/* ================================================ paneles ajustables
+   Se arrastran los divisores (o se mueven con las flechas si tienen el foco). Doble clic vuelve al tamaño
+   original. Cada medida queda guardada en esta PC (en la app, para el usuario de Windows). */
+function divisor(el, o){
+  const aplicar = v => { o.poner(v); return v; };
+  const limitar = v => Math.min(o.max(), Math.max(o.min(), v));
+  let actual = Number(leerLS(o.clave)) || o.inicial;
+  const guardar = () => grabarLS(o.clave, String(actual));
+  const reponer = () => { actual = limitar(actual); aplicar(actual); };
+  reponer();
+  addEventListener('resize', reponer);
+  el.addEventListener('pointerdown', e => {
+    if(e.button !== 0) return;
+    e.preventDefault(); el.setPointerCapture(e.pointerId);
+    el.classList.add('arrastrando'); document.body.classList.add('redimensionando');
+    const x0 = e.clientX, v0 = actual;
+    const mover = ev => { actual = limitar(o.desdeArrastre(v0, ev.clientX - x0)); aplicar(actual); };
+    const soltar = () => { el.classList.remove('arrastrando'); document.body.classList.remove('redimensionando');
+      el.removeEventListener('pointermove', mover); el.removeEventListener('pointerup', soltar); el.removeEventListener('pointercancel', soltar);
+      guardar(); if(o.alTerminar) o.alTerminar(); };
+    el.addEventListener('pointermove', mover); el.addEventListener('pointerup', soltar); el.addEventListener('pointercancel', soltar);
+  });
+  el.addEventListener('dblclick', () => { actual = limitar(o.inicial); aplicar(actual); guardar(); if(o.alTerminar) o.alTerminar(); });
+  el.addEventListener('keydown', e => {
+    const paso = e.shiftKey ? 64 : 16;
+    if(e.key === 'ArrowLeft' || e.key === 'ArrowRight'){ e.preventDefault(); e.stopPropagation();
+      actual = limitar(o.desdeArrastre(actual, e.key === 'ArrowLeft' ? -paso : paso)); aplicar(actual); guardar(); if(o.alTerminar) o.alTerminar(); }
+    else if(e.key === 'Home'){ e.preventDefault(); el.dispatchEvent(new Event('dblclick')); }
+  });
+}
+/* lista de audios: ancho en px */
+divisor($('#divLista'), {clave: 'anchoLista', inicial: 270,
+  min: () => 200, max: () => Math.max(240, Math.min(620, innerWidth * 0.45)),
+  desdeArrastre: (v0, dx) => v0 + dx,
+  poner: v => document.querySelector('.app').style.setProperty('--ancho-lista', Math.round(v) + 'px')});
+/* informe | dictado: proporción del ancho que se lleva el informe (0,25 a 0,8) */
+{
+  const cols = document.querySelector('.cols');
+  const ancho = () => Math.max(1, cols.clientWidth - 32 - 16);
+  const visible = () => cols.clientWidth > 600;         // con el caso cerrado no hay ancho para medir
+  divisor($('#divCols'), {clave: 'propInforme', inicial: 1.35 / 2.35,
+    min: () => visible() ? Math.min(0.5, Math.max(0.25, 300 / ancho())) : 0.25,
+    max: () => visible() ? Math.max(0.5, Math.min(0.8, 1 - 240 / ancho())) : 0.8,
+    desdeArrastre: (p0, dx) => p0 + dx / ancho(),
+    poner: p => { cols.style.setProperty('--fr-hoja', p.toFixed(4) + 'fr'); cols.style.setProperty('--fr-dict', (1 - p).toFixed(4) + 'fr'); },
+    alTerminar: () => requestAnimationFrame(dibujarOnda)});
+}
+/* listas de Plantillas y Médicos: el mismo ancho para las dos */
+document.querySelectorAll('.div-lista2').forEach(d => divisor(d, {clave: 'anchoLista2', inicial: 240,
+  min: () => 160, max: () => Math.max(200, Math.min(560, innerWidth * 0.4)),
+  desdeArrastre: (v0, dx) => v0 + dx,
+  poner: v => document.querySelectorAll('.fila2').forEach(f => f.style.setProperty('--ancho-lista2', Math.round(v) + 'px'))}));
+
+/* ================================================ tema claro / oscuro */
+const EN_APP = !!(window.chrome && window.chrome.webview);     // dentro de la aplicación del trabajo
+const mqOscuro = matchMedia('(prefers-color-scheme: dark)');
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const colorDe = c => c.replace(/var\((--[\w-]+)\)/, (_, v) => cssVar(v));
+function temaEfectivo(){ return document.documentElement.dataset.theme || (mqOscuro.matches ? 'dark' : 'light'); }
+function aplicarTema(){
+  const t = temaEfectivo();
+  document.documentElement.dataset.temaEfectivo = t;
+  $('#bTema').title = t==='dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+  if(EN_APP) try { chrome.webview.postMessage({accion:'tema', oscuro: t==='dark'}); } catch(e){}
+  dibujarOnda();
+}
+$('#bTema').onclick = () => {
+  const t = temaEfectivo()==='dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t; grabarLS('tema', t); aplicarTema();
+};
+mqOscuro.addEventListener('change', aplicarTema);
+
+/* ================================================ modo compacto: solo la cola y los avisos */
+function esCompacto(){ return document.body.classList.contains('compacto'); }
+window.ponerCompacto = function(si){          // la aplicación del trabajo también la llama
+  document.body.classList.toggle('compacto', !!si);
+  if(si){ audio.pause(); ocultarExplica(); }
+  if(!EN_APP) grabarLS('compacto', si ? '1' : '');
+  $('#bCompacto').title = si ? 'Agrandar la ventana' : 'Modo compacto: solo la cola y los avisos';
+  if(!si) requestAnimationFrame(dibujarOnda);
+};
+function agrandar(){
+  if(EN_APP) try { chrome.webview.postMessage({accion:'agrandar'}); } catch(e){}
+  ponerCompacto(false);
+}
+$('#bCompacto').onclick = () => esCompacto() ? agrandar() : ponerCompacto(true);
+if(EN_APP) $('#bCompacto').style.display = 'none';      // en la aplicación lo maneja su barra de arriba
+else if(leerLS('compacto')) ponerCompacto(true);
+
+/* ================================================ autocorrección de Word (solo en la aplicación del trabajo)
+   La aplicación lee el Normal.dotm de ESA PC y pasa sus entradas con ponerAutocorreccion(); la lista no va al
+   Servidor. Se aplica solo a lo que se escribe a mano en el informe: al escribir el activador EXACTO (mayúsculas
+   y minúsculas igual que en Word) y después espacio, Enter o un signo, se reemplaza por el texto de la entrada.
+   Las negritas, colores y alineación de la entrada se agregan al formato del caso (como si se hubieran puesto
+   en la vista previa F9), así que salen en el Word y en "Copiar para Word". Ctrl+Z enseguida vuelve a lo escrito. */
+const AUTOC = {mapa: new Map(), deshacer: null};
+const AUTOC_FIN = /^[ \u00A0.,;:!?)\]]$/;
+window.ponerAutocorreccion = function(d){
+  const m = new Map();
+  for(const e of (d && d.entradas) || [])
+    if(e && typeof e.g === 'string' && e.g && Array.isArray(e.p) && e.p.length) m.set(e.g, e.p);
+  AUTOC.mapa = m;
+};
+if(EN_APP) try { chrome.webview.postMessage({accion:'autocorreccion'}); } catch(e){}
+/* nodo de texto y posición para la letra n de un elemento */
+function puntoTexto(el, n){
+  const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let ult = null;
+  for(let t; (t = w.nextNode());){ if(n <= t.data.length) return [t, n]; n -= t.data.length; ult = t; }
+  return ult ? [ult, ult.data.length] : [el, 0];
+}
+function lineaAutoc(p){
+  const d = document.createElement('div'); d.className = 'ln';
+  if(p.a === 'center') d.classList.add('tit');
+  if(p.t) d.appendChild(document.createTextNode(p.t)); else d.appendChild(document.createElement('br'));
+  return d;
+}
+function autocorregir(tecla){
+  const s = getSelection(); if(!s.rangeCount || !s.isCollapsed) return false;
+  const r0 = s.getRangeAt(0), nodo = r0.startContainer;
+  const ln = (nodo.nodeType === 1 ? nodo : nodo.parentElement)?.closest('.ln');
+  if(!ln || ln.parentElement !== editor) return false;
+  const antes = document.createRange(); antes.setStart(ln, 0); antes.setEnd(r0.startContainer, r0.startOffset);
+  const txt = antes.toString();
+  const m = /(?:^|[\s\u00A0])([^\s\u00A0]+)$/.exec(txt); if(!m) return false;
+  const pars = AUTOC.mapa.get(m[1]); if(!pars) return false;          // tiene que ser igual, letra por letra
+  AUTOC.deshacer = {html: editor.innerHTML, lin: [...editor.children].indexOf(ln), off: txt.length, tecla};
+  // borrar el activador
+  const [n0, o0] = puntoTexto(ln, txt.length - m[1].length);
+  const rt = document.createRange(); rt.setStart(n0, o0); rt.setEnd(r0.startContainer, r0.startOffset);
+  rt.deleteContents();
+  // lo que había después del cursor en ese renglón
+  const rr = document.createRange(); rr.setStart(rt.startContainer, rt.startOffset); rr.setEnd(ln, ln.childNodes.length);
+  const cola = rr.extractContents();
+  const colaTexto = (cola.textContent || '').replace(/\u00A0/g, ' ').trim() !== '';
+  cola.querySelectorAll('br').forEach(b => b.remove());
+  ln.querySelectorAll('br').forEach(b => b.remove());
+  const prefijo = ln.textContent.replace(/\u00A0/g, ' ').trim() === '';
+  // primer párrafo en el mismo renglón; los demás, renglones nuevos
+  if(pars[0].t) ln.appendChild(document.createTextNode(pars[0].t));
+  if(prefijo && pars[0].a === 'center') ln.classList.add('tit');
+  let ult = ln;
+  for(const p of pars.slice(1)){ const d = lineaAutoc(p); ult.after(d); ult = d; }
+  if(ult !== ln) ult.querySelectorAll('br').forEach(b => b.remove());
+  const cur = document.createRange();
+  if(tecla === '\n'){
+    const d = document.createElement('div'); d.className = 'ln';
+    d.appendChild(cola); if(!d.textContent) d.appendChild(document.createElement('br'));
+    ult.after(d); cur.setStart(d, 0);
+  } else {
+    const t = document.createTextNode(tecla === ' ' && !colaTexto ? '\u00A0' : tecla);
+    ult.appendChild(t); ult.appendChild(cola); cur.setStartAfter(t);
+  }
+  for(const l of new Set([ln, ult])) if(!l.textContent && !l.querySelector('br')) l.appendChild(document.createElement('br'));
+  cur.collapse(true); s.removeAllRanges(); s.addRange(cur);
+  const vis = cur.startContainer.nodeType === 1 ? cur.startContainer : cur.startContainer.parentElement;
+  if(vis && vis.scrollIntoView) vis.scrollIntoView({block: 'nearest'});
+  if(explicaFija) ocultarExplica();
+  actualizarPend(); programarBorrador();
+  agregarFormatoAutoc(pars);
+  return true;
+}
+/* Ctrl+Z justo después: vuelve el activador tal como se escribió, con la tecla que lo disparó */
+function deshacerAutoc(){
+  const d = AUTOC.deshacer; AUTOC.deshacer = null;
+  editor.innerHTML = d.html;
+  const ln = editor.children[d.lin]; if(!ln) return;
+  const [n, o] = puntoTexto(ln, d.off), r = document.createRange();
+  r.setStart(n, o); r.collapse(true);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  editor.focus({preventScroll: true});
+  if(d.tecla === '\n') document.execCommand('insertParagraph'); else document.execCommand('insertText', false, d.tecla);
+  actualizarPend(); programarBorrador();
+}
+/* los párrafos de la entrada con formato (negrita, cursiva, subrayado, color, alineación) van al formato del caso */
+function agregarFormatoAutoc(pars){
+  const con = pars.filter(p => p.t && (p.a || (p.r || []).some(r => r.b || r.i || r.u || r.c))).map(p => ({
+    t: p.t, a: p.a || '',
+    r: (p.r && p.r.length ? p.r : [{t: p.t}]).map(r => { const x = {t: r.t}; if(r.b) x.b = 1; if(r.i) x.i = 1; if(r.u) x.u = 1; if(r.c) x.c = r.c; return x; })
+  }));
+  if(!con.length || !actual) return;
+  api('/api/formato_caso/agregar', {nombre: actual, parrafos: con})
+    .catch(e => toast('No se pudo guardar el formato de la autocorrección: ' + e.message));
+}
+editor.addEventListener('keydown', e => {
+  if(AUTOC.deshacer && (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'z'){
+    e.preventDefault(); deshacerAutoc(); return;
+  }
+  if(!AUTOC.mapa.size || e.ctrlKey || e.altKey || e.metaKey || e.isComposing) return;
+  const tecla = e.key === 'Enter' ? '\n' : e.key;
+  if(tecla !== '\n' && !AUTOC_FIN.test(tecla)) return;
+  if(autocorregir(tecla)) e.preventDefault();
+});
+editor.addEventListener('input', () => { AUTOC.deshacer = null; });
+editor.addEventListener('mousedown', () => { AUTOC.deshacer = null; });
+
+function htmlAvisos(c){
+  const a = c.avisos; if(!a || c.estado!=='listo') return '';
+  const col = [['rojo','var(--rojo-f)','para corregir'],['amarillo','var(--amar-f)','dudosas'],
+               ['turq','var(--turq)','no dictadas junto al hallazgo'],['gris','var(--gris)','frases de plantilla']];
+  let h = col.filter(([k]) => a[k]).map(([k, color, txt]) =>
+    `<span class="c" title="${a[k]} ${txt}"><i style="background:${color}"></i>${a[k]}</span>`).join('');
+  const t = [];
+  if(a.faltan.length) t.push('<b>Falta en el informe:</b> ' + esc(a.faltan.slice(0, 6).join(', ')) + (a.faltan.length > 6 ? '…' : ''));
+  if(a.huecos.length) t.push('<b>Sin transcribir en:</b> ' + esc(a.huecos.join(', ')));
+  if(!h && !t.length) h = '<span class="c" style="color:var(--ok)">✓ sin avisos</span>';
+  return `<span class="av">${h}${t.length ? '<span class="txt">' + t.join(' · ') + '</span>' : ''}</span>`;
+}
+
+/* ================================================ explicación de cada marca */
+const TIPOS = {
+  'm-numero':   ['No coincide con el dictado', 'var(--rojo-f)'],
+  'm-completar':['Falta completar', 'var(--rojo-f)'],
+  'm-dudoso':   ['Dudoso', 'var(--amar-f)'],
+  'm-bajaconf': ['Whisper no estaba seguro', 'var(--amar-f)'],
+  'm-verificar':['No dictado junto al hallazgo', 'var(--turq)'],
+  'l-verificar':['Línea que no está en el dictado', 'var(--turq)'],
+  'l-plantilla':['Frase de plantilla no dictada', 'var(--gris)']};
+function tipoDe(el){ return Object.keys(TIPOS).find(k => el.classList.contains(k)); }
+function resaltarMotivo(m){   // "Dictado: 12 / Informe: 2" -> los valores en negrita
+  return esc(m).replace(/(Dictado|Informe): (.+?)(?= \/| ·| \(|\. |\.$|$)/g, '$1: <b>$2</b>');
+}
+function fragmentoDictado(el, k){
+  if(!palabras.length) return '';
+  const ln = el.closest('.ln'), r = ln ? rangoDe(ln) : null, t = el.dataset.t ? +el.dataset.t : null;
+  let a, b, claves = null;
+  if(r){ a = Math.max(0, r[0]-4); b = Math.min(palabras.length-1, r[1]+4); claves = r[2]; }
+  else if(t != null){
+    a = palabras.findIndex(w => w.ini >= t - 1.5); if(a < 0) return '';
+    b = a; while(b+1 < palabras.length && palabras[b+1].ini <= t + 3.5) b++;
+  } else return k==='l-plantilla' ? '' : '<i>No encontré esta parte en el dictado: escuchá el audio.</i>';
+  if(b - a > 30) b = a + 30;
+  const txt = palabras.slice(a, b+1).map((w, j) => claves && claves.has(a+j) ? '<b>'+esc(w.p.trim())+'</b>' : esc(w.p.trim())).join(' ');
+  return `Dictado (${mmss(palabras[a].ini)}): «${a > 0 ? '… ' : ''}${txt}${b < palabras.length-1 ? ' …' : ''}»`;
+}
+function mostrarExplica(el, fija=false){
+  const k = tipoDe(el); if(!k || !editor.contains(el)) return;
+  const box = $('#explica'), [tit, color] = TIPOS[k];
+  box.querySelector('.ex-tit i').style.background = color;
+  box.querySelector('.ex-tit span').textContent = tit;
+  box.querySelector('.ex-mot').innerHTML = resaltarMotivo(el.dataset.motivo || el.getAttribute('title') || '');
+  const d = box.querySelector('.ex-dic'), frag = fragmentoDictado(el, k);
+  d.innerHTML = frag; d.style.display = frag ? '' : 'none';
+  explicaDe = el; explicaFija = fija;
+  box.style.display = 'block'; ubicarExplica();
+}
+function ubicarExplica(){
+  if(!explicaDe) return;
+  const box = $('#explica'), r = explicaDe.getBoundingClientRect(), hw = $('.hojawrap').getBoundingClientRect();
+  if(!explicaDe.isConnected || r.bottom < hw.top || r.top > hw.bottom){ box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  const w = box.offsetWidth, h = box.offsetHeight;
+  const x = Math.min(Math.max(8, explicaDe.tagName==='MARK' ? r.left - 8 : r.left + 14), innerWidth - w - 8);
+  let y = r.bottom + 6; if(y + h > innerHeight - 8) y = Math.max(8, r.top - h - 6);
+  box.style.left = x + 'px'; box.style.top = y + 'px';
+}
+function ocultarExplica(){ clearTimeout(tExplica); explicaDe = null; explicaFija = false; $('#explica').style.display = 'none'; }
+$('.hojawrap').addEventListener('scroll', () => explicaDe && ubicarExplica(), {passive:true});
+addEventListener('resize', () => explicaDe && ubicarExplica());
+const marcaBajo = t => t.closest && (t.closest('mark') || t.closest('.ln[data-linea]'));
+editor.addEventListener('mouseover', e => {
+  const el = marcaBajo(e.target);
+  if(!el || !editor.contains(el) || el === explicaDe || (explicaFija && explicaDe)) return;
+  clearTimeout(tExplica);
+  tExplica = setTimeout(() => mostrarExplica(el, false), el.tagName==='MARK' ? 250 : 600);
+});
+editor.addEventListener('mouseout', e => {
+  const el = marcaBajo(e.target); if(!el || (e.relatedTarget && el.contains(e.relatedTarget))) return;
+  clearTimeout(tExplica); if(!explicaFija && explicaDe === el) ocultarExplica();
+});
+document.addEventListener('mousedown', e => {
+  if(explicaFija && explicaDe && !explicaDe.contains(e.target) && !e.target.closest('#explica,#bSig,#bAcep,.player,.onda')) ocultarExplica();
+});
+/* borrador guardado con la versión anterior (el motivo estaba en title) */
+function adaptarBorrador(){
+  editor.querySelectorAll('mark[title], .ln[data-linea][title]').forEach(x => {
+    if(!x.dataset.motivo) x.dataset.motivo = x.title; x.removeAttribute('title'); });
+  editor.querySelectorAll('.activa, .sonando').forEach(x => x.classList.remove('activa', 'sonando'));
+}
+function htmlLimpio(){
+  const c = editor.cloneNode(true);
+  c.querySelectorAll('.activa, .sonando').forEach(x => x.classList.remove('activa', 'sonando'));
+  return c.innerHTML;
+}
+
+/* ================================================ sincronización informe <-> dictado */
+// Cada línea del informe se ubica en el dictado buscando el tramo con más palabras y números en común.
+const STOP_AL = new Set(('dimensiones uterinas longitudinal anteroposterior transverso transversal endometrio espesor ' +
+  'ovario derecho izquierdo mide lobulo istmo categorizacion conjunta central ecogenico como para sobre entre desde ' +
+  'hasta este esta estos estas tiene presenta pero porque cual cuales donde cuando nivel ambas ambos').split(' '));
+const sinAcentosL = t => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+function clavesDe(texto){
+  let t = sinAcentosL(texto).replace(/\[completar:?|\[\[\??/g, ' ').replace(/\]+/g, ' ').replace(/\bbi-?rads?\b/g, 'birads');
+  t = t.replace(/(\d),(\d)/g, '$1.$2').replace(/\b([hcdlst])\s*(\d{1,2})\b/g, '$1$2')
+       .replace(/\b([cdls]\d{1,2})\s*[-,]?\s*([cdls]\d{1,2})\b/g, '$1$2');
+  const nums = t.match(/(?<![a-z0-9.])\d+(?:\.\d+)?|\b[hcdlst]\d{1,2}(?:[cdls]\d{1,2})?\b/g) || [];
+  const pals = (t.match(/[a-z]{4,}/g) || []).filter(p => !STOP_AL.has(p));
+  return [...new Set(nums)].map(x => [x, 2]).concat([...new Set(pals)].map(p => [p, 1]));
+}
+function tokCodigo(i){   // Whisper da "hora" y "12" como dos palabras: se juntan en "h12"
+  if(!codTok){
+    const L = {hora:'h', horas:'h', hache:'h', h:'h', ele:'l', l:'l', ese:'s', s:'s', ce:'c', c:'c', d:'d'};
+    codTok = palabras.map((w, j) => { const sig = palabras[j+1];
+      if(L[w.n] && sig && /^\d{1,2}$/.test(sig.n)) return L[w.n] + sig.n;
+      return /^[hcdlst]\d{1,2}([cdls]\d{1,2})?$/.test(w.n || '') ? w.n : null; });
+  }
+  return codTok[i];
+}
+function parecido(a, b){   // 0..1 (distancia de edición)
+  const m = a.length, n = b.length; let prev = Array.from({length:n+1}, (_, j) => j);
+  for(let i=1; i<=m; i++){ const cur = [i];
+    for(let j=1; j<=n; j++) cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1] + (a[i-1]===b[j-1] ? 0 : 1));
+    prev = cur; }
+  return 1 - prev[n] / Math.max(m, n, 1);
+}
+function igual(c, i){
+  const t = palabras[i].n || '';
+  if(/^\d/.test(c)) return c === t;
+  if(/^[hcdlst]\d/.test(c)){ const k = tokCodigo(i); return !!k && (k === c || (c.length > 3 && c.startsWith(k))); }
+  if(c === 'birads') return /^(bi?rr?ads?|birra|vrads?)/.test(t) || t === 'ponemos';   // "le ponemos un 2", "un birrastre"
+  if(t.length < 4 || !/^[a-z]+$/.test(t)) return false;
+  if(c.length >= 5 && t.length >= 5){ if(c.slice(0,5) === t.slice(0,5)) return true; }
+  else if(c === t) return true;
+  return c.slice(0,2) === t.slice(0,2) && Math.abs(c.length - t.length) <= 3 && parecido(c, t) >= 0.8;
+}
+function alinear(texto){
+  if(cacheRango.has(texto)) return cacheRango.get(texto);
+  const claves = clavesDe(texto); let res = null;
+  if(claves.length && palabras.length){
+    const pos = new Map();
+    for(let i=0; i<palabras.length; i++) for(let k=0; k<claves.length; k++)
+      if(igual(claves[k][0], i)){ if(!pos.has(i)) pos.set(i, new Set()); pos.get(i).add(k); }
+    const idx = [...pos.keys()].sort((x, y) => x - y), ancho = Math.max(12, 3 * claves.length);
+    let mejor = null;
+    for(let s=0; s<idx.length; s++){
+      const a = idx[s], vistos = new Set();
+      for(let q=s; q<idx.length; q++){
+        const j = idx[q]; if(j - a > ancho) break;
+        pos.get(j).forEach(k => vistos.add(k));
+        let sc = 0; vistos.forEach(k => sc += claves[k][1]);
+        if(!mejor || sc > mejor.sc || (sc === mejor.sc && j - a < mejor.b - mejor.a)) mejor = {sc, a, b: j};
+      }
+    }
+    const total = claves.reduce((x, c) => x + c[1], 0);
+    if(mejor && mejor.sc >= Math.min(2, total)){
+      const marc = new Set(idx.filter(j => j >= mejor.a && j <= mejor.b));
+      res = [mejor.a, mejor.b, marc];
+    }
+  }
+  if(cacheRango.size > 400) cacheRango.clear();
+  cacheRango.set(texto, res); return res;
+}
+function rangoDe(ln){ const t = ln.textContent.trim(); return t ? alinear(t) : null; }
+function reiniciarSync(){
+  cacheRango = new Map(); lineaCursor = null; rangoCursor = null; lineaSonando = null; codTok = null;
+  $('#lineaInfo').innerHTML = '';
+}
+let rafSel = 0;
+document.addEventListener('selectionchange', () => { if(!actual) return; cancelAnimationFrame(rafSel); rafSel = requestAnimationFrame(seguirCursor); });
+function seguirCursor(){
+  const s = getSelection(); if(!s.rangeCount) return;
+  const n = s.anchorNode, el = n && (n.nodeType===1 ? n : n.parentElement);
+  if(!el || !editor.contains(el)) return;
+  const ln = el.closest('.ln'); if(!ln) return;
+  const r = rangoDe(ln);
+  if(ln === lineaCursor && r === rangoCursor) return;
+  lineaCursor = ln; pintarEco(r);
+}
+function pintarEco(r){
+  dict.querySelectorAll('.eco').forEach(x => x.classList.remove('eco'));
+  rangoCursor = r; const info = $('#lineaInfo');
+  if(!r){ info.textContent = lineaCursor && lineaCursor.textContent.trim() ? '· la línea del cursor no está en el dictado' : ''; dibujarOnda(); return; }
+  for(let i=r[0]; i<=r[1]; i++) dict.children[i]?.classList.add('eco');
+  info.innerHTML = `· línea del cursor: ${mmss(palabras[r[0]].ini)} <button class="chico" title="Escuchar esta parte (también Alt+clic en la línea)">▶</button>`;
+  info.querySelector('button').onclick = () => escuchar(palabras[r[0]].ini);
+  if(audio.paused || !$('#seguir').checked){
+    const sp = dict.children[r[0]];
+    if(sp){ const a = sp.getBoundingClientRect(), c = dict.getBoundingClientRect();
+      if(a.top < c.top + 10 || a.bottom > c.bottom - 10) sp.scrollIntoView({block:'center', behavior:'smooth'}); }
+  }
+  dibujarOnda();
+}
+function marcarLineaSonando(i){     // mientras suena el audio se marca la línea del informe que le corresponde
+  if(i < 0) return;
+  let mejor = null, ancho = 1e9;
+  for(const ln of editor.querySelectorAll('.ln')){
+    const r = rangoDe(ln); if(r && i >= r[0] && i <= r[1] && r[1] - r[0] < Math.min(ancho, 40)){ mejor = ln; ancho = r[1] - r[0]; } }
+  // entre dos líneas queda marcada la última que sonó
+  if(mejor && mejor !== lineaSonando){ lineaSonando?.classList.remove('sonando'); lineaSonando = mejor; mejor.classList.add('sonando'); }
+}
+
+/* ================================================ forma de onda con marcas y huecos */
+const cv = $('#onda'), ondaCaja = $('#ondaCaja');
+async function cargarOnda(n){
+  onda = null; dibujarOnda();
+  try { const d = await api('/api/onda?nombre=' + encodeURIComponent(n)); if(actual === n){ onda = d; dibujarOnda(); } } catch(e){}
+}
+function durTotal(){ return (isFinite(audio.duration) && audio.duration) || (onda && onda.dur) || (palabras.length ? palabras[palabras.length-1].fin : 0); }
+function marcadoresOnda(){
+  const out = [];
+  for(const el of marcasPend()){ const t = tiempoDe(el); if(t == null) continue; const k = tipoDe(el); if(k) out.push({t, el, k, color: TIPOS[k][1]}); }
+  for(const o of omis) if(!o.hueco && o.seg != null && !omisOk.includes(o.dato)) out.push({t: o.seg, omision: o, color: 'var(--rojo-f)', abajo: true});
+  return out;
+}
+function huecosPend(){ return omis.filter(o => o.hueco && !omisOk.includes(o.dato)).map(o => ({o, a: o.ini ?? (o.seg - 0.5), b: o.fin ?? (o.seg + 1.5)})); }
+function dibujarOnda(){
+  const w = cv.clientWidth, h = cv.clientHeight; if(!w || !h) return;
+  const dpr = devicePixelRatio || 1;
+  if(cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); }
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  const D = durTotal(); if(!actual || !D) return;
+  const X = t => t / D * w, top = 11, bottom = h - 9, mid = (top + bottom) / 2, amp = (bottom - top) / 2;
+  const cAc = cssVar('--ac'), cOnda = cssVar('--onda'), xa = X(audio.currentTime || 0);
+  g.fillStyle = cssVar('--amarillo');                          // partes que Whisper no transcribió
+  for(const q of huecosPend()) g.fillRect(X(q.a), 0, Math.max(3, X(q.b) - X(q.a)), h);
+  if(rangoCursor){                                             // la línea donde está el cursor
+    g.fillStyle = cssVar('--eco'); const a = X(palabras[rangoCursor[0]].ini), b = X(palabras[rangoCursor[1]].fin);
+    g.fillRect(a, 0, Math.max(3, b - a), h); }
+  if(onda && onda.picos.length){
+    const P = onda.picos, n = P.length, f = n / ((onda.dur || D) / D) / w;
+    for(let x=0; x<w; x+=3){
+      const i0 = Math.floor(x * f), i1 = Math.max(i0 + 1, Math.floor((x + 3) * f)); if(i0 >= n) break;
+      let m = 0; for(let i=i0; i<i1 && i<n; i++) if(P[i] > m) m = P[i];
+      const hh = Math.max(0.75, m / 100 * amp);
+      g.fillStyle = x < xa ? cAc : cOnda; g.fillRect(x, mid - hh, 2, hh * 2); }
+  } else {                                                     // sin forma de onda: las palabras como bloques
+    for(const p of palabras){ g.fillStyle = X(p.ini) < xa ? cAc : cOnda; g.fillRect(X(p.ini), mid - amp*0.3, Math.max(1, X(p.fin) - X(p.ini) - 1), amp*0.6); } }
+  for(const m of marcadoresOnda()){                            // marcas: arriba; datos que faltan en el informe: abajo
+    const x = X(m.t), grande = m.el && m.el === activa ? 1.6 : 1;
+    g.fillStyle = colorDe(m.color); g.globalAlpha = 0.5;
+    if(m.abajo) g.fillRect(x - 0.5, mid, 1, h - 7 - mid); else g.fillRect(x - 0.5, 7, 1, mid - 7);
+    g.globalAlpha = 1; g.beginPath();
+    if(m.abajo){ g.moveTo(x - 4.5*grande, h); g.lineTo(x + 4.5*grande, h); g.lineTo(x, h - 8*grande); }
+    else { g.moveTo(x - 4.5*grande, 0); g.lineTo(x + 4.5*grande, 0); g.lineTo(x, 8*grande); }
+    g.fill(); }
+  g.fillStyle = cssVar('--tx'); g.fillRect(xa - 0.75, 0, 1.5, h);   // cabezal
+}
+function ondaEn(ev){
+  const r = cv.getBoundingClientRect(), x = ev.clientX - r.left, D = durTotal();
+  let cerca = null, dmin = 7;
+  for(const m of marcadoresOnda()){ const d = Math.abs(m.t / D * r.width - x); if(d < dmin){ dmin = d; cerca = m; } }
+  return {x, t: Math.max(0, Math.min(D, x / r.width * D)), m: cerca};
+}
+ondaCaja.addEventListener('mousemove', ev => {
+  if(!actual || !durTotal()) return;
+  const p = ondaEn(ev), tip = $('#ondaTip'); let txt = mmss(p.t);
+  if(p.m) txt += p.m.omision ? ' · falta en el informe: ' + p.m.omision.dato
+                             : ' · ' + TIPOS[p.m.k][0] + ': «' + p.m.el.textContent.trim().slice(0, 40) + '»';
+  else if(huecosPend().some(q => p.t >= q.a && p.t <= q.b)) txt += ' · posible parte no transcrita';
+  tip.textContent = txt; tip.style.display = 'block';
+  tip.style.left = Math.min(Math.max(p.x, tip.offsetWidth/2 + 4), cv.clientWidth - tip.offsetWidth/2 - 4) + 'px';
+  ondaCaja.style.cursor = p.m ? 'pointer' : 'col-resize';
+});
+ondaCaja.addEventListener('mouseleave', () => $('#ondaTip').style.display = 'none');
+ondaCaja.addEventListener('click', ev => {
+  if(scrub.evitarClic){ scrub.evitarClic = false; return; }     // fue un arrastre, no un clic
+  if(!actual || !durTotal()) return;
+  const p = ondaEn(ev);
+  if(p.m && p.m.el){ seleccionar(p.m.el); return; }
+  if(p.m && p.m.omision){ escuchar(p.m.t); return; }
+  audio.currentTime = p.t; audio.play();
+});
+/* ------------------------------------------------ arrastrar sobre la onda = escuchar mientras se mueve (como una cinta) */
+const scrub = {ctx:null, buf:null, rev:null, de:null, cargando:null, abajo:false, activo:false, x0:0,
+               t:0, tSon:0, prox:0, timer:0, raf:0, evitarClic:false};
+const TICK = 0.03;                                               // cada 30 ms suena el tramo recorrido
+function ctxScrub(){
+  if(!scrub.ctx){ try { scrub.ctx = new AudioContext({sampleRate: 24000}); } catch(e){ scrub.ctx = new AudioContext(); } }
+  return scrub.ctx;
+}
+function bufferScrub(){                                          // el audio del caso decodificado (mono) y al revés
+  const n = actual; if(!n) return Promise.resolve(null);
+  if(scrub.de === n && (scrub.buf || scrub.cargando)) return scrub.buf ? Promise.resolve(scrub.buf) : scrub.cargando;
+  scrub.de = n; scrub.buf = scrub.rev = null; const ctx = ctxScrub();
+  scrub.cargando = (async () => {
+    const r = await fetch('/audio/' + encodeURIComponent(n)); if(!r.ok) throw new Error('audio ' + r.status);
+    const b = await ctx.decodeAudioData(await r.arrayBuffer());
+    if(scrub.de !== n) return null;
+    const L = b.length, mono = ctx.createBuffer(1, L, b.sampleRate), rev = ctx.createBuffer(1, L, b.sampleRate);
+    const m = mono.getChannelData(0), v = rev.getChannelData(0), k = b.numberOfChannels;
+    for(let c=0; c<k; c++){ const d = b.getChannelData(c); for(let i=0; i<L; i++) m[i] += d[i] / k; }
+    for(let i=0; i<L; i++) v[i] = m[L-1-i];
+    scrub.buf = mono; scrub.rev = rev; scrub.cargando = null; return mono;
+  })().catch(() => { if(scrub.de === n){ scrub.de = null; scrub.cargando = null; } return null; });
+  return scrub.cargando;
+}
+function granoScrub(desde, hasta){                               // suena desde→hasta en TICK segundos (al revés si va para atrás)
+  const b = scrub.buf, ctx = scrub.ctx; if(!b) return;
+  const atras = hasta < desde, rate = Math.abs(hasta - desde) / TICK, D = b.duration;
+  const ahora = ctx.currentTime;
+  if(scrub.prox < ahora + 0.005 || scrub.prox > ahora + 0.12) scrub.prox = ahora + 0.01;   // sin acumular demora
+  const t0 = scrub.prox, ov = 0.012, dur = TICK + ov;
+  const src = ctx.createBufferSource(), g = ctx.createGain();
+  src.buffer = atras ? scrub.rev : b; src.playbackRate.value = rate;
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(1, t0 + ov);
+  g.gain.setValueAtTime(1, t0 + TICK); g.gain.linearRampToValueAtTime(0, t0 + dur);
+  src.connect(g); g.connect(ctx.destination);
+  const pos = atras ? D - desde : desde;
+  src.start(t0, Math.max(0, Math.min(D - 0.005, pos))); src.stop(t0 + dur + 0.01);
+  scrub.prox = t0 + TICK;
+}
+function tickScrub(){
+  if(!scrub.activo || !scrub.buf) return;
+  let desde = scrub.tSon; const hasta = scrub.t, dist = Math.abs(hasta - desde);
+  if(dist < 0.002){ scrub.tSon = hasta; return; }                // quieto: silencio
+  if(dist < 0.3 * TICK) return;                                  // muy lento: junta movimiento antes de sonar
+  if(dist > 4 * TICK) desde = hasta - Math.sign(hasta - desde) * 4 * TICK;   // salto grande: suena solo el final, a 4×
+  granoScrub(desde, hasta); scrub.tSon = hasta;
+}
+function moverCabezal(){                                         // el cabezal, el dictado y la onda siguen al mouse
+  scrub.raf = 0; if(Math.abs(audio.currentTime - scrub.t) > 0.01) audio.currentTime = scrub.t;
+}
+ondaCaja.addEventListener('mouseenter', () => { if(actual) bufferScrub(); });    // se prepara antes del primer arrastre
+ondaCaja.addEventListener('pointerdown', ev => {
+  if(ev.button !== 0 || !actual || !durTotal()) return;
+  scrub.abajo = true; scrub.activo = false; scrub.x0 = ev.clientX;
+  ctxScrub().resume(); bufferScrub();
+  ondaCaja.setPointerCapture(ev.pointerId);
+});
+ondaCaja.addEventListener('pointermove', ev => {
+  if(!scrub.abajo) return;
+  const p = ondaEn(ev);
+  if(!scrub.activo){
+    if(Math.abs(ev.clientX - scrub.x0) < 4) return;              // todavía puede ser un clic
+    scrub.activo = true; audio.pause(); ocultarExplica && ocultarExplica();
+    scrub.tSon = audio.currentTime = ondaEn({clientX: scrub.x0}).t; scrub.prox = 0;
+    ondaCaja.classList.add('arrastrando');
+    scrub.timer = setInterval(tickScrub, TICK * 1000);
+  }
+  scrub.t = p.t;
+  if(!scrub.buf) $('#ondaTip').textContent = mmss(p.t) + ' · preparando el audio…';
+  if(!scrub.raf) scrub.raf = requestAnimationFrame(moverCabezal);
+});
+function soltarScrub(ev, cancelado){
+  if(!scrub.abajo) return; scrub.abajo = false;
+  if(!scrub.activo) return;                                      // fue un clic: lo atiende 'click'
+  scrub.activo = false; scrub.evitarClic = !cancelado; clearInterval(scrub.timer);
+  cancelAnimationFrame(scrub.raf); scrub.raf = 0; ondaCaja.classList.remove('arrastrando');
+  audio.currentTime = scrub.t;
+  if(!cancelado){ ultimaPausa = 0; audio.play(); }               // al soltar sigue sonando desde ahí, sin retroceder
+  setTimeout(() => scrub.evitarClic = false, 300);
+}
+ondaCaja.addEventListener('pointerup', ev => soltarScrub(ev, false));
+ondaCaja.addEventListener('pointercancel', ev => soltarScrub(ev, true));
+new ResizeObserver(() => dibujarOnda()).observe(ondaCaja);
+audio.addEventListener('play', () => { cancelAnimationFrame(rafOnda);
+  const ciclo = () => { dibujarOnda(); if(!audio.paused) rafOnda = requestAnimationFrame(ciclo); }; rafOnda = requestAnimationFrame(ciclo); });
+audio.addEventListener('pause', () => { cancelAnimationFrame(rafOnda); dibujarOnda(); });
+audio.addEventListener('loadedmetadata', dibujarOnda);
+audio.addEventListener('emptied', () => { $('#prog').value = 0; $('#tiempo').textContent = '0:00 / 0:00'; });
+
+aplicarTema();
+</script>
+</body>
+</html>
