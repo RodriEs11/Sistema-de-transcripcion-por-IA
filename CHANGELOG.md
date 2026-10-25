@@ -6,6 +6,9 @@ El servidor se versiona por fecha; la app del trabajo, con [versionado semántic
 ## [Servidor 2026.10.25] — 2026-10-25
 
 ### Agregado
+- Barra del informe compacta para pantallas de 1366 × 768: dos filas finas que se achican por pasos (menú «Más», sin teclas, solo íconos) en lugar de encimarse; botón «?» con los colores y los atajos.
+- Botón para ocultar la lista de informes (queda un riel con el estado de la IA, los informes para revisar y la configuración).
+- Ventana de Configuración: tema, lista, tamaño del texto, referencias y atajos, paneles, velocidad inicial, saltos, retroceso al reanudar, seguir el audio, explicación de las marcas, y las opciones de la app del trabajo.
 - Panel de administración local (`/admin`): estado del servidor, túnel, PC vinculadas, errores y avisos recientes, acciones de mantenimiento.
 - Página de estadísticas (`/admin/estadisticas`): % corregido, tiempo de revisión, desglose por semana, médico y estudio.
 - Acceso al panel desde las PC del trabajo con contraseña propia, sesión atada a la PC y bloqueo por intentos.
@@ -33,6 +36,11 @@ El servidor se versiona por fecha; la app del trabajo, con [versionado semántic
 - Consola con eventos por área, registro diario y `actividad.csv`.
 
 ## App del trabajo
+
+### [1.9] — 2026-10-25
+- «Configuración…» en Opciones (y en el ícono junto al reloj): abre la ventana de Configuración de la pantalla con las opciones de esta PC (abrir con Windows, toma de audios, avisos de informe listo, modo compacto, carpeta de los Word, registro de envíos, autocorrección, dirección del Servidor, desconectar, actualización). Sin pantalla cargada, abre una ventana propia.
+- Carpeta de los Word descargados configurable y aviso de «informe listo» que se puede apagar.
+- El menú Opciones queda con Configuración, Cargar audio y Volver a cargar la pantalla.
 
 ### [1.8] — 2026-10-25
 - Ícono nuevo ("Marcas de revisión") en el .exe, la ventana y junto al reloj; el estado de la conexión se muestra con un punto de color sobre el ícono.

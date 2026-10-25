@@ -80,4 +80,4 @@ nombre de la PC y la contraseña, y subir los audios a mano.
 | Error de memoria de la placa | Otro programa usa la GPU | Cerrar juegos/editores de video; ver `nvidia-smi` |
 | "Método no encontrado" al abrir la app | Compilada con un método que .NET 4.8 no tiene | Ver [compilacion.md](compilacion.md#métodos-prohibidos) |
 | "Windows protegió su PC" | El .exe vino de internet | *Más información → Ejecutar de todas formas*, o copiarlo desde un pendrive |
-| La app no encuentra el servidor | Túnel caído o ntfy bloqueado | Revisar el panel `/admin`; en la app, *Opciones → Escribir la dirección del Servidor…* |
+| La app no encuentra el servidor | Túnel caído o ntfy bloqueado | Revisar el panel `/admin`; en la app, *Opciones → Configuración… → Conexión → Cambiar dirección…* |

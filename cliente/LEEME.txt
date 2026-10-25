@@ -6,7 +6,8 @@ QUÉ HACE
   en la carpeta temporal y lo envía al Servidor. No bloquea el archivo: el sistema lo puede
   seguir usando y borrar al cerrar el informe.
 - Muestra la pantalla de revisión del Servidor dentro de la ventana (la misma de siempre).
-- Avisa cuando un informe está listo. El Word se guarda en la carpeta Descargas de esta PC.
+- Avisa cuando un informe está listo. El Word se guarda en la carpeta Descargas de esta PC
+  (o en la que elijas en Opciones → Configuración).
 - Si se corta internet, guarda los audios cifrados en esta PC y los envía solos después.
 
 ANTES DE COPIARLA (en el Servidor, una sola vez)
@@ -20,7 +21,7 @@ EN CADA PC DEL TRABAJO
 2. Doble clic en Transcripcion.exe.
 3. Escribí el nombre de la PC (info-01, info-02 o info-03) y la contraseña → Conectar.
 4. Listo. Si cerrás la ventana sigue funcionando (ícono junto al reloj).
-   Con "Abrir al iniciar Windows" arranca sola cada día.
+   Con Opciones → Configuración → "Abrir al iniciar Windows" arranca sola cada día.
 
 MODO COMPACTO Y MODO OSCURO (versión 1.1)
 - Botón "Compacto" en la barra de arriba (o en el ícono junto al reloj): la ventana se
@@ -44,7 +45,7 @@ AUTOCORRECCIÓN DE WORD (versión 1.5)
 - Las negritas, colores y centrado de la autocorrección salen en el Word y en
   "Copiar para Word" (en el informe se ve el texto; F9 muestra cómo queda).
 - Si agregás o cambiás una autocorrección en Word, se toma sola en unos segundos.
-  También: Opciones → "Volver a leer la autocorrección de Word".
+  También: Opciones → Configuración → Esta PC → Autocorrección de Word → "Volver a leer".
 - La lista queda en esta PC: no se manda al Servidor. Cada PC (y cada usuario de Windows)
   usa la suya.
 
@@ -66,6 +67,36 @@ PANTALLA A GUSTO Y CARGAR AUDIO (versión 1.6)
   verde = conectado, ámbar = conectando, naranja = la IA no está lista, rojo = sin conexión.
 - Si un acceso directo o el ícono anclado a la barra de tareas sigue mostrando el ícono viejo,
   es la memoria de íconos de Windows: se actualiza sola con el tiempo, o desanclá y volvé a anclar.
+
+CONFIGURACIÓN Y PANTALLAS CHICAS (versión 1.9)
+- Opciones → "Configuración…" (también el ícono de controles abajo de la lista, junto a
+  Plantillas y Médicos) abre una ventana con todas las opciones, ordenadas en secciones:
+  · Pantalla: tema claro/oscuro/como Windows, mostrar u ocultar la lista de informes, tamaño
+    del texto del informe y del dictado (no cambia el Word), referencias de colores y atajos,
+    volver los paneles al tamaño original.
+  · Audio y revisión: velocidad al abrir un informe, cuánto saltan los botones − y + (y F3),
+    cuánto retrocede al reanudar después de una pausa, que el dictado siga al audio, y la
+    explicación de las marcas al pasar el mouse.
+  · Esta PC: abrir al iniciar Windows, tomar los audios del sistema, avisar cuando un informe
+    queda listo, modo compacto, carpeta de los Word descargados (se puede cambiar), registro de
+    envíos (y cuántos audios esperan para enviarse) y autocorrección de Word.
+  · Conexión: dirección del Servidor (cambiarla), volver a cargar la pantalla y desconectar
+    esta PC.
+  · Acerca de: versión, actualización disponible, colores y atajos, volver todo a como venía.
+  Los cambios se guardan solos. El menú Opciones quedó solo con Configuración, Cargar audio
+  y Volver a cargar la pantalla.
+- Si la pantalla del Servidor no llegó a cargarse (sin conexión desde que se abrió), la
+  Configuración abre una ventana más simple con las opciones de esta PC.
+- Para pantallas chicas (1366 × 768): la barra del informe ocupa dos renglones finos. Si los
+  botones no entran, primero pasan al botón "⋯" (Borrar, Regenerar y, si hace falta, Cerrar
+  estudio), después se ocultan las teclas y algunos botones quedan solo con su ícono (al pasar
+  el mouse dicen qué hacen). Nada se encima.
+- El botón "?" de la barra muestra qué significa cada color y los atajos de teclado. En
+  pantallas chicas las referencias de colores y los atajos debajo del dictado se ocultan
+  solos (en Configuración se pueden mostrar siempre).
+- El botón de arriba de la lista (un panel con una flecha) la oculta: queda una franja finita
+  con el estado de la IA, cuántos informes hay para revisar y la Configuración. Para volver a
+  verla, el botón de arriba de la franja o el número de informes. Se recuerda en esta PC.
 
 ACTUALIZACIONES (desde la versión 1.2 se actualiza sola)
 - La app se mantiene igual a la carpeta sistema\cliente del Servidor. Para actualizar todas
@@ -90,9 +121,10 @@ SI ALGO NO ANDA
   entrá con el nombre de la PC y la contraseña, y usá "Cargar audio"
   (en la ventana para elegir el archivo, escribí %temp% y Enter).
 - Dice "Buscando el Servidor…" todo el tiempo: el Servidor puede estar apagado o sin internet,
-  o la red del trabajo bloquea el canal de avisos. Opciones → "Escribir la dirección del Servidor":
-  al pegarla y tocar Aceptar, se conecta enseguida.
-- Para ver qué audios se enviaron: Opciones → "Ver registro de envíos".
+  o la red del trabajo bloquea el canal de avisos. Opciones → Configuración → Conexión →
+  "Cambiar dirección…": al pegarla y tocar Conectar, se conecta enseguida.
+- Para ver qué audios se enviaron: Opciones → Configuración → Esta PC → "Ver registro"
+  (también con clic derecho en el ícono junto al reloj → "Ver registro de envíos").
 
 Lo que guarda en esta PC (carpeta %LOCALAPPDATA%\Transcripcion): la configuración, la llave
 de esta PC cifrada con tu usuario de Windows, el registro y los audios pendientes (cifrados).

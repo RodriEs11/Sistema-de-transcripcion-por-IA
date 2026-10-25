@@ -21,14 +21,14 @@ using Microsoft.Win32;
 [assembly: System.Reflection.AssemblyDescription("Envía los audios del sistema de gestión al Servidor de transcripción")]
 [assembly: System.Reflection.AssemblyCompany("Rodrigo Espíndola")]
 [assembly: System.Reflection.AssemblyCopyright("Creada por Rodrigo Espíndola")]
-[assembly: System.Reflection.AssemblyVersion("1.8.0.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.8.0.0")]
+[assembly: System.Reflection.AssemblyVersion("1.9.0.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.9.0.0")]
 
 namespace Transcripcion
 {
     static class Programa
     {
-        public const string VERSION = "1.8";
+        public const string VERSION = "1.9";
         public static EventWaitHandle SenalMostrar;
 
         [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
@@ -134,7 +134,14 @@ namespace Transcripcion
             catch { return false; }
         }
 
+        // Carpeta de los Word descargados: la que se eligió en Configuración (si todavía existe) o Descargas.
         public static string CarpetaDescargas()
+        {
+            try { if (Config.CarpetaWord != "" && Directory.Exists(Config.CarpetaWord)) return Config.CarpetaWord; } catch { }
+            return CarpetaDescargasWindows();
+        }
+
+        public static string CarpetaDescargasWindows()
         {
             try
             {
@@ -164,6 +171,8 @@ namespace Transcripcion
 
         public static string Pc = "", Url = "", Tema = "", Aviso = "https://ntfy.sh";
         public static bool Pausado = false;
+        public static bool AvisarListos = true;                    // notificación cuando un informe queda listo (1.9)
+        public static string CarpetaWord = "";                     // carpeta elegida para los Word ("" = Descargas) (1.9)
         public static bool Compacto = false, Oscuro = false;      // modo compacto y tema (los elige la persona)
         public static string BordesCompacto = "";                  // "x,y,ancho,alto" de la ventana compacta
         public static string HuellaApp = "", HuellaFallida = "";    // versión de la app que ya está al día / que falló acá
@@ -221,6 +230,8 @@ namespace Transcripcion
                     if (d.TryGetValue("url", out v)) Url = v + "";
                     if (d.TryGetValue("llave", out v)) llaveCifrada = v + "";
                     if (d.TryGetValue("pausado", out v)) Pausado = v is bool && (bool)v;
+                    if (d.TryGetValue("avisar_listos", out v)) AvisarListos = !(v is bool) || (bool)v;
+                    if (d.TryGetValue("carpeta_word", out v)) CarpetaWord = v + "";
                     if (d.TryGetValue("compacto", out v)) Compacto = v is bool && (bool)v;
                     if (d.TryGetValue("oscuro", out v)) Oscuro = v is bool && (bool)v;
                     if (d.TryGetValue("bordes_compacto2", out v)) BordesCompacto = v + "";   // desde la 1.4 (la de antes era más ancha)
@@ -238,7 +249,7 @@ namespace Transcripcion
             lock (cerrojoGuardar)
             {
                 var d = new Dictionary<string, object> {
-                    { "pc", Pc }, { "url", Url }, { "llave", llaveCifrada }, { "pausado", Pausado }, { "tema", Tema },
+                    { "pc", Pc }, { "url", Url }, { "llave", llaveCifrada }, { "pausado", Pausado }, { "tema", Tema }, { "avisar_listos", AvisarListos }, { "carpeta_word", CarpetaWord },
                     { "compacto", Compacto }, { "oscuro", Oscuro }, { "bordes_compacto2", BordesCompacto },
                     { "app_huella", HuellaApp }, { "app_huella_fallida", HuellaFallida } };
                 Directory.CreateDirectory(Carpeta);

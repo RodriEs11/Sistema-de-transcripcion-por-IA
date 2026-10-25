@@ -30,7 +30,7 @@ sequenceDiagram
 - La dirección cambia en cada reinicio del túnel; la app la redescubre sola.
 - El nombre del canal de ntfy es aleatorio y se guarda en `acceso_remoto.json` (servidor) y `cliente/conexion.json`
   (app). **Ninguno de los dos archivos se versiona.**
-- Si la red bloquea ntfy, la dirección se puede escribir a mano en la app (*Opciones → Escribir la dirección del Servidor…*).
+- Si la red bloquea ntfy, la dirección se puede escribir a mano en la app (*Opciones → Configuración… → Conexión → Cambiar dirección…*).
 - El túnel rápido no tiene disponibilidad garantizada ni admite SSE; la interfaz consulta el estado cada 2 s, así
   que no le afecta. El panel de administración permite reiniciarlo y volver a publicar la dirección.
 
@@ -82,8 +82,12 @@ La página detecta la app y se comunica con `chrome.webview.postMessage`:
 | `{accion: 'tema', ...}` | Sincroniza el tema de la barra de la app |
 | `{accion: 'audio', id, nombre, datos}` | Audio cargado a mano: pasa por la cola cifrada |
 | `{accion: 'autocorreccion'}` | Pide la lista de autocorrecciones |
+| `{accion: 'configuracion'}` | Pide el estado de la app para la ventana de Configuración (1.9) |
+| `{accion: 'cfg', que, valor}` | Cambio desde Configuración (1.9): `inicio`, `tomar`, `avisar` (con `valor` true/false), `compacto`, `abrirWord`, `cambiarWord`, `wordPorDefecto`, `registro`, `autocorreccion`, `recargar`, `direccion` (`valor` = URL), `desvincular` (la página ya confirmó), `actualizar` |
 
-La app responde llamando funciones de la página (`ponerApp`, `audioEnCola`, `ponerAutocorreccion`) con `ExecuteScriptAsync`.
+La app responde llamando funciones de la página (`ponerApp`, `audioEnCola`, `ponerAutocorreccion`, `ponerConfigApp`) con `ExecuteScriptAsync`.
+Opciones → *Configuración…* llama a `abrirConfiguracion(estado, seccion)`; si la página no la tiene o no está cargada,
+la app abre su propia ventana con las opciones de la PC.
 
 ### Actualización automática
 
