@@ -59,6 +59,14 @@ PANTALLA A GUSTO Y CARGAR AUDIO (versión 1.6)
   propia de la aplicación (ya no la del navegador).
 - Aplicación creada por Rodrigo Espíndola (figura en Opciones, debajo de la versión).
 
+ÍCONO NUEVO (versión 1.8)
+- La aplicación tiene ícono nuevo: un cuadrado azul oscuro con renglones y las marcas roja,
+  amarilla y turquesa de la revisión. El mismo ícono aparece en la pestaña del navegador.
+- Junto al reloj se ve ese ícono con un punto abajo a la derecha que indica el estado:
+  verde = conectado, ámbar = conectando, naranja = la IA no está lista, rojo = sin conexión.
+- Si un acceso directo o el ícono anclado a la barra de tareas sigue mostrando el ícono viejo,
+  es la memoria de íconos de Windows: se actualiza sola con el tiempo, o desanclá y volvé a anclar.
+
 ACTUALIZACIONES (desde la versión 1.2 se actualiza sola)
 - La app se mantiene igual a la carpeta sistema\cliente del Servidor. Para actualizar todas
   las PC alcanza con poner el Transcripcion.exe nuevo en esa carpeta del Servidor.

@@ -34,6 +34,10 @@ El servidor se versiona por fecha; la app del trabajo, con [versionado semántic
 
 ## App del trabajo
 
+### [1.8] — 2026-10-25
+- Ícono nuevo ("Marcas de revisión") en el .exe, la ventana y junto al reloj; el estado de la conexión se muestra con un punto de color sobre el ícono.
+- La interfaz web muestra el mismo ícono en la pestaña del navegador.
+
 ### [1.7] — 2026-10-25
 - Créditos solo en el menú Opciones; la línea de versión muestra únicamente el número.
 

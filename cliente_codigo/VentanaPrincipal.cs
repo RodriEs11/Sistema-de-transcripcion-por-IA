@@ -103,7 +103,7 @@ namespace Transcripcion
             Size = new Size(1400, 900);
             StartPosition = FormStartPosition.CenterScreen;
             WindowState = FormWindowState.Maximized;
-            Icon = Estilo.Icono(Estilo.Azul);
+            Icon = Estilo.IconoApp();
             KeyPreview = true;
 
             ArmarBarra();

@@ -26,7 +26,7 @@ namespace Transcripcion
             StartPosition = FormStartPosition.CenterScreen;
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(500, 600);
-            Icon = Estilo.Icono(Estilo.Azul);
+            Icon = Estilo.IconoApp();
 
             var t = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false,
                 Padding = new Padding(28, 22, 28, 16), AutoScroll = true };

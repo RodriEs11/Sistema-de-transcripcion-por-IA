@@ -42,7 +42,7 @@ for a in mscorlib System System.Core System.Windows.Forms System.Drawing System.
 done
 
 mkdir -p "$(dirname "$SALIDA")"
-"$MCS" -nostdlib -noconfig -target:winexe -optimize+ -win32icon:app.ico -out:"$SALIDA" \
+"$MCS" -nostdlib -noconfig -target:winexe -optimize+ -win32icon:app.ico -resource:app.ico,Transcripcion.app.ico -out:"$SALIDA" \
   "${refs[@]}" -r:"$WV/Microsoft.Web.WebView2.Core.dll" -r:"$WV/Microsoft.Web.WebView2.WinForms.dll" \
   ./*.cs
 

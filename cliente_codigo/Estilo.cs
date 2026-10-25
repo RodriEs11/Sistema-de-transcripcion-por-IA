@@ -2,7 +2,9 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 namespace Transcripcion
 {
@@ -31,8 +33,67 @@ namespace Transcripcion
 
         [DllImport("user32.dll")] static extern bool DestroyIcon(IntPtr h);
 
-        // Ícono: cinco barras de una onda de sonido, del color del estado.
-        public static Icon Icono(Color c)
+        // Ícono de la app (diseño "Marcas de revisión", versión 1.8): app.ico va incrustado en el .exe
+        // como recurso "Transcripcion.app.ico" (ver compilar.sh y Transcripcion.csproj).
+        static Icon icoApp;
+        public static Icon IconoApp()
+        {
+            if (icoApp != null) return icoApp;
+            try
+            {
+                using (var s = typeof(Estilo).Assembly.GetManifestResourceStream("Transcripcion.app.ico"))
+                    if (s != null) icoApp = new Icon(s);
+            }
+            catch { icoApp = null; }
+            return icoApp ?? (icoApp = IconoOnda(Azul));
+        }
+
+        // Junto al reloj: el ícono de la app con un punto del color del estado abajo a la derecha
+        // (verde conectado, ámbar conectando, naranja IA no lista, rojo sin conexión).
+        public static Icon Icono(Color estado)
+        {
+            try
+            {
+                int lado = SystemInformation.SmallIconSize.Width;
+                if (lado < 16) lado = 16;
+                using (var chico = new Icon(IconoApp(), lado, lado))
+                using (var dib = chico.ToBitmap())
+                using (var bmp = new Bitmap(lado, lado, PixelFormat.Format32bppArgb))
+                {
+                    using (var g = Graphics.FromImage(bmp))
+                    {
+                        g.Clear(Color.Transparent);
+                        g.DrawImage(dib, new Rectangle(0, 0, lado, lado));
+                        g.SmoothingMode = SmoothingMode.AntiAlias;
+                        float d = (float)Math.Round(lado * 0.42), borde = Math.Max(1.5f, lado / 11f);
+                        float x = lado - d, y = lado - d;
+                        using (var b = new SolidBrush(Color.FromArgb(0x0f, 0x17, 0x2a)))
+                            g.FillEllipse(b, x - 0.5f, y - 0.5f, d + 0.5f, d + 0.5f);
+                        using (var b = new SolidBrush(ColorPunto(estado)))
+                            g.FillEllipse(b, x + borde - 0.5f, y + borde - 0.5f, d - 2 * borde + 0.5f, d - 2 * borde + 0.5f);
+                    }
+                    IntPtr hi = bmp.GetHicon();
+                    var ico = (Icon)Icon.FromHandle(hi).Clone();
+                    try { DestroyIcon(hi); } catch { }
+                    return ico;
+                }
+            }
+            catch { return IconoOnda(estado); }
+        }
+
+        // Colores más vivos para el punto, que tiene que verse chico y sobre fondo oscuro.
+        static Color ColorPunto(Color c)
+        {
+            if (c == Verde) return Color.FromArgb(0x22, 0xc5, 0x5e);
+            if (c == Ambar) return Color.FromArgb(0xf5, 0x9e, 0x0b);
+            if (c == Naranja) return Color.FromArgb(0xf9, 0x73, 0x16);
+            if (c == Rojo) return Color.FromArgb(0xef, 0x44, 0x44);
+            if (c == Azul) return Color.FromArgb(0x60, 0xa5, 0xfa);
+            return c;
+        }
+
+        // Ícono anterior (cinco barras de una onda, del color del estado). Solo de respaldo si falta el recurso.
+        static Icon IconoOnda(Color c)
         {
             using (var bmp = new Bitmap(32, 32))
             {
