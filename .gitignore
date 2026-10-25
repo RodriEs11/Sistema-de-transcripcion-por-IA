@@ -1,0 +1,83 @@
+# =====================================================================
+#  .gitignore — Sistema de transcripción de informes médicos
+#  Regla general: el repositorio contiene SOLO código y documentación.
+#  Nada de datos de pacientes, secretos, configuraciones locales ni binarios.
+# =====================================================================
+
+# --- Secretos y configuración local -----------------------------------
+# contraseñas (PBKDF2), llaves de las PC, canal ntfy
+acceso_remoto.json
+# configuración local (se crea desde configuracion.ejemplo.json)
+configuracion.json
+*.env
+.env*
+*.pem
+*.key
+
+# --- Datos clínicos y derivados (NUNCA se suben) ----------------------
+# plantillas reales, notas de médicos, correcciones aprendidas
+conocimiento/
+# pares dictado → informe de pacientes reales
+ejemplos/
+# informes Word reales convertidos a texto
+referencias/
+# evaluaciones e historial sobre audios reales
+resultados/
+# logs y actividad.csv (nombres de casos, PC, médicos)
+registros/
+Informes/
+Audios_nuevos/
+Dataset/
+*.wav
+*.mp3
+*.m4a
+*.ogg
+*.flac
+*.wma
+*.aac
+*.opus
+*.doc
+*.docx
+*.dotm
+
+# --- Distribución de la app del trabajo (se genera al compilar) -------
+# Solo se versionan el manual y el .config; el .exe, las DLL de WebView2 y
+# conexion.json (contiene el canal secreto de avisos) quedan fuera.
+cliente/*
+!cliente/LEEME.txt
+!cliente/Transcripcion.exe.config
+cliente_codigo/bin/
+cliente_codigo/obj/
+cliente_codigo/lib/
+*.exe
+*.dll
+*.pdb
+*.viejo*
+*.nuevo
+*.fallida
+
+# --- Herramientas descargadas -----------------------------------------
+cloudflared.exe
+
+# --- Respaldos y archivos de trabajo ----------------------------------
+respaldo/
+respaldo_*/
+_huellas.json
+_ia_vuelve
+*.bak
+*.tmp
+
+# --- Python -----------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# --- Editores y sistema operativo -------------------------------------
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+.DS_Store
