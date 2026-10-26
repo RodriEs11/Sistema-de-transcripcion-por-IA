@@ -1625,11 +1625,11 @@ PAGINA_PANEL_NO_HABILITADO = """<!doctype html><html lang="es"><head><meta chars
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Administración · Transcripción</title>
 <style>:root{color-scheme:light dark}body{margin:0;min-height:100vh;display:grid;place-items:center;
 font:15px/1.5 "Segoe UI",system-ui,sans-serif;background:Canvas;color:CanvasText}
-div{max-width:440px;padding:24px}h1{font-size:19px;margin:0 0 8px}a{color:#1f5fbf}</style></head>
+div{max-width:440px;padding:24px}h1{font-size:19px;margin:0 0 8px}a.volver{display:inline-block;margin-top:6px;font-weight:600;text-decoration:none;color:CanvasText;border:1px solid GrayText;border-radius:7px;padding:7px 14px}a.volver:hover{border-color:#1f5fbf}a.volver:focus-visible{outline:2px solid #1f5fbf;outline-offset:2px}</style></head>
 <body><div><h1>Panel no habilitado en el trabajo</h1><p>El panel de administración todavía no se puede abrir desde
 las PC del trabajo. Para habilitarlo, en la PC del servidor abrí <b>http://127.0.0.1:8765/admin</b> y configurá
 la <b>contraseña del panel desde el trabajo</b>.</p>
-<p><a href="/">Volver a los informes</a></p></div></body></html>"""
+<p><a class="volver" href="/">Volver a los informes</a></p></div></body></html>"""
 
 
 def pagina_panel_entrar(pc, volver):
@@ -1649,13 +1649,15 @@ input{font:inherit;font-weight:400;color:var(--tx);background:var(--bg);border:1
 input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
 button{font:inherit;font-weight:600;background:var(--ac);color:#fff;border:0;border-radius:7px;padding:9px;cursor:pointer}
 button:disabled{opacity:.6;cursor:default}.err{color:var(--err);font-weight:600;font-size:13.5px;min-height:1em}
-a{color:var(--ac);font-size:13.5px;text-align:center}</style>
+a.volver{display:block;text-align:center;font-weight:600;text-decoration:none;color:var(--tx);background:var(--p);
+border:1px solid var(--bd);border-radius:7px;padding:8px}
+a.volver:hover{border-color:var(--ac)}</style>
 </head><body><form id="f" autocomplete="off"><h1>Panel de administración</h1>
 <p>Estás en <b>{{pc}}</b>. Escribí la contraseña del panel: es distinta de la del acceso remoto y la configura
 quien administra el servidor.</p>
 <label>Contraseña del panel<input id="c" type="password" required autocomplete="off" autofocus></label>
 <div class="err" id="err" role="alert"></div>
-<button id="b">Entrar al panel</button><a href="/">Volver a los informes</a></form>
+<button id="b">Entrar al panel</button><a class="volver" href="/">Volver a los informes</a></form>
 <script>
 const VOLVER = {{volver}};
 document.getElementById('f').onsubmit = async ev => {
@@ -1679,11 +1681,11 @@ PAGINA_SOLO_LOCAL = """<!doctype html><html lang="es"><head><meta charset="utf-8
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Administración · Transcripción</title>
 <style>:root{color-scheme:light dark}body{margin:0;min-height:100vh;display:grid;place-items:center;
 font:15px/1.5 "Segoe UI",system-ui,sans-serif;background:Canvas;color:CanvasText}
-div{max-width:420px;padding:24px}h1{font-size:19px;margin:0 0 8px}a{color:#1f5fbf}</style></head>
+div{max-width:420px;padding:24px}h1{font-size:19px;margin:0 0 8px}a.volver{display:inline-block;margin-top:6px;font-weight:600;text-decoration:none;color:CanvasText;border:1px solid GrayText;border-radius:7px;padding:7px 14px}a.volver:hover{border-color:#1f5fbf}a.volver:focus-visible{outline:2px solid #1f5fbf;outline-offset:2px}</style></head>
 <body><div><h1>Solo en la PC del servidor</h1><p>El panel de administración se abre únicamente en la PC donde
 corre el servidor, en <b>http://127.0.0.1:8765/admin</b> (escribí exactamente esa dirección). Desde las PC del
 trabajo se abre con el engranaje de la lista, si se habilitó con su contraseña.</p>
-<p><a href="/">Volver a los informes</a></p></div></body></html>"""
+<p><a class="volver" href="/">Volver a los informes</a></p></div></body></html>"""
 
 
 def anunciar_audio(nombre, cuerpo, desde):

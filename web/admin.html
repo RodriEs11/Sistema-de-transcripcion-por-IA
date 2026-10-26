@@ -152,10 +152,9 @@ form.clave .fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     <h1>Administración del servidor</h1>
     <span class="sub" id="sub">Solo en esta PC · se actualiza sola</span>
     <span class="sep"></span>
-    <button id="bSalirPanel" class="chico" hidden title="Cierra la sesión del panel en esta PC y vuelve a los informes">Salir del panel</button>
-    <a class="boton" href="/">
+    <button id="bSalirPanel" type="button" title="Vuelve a la lista de informes">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
-      Volver a los informes</a>
+      Salir del panel</button>
     <button id="bTema" class="ico" title="Cambiar entre modo claro y oscuro" aria-label="Cambiar entre modo claro y oscuro">
       <svg class="solo-claro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       <svg class="solo-oscuro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
@@ -489,11 +488,13 @@ document.querySelectorAll('[data-abrir]').forEach(b => b.onclick = () => accion(
 function modoRemoto(v, subNormal){
   const rem = !!(v && v.remoto);
   document.documentElement.classList.toggle('panel-remoto', rem);
-  $('#bSalirPanel').hidden = !rem;
+  $('#bSalirPanel').title = rem ? 'Cierra la sesión del panel en esta PC y vuelve a los informes' : 'Vuelve a la lista de informes';
   $('#sub').textContent = rem ? `Desde ${v.pc} · la sesión del panel se cierra sola tras 30 min sin usarla` : subNormal;
 }
 $('#bSalirPanel').onclick = async () => {
-  try { await fetch('/api/admin/salir', {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Panel': '1'}, body: '{}'}); } catch(e){}
+  // un solo botón: desde una PC del trabajo además cierra la sesión del panel
+  if(document.documentElement.classList.contains('panel-remoto'))
+    try { await fetch('/api/admin/salir', {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Panel': '1'}, body: '{}'}); } catch(e){}
   location.href = '/';
 };
 

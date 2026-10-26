@@ -61,6 +61,7 @@ body.redimensionando,body.redimensionando *{cursor:col-resize!important;user-sel
 body.redimensionando iframe,body.redimensionando #editor,body.redimensionando #dictado{pointer-events:none}
 .marca{padding:14px 12px 10px 16px;font-weight:700;font-size:15px;display:flex;align-items:center;gap:4px}
 .marca small{font-weight:400;color:var(--mu);font-size:12px;margin:0 2px 0 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.marca .ico{flex:none}
 .punto{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
 .punto.mal{background:var(--err)}
 .tabs{margin:0 12px 10px;display:flex;gap:4px;padding:3px;background:var(--bg);border-radius:9px}
@@ -164,8 +165,10 @@ main{min-width:0;min-height:0;display:flex;flex-direction:column}
 #dictado .actual{background:var(--actual)}
 .selmed{margin:0 12px 10px;display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mu)}
 .selmed select,.barra select.med{border:1px solid var(--bd2);border-radius:7px;padding:5px 6px;background:var(--panel);color:var(--tx)}
-.pie{border-top:1px solid var(--bd);padding:10px 12px;display:flex;gap:8px}
-.pie button{flex:1}
+/* con la lista angosta los íconos pasan a una segunda fila (a la derecha) en vez de salirse de la columna */
+.pie{border-top:1px solid var(--bd);padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;row-gap:6px}
+.pie > button{flex:1 1 auto;min-width:0}
+.pie-ico{display:flex;gap:8px;flex:none;margin-left:auto}
 .pie #bAdmin{flex:none;padding:3px 8px;line-height:0;color:var(--mu)}
 .pie #bAdmin:hover{color:var(--tx)}
 .pie #bAdmin svg{width:16px;height:16px}
@@ -495,12 +498,12 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
     <div class="limpiar" id="limpiar" hidden><button id="bLimpiar" type="button"></button></div>
     <ul id="casos"></ul>
     <div class="pie"><button id="bVerPlant" class="chico">Plantillas</button><button id="bVerMed" class="chico">Médicos</button>
-      <button id="bConfig" class="chico ico-pie" title="Configuración" aria-label="Configuración">
+      <span class="pie-ico"><button id="bConfig" class="chico ico-pie" title="Configuración" aria-label="Configuración">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>
       </button>
       <button id="bAdmin" class="chico" hidden title="Administración del servidor: PC vinculadas, túnel, errores y estadísticas" aria-label="Administración del servidor">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-      </button></div>
+      </button></span></div>
     <div class="divisor" id="divLista" role="separator" aria-orientation="vertical" aria-label="Ancho de la lista" tabindex="0" title="Arrastrá para cambiar el ancho · doble clic: tamaño original"></div>
     <!-- lista oculta: queda este riel angosto para volver a mostrarla -->
     <div class="riel" id="riel">

@@ -3,6 +3,14 @@
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El servidor se versiona por fecha; la app del trabajo, con [versionado semántico](https://semver.org/lang/es/).
 
+## [Servidor 2026.10.26] — 2026-10-26
+
+### Cambiado
+- Lista de informes angosta: los íconos del pie (Configuración y Administración) pasan a una segunda fila en lugar de salirse de la columna.
+- Panel de administración y estadísticas: un solo botón «Salir del panel» (con aspecto de botón) en lugar de «Salir del panel» y «Volver a los informes»; desde una PC del trabajo además cierra la sesión del panel.
+- Página de contraseña del panel y avisos del panel: «Volver a los informes» es un botón, no un enlace subrayado.
+- Estadísticas: «Por médico» y «Por estudio» van una debajo de la otra a todo el ancho; los estudios combinados se cortan solo entre estudio y estudio (cada uno con su «+»).
+
 ## [Servidor 2026.10.25] — 2026-10-25
 
 ### Agregado
@@ -36,6 +44,10 @@ El servidor se versiona por fecha; la app del trabajo, con [versionado semántic
 - Consola con eventos por área, registro diario y `actividad.csv`.
 
 ## App del trabajo
+
+### [1.10] — 2026-10-26
+- La barra de tareas muestra el ícono nuevo: la primera vez que abre cada versión, la app le pide a Windows que vuelva a leer el ícono de `Transcripcion.exe` y de sus accesos directos (el anclado a la barra de tareas seguía con el ícono viejo en la memoria de íconos de Windows).
+- Se quitó de la barra superior la casilla «Tomar los audios del sistema automáticamente»: está en Configuración (y en el menú del ícono junto al reloj).
 
 ### [1.9] — 2026-10-25
 - «Configuración…» en Opciones (y en el ícono junto al reloj): abre la ventana de Configuración de la pantalla con las opciones de esta PC (abrir con Windows, toma de audios, avisos de informe listo, modo compacto, carpeta de los Word, registro de envíos, autocorrección, dirección del Servidor, desconectar, actualización). Sin pantalla cargada, abre una ventana propia.

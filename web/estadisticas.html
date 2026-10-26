@@ -164,9 +164,12 @@ td .nom{font-weight:600;overflow-wrap:anywhere}
 .leyenda-pct{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--mu);margin:10px 0 0}
 .leyenda-pct span{display:inline-flex;align-items:center;gap:5px}
 .leyenda-pct i{width:9px;height:9px;border-radius:50%;display:inline-block}
-.est-dos{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media (max-width:1000px){.est-dos{grid-template-columns:1fr}}
-@media (max-width:640px){.ocultable{display:none}td.barra-c{min-width:110px}}
+/* Por médico y Por estudio van uno debajo del otro: los nombres de los estudios son largos y en media columna no se leían */
+.est-dos{display:grid;grid-template-columns:1fr;gap:16px}
+td .nom .parte{white-space:nowrap}
+td .nom .mas-e{color:var(--mu);font-weight:400;margin-right:4px}
+td.col-nom{width:100%;min-width:220px}
+@media (max-width:640px){.ocultable{display:none}td.barra-c{min-width:110px}td .nom .parte{white-space:normal}td.col-nom{min-width:0}}
 
 /* desde una PC del trabajo no se abren carpetas de la PC del servidor */
 .panel-remoto [data-abrir]{display:none!important}
@@ -178,10 +181,9 @@ td .nom{font-weight:600;overflow-wrap:anywhere}
     <h1>Estadísticas</h1>
     <span class="sub" id="sub">Informes guardados · solo en esta PC · se actualiza sola cada minuto</span>
     <span class="sep"></span>
-    <button id="bSalirPanel" class="chico" hidden title="Cierra la sesión del panel en esta PC y vuelve a los informes">Salir del panel</button>
-    <a class="boton" href="/">
+    <button id="bSalirPanel" type="button" title="Vuelve a la lista de informes">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
-      Volver a los informes</a>
+      Salir del panel</button>
     <button id="bTema" class="ico" title="Cambiar entre modo claro y oscuro" aria-label="Cambiar entre modo claro y oscuro">
       <svg class="solo-claro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       <svg class="solo-oscuro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
@@ -292,11 +294,13 @@ function tile(et, punto, v, d){ return `<div class="tile"><div class="et">${et}<
 function modoRemoto(v, subNormal){
   const rem = !!(v && v.remoto);
   document.documentElement.classList.toggle('panel-remoto', rem);
-  $('#bSalirPanel').hidden = !rem;
+  $('#bSalirPanel').title = rem ? 'Cierra la sesión del panel en esta PC y vuelve a los informes' : 'Vuelve a la lista de informes';
   $('#sub').textContent = rem ? `Desde ${v.pc} · la sesión del panel se cierra sola tras 30 min sin usarla` : subNormal;
 }
 $('#bSalirPanel').onclick = async () => {
-  try { await fetch('/api/admin/salir', {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Panel': '1'}, body: '{}'}); } catch(e){}
+  // un solo botón: desde una PC del trabajo además cierra la sesión del panel
+  if(document.documentElement.classList.contains('panel-remoto'))
+    try { await fetch('/api/admin/salir', {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Panel': '1'}, body: '{}'}); } catch(e){}
   location.href = '/';
 };
 function cargar(){ cargarEst(true); }      // la usa accion() después de un botón
@@ -402,6 +406,11 @@ function armarEst(){
   armarUltimos();
 }
 
+// "Mamografía + Eco mamaria" -> cada estudio en un bloque que no se corta; si no entra, pasa al renglón siguiente con su "+"
+function nombreGrupo(n){
+  const p = String(n ?? '').split(' + ');
+  return `<span class="parte">${esc(p[0])}</span>` + p.slice(1).map(x => ` <span class="parte"><span class="mas-e">+</span>${esc(x)}</span>`).join('');
+}
 function tablaGrupo(filas, titulo){
   const porTiempo = S.medida === 'tiempo';
   const parte = f => f.parte;
@@ -411,7 +420,7 @@ function tablaGrupo(filas, titulo){
   for(const f of filas){
     const pt = parte(f);
     const tip = `${f.nombre}: ${plural(f.n, 'informe')} · ${num1(f.pct)} % corregido · ${ent(f.corregidas)} palabras corregidas` + (f.rev_n ? ` · ${horas(f.rev_total)} de revisión` : '');
-    h += `<tr><td><span class="nom">${esc(f.nombre)}</span>${f.marcas != null ? `<span class="sec">${num1(f.marcas)} marcas por informe</span>` : ''}</td>`
+    h += `<tr><td class="col-nom"><span class="nom">${nombreGrupo(f.nombre)}</span>${f.marcas != null ? `<span class="sec">${num1(f.marcas)} marcas por informe</span>` : ''}</td>`
        + `<td class="num">${ent(f.n)}</td><td class="num">${pctHtml(f.pct)}</td><td class="num">${f.rev_n ? mmss(f.rev_prom) : '<span class="mu">—</span>'}</td>`
        + `<td class="barra-c">${pt != null ? barra(pt, max, num1(pt) + ' %', tip) : '<span class="mu">—</span>'}</td></tr>`;
   }
