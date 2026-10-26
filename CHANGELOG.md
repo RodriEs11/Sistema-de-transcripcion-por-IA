@@ -3,6 +3,16 @@
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El servidor se versiona por fecha; la app del trabajo, con [versionado semántico](https://semver.org/lang/es/).
 
+## [Servidor 2026.10.33] — 2026-10-26
+
+### Arreglado
+- **El panel de administración no se podía abrir desde el trabajo con Microsoft Dev Tunnels**: al escribir la
+  contraseña decía «Pedido rechazado». Dev Tunnels reescribe los encabezados Host y Origin a
+  `localhost:<puerto del túnel>`, y el control de origen de los botones del panel esperaba la dirección pública.
+  Ahora, en el puerto propio del túnel se acepta ese Origin reescrito (además de Host, X-Forwarded-Host y la dirección
+  del túnel). Siguen exigiéndose `X-Panel`, `Sec-Fetch-Site` y la cookie SameSite=Strict. Cuando se rechaza un pedido,
+  el registro dice el motivo con los encabezados recibidos.
+
 ## [Servidor 2026.10.32] — 2026-10-26
 
 ### Agregado

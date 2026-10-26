@@ -113,23 +113,55 @@ def puede_ver(handler, puerto):
     return acceso(handler, puerto) is not None
 
 
+def _host(url):
+    """«https://Algo.devtunnels.ms:443/x» → «algo.devtunnels.ms» (sin esquema, puerto ni ruta)."""
+    h = (url or "").strip().lower()
+    if "://" in h:
+        h = h.split("://", 1)[1]
+    h = h.split("/", 1)[0].split(",")[0].strip()
+    if h.startswith("["):
+        return h.split("]")[0] + "]"
+    return h.rsplit(":", 1)[0] if h.count(":") == 1 else h
+
+
+def origenes_validos(handler, puerto):
+    """Hosts aceptados en el encabezado Origin de un botón del panel."""
+    if not handler.remoto:
+        return {"127.0.0.1", "localhost"}
+    hosts = {_host(handler.headers.get("Host")), _host(handler.headers.get("X-Forwarded-Host"))}
+    try:
+        import remoto as R
+        hosts.add(_host(R.URL_TUNEL.get("url")))
+    except Exception:
+        pass
+    # Microsoft Dev Tunnels reescribe Host y Origin a «localhost:<puerto del túnel>» antes de pasarlos al servidor
+    # (por eso desde que se usa Dev Tunnels el panel decía «Pedido rechazado» al entrar). Ese puerto solo recibe lo
+    # que llega por el túnel; lo que protege de otras páginas es X-Panel (exige permiso CORS, que el servidor no da),
+    # Sec-Fetch-Site y la cookie SameSite=Strict.
+    if getattr(handler, "es_puerto_tunel", False):
+        hosts |= {"127.0.0.1", "localhost"}
+    hosts.discard("")
+    return hosts
+
+
+def motivo_origen(handler, puerto):
+    """None si el pedido viene de la página del panel; si no, el motivo (para el registro)."""
+    if handler.headers.get("X-Panel") != "1":
+        return "falta el encabezado X-Panel"
+    origen = handler.headers.get("Origin") or ""
+    if origen and _host(origen) not in origenes_validos(handler, puerto):
+        return (f"Origin «{origen[:80]}» no coincide (Host «{(handler.headers.get('Host') or '')[:60]}», "
+                f"X-Forwarded-Host «{(handler.headers.get('X-Forwarded-Host') or '')[:60]}»)")
+    sitio = handler.headers.get("Sec-Fetch-Site")
+    if sitio and sitio not in ("same-origin", "none"):
+        return f"Sec-Fetch-Site «{sitio}»"
+    return None
+
+
 def mismo_origen(handler, puerto):
     """Para los botones (POST): encabezado propio (una página de otro sitio no lo puede mandar sin permiso) y,
     si el navegador dice de dónde viene el pedido, que sea de esta misma página."""
-    if handler.headers.get("X-Panel") != "1":
-        return False
-    origen = (handler.headers.get("Origin") or "").lower()
-    if handler.remoto:
-        # Cloudflare deja el Host como lo escribió el navegador; Microsoft Dev Tunnels puede cambiarlo y
-        # manda el original en X-Forwarded-Host.
-        validos = tuple("https://" + h.split(",")[0].strip().lower()
-                        for h in (handler.headers.get("Host"), handler.headers.get("X-Forwarded-Host")) if h)
-    else:
-        validos = (f"http://127.0.0.1:{puerto}", f"http://localhost:{puerto}")
-    if origen and origen not in validos:
-        return False
-    sitio = handler.headers.get("Sec-Fetch-Site")
-    return not sitio or sitio in ("same-origin", "none")
+    return motivo_origen(handler, puerto) is None
 
 
 def puede_cambiar(handler, puerto):

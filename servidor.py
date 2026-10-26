@@ -55,7 +55,7 @@ for d in (NUEVOS, DATOS):
     d.mkdir(parents=True, exist_ok=True)
 
 SIMULAR = os.environ.get("SIMULAR_IA") == "1"   # solo para pruebas
-VERSION = "2026.10.32"
+VERSION = "2026.10.33"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
@@ -1880,8 +1880,10 @@ class H(BaseHTTPRequestHandler):
         if not self.remoto:
             return self._json({"ok": True})          # en la PC del servidor no hace falta contraseña
         ip = self._ip()
-        if not ADM.mismo_origen(self, PUERTO):
-            L.aviso("ACCESO", f"Pedido para entrar al panel desde {self.pc} rechazado: no vino de la página del panel (IP {ip}).")
+        motivo = ADM.motivo_origen(self, PUERTO)
+        if motivo:
+            L.aviso("ACCESO", f"Pedido para entrar al panel desde {self.pc} rechazado: no vino de la página del panel "
+                              f"(IP {ip}; {motivo}).")
             return self._json({"error": "Pedido rechazado."}, 403)
         if not R.admin_configurado():
             return self._json({"error": "El panel de administración no está habilitado para las PC del trabajo."}, 403)
@@ -2232,6 +2234,8 @@ button{font:inherit;font-weight:600;background:var(--ac);color:#fff;border:0;bor
 
 class HTunel(H):
     """Pedidos que entran por el puerto propio del túnel de Microsoft: siempre de las PC del trabajo."""
+    es_puerto_tunel = True
+
     def _es_remoto(self):
         return True
 
