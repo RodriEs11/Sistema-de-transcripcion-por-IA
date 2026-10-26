@@ -3,6 +3,20 @@
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El servidor se versiona por fecha; la app del trabajo, con [versionado semántico](https://semver.org/lang/es/).
 
+## [Servidor 2026.10.27] — 2026-10-26
+
+### Agregado
+- Panel de administración, tarjeta **Mantenimiento**: archivos que cambiaron desde que arrancó el servidor («cambios sin tomar»), commit en uso y en la carpeta, archivos sin commitear, y botón **Reiniciar servidor** (ahora, en 1 o en 5 minutos; espera a que termine lo que se procesa, prueba antes el código nuevo, retoma la cola al volver).
+- **Mensaje a las PC del trabajo**: cartel en la página de informes, con duración; el aviso de reinicio muestra la cuenta regresiva.
+- **Cola de procesamiento** en vivo: etapa, cuánto lleva, orden y cuánto falta.
+- **Casos abiertos ahora** con botón **Liberar** (la PC que lo tenía deja de poder guardar y su página se cierra con un aviso).
+- Página **Correcciones** (`/admin/correcciones`): lo más corregido de lo que escribe la IA, en general o por médico, con **Convertir en regla** (agrega a `reglas_dictado.md`, con copia).
+- Estadísticas: **tiempos de procesamiento** (IA, Whisper por minuto de audio, total, por semana, los más lentos y errores).
+
+### Cambiado
+- `iniciar_servidor.bat` e `interfaz.bat` vuelven a abrir el servidor cuando termina con el código 75 (reinicio desde el panel).
+- La página de informes avisa «El servidor se está reiniciando» en lugar de «Sin conexión» durante un reinicio pedido desde el panel.
+
 ## [Servidor 2026.10.26] — 2026-10-26
 
 ### Cambiado

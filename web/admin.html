@@ -26,6 +26,7 @@
   --sombra:none;--nuevo:#7aa7f0;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 "Segoe UI",system-ui,sans-serif}
 button,input,select{font:inherit;color:var(--tx)}
 input{background:var(--panel);border:1px solid var(--bd2);border-radius:7px;padding:7px 10px;min-width:0}
@@ -142,6 +143,44 @@ form.clave .fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .pestanas a:hover{color:var(--tx);border-color:var(--bd2)}
 .pestanas a[aria-current=page]{color:var(--tx);border-color:var(--ac)}
 
+
+/* mantenimiento, mensaje a las PC, cola y casos abiertos */
+textarea{font:inherit;color:var(--tx);background:var(--panel);border:1px solid var(--bd2);border-radius:7px;padding:7px 10px;width:100%;resize:vertical;min-height:58px}
+textarea:focus-visible,select:focus-visible,input[type=radio]:focus-visible,input[type=checkbox]:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+select{font:inherit;color:var(--tx);background:var(--panel);border:1px solid var(--bd2);border-radius:7px;padding:6px 8px}
+.cambios{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.cambios li{font:12px ui-monospace,Consolas,monospace;background:var(--panel);border:1px solid var(--aviso);border-radius:6px;padding:2px 7px}
+.cambios li small{font-family:"Segoe UI",system-ui,sans-serif;color:var(--mu);margin-left:5px}
+.form-rei,.form-msj{display:flex;flex-direction:column;gap:10px;margin-top:12px;padding:12px;border:1px solid var(--bd);border-radius:9px;background:var(--bg)}
+.form-rei[hidden],.form-msj[hidden]{display:none}
+.opciones{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13.5px}
+.opciones label,.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.campo{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+.campo .opciones,.campo textarea,.campo select{font-weight:400}
+.fila-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ayuda{font-size:12px;color:var(--mu);font-weight:400}
+.rapidos{display:flex;flex-wrap:wrap;gap:6px}
+.rapidos button{font-size:12px;padding:2px 9px;border-radius:12px;color:var(--mu)}
+.estado-rei{margin-top:12px;padding:11px 12px;border-radius:9px;border:1px solid var(--aviso);background:var(--aviso-bg)}
+.estado-rei .grande{font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cuenta-atras{font-variant-numeric:tabular-nums}
+.msj-actual{padding:10px 12px;border-radius:9px;border:1px solid var(--bd2);background:var(--bg);display:flex;gap:10px;align-items:flex-start}
+.msj-actual.aviso{border-color:var(--aviso);background:var(--aviso-bg)}
+.msj-actual .t{flex:1;min-width:0;overflow-wrap:anywhere}
+.msj-actual .t small{display:block;color:var(--mu);font-size:12px;margin-top:2px}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td .nom{font-weight:600;overflow-wrap:anywhere}
+.badge-e{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:1px 8px;border-radius:10px;border:1px solid var(--bd2);white-space:nowrap}
+.badge-e.ahora{color:var(--ac);border-color:var(--ac);background:var(--ac-suave)}
+.badge-e.espera{color:var(--aviso);border-color:var(--aviso);background:var(--aviso-bg)}
+.spin{width:10px;height:10px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;display:inline-block;animation:gira .8s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.sin-conexion.reiniciando{background:var(--aviso-bg);border-color:var(--aviso)}
+.sin-conexion.reiniciando b{color:var(--aviso)}
+details.mas-git summary{cursor:pointer;color:var(--mu);font-size:12.5px}
+details.mas-git ul{margin:4px 0 0;padding-left:18px;font:12px ui-monospace,Consolas,monospace}
+
 /* desde una PC del trabajo no se abren carpetas de la PC del servidor */
 .panel-remoto [data-abrir]{display:none!important}
 </style>
@@ -161,7 +200,7 @@ form.clave .fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     </button>
   </div>
   <nav class="pestanas" aria-label="Páginas del panel">
-    <a href="/admin" aria-current="page">Estado del servidor</a><a href="/admin/estadisticas">Estadísticas</a>
+    <a href="/admin" aria-current="page">Estado del servidor</a><a href="/admin/estadisticas">Estadísticas</a><a href="/admin/correcciones">Correcciones</a>
   </nav>
 </header>
 <main>
@@ -170,6 +209,66 @@ form.clave .fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   <div class="cargando" id="cargando">Cargando…</div>
 
   <section class="resumen" id="resumen" aria-label="Resumen" hidden></section>
+
+  <div class="dos" id="filaMant" hidden>
+    <section class="card" aria-labelledby="tMant">
+      <div class="cab"><h2 id="tMant">Mantenimiento</h2><span class="sep"></span><span class="cuenta" id="mantCuenta"></span></div>
+      <div class="cuerpo">
+        <div id="mantEstado"></div>
+        <div id="mantRei"></div>
+        <form class="form-rei" id="fRei" hidden novalidate>
+          <div class="campo">Cuándo
+            <div class="opciones" role="radiogroup" aria-label="Cuándo reiniciar">
+              <label><input type="radio" name="reiEn" value="0" checked> En cuanto termine lo que se está procesando</label>
+              <label><input type="radio" name="reiEn" value="60"> En 1 minuto</label>
+              <label><input type="radio" name="reiEn" value="300"> En 5 minutos</label>
+            </div>
+          </div>
+          <label class="chk"><input type="checkbox" id="reiAvisar" checked> Avisar a las PC con un cartel en pantalla</label>
+          <label class="campo" id="reiTextoCampo">Texto del cartel <span class="ayuda">(arriba el cartel dice cuánto falta)</span>
+            <textarea id="reiTexto" maxlength="300" rows="2"></textarea></label>
+          <div class="err-txt" id="reiErr" aria-live="polite"></div>
+          <div class="fila-form"><button class="prim" id="bReiOk" type="submit">Programar reinicio</button>
+            <button type="button" id="bReiNo">Cancelar</button></div>
+          <p class="nota" style="margin:0">Antes de reiniciar se prueba el código nuevo: si tiene un error, no se reinicia (el servidor no volvería a abrir).
+            Lo que esté en la cola se retoma solo. Las PC del trabajo se reconectan solas; por el túnel tarda un poco más porque cambia la dirección.</p>
+        </form>
+      </div>
+    </section>
+    <section class="card" aria-labelledby="tMsj">
+      <div class="cab"><h2 id="tMsj">Mensaje a las PC del trabajo</h2></div>
+      <div class="cuerpo">
+        <div id="msjActual"></div>
+        <form class="form-msj" id="fMsj" novalidate>
+          <label class="campo">Mensaje <span class="ayuda">aparece arriba a la derecha en la pantalla de informes de todas las PC</span>
+            <textarea id="msjTexto" maxlength="300" rows="2" placeholder="Ej.: El sistema se reinicia en 5 minutos, guardá lo que estés haciendo."></textarea></label>
+          <div class="rapidos" aria-label="Mensajes rápidos">
+            <button type="button" data-rapido="El sistema se reinicia en 5 minutos: guardá lo que estés haciendo.">Se reinicia en 5 min</button>
+            <button type="button" data-rapido="Hoy los informes pueden tardar más de lo normal en estar listos.">Va más lento</button>
+            <button type="button" data-rapido="El servidor va a estar apagado un rato. Los audios que grabes se envían solos cuando vuelva.">Va a estar apagado</button>
+          </div>
+          <div class="fila-form">
+            <label class="campo" style="flex-direction:row;align-items:center;gap:6px">Mostrar
+              <select id="msjMin"><option value="0">hasta quitarlo</option><option value="15">15 minutos</option><option value="60" selected>1 hora</option><option value="240">4 horas</option><option value="720">12 horas</option></select></label>
+            <label class="chk"><input type="checkbox" id="msjAviso" checked> Destacado (amarillo)</label>
+          </div>
+          <div class="err-txt" id="msjErr" aria-live="polite"></div>
+          <div class="fila-form"><button class="prim" id="bMsj" type="submit">Mostrar en las PC</button></div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <div class="dos" id="filaCola" hidden>
+    <section class="card" aria-labelledby="tCola">
+      <div class="cab"><h2 id="tCola">Cola de procesamiento</h2><span class="sep"></span><span class="cuenta" id="colaCuenta"></span></div>
+      <div id="cola"></div>
+    </section>
+    <section class="card" aria-labelledby="tAbiertos">
+      <div class="cab"><h2 id="tAbiertos">Casos abiertos ahora</h2><span class="sep"></span><span class="cuenta" id="abiertosCuenta"></span></div>
+      <div id="abiertos"></div>
+    </section>
+  </div>
 
   <div class="dos" id="fila1" hidden>
     <section class="card" aria-labelledby="tTunel">
@@ -273,19 +372,19 @@ const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : (varios || uno + 's')
 function fechaCorta(s){         // "2026-10-24 23:47" -> "24/10 23:47"
   const m = /^(\d{4})-(\d\d)-(\d\d)(?: (\d\d:\d\d))?/.exec(s || ''); return m ? `${m[3]}/${m[2]}${m[4] ? ' ' + m[4] : ''}` : (s || '');
 }
-function fechaDe(t){ const d = new Date(t * 1000); return d.toLocaleDateString('es-AR', {day:'2-digit', month:'2-digit'}) + ' ' + d.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'}); }
+function fechaDe(t){ const d = new Date(t * 1000); return d.toLocaleDateString('es-AR', {day:'2-digit', month:'2-digit'}) + ' ' + d.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', hourCycle:'h23'}); }
 let toastT;
 function toast(msg, error){
   const t = $('#toast'); t.textContent = msg; t.className = error ? 'err' : ''; t.style.display = 'block';
   clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', error ? 9000 : 6000);
 }
-async function accion(ruta, datos, boton){
+async function accion(ruta, datos, boton, siFalla){
   if(boton) boton.disabled = true;
   try {
     const r = await fetch('/api/admin/' + ruta, {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Panel': '1'}, body: JSON.stringify(datos || {})});
     const j = await r.json().catch(() => ({}));
     if(r.status === 401 && j.entrar_panel){ location.reload(); return null; }
-    if(!r.ok) throw new Error(j.error || 'Error ' + r.status);
+    if(!r.ok){ if(siFalla) siFalla(j); throw new Error(j.error || 'Error ' + r.status); }
     if(j.msg) toast(j.msg);
     cargar();
     return j;
@@ -484,6 +583,161 @@ document.querySelectorAll('.filtro button').forEach(b => b.onclick = () => {
 $('#bMas').onclick = () => { cuantos += 25; ultimo['#eventos'] = null; armarRegistro(E); };
 document.querySelectorAll('[data-abrir]').forEach(b => b.onclick = () => accion('abrir', {que: b.dataset.abrir}, b));
 
+
+/* ---------- reloj del servidor, para las cuentas regresivas */
+let desfase = 0;                                    // hora del servidor - hora de esta PC (segundos)
+const ahoraSrv = () => Date.now() / 1000 + desfase;
+function mmss(seg){ seg = Math.max(0, Math.round(seg || 0)); return `${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, '0')}`; }
+function aprox(seg){ seg = Math.max(0, Math.round(seg || 0)); return seg < 60 ? `${seg} s` : `${Math.round(seg / 60)} min`; }
+function horaDe(t){ return new Date(t * 1000).toLocaleTimeString('es-AR', {hour: '2-digit', minute: '2-digit', hourCycle: 'h23'}); }
+setInterval(() => document.querySelectorAll('[data-cuando]').forEach(el => { el.textContent = mmss(+el.dataset.cuando - ahoraSrv()); }), 1000);
+
+/* ---------- mantenimiento: código en uso, cambios sin tomar y reinicio */
+const TEXTO_REINICIO = 'Guardá lo que estés haciendo. El informe abierto se guarda solo; en un minuto el sistema vuelve y la pantalla se reconecta sola.';
+function lineaCommit(g){
+  return `<span class="cod">${esc(g.commit)}</span> ${esc(g.mensaje || '')}${g.fecha ? ` <span style="color:var(--mu)">· ${fechaDe(g.fecha)}</span>` : ''}`;
+}
+function armarMant(e){
+  const m = e.mantenimiento, g = m.git || {}, gi = m.git_inicio || {}, cambios = m.cambios || [];
+  $('#mantCuenta').textContent = cambios.length ? plural(cambios.length, 'cambio sin tomar', 'cambios sin tomar') : '';
+  let h = cambios.length
+    ? `<div class="explica av" style="margin-top:0"><b>Hay cambios que el servidor todavía no tomó.</b> Estos archivos cambiaron después de que arrancó: para usarlos hay que reiniciarlo.`
+      + `<ul class="cambios">${cambios.map(c => `<li>${esc(c.archivo)}<small>${c.estado === 'borrado' ? 'borrado' : 'cambió ' + (c.modificado ? fechaDe(c.modificado) : '')}</small></li>`).join('')}</ul></div>`
+    : '<div class="estado-grande"><span class="punto ok"></span>Usando el código de la carpeta</div><p class="nota" style="margin-top:4px">No hay cambios sin tomar. Las páginas, las plantillas y las reglas se toman solas (alcanza con recargar la página).</p>';
+  h += '<dl class="dl">';
+  if(gi.commit) h += `<dt>En uso</dt><dd>${lineaCommit(gi)}${gi.sucios && gi.sucios.length ? ` <span class="etq av" title="${esc(gi.sucios.join(', '))}">+ ${plural(gi.sucios.length, 'archivo')} sin commitear</span>` : ''}<span class="sec" style="display:block;color:var(--mu);font-size:12px">el código con el que arrancó el servidor</span></dd>`;
+  if(g.commit){
+    const mismo = gi.completo && g.completo === gi.completo;
+    h += `<dt>En la carpeta</dt><dd>${mismo ? 'el mismo commit' : lineaCommit(g) + ' <span class="etq av">commit nuevo</span>'}`
+       + (g.sucios == null ? '' : g.sucios.length
+          ? `<details class="mas-git"><summary>${plural(g.sucios.length, 'archivo')} con cambios sin commitear</summary><ul>${g.sucios.map(x => `<li>${esc(x)}</li>`).join('')}</ul></details>`
+          : ' · <span style="color:var(--ok)">sin cambios sin commitear</span>')
+       + (g.sin_seguimiento && g.sin_seguimiento.length ? `<span style="display:block;color:var(--mu);font-size:12px">Archivos nuevos que git todavía no sigue: ${esc(g.sin_seguimiento.join(', '))}</span>` : '')
+       + (g.aviso ? `<span style="display:block;color:var(--mu);font-size:12px">${esc(g.aviso)}</span>` : '') + '</dd>';
+  } else if(g.error) h += `<dt>Versión</dt><dd style="color:var(--mu)">${esc(g.error)}</dd>`;
+  h += `<dt>Encendido</dt><dd>desde ${fechaDe(e.servidor.desde)} (${duracion(e.ahora - e.servidor.desde)})</dd></dl>`;
+  if(document.querySelector('#mantEstado details[open]') && ultimo['#mantEstado']) {} else poner('#mantEstado', h);
+
+  const r = m.reinicio;
+  let hr;
+  if(r){
+    const falta = r.cuando - e.ahora;
+    const txt = r.estado === 'reiniciando' ? '<span class="spin"></span>Reiniciando…'
+      : r.estado === 'esperando' ? `<span class="spin"></span>Esperando que termine ${r.procesando.length ? r.procesando.map(x => '«' + esc(x) + '»').join(', ') : 'lo que se está procesando'}`
+      : falta > 1 ? `Reinicio en <span class="cuenta-atras" data-cuando="${r.cuando}">${mmss(falta)}</span>`
+      : '<span class="spin"></span>Reiniciando en un instante…';
+    hr = `<div class="estado-rei" role="status"><div class="grande">${txt}</div><p class="nota" style="margin:4px 0 0">Pedido ${r.por === 'Servidor' ? 'en esta PC' : 'desde ' + esc(r.por)} ${hace(e.ahora - r.pedido)}`
+       + `${r.avisar ? ' · las PC ven el aviso' : ' · sin aviso a las PC'}${r.en_cola ? ` · ${plural(r.en_cola, 'audio')} en la cola: se retoma${r.en_cola === 1 ? '' : 'n'} al volver` : ''}.</p>`
+       + (r.estado === 'reiniciando' ? '' : `<div class="acciones" style="margin-top:10px"><button id="bReiCancelar">Cancelar reinicio</button>`
+          + (r.estado === 'esperando' ? '<button class="peligro" id="bReiYa" title="Corta lo que se está procesando: se vuelve a procesar solo cuando el servidor vuelve">Reiniciar ya, sin esperar</button>' : '') + '</div>')
+       + '</div>';
+    $('#fRei').hidden = true;
+  } else {
+    hr = `<div class="acciones"><button class="${cambios.length ? 'prim' : ''}" id="bReiAbrir" ${m.reiniciable ? '' : 'disabled'} ${$('#fRei').hidden ? '' : 'hidden'}>Reiniciar servidor…</button></div>`
+       + (m.reiniciable ? '' : `<p class="nota">${esc(m.motivo_no || '')}</p>`);
+  }
+  poner('#mantRei', hr);
+  const a = $('#bReiAbrir');
+  if(a) a.onclick = () => { $('#fRei').hidden = false; a.hidden = true; if(!$('#reiTexto').value) $('#reiTexto').value = TEXTO_REINICIO; $('#reiErr').textContent = ''; $('#bReiOk').focus(); };
+  const c = $('#bReiCancelar'); if(c) c.onclick = ev => accion('reinicio/cancelar', {}, ev.currentTarget);
+  const y = $('#bReiYa'); if(y) y.onclick = ev => {
+    if(confirm('¿Reiniciar ya, sin esperar?\n\nSe corta lo que se está procesando; se vuelve a procesar solo cuando el servidor vuelve.')) accion('reinicio/ya', {}, ev.currentTarget);
+  };
+}
+$('#reiAvisar').onchange = () => { $('#reiTextoCampo').hidden = !$('#reiAvisar').checked; };
+$('#bReiNo').onclick = () => { $('#fRei').hidden = true; const a = $('#bReiAbrir'); if(a) a.hidden = false; ultimo['#mantRei'] = null; if(E) armarMant(E); };
+$('#fRei').onsubmit = async ev => {
+  ev.preventDefault();
+  const en = +(document.querySelector('input[name=reiEn]:checked') || {}).value || 0, avisar = $('#reiAvisar').checked;
+  const rem = E && E.visor && E.visor.remoto, err = $('#reiErr');
+  err.textContent = '';
+  const cuando = en ? `en ${en / 60} ${en === 60 ? 'minuto' : 'minutos'}` : 'en cuanto termine lo que se está procesando';
+  if(!confirm(`¿Reiniciar el servidor ${cuando}?\n\n${avisar ? 'Las PC ven un cartel con la cuenta regresiva. ' : ''}Las PC se desconectan unos segundos y se reconectan solas.`
+      + (E && E.tunel.modo ? ' La dirección del túnel cambia y se publica sola.' : '')
+      + (rem ? '\n\nVos estás entrando por el túnel: la app se reconecta sola a la dirección nueva y vas a tener que volver a escribir la contraseña del panel.' : ''))) return;
+  const b = $('#bReiOk'), txt = b.textContent;
+  b.innerHTML = '<span class="spin"></span> Probando el código nuevo…';
+  const r = await accion('reinicio', {en, avisar, texto: $('#reiTexto').value}, b, j => {
+    err.innerHTML = esc(j.error || '') + (j.detalle ? `<pre style="white-space:pre-wrap;margin:6px 0 0;font:11.5px/1.4 ui-monospace,Consolas,monospace;color:var(--tx);background:var(--panel);border:1px solid var(--bd);border-radius:7px;padding:7px 9px;max-height:200px;overflow:auto">${esc(j.detalle)}</pre>` : '');
+  });
+  b.textContent = txt;
+  if(r){ $('#fRei').hidden = true; ultimo['#mantRei'] = null; }
+};
+
+/* ---------- mensaje a las PC */
+function armarMensaje(e){
+  const m = e.mantenimiento.mensaje, rei = e.mantenimiento.reinicio;
+  let h = '';
+  if(m){
+    const del = m.reinicio && rei;
+    h = `<div class="msj-actual ${m.tipo === 'aviso' ? 'aviso' : ''}"><div class="t"><b>En pantalla ahora:</b> ${del ? 'aviso del reinicio — ' : ''}${esc(m.texto)}`
+      + `<small>desde ${horaDe(m.desde)}${m.hasta ? ` · hasta las ${horaDe(m.hasta)}` : del ? ' · hasta que se reinicie' : ' · hasta que lo quites'}${m.por && m.por !== 'Servidor' ? ` · lo puso ${esc(m.por)}` : ''}</small></div>`
+      + (del ? '' : '<button class="chico" id="bMsjQuitar">Quitar</button>') + '</div>';
+  } else h = '<p class="nota" style="margin:0">No hay ningún mensaje en las pantallas. Cada PC lo puede cerrar con «Entendido».</p>';
+  poner('#msjActual', h);
+  const q = $('#bMsjQuitar'); if(q) q.onclick = ev => accion('mensaje/quitar', {}, ev.currentTarget);
+}
+document.querySelectorAll('[data-rapido]').forEach(b => b.onclick = () => { $('#msjTexto').value = b.dataset.rapido; $('#msjTexto').focus(); });
+$('#fMsj').onsubmit = async ev => {
+  ev.preventDefault();
+  const texto = $('#msjTexto').value.trim(), err = $('#msjErr');
+  err.textContent = '';
+  if(!texto){ err.textContent = 'Escribí el mensaje.'; $('#msjTexto').focus(); return; }
+  if(E && E.mantenimiento.mensaje && !confirm('Ya hay un mensaje en pantalla. ¿Reemplazarlo por este?')) return;
+  const r = await accion('mensaje', {texto, minutos: +$('#msjMin').value, tipo: $('#msjAviso').checked ? 'aviso' : 'info'}, $('#bMsj'));
+  if(r) $('#msjTexto').value = '';
+};
+
+/* ---------- cola */
+const ETQ_COLA = {transcribiendo: 'transcribiendo', generando: 'armando el informe', 'en cola': 'en cola'};
+function armarCola(e){
+  const c = e.cola, it = c.items;
+  $('#colaCuenta').textContent = it.length ? `${plural(it.length, 'audio')} · todo listo en ~${aprox(c.eta_total)}` : '';
+  const pie = `<p class="nota" style="margin:0;padding:10px 16px">${c.pausada ? '<b>En pausa:</b> hay un reinicio en camino; lo que espera se retoma al volver. ' : ''}`
+    + `Estimado con los últimos informes: Whisper tarda ${String(c.tiempos.whisper_x).replace('.', ',')} s por segundo de audio y la IA unos ${Math.round(c.tiempos.ia)} s por informe.`
+    + (c.errores ? ` ${plural(c.errores, 'caso')} con error: se reintenta${c.errores === 1 ? '' : 'n'} desde la lista de informes.` : '') + '</p>';
+  if(!it.length){
+    poner('#cola', `<div class="vacio"><b>No se está procesando nada.</b>Los audios que lleguen aparecen acá, con cuánto lleva cada uno y cuánto falta.</div>` + pie);
+    return;
+  }
+  let h = '<div class="tabla-env"><table><thead><tr><th scope="col">#</th><th scope="col">Audio</th><th scope="col">Etapa</th><th scope="col" class="num">Lleva</th><th scope="col" class="num">Listo en</th></tr></thead><tbody>';
+  it.forEach((x, i) => {
+    const activo = x.estado === 'transcribiendo' || x.estado === 'generando';
+    const cls = activo ? 'ahora' : x.espera_ia ? 'espera' : '';
+    const etq = x.espera_ia ? 'esperando la IA' : (ETQ_COLA[x.estado] || x.estado);
+    const det = [x.pc, x.medico || 'sin médico', x.dur ? mmss(x.dur) + ' de audio' : null].filter(Boolean).join(' · ');
+    h += `<tr><td class="num">${i + 1}</td><td><span class="nom">${esc(x.paciente || x.titulo)}</span><span class="sec">${esc(det)}</span></td>`
+       + `<td><span class="badge-e ${cls}">${activo ? '<span class="spin"></span>' : ''}${etq}</span>${x.msg && !activo ? `<span class="sec">${esc(x.msg)}</span>` : ''}</td>`
+       + `<td class="num">${x.etapa_desde != null ? mmss(x.etapa_desde) : '—'}${x.en_cola != null && x.en_cola > (x.etapa_desde || 0) + 5 ? `<span class="sec">llegó ${hace(x.en_cola)}</span>` : ''}</td>`
+       + `<td class="num">${x.espera_ia ? '<span style="color:var(--mu)">cuando vuelva la IA</span>' : '~' + aprox(x.eta)}</td></tr>`;
+  });
+  poner('#cola', h + '</tbody></table></div>' + pie);
+}
+
+/* ---------- casos abiertos */
+function armarAbiertos(e){
+  const a = e.abiertos;
+  $('#abiertosCuenta').textContent = a.length ? plural(a.length, 'caso') : '';
+  const pie = '<p class="nota" style="margin:0;padding:10px 16px">Un caso abierto no se puede abrir en otra PC. Si una PC se apaga o se cierra la app, su caso se libera solo a los 45 segundos. '
+    + '<b>Liberar</b> sirve cuando una PC quedó con un caso abierto y nadie lo está usando: esa PC deja de poder guardar cambios en él.</p>';
+  if(!a.length){ poner('#abiertos', '<div class="vacio"><b>Ninguna PC tiene un caso abierto.</b>Cuando alguien abre un caso para revisarlo, aparece acá.</div>' + pie); return; }
+  let h = '<div class="tabla-env"><table><thead><tr><th scope="col">Caso</th><th scope="col">PC</th><th scope="col">Abierto</th><th scope="col"><span style="position:absolute;left:-9999px">Acciones</span></th></tr></thead><tbody>';
+  for(const x of a){
+    const vivo = x.senal < 20;
+    h += `<tr><td><span class="nom">${esc(x.paciente || x.titulo)}</span>${x.rev ? `<span class="sec">revisión ${mmss(x.rev)}</span>` : ''}</td>`
+       + `<td><span class="pcnom">${esc(x.pc)}</span><span class="sec">${vivo ? '<span class="conex"><span class="punto ok vivo"></span>con señal</span>' : `sin señal hace ${x.senal} s · se libera solo en ${x.libera_en} s`}</span></td>`
+       + `<td>${hace(e.ahora - x.desde)}</td>`
+       + `<td style="text-align:right"><button class="chico peligro" data-liberar="${esc(x.nombre)}" data-pc="${esc(x.pc)}" data-tit="${esc(x.paciente || x.titulo)}" data-vivo="${vivo ? 1 : ''}">Liberar</button></td></tr>`;
+  }
+  poner('#abiertos', h + '</tbody></table></div>' + pie);
+  document.querySelectorAll('[data-liberar]').forEach(b => b.onclick = () => {
+    const d = b.dataset;
+    if(confirm(`¿Liberar «${d.tit}»?\n\n${d.pc} lo tiene abierto${d.vivo ? ' y sigue conectada: si alguien lo está revisando ahí, pierde lo que escribió en los últimos segundos' : ''}. `
+               + 'Lo que ya se guardó solo queda como borrador y el caso se puede abrir desde otra PC.'))
+      accion('caso/liberar', {nombre: d.liberar}, b);
+  });
+}
+
 /* ---------- usado desde una PC del trabajo (con la contraseña del panel) */
 function modoRemoto(v, subNormal){
   const rem = !!(v && v.remoto);
@@ -499,19 +753,45 @@ $('#bSalirPanel').onclick = async () => {
 };
 
 /* ---------- carga */
+const SIN_CONEXION = $('#sinConexion').innerHTML;
+let desdeVisto = null, reiniciandoDesde = 0;
+function sinConexion(){
+  const box = $('#sinConexion'), r = E && E.mantenimiento && E.mantenimiento.reinicio;
+  if(!reiniciandoDesde && r && (r.estado === 'reiniciando' || (r.estado === 'programado' && r.cuando - ahoraSrv() < 8))) reiniciandoDesde = Date.now();
+  if(reiniciandoDesde){
+    const tarde = Date.now() - reiniciandoDesde > 120000, rem = E && E.visor && E.visor.remoto;
+    box.className = 'sin-conexion reiniciando';
+    box.innerHTML = tarde
+      ? '<b>El servidor no volvió después de 2 minutos.</b> Mirá la ventana del servidor en esa PC: si dice «Presione una tecla para continuar», se cerró con un error (el detalle está arriba de ese mensaje y en la carpeta registros).'
+      : '<b>Reiniciando el servidor…</b> Esta página se reconecta sola en unos segundos.'
+        + (rem ? ' Como entraste por el túnel, la dirección cambia: la app se reconecta sola y vas a tener que volver a escribir la contraseña del panel.' : '');
+  } else { box.className = 'sin-conexion'; box.innerHTML = SIN_CONEXION; }
+  box.style.display = 'block';
+  $('#sub').textContent = reiniciandoDesde ? 'Reiniciando · reintentando' : 'Sin conexión · reintentando';
+}
 async function cargar(){
   let e;
   try {
     const r = await fetch('/api/admin/estado', {cache: 'no-store'});
     if(r.status === 403 || r.status === 401){ location.reload(); return; }     // sesión del panel vencida: pide la contraseña
     e = await r.json();
-  } catch(err){ $('#sinConexion').style.display = 'block'; $('#sub').textContent = 'Sin conexión · reintentando'; return; }
+  } catch(err){ sinConexion(); return; }
   $('#sinConexion').style.display = 'none';
+  if(desdeVisto && e.servidor.desde !== desdeVisto) toast('Servidor reiniciado: ya está usando el código de la carpeta.');
+  desdeVisto = e.servidor.desde; reiniciandoDesde = 0;
+  desfase = e.ahora - Date.now() / 1000;
   E = e;
   $('#cargando').hidden = true;
-  ['#resumen', '#fila1', '#secPanel', '#secPcs', '#secReg'].forEach(s => $(s).hidden = false);
+  ['#resumen', '#filaMant', '#filaCola', '#fila1', '#secPanel', '#secPcs', '#secReg'].forEach(s => $(s).hidden = false);
   modoRemoto(e.visor, 'Solo en esta PC · se actualiza sola');
-  armarResumen(e); armarTunel(e); armarClave(e); armarPanel(e); armarPcs(e); armarRegistro(e);
+  armarResumen(e);
+  if(e.mantenimiento){ armarMant(e); armarMensaje(e); armarCola(e); armarAbiertos(e); }
+  else {      // la página es nueva pero el servidor que la sirve todavía es el de antes
+    $('#filaCola').hidden = true; $('#fMsj').closest('section').hidden = true;
+    poner('#mantEstado', `<div class="explica av" style="margin-top:0"><b>El servidor está usando una versión anterior.</b> Para ver esta parte (cambios sin tomar, reinicio, mensajes a las PC, cola y casos abiertos), cerrá la ventana del servidor y abrila de nuevo con <span class="cod">${e.tunel && e.tunel.modo ? 'iniciar_servidor.bat' : 'interfaz.bat'}</span>. Desde ahí en adelante se puede reiniciar desde acá.</div>`);
+    poner('#mantRei', '');
+  }
+  armarTunel(e); armarClave(e); armarPanel(e); armarPcs(e); armarRegistro(e);
 }
 addEventListener('pagehide', () => { if(E) grabarLS('adminVisto', String(Math.round(E.ahora))); });
 cargar(); setInterval(cargar, 3000);

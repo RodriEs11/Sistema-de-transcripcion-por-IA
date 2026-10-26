@@ -29,7 +29,7 @@ EJ = AQUI / "ejemplos"
 SIN_MEDICO = "Sin especificar"
 SIN_ESTUDIO = "Sin estudio reconocido"
 LOCAL = "Servidor"
-_CACHE = {"firma": None, "t": 0, "informes": []}
+_CACHE = {"firma": None, "t": 0, "informes": [], "generados": []}
 _lock = threading.Lock()
 _CLAVE_EJ = re.compile(r"^(\d{8}_\d{6})_(.+)\.informe\.txt$")
 _PC_EN_NOMBRE = re.compile(r"^(.+?)_\d{8}-\d{6}_")
@@ -167,8 +167,24 @@ def _informes(actual):
             "dur": _num(ge.get("duracion_audio_s")) if ge else None,
         })
     salida.sort(key=lambda x: x["t"])
+    generados = []
+    for r in _leer_csv(L.CARPETA / "actividad.csv"):
+        if r.get("evento") not in ("generado", "error"):
+            continue
+        t = _fecha(f"{r.get('fecha', '')} {r.get('hora', '')}")
+        if not t:
+            continue
+        n = (r.get("caso") or "").strip()
+        m = _PC_EN_NOMBRE.match(n)
+        generados.append({"t": t, "evento": r.get("evento"), "caso": n,
+                          "titulo": (r.get("audio_original") or "").strip() or (n[m.end():].replace("-", " ") if m else n),
+                          "pc": (r.get("pc") or "").strip() or (m.group(1) if m else LOCAL),
+                          "medico": (r.get("medico") or "").strip(), "dur": _num(r.get("duracion_audio_s")),
+                          "whisper": _num(r.get("whisper_s")), "ia": _num(r.get("ia_s")),
+                          "detalle": (r.get("detalle") or "").strip()[:200]})
+    generados.sort(key=lambda x: x["t"])
     with _lock:
-        _CACHE.update(firma=firma, t=time.time(), informes=salida)
+        _CACHE.update(firma=firma, t=time.time(), informes=salida, generados=generados)
     return salida
 
 
@@ -242,6 +258,69 @@ def _semanas(lista, desde, hasta):
     return filas
 
 
+# ------------------------------------------------- tiempos de procesamiento
+def _pctl(xs, q):
+    xs = sorted(x for x in xs if x is not None)
+    if not xs:
+        return None
+    k = (len(xs) - 1) * q
+    i = int(k)
+    return round(xs[i] + (xs[min(i + 1, len(xs) - 1)] - xs[i]) * (k - i), 1)
+
+
+def _resumen_tiempos(lista):
+    ok = [g for g in lista if g["evento"] == "generado"]
+    w = [g["whisper"] for g in ok if g["whisper"]]
+    ia = [g["ia"] for g in ok if g["ia"]]
+    fx = [g["whisper"] / g["dur"] for g in ok if g["whisper"] and g["dur"] and g["dur"] > 1]
+    tot = [(g["whisper"] or 0) + (g["ia"] or 0) for g in ok if g["whisper"] or g["ia"]]
+    return {"n": len(ok), "errores": sum(1 for g in lista if g["evento"] == "error"),
+            "whisper_prom": _prom(w), "whisper_mediana": _mediana(w),
+            "whisper_x": round(statistics.median(fx), 3) if fx else None,          # segundos por segundo de audio
+            "ia_prom": _prom(ia), "ia_mediana": _mediana(ia), "ia_p90": _pctl(ia, 0.9),
+            "total_prom": _prom(tot), "total_mediana": _mediana(tot),
+            "audio_prom": _prom([g["dur"] for g in ok])}
+
+
+def tiempos(desde, dias, ahora):
+    """Cuánto tardan Whisper y la IA en los informes generados del período (de actividad.csv)."""
+    with _lock:
+        todos = list(_CACHE["generados"])
+    lista = [g for g in todos if desde is None or g["t"] >= desde]
+    previo = None
+    if dias:
+        ant = [g for g in todos if desde - dias * 86400 <= g["t"] < desde]
+        if any(g["evento"] == "generado" for g in ant):
+            previo = _resumen_tiempos(ant)
+    ok = [g for g in lista if g["evento"] == "generado" and (g["whisper"] or g["ia"])]
+    res = _resumen_tiempos(lista)
+    med_ia, med_x = res["ia_mediana"], res["whisper_x"]
+    lentos = []
+    for g in sorted(ok, key=lambda g: -((g["whisper"] or 0) + (g["ia"] or 0)))[:10]:
+        x = g["whisper"] / g["dur"] if g["whisper"] and g["dur"] and g["dur"] > 1 else None
+        lentos.append({"t": g["t"], "titulo": g["titulo"], "pc": g["pc"], "dur": g["dur"], "whisper": g["whisper"],
+                       "ia": g["ia"], "whisper_x": round(x, 3) if x else None,
+                       "ia_lenta": bool(g["ia"] and med_ia and g["ia"] >= 2 * med_ia and g["ia"] - med_ia >= 10),
+                       "whisper_lento": bool(x and med_x and x >= 2 * med_x and (g["whisper"] or 0) >= 5)})
+    semanas = []
+    if ok:
+        grupos = {}
+        for g in lista:
+            grupos.setdefault(_lunes(g["t"]), []).append(g)
+        ini = _lunes(desde) if desde else min(grupos)
+        fin = _lunes(ahora)
+        ini = max(ini, fin - timedelta(weeks=25))
+        d = ini
+        while d <= fin:
+            semanas.append(dict(_resumen_tiempos(grupos.get(d, [])), desde=d.isoformat(),
+                                hasta=(d + timedelta(days=6)).isoformat()))
+            d += timedelta(weeks=1)
+    errores = [{"t": g["t"], "titulo": g["titulo"], "pc": g["pc"], "detalle": g["detalle"]}
+               for g in reversed(lista) if g["evento"] == "error"][:8]
+    return {"resumen": res, "previo": previo, "lentos": lentos, "semanas": semanas, "errores": errores,
+            "desde_registro": todos[0]["t"] if todos else None}
+
+
 def calcular(dias=30, medico_actual=None, estudios_actual=None):
     """Estadísticas de los informes guardados en los últimos `dias` días (0 = todos)."""
     actual = {"medico": medico_actual or (lambda n: ""), "estudios": estudios_actual or (lambda n: None)}
@@ -273,4 +352,5 @@ def calcular(dias=30, medico_actual=None, estudios_actual=None):
         "medicos": _por(lista, "medico", medida),
         "estudios": _por(lista, "estudios", medida),
         "ultimos": ultimos,
+        "tiempos": tiempos(desde, dias, ahora),
     }

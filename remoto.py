@@ -38,7 +38,9 @@ _lock = threading.RLock()
 
 SESIONES = {}    # sid -> {"pc", "exp"}
 CODIGOS = {}     # codigo -> {"pc", "exp"}
-BLOQUEOS = {}    # nombre de caso -> {"pc", "t"}
+BLOQUEOS = {}    # nombre de caso -> {"pc", "t" (última señal), "desde" (cuándo lo abrió)}
+LIBERADOS = {}   # nombre de caso -> {"pc", "t"}: casos que el panel le sacó a una PC
+LIBERADO_SEG = 15 * 60
 FALLOS = {}      # ip -> [tiempos de intentos fallidos]   (para el panel: "admin:<pc>" -> [...])
 ADMIN_SES = {}   # token -> {"pc", "ip", "desde", "ult", "exp"}: panel de administración abierto desde una PC del trabajo
 ADMIN_MAX_SEG = 8 * 3600        # una sesión del panel dura como mucho 8 horas
@@ -340,15 +342,47 @@ def cookie_sesion(sid):
 
 
 # -------------------------------------------------------------- bloqueos
-def bloquear(nombre, pc):
-    """True si quedó para esta PC; si no, devuelve la PC que lo tiene."""
+LIBERADO = object()      # respuesta de bloquear(): el panel de administración le sacó el caso a esta PC
+
+
+def bloquear(nombre, pc, renovar=False):
+    """True si quedó para esta PC; si no, devuelve la PC que lo tiene (o LIBERADO).
+    renovar: la página que ya tenía el caso abierto avisa que sigue ahí (cada 15 s). Si el panel le liberó el
+    caso, la renovación se rechaza; abrirlo de nuevo a propósito sí se puede."""
     ahora = time.time()
     with _lock:
+        lib = LIBERADOS.get(nombre)
+        if lib and ahora - lib["t"] > LIBERADO_SEG:
+            LIBERADOS.pop(nombre, None)
+            lib = None
+        if lib and lib["pc"] == pc:
+            if renovar:
+                return LIBERADO
+            LIBERADOS.pop(nombre, None)
         b = BLOQUEOS.get(nombre)
-        if b and b["pc"] != pc and ahora - b["t"] < BLOQUEO_SEG:
+        vigente = b and ahora - b["t"] < BLOQUEO_SEG
+        if vigente and b["pc"] != pc:
             return b["pc"]
-        BLOQUEOS[nombre] = {"pc": pc, "t": ahora}
+        desde = b.get("desde", b["t"]) if vigente else ahora
+        BLOQUEOS[nombre] = {"pc": pc, "t": ahora, "desde": desde}
     return True
+
+
+def liberar(nombre):
+    """Desde el panel: saca el caso a la PC que lo tiene abierto (por ejemplo, si esa PC se apagó o quedó
+    abierta sin nadie). Devuelve la PC que lo tenía o None."""
+    with _lock:
+        b = BLOQUEOS.pop(nombre, None)
+        if not b or time.time() - b["t"] >= BLOQUEO_SEG:
+            return None
+        LIBERADOS[nombre] = {"pc": b["pc"], "t": time.time()}
+        return b["pc"]
+
+
+def liberado_para(nombre, pc):
+    """True si el panel le liberó este caso a esta PC (y no lo volvió a abrir): sus cambios ya no se guardan."""
+    lib = LIBERADOS.get(nombre)
+    return bool(lib and lib["pc"] == pc and time.time() - lib["t"] <= LIBERADO_SEG)
 
 
 def soltar(nombre, pc):

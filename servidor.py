@@ -25,8 +25,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import admin as ADM
+import correcciones as CORR
 import estadisticas as EST
 import app_cliente as A
+import mantenimiento as M
 import nucleo as N
 import paciente as PAC
 import registro as L
@@ -49,10 +51,11 @@ for d in (NUEVOS, DATOS):
     d.mkdir(parents=True, exist_ok=True)
 
 SIMULAR = os.environ.get("SIMULAR_IA") == "1"   # solo para pruebas
-VERSION = "2026.10.24"
+VERSION = "2026.10.27"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
-PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html"}
+PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
+                 "/admin/correcciones": "correcciones.html"}
 FIN_LOCK = threading.Lock()
 INICIO = time.time()
 TUNEL = {"modo": False, "exe": AQUI / "cloudflared.exe"}     # "modo": se abrió con iniciar_servidor.bat (--tunel)
@@ -529,10 +532,13 @@ def trabajador():
     whisper = None
     while True:
         lote = [COLA.get()]
+        while REINICIO.get("detener"):      # reinicio en camino: no empieza nada nuevo (queda en la cola)
+            time.sleep(0.5)
         time.sleep(0.5)
         while not COLA.empty():
             lote.append(COLA.get())
         lote = list(dict.fromkeys(lote))
+        TRABAJO.update(ocupado=True, desde=time.time())
         trans, info = {}, {}
         etapa = "WHISPER"
         if len(lote) > 1:
@@ -664,6 +670,7 @@ def trabajador():
             for n in afectados:
                 poner_estado(n, "error", msg)
                 L.actividad("error", **datos_csv(n), detalle=f"{etapa}: {msg}")
+        TRABAJO.update(ocupado=False, esperando_ia=False)
         if not en_proceso() and COLA.empty():
             L.debug("SERVIDOR", "Cola vacía.")
 
@@ -675,9 +682,11 @@ def esperar_ia(n, lote):
     while True:
         e = estado_ia()
         if e == "ok":
+            TRABAJO["esperando_ia"] = False
             if avisado:
                 L.ok("IA", f"La IA volvió: sigo con {visible(n)}.")
             return
+        TRABAJO["esperando_ia"] = True       # se puede reiniciar el servidor sin esperar (se retoma al volver)
         E_IA["e"] = e
         _IA_CACHE.update(t=time.time(), ok=e != "caida")
         motivo = "Ollama no responde" if e == "caida" else f"falta el modelo {CFG['modelo_ia']}"
@@ -700,6 +709,244 @@ def encolar(nombre):
     DURACION.pop(nombre, None)
     poner_estado(nombre, "en cola", "En cola…")
     COLA.put(nombre)
+
+
+# ------------------------------------------------- cola en vivo y casos abiertos (panel de administración)
+def cola_en_vivo():
+    """Lo que se está procesando y lo que espera, en orden, con cuánto lleva y cuánto falta (aproximado)."""
+    ahora = time.time()
+    esp = esperas()
+    with LOCK:
+        enp = {n: dict(v) for n, v in ESTADO.items() if v.get("estado") in EN_PROCESO}
+        errores = sum(1 for v in ESTADO.values() if v.get("estado") == "error")
+    items = []
+    for n in sorted(enp, key=lambda x: (esp.get(x) or {}).get("adelante", 0)):
+        e, s_ = enp[n], esp.get(n) or {}
+        msg = e.get("msg") or ""
+        items.append({"nombre": n, "titulo": titulo_de(n), "paciente": PAC.de(DATOS, n), "pc": origen_de(n),
+                      "medico": medico_de(n), "estado": e.get("estado"), "msg": msg,
+                      "etapa_desde": s_.get("desde"), "adelante": s_.get("adelante"), "eta": s_.get("eta"),
+                      "en_cola": round(ahora - ENCOLADO[n]) if n in ENCOLADO else None, "dur": duracion_de(n),
+                      "espera_ia": e.get("estado") == "en cola" and msg.startswith("Esperando a la IA (")})
+    return {"items": items, "eta_total": max((i["eta"] or 0 for i in items), default=0), "errores": errores,
+            "pausada": bool(REINICIO.get("detener")),
+            "tiempos": {"whisper_x": round(TIEMPOS["whisper_x"], 3), "ia": round(TIEMPOS["ia"], 1), "n": TIEMPOS["n"]}}
+
+
+def casos_abiertos():
+    """Casos que alguna PC tiene abiertos ahora (bloqueados para las demás)."""
+    ahora, out = time.time(), []
+    for n, b in sorted(list(R.BLOQUEOS.items()), key=lambda x: x[1].get("desde", x[1]["t"])):
+        edad = ahora - b["t"]
+        if edad >= R.BLOQUEO_SEG:
+            continue
+        out.append({"nombre": n, "titulo": titulo_de(n), "paciente": PAC.de(DATOS, n), "pc": b["pc"],
+                    "desde": b.get("desde", b["t"]), "senal": round(edad), "libera_en": round(R.BLOQUEO_SEG - edad),
+                    "rev": revision_de(n)})
+    return out
+
+
+# ------------------------------------------------- mensajes a las PC y reinicio desde el panel
+SRV = {"http": None, "salida": 0}
+TRABAJO = {"ocupado": False, "esperando_ia": False, "desde": None}
+REINICIO = {}       # reinicio programado desde el panel: id, cuando, estado (programado|esperando|reiniciando)...
+MENSAJE = {}        # cartel en la pantalla de todas las PC: id, texto, tipo, desde, hasta, por, reinicio
+COLA_AL_REINICIAR = INFORMES / "revision" / "cola_al_reiniciar.json"
+_MSJ_LOCK = threading.Lock()
+_REI_LOCK = threading.Lock()
+TEXTO_REINICIO = ("Guardá lo que estés haciendo. El informe abierto se guarda solo; en un minuto el sistema "
+                  "vuelve y la pantalla se reconecta sola.")
+
+
+def poner_mensaje(texto, minutos=0, tipo="info", por=None, reinicio=False):
+    ahora = time.time()
+    with _MSJ_LOCK:
+        MENSAJE.clear()
+        MENSAJE.update(id=f"{int(ahora * 1000):x}", texto=texto, tipo=tipo, desde=ahora,
+                       hasta=ahora + minutos * 60 if minutos else None, por=por or LOCAL, reinicio=reinicio)
+
+
+def quitar_mensaje(solo_reinicio=False):
+    with _MSJ_LOCK:
+        if not MENSAJE or (solo_reinicio and not MENSAJE.get("reinicio")):
+            return False
+        MENSAJE.clear()
+        return True
+
+
+def mensaje_actual():
+    with _MSJ_LOCK:
+        if MENSAJE.get("hasta") and time.time() > MENSAJE["hasta"]:
+            MENSAJE.clear()
+        return dict(MENSAJE) if MENSAJE else None
+
+
+def mensaje_para_pcs():
+    """Lo que ven las páginas de informes (va en /api/casos)."""
+    m = mensaje_actual()
+    if not m:
+        return None
+    out = {"id": m["id"], "texto": m["texto"], "tipo": m["tipo"], "ahora": time.time(), "reinicio": None}
+    if m.get("reinicio"):
+        with _REI_LOCK:
+            if REINICIO:
+                out["reinicio"] = {"cuando": REINICIO.get("cuando"), "estado": REINICIO.get("estado")}
+                out["id"] = f"{m['id']}-{REINICIO.get('estado')}"     # cambia de etapa: se vuelve a mostrar
+    return out
+
+
+def cola_pendiente():
+    with LOCK:
+        nombres = [n for n, v in ESTADO.items() if v.get("estado") in EN_PROCESO and n not in BORRADOS]
+    return sorted(nombres, key=lambda n: ENCOLADO.get(n, 0))
+
+
+def estado_reinicio():
+    with _REI_LOCK:
+        if not REINICIO:
+            return None
+        r = {k: REINICIO.get(k) for k in ("cuando", "estado", "por", "avisar", "pedido")}
+    r["procesando"] = [titulo_de(n) for n in _en("transcribiendo") + _en("generando")]
+    r["en_cola"] = len(cola_pendiente())
+    return r
+
+
+def programar_reinicio(seg, avisar, texto, quien):
+    """Programa el reinicio: avisa a las PC (si se pide), espera el tiempo elegido y además que no haya nada
+    a medio procesar; antes prueba que el código nuevo arranque. Devuelve (respuesta, código)."""
+    quien_txt = quien or LOCAL
+    if REINICIO.get("estado") == "reiniciando":
+        return {"error": "El servidor ya se está reiniciando."}, 409
+    ok, motivo = M.soporta_reinicio(TUNEL["modo"])
+    if not ok:
+        return {"error": motivo}, 409
+    try:
+        seg = max(0, min(int(seg or 0), 3600))
+    except (TypeError, ValueError):
+        seg = 0
+    texto = " ".join(str(texto or "").split())[:300] or TEXTO_REINICIO
+    t0 = time.time()
+    err = M.prueba_de_arranque()
+    if err:
+        L.aviso("SERVIDOR", f"Reinicio pedido desde el panel ({quien_txt}) cancelado: el código de la carpeta tiene "
+                            f"un error y el servidor no volvería a abrir.", det=err.splitlines()[-6:])
+        return {"error": "No se reinicia: el código que está en la carpeta tiene un error y el servidor no volvería "
+                         "a abrir. Corregilo y probá de nuevo.", "detalle": err}, 409
+    with _REI_LOCK:
+        if REINICIO.get("estado") == "reiniciando":
+            return {"error": "El servidor ya se está reiniciando."}, 409
+        rid = f"{int(time.time() * 1000):x}"
+        REINICIO.clear()
+        REINICIO.update(id=rid, cuando=time.time() + seg, pedido=time.time(), por=quien_txt, estado="programado",
+                        detener=False, forzar=False, avisar=bool(avisar))
+    if avisar:
+        poner_mensaje(texto, tipo="aviso", por=quien, reinicio=True)
+    else:
+        quitar_mensaje(solo_reinicio=True)
+    threading.Thread(target=_hilo_reinicio, args=(rid,), daemon=True, name="reinicio").start()
+    cambios = ", ".join(c["archivo"] for c in M.cambios_sin_tomar()) or "sin cambios en el código"
+    L.info("SERVIDOR", f"Reinicio del servidor programado desde el panel ({quien_txt}) "
+                       + (f"para dentro de {L.seg(seg)}" if seg else "para ahora")
+                       + (", con aviso a las PC" if avisar else "") + f". Toma: {cambios}. "
+                       f"(el código nuevo se probó en {L.seg(time.time() - t0)})")
+    if seg:
+        msg = f"Reinicio programado: en {mmss(seg)} (y cuando termine lo que se esté procesando)."
+    else:
+        msg = "Reiniciando en cuanto termine lo que se esté procesando…"
+    return {"ok": True, "msg": msg + (" Se avisó a las PC." if avisar else "")}, 200
+
+
+def cancelar_reinicio(quien):
+    with _REI_LOCK:
+        if not REINICIO:
+            return {"error": "No hay ningún reinicio programado."}, 409
+        if REINICIO.get("estado") == "reiniciando":
+            return {"error": "Ya se está reiniciando: no se puede cancelar."}, 409
+        REINICIO.clear()
+    avisadas = quitar_mensaje(solo_reinicio=True)
+    L.info("SERVIDOR", f"Reinicio del servidor cancelado desde el panel ({quien or LOCAL}).")
+    return {"ok": True, "msg": "Reinicio cancelado." + (" Se quitó el aviso de las PC." if avisadas else "")}, 200
+
+
+def reiniciar_ya(quien):
+    """Durante la espera: reiniciar sin esperar a que termine lo que se está procesando (se retoma al volver)."""
+    with _REI_LOCK:
+        if not REINICIO:
+            return {"error": "No hay ningún reinicio programado."}, 409
+        if REINICIO.get("estado") == "reiniciando":
+            return {"error": "Ya se está reiniciando."}, 409
+        REINICIO.update(forzar=True, cuando=min(REINICIO["cuando"], time.time()))
+    L.aviso("SERVIDOR", f"Reinicio sin esperar pedido desde el panel ({quien or LOCAL}): lo que se estaba procesando "
+                        f"se vuelve a procesar al volver.")
+    return {"ok": True, "msg": "Reiniciando ahora…"}, 200
+
+
+def _hilo_reinicio(rid):
+    avisado = False
+    while True:
+        time.sleep(0.5)
+        with _REI_LOCK:
+            if REINICIO.get("id") != rid:
+                return                       # cancelado o vuelto a programar
+            if time.time() < REINICIO["cuando"]:
+                continue
+            REINICIO["detener"] = True       # el trabajador no empieza nada nuevo
+            ocupado = TRABAJO["ocupado"] and not TRABAJO["esperando_ia"]
+            if ocupado and not REINICIO.get("forzar"):
+                REINICIO["estado"] = "esperando"
+                if not avisado:
+                    avisado = True
+                    proc = ", ".join(f"«{titulo_de(n)}»" for n in _en("transcribiendo") + _en("generando"))
+                    L.info("SERVIDOR", "Reinicio: espero a que termine lo que se está procesando"
+                                       + (f" ({proc})" if proc else "") + ".")
+                continue
+            REINICIO["estado"] = "reiniciando"
+        _reiniciar_ahora()
+        return
+
+
+def _reiniciar_ahora():
+    por = REINICIO.get("por") or LOCAL
+    FIN_LOCK.acquire(timeout=60)             # que no quede un «Guardar Word» a medias (no se suelta: se cierra)
+    pend = cola_pendiente()
+    try:
+        COLA_AL_REINICIAR.write_text(json.dumps({"t": time.time(), "nombres": pend}, ensure_ascii=False),
+                                     encoding="utf-8")
+    except OSError:
+        L.error("SERVIDOR", "No se pudo anotar la cola antes de reiniciar: esos audios quedan «sin procesar».", exc=True)
+    L.aviso("SERVIDOR", f"Reiniciando el servidor (pedido desde el panel, {por}) para tomar los cambios"
+                        + (f"; {L.plural(len(pend), 'audio')} de la cola se retoman al volver." if pend else ".")
+                        + " Las PC del trabajo se reconectan solas.")
+    time.sleep(1.5)                          # que las páginas alcancen a ver «reiniciando»
+    SRV["salida"] = M.CODIGO_REINICIO
+    if SRV["http"]:
+        SRV["http"].shutdown()
+
+
+def reanudar_cola():
+    """Al arrancar: vuelve a poner en la cola lo que estaba esperando cuando se reinició desde el panel."""
+    f = COLA_AL_REINICIAR
+    if not f.exists():
+        return
+    try:
+        d = json.loads(f.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        d = {}
+    f.unlink(missing_ok=True)
+    nombres = [n for n in d.get("nombres") or [] if isinstance(n, str) and "/" not in n and "\\" not in n
+               and ruta_audio(n)]
+    for n in nombres:
+        encolar(n)
+    if nombres:
+        L.info("SERVIDOR", f"Retomo {L.plural(len(nombres), 'audio')} que {'estaba' if len(nombres) == 1 else 'estaban'} "
+                           f"en la cola antes de reiniciar: " + ", ".join(visible(n) for n in nombres))
+
+
+def estado_mantenimiento():
+    ok, motivo = M.soporta_reinicio(TUNEL["modo"])
+    return {"cambios": M.cambios_sin_tomar(), "git": M.info_git(), "git_inicio": M.git_al_arrancar(),
+            "reiniciable": ok, "motivo_no": motivo, "bat": M.bat_del_modo(TUNEL["modo"]).name,
+            "reinicio": estado_reinicio(), "mensaje": mensaje_actual()}
 
 
 # ---------------------------------------------------------------- borrar
@@ -1027,6 +1274,13 @@ class H(BaseHTTPRequestHandler):
                 except ValueError:
                     dias = 30
                 self._json(dict(EST.calcular(dias, medico_actual=medico_de, estudios_actual=estudios_de), visor=visor))
+            elif u.path == "/api/admin/correcciones":
+                try:
+                    dias = int((q.get("dias") or ["0"])[0])
+                except ValueError:
+                    dias = 0
+                self._json(dict(CORR.calcular(dias, (q.get("medico") or [""])[0], medico_actual=medico_de,
+                                              puntuacion=(q.get("puntuacion") or [""])[0] == "1"), visor=visor))
             else:
                 self.send_error(404)
         elif u.path == "/api/mi_pc":
@@ -1063,7 +1317,7 @@ class H(BaseHTTPRequestHandler):
             ok = ia_lista()
             self._json({"casos": listar_casos(self.pc, self.remoto), "ollama": ok, "pc": self.pc,
                         "ia_estado": "caida" if not ok else ("sin_modelo" if E_IA["e"] == "sin_modelo" else "ok"),
-                        "modelo": CFG["modelo_ia"]})
+                        "modelo": CFG["modelo_ia"], "mensaje": mensaje_para_pcs()})
         elif u.path == "/api/formato":
             self._json({"palabras_titulo": sorted(N.PALABRAS_ESTUDIO),
                         "negrita_titulos": CFG.get("negrita_titulos", True),
@@ -1314,7 +1568,10 @@ class H(BaseHTTPRequestHandler):
                 return self._json({"error": "nombre inválido"}, 400)
             if u.path == "/api/caso/bloquear":
                 previo = R.BLOQUEOS.get(n)
-                r = R.bloquear(n, self.pc)
+                # la página que ya lo tenía abierto avisa cada 15 s que sigue ahí (manda el tiempo de revisión)
+                r = R.bloquear(n, self.pc, renovar="rev" in datos or bool(datos.get("renovar")))
+                if r is R.LIBERADO:
+                    return self._json({"ok": False, "liberado": True, "por": "el panel de administración"})
                 if r is True:
                     sumar_revision(n, datos.get("rev"), self.pc)
                     if not previo or previo["pc"] != self.pc or time.time() - previo["t"] > R.BLOQUEO_SEG:
@@ -1328,12 +1585,16 @@ class H(BaseHTTPRequestHandler):
                 R.soltar(n, self.pc)
                 L.debug("CASO", f"{self.pc} cerró {visible(n)}.")
                 return self._json({"ok": True})
-            otro = R.bloqueado_por(n, self.pc)
+            otro = R.bloqueado_por(n, self.pc) or (R.liberado_para(n, self.pc) and "el panel de administración")
             if otro and u.path in ("/api/borrador", "/api/finalizar", "/api/procesar", "/api/caso_medico", "/api/paciente",
                                        "/api/formato_caso", "/api/formato_caso/agregar"):
                 if L.una_vez(("conflicto", n, self.pc), 120):
-                    L.aviso("CASO", f"{self.pc} intentó modificar {visible(n)} mientras lo revisa {otro}; "
-                                    f"no se guardó su cambio.")
+                    L.aviso("CASO", f"{self.pc} intentó modificar {visible(n)} " + (
+                        "después de que se lo liberaron desde el panel" if otro == "el panel de administración"
+                        else f"mientras lo revisa {otro}") + "; no se guardó su cambio.")
+                if otro == "el panel de administración":
+                    return self._json({"error": "Desde el panel de administración se liberó este caso: cerralo y "
+                                                "volvé a abrirlo desde la lista para seguir.", "liberado": True}, 409)
                 return self._json({"error": f"Este caso lo está revisando {otro}."}, 409)
             if u.path == "/api/caso_medico":
                 med = datos.get("medico", "").strip()
@@ -1522,6 +1783,9 @@ def estado_admin():
         "app": {"version": oficial, "archivos": len(man.get("archivos", []))},
         "pcs": pcs,
         "registro": ADM.ultimos_eventos(),
+        "mantenimiento": estado_mantenimiento(),
+        "cola": cola_en_vivo(),
+        "abiertos": casos_abiertos(),
     }
 
 
@@ -1599,6 +1863,51 @@ def accion_admin(accion, d, quien=None):
         n = R.cerrar_sesiones_admin()
         L.info("ACCESO", f"Sesiones del panel de administración cerradas desde esta PC: {n}.")
         return {"ok": True, "msg": f"{_cerradas(n)} del panel." if n else "No había sesiones abiertas."}, 200
+    if accion == "reinicio":
+        return programar_reinicio(d.get("en"), d.get("avisar", True), d.get("texto"), quien)
+    if accion == "reinicio/cancelar":
+        return cancelar_reinicio(quien)
+    if accion == "reinicio/ya":
+        return reiniciar_ya(quien)
+    if accion == "mensaje":
+        texto = " ".join(str(d.get("texto", "")).split())
+        if not texto:
+            return {"error": "Escribí el mensaje."}, 400
+        if len(texto) > 300:
+            return {"error": "El mensaje es muy largo: usá menos de 300 letras."}, 400
+        try:
+            minutos = max(0, min(int(d.get("minutos") or 0), 24 * 60))
+        except (TypeError, ValueError):
+            minutos = 0
+        tipo = "aviso" if d.get("tipo") == "aviso" else "info"
+        if REINICIO and REINICIO.get("avisar"):
+            return {"error": "Hay un reinicio programado con su aviso en pantalla: cancelalo o esperá a que termine."}, 409
+        poner_mensaje(texto, minutos, tipo, por=quien)
+        L.info("SERVIDOR", f"Mensaje para las PC {desde}" + (f" (por {minutos} min)" if minutos else "") + f": «{texto}»")
+        return {"ok": True, "msg": "Mensaje publicado: aparece en todas las PC en unos segundos."}, 200
+    if accion == "mensaje/quitar":
+        if REINICIO and MENSAJE.get("reinicio"):
+            return {"error": "Ese aviso es del reinicio programado: para quitarlo, cancelá el reinicio."}, 409
+        if not quitar_mensaje():
+            return {"error": "No hay ningún mensaje en pantalla."}, 409
+        L.info("SERVIDOR", f"Mensaje para las PC quitado {desde}.")
+        return {"ok": True, "msg": "Mensaje quitado."}, 200
+    if accion == "caso/liberar":
+        n = str(d.get("nombre", ""))
+        if not n or "/" in n or "\\" in n or ".." in n:
+            return {"error": "Caso inválido."}, 400
+        pc = R.liberar(n)
+        if not pc:
+            return {"error": "Ese caso ya no está abierto en ninguna PC."}, 409
+        L.aviso("CASO", f"{visible(n)} liberado {desde}: lo tenía abierto {pc}. Lo que escribió hasta su último "
+                        f"guardado automático quedó como borrador; ya se puede abrir desde otra PC.")
+        return {"ok": True, "msg": f"Caso liberado. {pc} deja de poder guardar cambios en él; ya se puede abrir desde otra PC."}, 200
+    if accion == "correcciones/regla":
+        r = CORR.agregar_regla(str(d.get("texto", "")))
+        if r.get("error"):
+            return r, 400
+        L.ok("CONFIG", f"Regla agregada a reglas_dictado.md {desde}: «{r['linea']}» (copia anterior en conocimiento\\copias).")
+        return {"ok": True, "msg": "Regla agregada: la IA la usa desde el próximo informe.", "linea": r["linea"]}, 200
     if accion == "abrir":
         que = d.get("que")
         rutas = {"registros": L.CARPETA, "registro_hoy": L.archivo_del_dia(), "cliente": AQUI / "cliente"}
@@ -1619,7 +1928,8 @@ def _cerradas(n):
 
 # Lo que desde una PC del trabajo no se puede hacer aunque se tenga la contraseña del panel: abrir carpetas o
 # archivos (se abrirían en la pantalla del servidor) y tocar la contraseña del propio panel o sus sesiones.
-SOLO_EN_EL_SERVIDOR = {"abrir", "contrasena_admin", "contrasena_admin/quitar", "sesiones_admin/cerrar"}
+SOLO_EN_EL_SERVIDOR = {"abrir", "contrasena_admin", "contrasena_admin/quitar", "sesiones_admin/cerrar",
+                       "correcciones/regla"}
 
 PAGINA_PANEL_NO_HABILITADO = """<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Administración · Transcripción</title>
@@ -1825,13 +2135,21 @@ def filas_encabezado(url, tunel):
 
 
 def main():
+    titulo = M.titulo_consola()          # antes de que el servidor cambie el título de la ventana
     L.configurar()
-    try:
-        srv = Servidor(("127.0.0.1", PUERTO), H)
-    except OSError:
-        L.error("SERVIDOR", f"No se pudo abrir el puerto {PUERTO}: seguramente el servidor ya está abierto en "
-                            f"otra ventana. Usá esa ventana o cerrala y volvé a abrir esta.", exc=True)
-        sys.exit(1)
+    srv = None
+    for intento in range(6):             # al reiniciar desde el panel, Windows puede tardar un instante en soltar el puerto
+        try:
+            srv = Servidor(("127.0.0.1", PUERTO), H)
+            break
+        except OSError:
+            if intento == 5:
+                L.error("SERVIDOR", f"No se pudo abrir el puerto {PUERTO}: seguramente el servidor ya está abierto en "
+                                    f"otra ventana. Usá esa ventana o cerrala y volvé a abrir esta.", exc=True)
+                sys.exit(1)
+            time.sleep(1)
+    SRV["http"] = srv
+    M.empezar(titulo)
     url = f"http://127.0.0.1:{PUERTO}"
     tunel = "--tunel" in sys.argv
     TUNEL["modo"] = tunel
@@ -1845,7 +2163,11 @@ def main():
     cargar_tiempos()
     threading.Thread(target=trabajador, daemon=True, name="procesamiento").start()
     threading.Thread(target=vigilar_ia, args=(e_ia,), daemon=True, name="vigilancia-ia").start()
-    L.ok("SERVIDOR", f"Servidor iniciado en {url}" + ("" if e_ia == "ok" else " (sin IA hasta que se abra Ollama)"))
+    g = M.git_al_arrancar() or {}
+    L.ok("SERVIDOR", f"Servidor iniciado en {url}" + ("" if e_ia == "ok" else " (sin IA hasta que se abra Ollama)")
+         + (f" · código {g['commit']}" + (f" + {L.plural(len(g['sucios']), 'cambio')} sin commitear" if g.get("sucios") else "")
+            if g.get("commit") else ""))
+    reanudar_cola()
     if tunel:
         if not R.configurado():
             L.aviso("TÚNEL", "Todavía no hay contraseña para el acceso remoto: ejecutá configurar_acceso.bat. "
@@ -1862,6 +2184,9 @@ def main():
     L.cerrar_encabezado()
     R.cerrar_tunel()
     h = L.HOY
+    if SRV["salida"] == M.CODIGO_REINICIO:
+        L.info("SERVIDOR", "Servidor cerrado para reiniciarse: se vuelve a abrir solo en esta misma ventana.")
+        sys.exit(M.CODIGO_REINICIO)
     L.info("SERVIDOR", f"Servidor apagado. Hoy: {L.plural(h['recibidos'], 'audio recibido', 'audios recibidos')}, "
                        f"{L.plural(h['generados'], 'informe generado', 'informes generados')}, "
                        f"{L.plural(h['guardados'], 'guardado')}, {L.plural(h['errores'], 'error', 'errores')}.")

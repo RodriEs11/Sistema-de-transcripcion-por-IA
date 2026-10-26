@@ -37,6 +37,33 @@ Muestra:
 Acciones: reiniciar el túnel, volver a publicar la dirección, anular una PC, cambiar la contraseña de acceso remoto,
 configurar la contraseña del panel remoto, abrir el registro o las carpetas (solo en la PC del servidor).
 
+### Mantenimiento (desde la versión 2026.10.27)
+
+- **Cambios sin tomar**: el servidor anota la versión de cada archivo de Python que carga (también los que se
+  importan tarde, como `aprender.py` o `huecos.py`) y de `configuracion.json`. Si alguno cambia en la carpeta,
+  el panel lo muestra y sugiere reiniciar. Las páginas (`web/`), las plantillas y las reglas no necesitan
+  reiniciar: se leen en cada pedido.
+- **Versión del código**: commit con el que arrancó el servidor, commit actual de la carpeta y archivos sin
+  commitear. Usa `git` si está instalado; si no, lee `.git` directamente (commit y archivos modificados).
+- **Reiniciar servidor**: en cuanto termine lo que se está procesando, en 1 minuto o en 5 minutos, con o sin
+  cartel en las PC. Antes se prueba el código nuevo en otro proceso (compila todos los `.py` e importa
+  `servidor`): si falla, no se reinicia y se muestra el error. Mientras espera, no empieza audios nuevos; si la
+  IA está cerrada, no espera. «Reiniciar ya, sin esperar» corta lo que se esté procesando. Los audios de la cola
+  se anotan en `Informes/revision/cola_al_reiniciar.json` y se retoman al volver.
+  - Funciona si el servidor se abrió con `iniciar_servidor.bat` o `interfaz.bat`: el servidor termina con el
+    código 75 y el `.bat` lo vuelve a abrir en la misma ventana (sin abrir otra pestaña del navegador). Las
+    líneas del `.bat` anteriores a `python servidor.py` no se tocan, porque Windows lee el archivo mientras corre.
+  - Al reiniciar se pierden las sesiones en memoria: las apps vuelven a entrar solas con su llave; el panel desde
+    el trabajo pide de nuevo su contraseña. Con túnel, la dirección cambia y se publica sola.
+- **Mensaje a las PC del trabajo**: un cartel arriba a la derecha de la página de informes (también en modo
+  compacto), por un tiempo o hasta quitarlo. Cada PC lo cierra con «Entendido». Vive en memoria: se borra al
+  reiniciar. El aviso del reinicio usa el mismo cartel, con la cuenta regresiva.
+- **Cola de procesamiento**: qué se transcribe o genera, cuánto lleva cada etapa, el orden y cuánto falta
+  (estimado con los tiempos de los últimos informes).
+- **Casos abiertos ahora**: qué PC tiene cada caso, desde cuándo y si sigue dando señal. **Liberar** se lo saca:
+  la página de esa PC se cierra con un aviso en la próxima renovación (15 s) y sus guardados se rechazan hasta
+  que lo vuelva a abrir desde la lista.
+
 ### Desde las PC del trabajo
 
 Se habilita en el panel local con una contraseña propia (mínimo 10 caracteres, distinta de la de acceso remoto).
@@ -55,6 +82,25 @@ Desde el trabajo no se pueden abrir carpetas, cambiar la contraseña del panel n
 
 El **tiempo de revisión** cuenta solo segundos activos: caso abierto, ventana visible y teclado/mouse en el último
 minuto o audio sonando.
+
+Desde la versión 2026.10.27 también muestra **tiempos de procesamiento** (de las filas «generado» y «error»
+de `actividad.csv`): IA por informe (mediana, promedio y percentil 90), Whisper por minuto de audio, total por
+audio, comparados con el período anterior, por semana, los 10 más lentos (en rojo los que tardaron más del doble
+de lo normal) y los errores al procesar.
+
+## Correcciones
+
+**http://127.0.0.1:8765/admin/correcciones** (`correcciones.py`)
+
+Compara la salida de la IA (`ejemplos/*.ia.txt`) con el informe final (`ejemplos/*.informe.txt`) palabra por
+palabra (los cambios de renglón separan los cambios) y junta los reemplazos, agregados y borrados que más se
+repiten, contando en cuántos informes aparece cada uno. Filtros: período, médico y si se incluyen los cambios solo
+de puntuación o mayúsculas. No cuenta cambios con números ni reescrituras de más de 12 palabras. Marca los que ya
+menciona `reglas_dictado.md` y los que ya están en `correcciones_aprendidas.md`.
+
+**Convertir en regla** (solo en la PC del servidor) agrega un renglón editable al final de
+`conocimiento/reglas_dictado.md`, en la sección «REGLAS AGREGADAS DESDE EL PANEL», con copia de la versión anterior
+en `conocimiento/copias/`. La IA lo usa desde el próximo informe.
 
 ## Borrar informes
 

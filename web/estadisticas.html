@@ -173,6 +173,13 @@ td.col-nom{width:100%;min-width:220px}
 
 /* desde una PC del trabajo no se abren carpetas de la PC del servidor */
 .panel-remoto [data-abrir]{display:none!important}
+/* tiempos de procesamiento */
+.mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.mini .tile{box-shadow:none;background:var(--bg)}
+.sub-t{font-size:13px;font-weight:600;margin:16px 0 6px}
+.lenta{color:var(--err);font-weight:600}
+.tabla-borde{border:1px solid var(--bd);border-radius:9px;overflow-x:auto}
+.tabla-borde th,.tabla-borde td{padding:8px 12px}
 </style>
 </head>
 <body>
@@ -190,7 +197,7 @@ td.col-nom{width:100%;min-width:220px}
     </button>
   </div>
   <nav class="pestanas" aria-label="Páginas del panel">
-    <a href="/admin">Estado del servidor</a><a href="/admin/estadisticas" aria-current="page">Estadísticas</a>
+    <a href="/admin">Estado del servidor</a><a href="/admin/estadisticas" aria-current="page">Estadísticas</a><a href="/admin/correcciones">Correcciones</a>
   </nav>
 </header>
 <main>
@@ -221,6 +228,11 @@ td.col-nom{width:100%;min-width:220px}
       <div class="tabla-env" id="estudios"></div>
     </section>
   </div>
+
+  <section class="card" aria-labelledby="tTiem" id="secTiem" hidden>
+    <div class="cab"><h2 id="tTiem">Tiempos de procesamiento</h2><span class="cuenta" id="tiemCuenta"></span></div>
+    <div class="cuerpo" id="tiempos"></div>
+  </section>
 
   <section class="card" aria-labelledby="tUlt" id="secUlt" hidden>
     <div class="cab"><h2 id="tUlt">Informes del período</h2><span class="cuenta" id="ultCuenta"></span><span class="sep"></span>
@@ -354,6 +366,7 @@ function armarEst(){
   $('#estAct').textContent = `${nombrePeriodo(s.dias)[0].toUpperCase() + nombrePeriodo(s.dias).slice(1)} · actualizado ${new Date(s.ahora * 1000).toLocaleTimeString('es-AR', HM)}`;
   const hay = r.n > 0;
   ['#estResumen', '#secSem', '#filaGrupos', '#secUlt'].forEach(id => $(id).hidden = !hay);
+  armarTiempos();
 
   // avisos
   let av = '';
@@ -404,6 +417,60 @@ function armarEst(){
   // informes
   $('#ultCuenta').textContent = s.ultimos.length < r.n ? `los ${s.ultimos.length} más recientes de ${r.n}` : plural(r.n, 'informe');
   armarUltimos();
+}
+
+
+/* ---------- tiempos de procesamiento (Whisper e IA) */
+const seg1 = v => v == null ? '—' : (v < 10 ? num1(v) : ent(v)) + ' s';
+function tendT(act, prev){        // en tiempos, más es peor
+  if(act == null || prev == null || !prev) return '';
+  const d = (act - prev) / prev * 100;
+  if(Math.abs(d) < 5) return '<span class="tend igual" title="Parecido al período anterior">= igual</span>';
+  return `<span class="tend ${d < 0 ? 'mejor' : 'peor'}" title="Comparado con el período anterior (${seg1(prev)})">${d < 0 ? '▼' : '▲'} ${Math.round(Math.abs(d))} %</span>`;
+}
+function armarTiempos(){
+  const T = S.tiempos, r = T && T.resumen;
+  const hay = r && r.n > 0;
+  $('#secTiem').hidden = !(hay || (r && r.errores));
+  if($('#secTiem').hidden) return;
+  const p = T.previo || {};
+  $('#tiemCuenta').textContent = `${plural(r.n, 'informe generado', 'informes generados')} en ${nombrePeriodo(S.dias)}`;
+  let h = '';
+  // aviso si se está poniendo más lento
+  const peor = [];
+  if(r.ia_mediana && p.ia_mediana && r.ia_mediana > p.ia_mediana * 1.3 && r.ia_mediana - p.ia_mediana >= 5) peor.push(`la IA (mediana ${seg1(r.ia_mediana)} contra ${seg1(p.ia_mediana)})`);
+  if(r.whisper_x && p.whisper_x && r.whisper_x > p.whisper_x * 1.3) peor.push(`Whisper (${num1(r.whisper_x * 60)} s por minuto de audio contra ${num1(p.whisper_x * 60)} s)`);
+  if(peor.length) h += `<p class="explica av" style="margin:0 0 12px">Más lento que en el período anterior: ${peor.join(' y ')}. Puede ser la placa de video ocupada por otro programa, poca memoria libre o un modelo distinto.</p>`;
+  h += '<div class="mini">'
+    + tile('IA por informe', null, `<span class="grande">${seg1(r.ia_mediana)}</span>${tendT(r.ia_mediana, p.ia_mediana)}`, `mediana · promedio ${seg1(r.ia_prom)} · 9 de cada 10 en menos de ${seg1(r.ia_p90)}`)
+    + tile('Whisper por minuto de audio', null, `<span class="grande">${r.whisper_x != null ? num1(r.whisper_x * 60) + ' s' : '—'}</span>${tendT(r.whisper_x, p.whisper_x)}`, `mediana · por audio ${seg1(r.whisper_mediana)} (audios de ${mmss(r.audio_prom)} en promedio)`)
+    + tile('Total por audio', null, `<span class="grande">${seg1(r.total_mediana)}</span>${tendT(r.total_mediana, p.total_mediana)}`, `Whisper + IA · mediana · promedio ${seg1(r.total_prom)}`)
+    + tile('Errores al procesar', r.errores ? 'err' : null, `<span class="grande">${ent(r.errores)}</span>`, r.errores ? 'ver abajo' : 'ninguno en el período')
+    + '</div>';
+  // por semana
+  const sem = (T.semanas || []).filter(w => w.n || w.errores);
+  if(sem.length > 1){
+    const maxIa = Math.max(1, ...sem.map(w => w.ia_mediana || 0)), maxW = Math.max(0.01, ...sem.map(w => w.whisper_x || 0));
+    h += '<div class="sub-t">Por semana</div><div class="tabla-borde"><table><thead><tr><th scope="col">Semana</th><th scope="col">IA (mediana)</th><th scope="col" class="ocultable">Whisper por min de audio</th><th scope="col" class="num">Informes</th></tr></thead><tbody>';
+    for(const w of [...sem].reverse())
+      h += `<tr><td>${diaMes(w.desde)} – ${diaMes(w.hasta)}</td><td class="barra-c">${w.ia_mediana ? barra(w.ia_mediana, maxIa, seg1(w.ia_mediana)) : '<span class="mu">—</span>'}</td>`
+         + `<td class="barra-c ocultable">${w.whisper_x ? barra(w.whisper_x, maxW, num1(w.whisper_x * 60) + ' s') : '<span class="mu">—</span>'}</td><td class="num">${ent(w.n)}${w.errores ? ` <span class="lenta" title="errores">· ${w.errores} con error</span>` : ''}</td></tr>`;
+    h += '</tbody></table></div>';
+  }
+  // los más lentos
+  if(T.lentos.length){
+    h += '<div class="sub-t">Los más lentos del período</div><div class="tabla-borde"><table><thead><tr><th scope="col">Generado</th><th scope="col">Audio</th><th scope="col" class="num">Duración</th><th scope="col" class="num">Whisper</th><th scope="col" class="num">IA</th><th scope="col" class="num">Total</th></tr></thead><tbody>';
+    for(const x of T.lentos)
+      h += `<tr><td style="white-space:nowrap">${fechaT(x.t)}</td><td><span class="nom">${esc(x.titulo)}</span><span class="sec">${esc(x.pc)}</span></td><td class="num">${mmss(x.dur)}</td>`
+         + `<td class="num${x.whisper_lento ? ' lenta' : ''}" title="${x.whisper_x ? num1(x.whisper_x * 60) + ' s por minuto de audio' : ''}">${seg1(x.whisper)}</td>`
+         + `<td class="num${x.ia_lenta ? ' lenta' : ''}">${seg1(x.ia)}</td><td class="num">${seg1((x.whisper || 0) + (x.ia || 0))}</td></tr>`;
+    h += '</tbody></table></div><p class="nota">En rojo: más del doble de lo normal del período. La IA del primer informe de una tanda suele tardar algo más porque carga el modelo en la placa.</p>';
+  }
+  if(T.errores.length){
+    h += '<div class="sub-t">Errores al procesar</div><ul class="eventos tabla-borde">' + T.errores.map(x =>
+      `<li class="ev error" style="grid-template-columns:96px minmax(0,1fr)"><span class="hora">${fechaT(x.t)}</span><div class="txt"><b>${esc(x.titulo)}</b> <span class="mu">· ${esc(x.pc)}</span><ul class="det"><li>${esc(x.detalle || 'sin detalle')}</li></ul></div></li>`).join('') + '</ul>';
+  }
+  poner('#tiempos', h);
 }
 
 // "Mamografía + Eco mamaria" -> cada estudio en un bloque que no se corta; si no entra, pasa al renglón siguiente con su "+"

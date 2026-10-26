@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Correcciones</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20x='2'%20y='2'%20width='60'%20height='60'%20rx='14'%20fill='%230F172A'/%3E%3Crect%20x='12'%20y='14'%20width='40'%20height='6'%20rx='3'%20fill='%23CBD5E1'/%3E%3Crect%20x='12'%20y='24'%20width='12'%20height='6'%20rx='3'%20fill='%23CBD5E1'/%3E%3Crect%20x='27'%20y='23'%20width='25'%20height='8'%20rx='2.5'%20fill='%23EF4444'/%3E%3Crect%20x='12'%20y='33'%20width='22'%20height='8'%20rx='2.5'%20fill='%23FACC15'/%3E%3Crect%20x='37'%20y='34'%20width='15'%20height='6'%20rx='3'%20fill='%23CBD5E1'/%3E%3Crect%20x='12'%20y='44'%20width='14'%20height='6'%20rx='3'%20fill='%23CBD5E1'/%3E%3Crect%20x='29'%20y='43'%20width='18'%20height='8'%20rx='2.5'%20fill='%232DD4BF'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem('tema');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t;}catch(e){}</script>
+<style>
+:root{
+  color-scheme:light;--aviso:#8a6500;--aviso-bg:#fdf3d6;
+  --bg:#f3f2ef;--panel:#fbfbfa;--hoja:#ffffff;--tx:#1d1d1b;--mu:#6d6c66;--bd:#e0dfda;--bd2:#cfcdc6;
+  --ac:#1f5fbf;--ac-tx:#ffffff;--ac-suave:#e6eefb;--ok:#2e7d4f;--ok-suave:#e3f2e8;--err:#b3261e;--err-bg:#fbe9e7;
+  --sombra:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);--nuevo:#1f5fbf;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  color-scheme:dark;--aviso:#f0c24b;--aviso-bg:#2f2810;
+  --bg:#141413;--panel:#1b1b1a;--hoja:#222220;--tx:#ebeae5;--mu:#a19f98;--bd:#33322e;--bd2:#45443f;
+  --ac:#7aa7f0;--ac-tx:#0e1a2e;--ac-suave:#1c2a40;--ok:#6fcf97;--ok-suave:#173524;--err:#ff8a80;--err-bg:#3a1b18;
+  --sombra:none;--nuevo:#7aa7f0;
+}}
+:root[data-theme=dark]{
+  color-scheme:dark;--aviso:#f0c24b;--aviso-bg:#2f2810;
+  --bg:#141413;--panel:#1b1b1a;--hoja:#222220;--tx:#ebeae5;--mu:#a19f98;--bd:#33322e;--bd2:#45443f;
+  --ac:#7aa7f0;--ac-tx:#0e1a2e;--ac-suave:#1c2a40;--ok:#6fcf97;--ok-suave:#173524;--err:#ff8a80;--err-bg:#3a1b18;
+  --sombra:none;--nuevo:#7aa7f0;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 "Segoe UI",system-ui,sans-serif}
+button,input,select{font:inherit;color:var(--tx)}
+input{background:var(--panel);border:1px solid var(--bd2);border-radius:7px;padding:7px 10px;min-width:0}
+input:focus-visible,button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+button,.boton{background:var(--panel);border:1px solid var(--bd2);border-radius:7px;padding:6px 11px;cursor:pointer;white-space:nowrap;
+  text-decoration:none;display:inline-flex;align-items:center;gap:6px;color:var(--tx)}
+button:hover,.boton:hover{border-color:var(--ac)}
+button.prim{background:var(--ac);color:var(--ac-tx);border-color:var(--ac);font-weight:600}
+button.peligro{color:var(--err)}
+button.peligro:hover{border-color:var(--err)}
+button.chico{padding:3px 9px;font-size:12.5px}
+button:disabled{opacity:.5;cursor:default}
+button:disabled:hover{border-color:var(--bd2)}
+.ico{width:32px;height:32px;padding:0;justify-content:center;border-color:transparent;background:none}
+.ico svg{width:18px;height:18px}
+.ico svg.solo-claro,.ico svg.solo-oscuro{display:none}
+:root[data-tema-efectivo=light] .ico svg.solo-claro,:root[data-tema-efectivo=dark] .ico svg.solo-oscuro{display:block}
+
+header{position:sticky;top:0;z-index:2;background:var(--panel);border-bottom:1px solid var(--bd)}
+.barra{max-width:1120px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.barra h1{font-size:17px;margin:0}
+.barra .sub{color:var(--mu);font-size:12.5px}
+.barra .sep{flex:1}
+main{max-width:1120px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:16px}
+
+/* resumen */
+.resumen{display:grid;grid-template-columns:repeat(auto-fit,minmax(142px,1fr));gap:10px}
+.tile{background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:11px 13px;box-shadow:var(--sombra);min-width:0}
+.tile .et{font-size:11.5px;color:var(--mu);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.tile .v{font-weight:600;margin-top:3px;display:flex;align-items:center;gap:7px;overflow-wrap:anywhere}
+.tile .d{font-size:12.5px;color:var(--mu);margin-top:1px;overflow-wrap:anywhere}
+.punto{width:9px;height:9px;border-radius:50%;flex:none;background:var(--mu)}
+.punto.ok{background:var(--ok)}.punto.av{background:var(--aviso)}.punto.err{background:var(--err)}
+.punto.vivo{box-shadow:0 0 0 3px var(--ok-suave)}
+
+/* tarjetas */
+.dos{display:grid;grid-template-columns:1.35fr 1fr;gap:16px}
+@media (max-width:900px){.dos{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:12px;box-shadow:var(--sombra);min-width:0}
+.card > .cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:13px 16px;border-bottom:1px solid var(--bd)}
+.card > .cab h2{font-size:15px;margin:0}
+.card > .cab .sep{flex:1}
+.card > .cab .cuenta{color:var(--mu);font-size:12.5px}
+.card > .cuerpo{padding:14px 16px}
+.nota{color:var(--mu);font-size:12.5px;margin:10px 0 0}
+.nota code,.cod{font:12px ui-monospace,Consolas,monospace;background:var(--bg);border:1px solid var(--bd);padding:1px 5px;border-radius:5px}
+.estado-grande{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:12px 0 0;font-size:13.5px}
+.dl dt{color:var(--mu)}
+.dl dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.url{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.url a{color:var(--ac);font:12.5px ui-monospace,Consolas,monospace;overflow-wrap:anywhere}
+.acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.explica{margin:10px 0 0;padding:9px 11px;border-radius:8px;font-size:13px;background:var(--bg);border:1px solid var(--bd)}
+.explica.av{background:var(--aviso-bg);border-color:var(--aviso)}
+.explica.err{background:var(--err-bg);border-color:var(--err)}
+
+/* tabla de PC */
+.tabla-env{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-weight:600;color:var(--mu);font-size:12px;padding:9px 16px;border-bottom:1px solid var(--bd);white-space:nowrap}
+td{padding:10px 16px;border-bottom:1px solid var(--bd);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td .pcnom{font-weight:600;white-space:nowrap}
+td .sec{display:block;color:var(--mu);font-size:12px}
+.etq{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:10px;border:1px solid var(--bd2);color:var(--mu);white-space:nowrap}
+.etq.ok{color:var(--ok);border-color:var(--ok);background:var(--ok-suave)}
+.etq.av{color:var(--aviso);border-color:var(--aviso);background:var(--aviso-bg)}
+.etq.err{color:var(--err);border-color:var(--err);background:var(--err-bg)}
+.conex{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.vacio{color:var(--mu);padding:18px 16px;font-size:13.5px}
+.vacio b{color:var(--tx);display:block;margin-bottom:2px}
+
+/* contraseña */
+form.clave{display:flex;flex-direction:column;gap:9px;margin-top:12px}
+form.clave label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+form.clave .fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.err-txt{color:var(--err);font-size:12.5px;min-height:1em}
+
+/* registro */
+.filtro{display:inline-flex;background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:2px}
+.filtro button{border:0;background:none;padding:4px 10px;border-radius:6px;font-size:12.5px;color:var(--mu)}
+.filtro button[aria-pressed=true]{background:var(--panel);color:var(--tx);font-weight:600;box-shadow:0 0 0 1px var(--bd2)}
+.eventos{list-style:none;margin:0;padding:0}
+.ev{display:grid;grid-template-columns:76px 66px minmax(0,1fr);gap:4px 12px;padding:10px 16px;border-bottom:1px solid var(--bd);align-items:baseline}
+.ev:last-child{border-bottom:0}
+.ev .hora{font-variant-numeric:tabular-nums;color:var(--mu);font-size:12.5px;white-space:nowrap}
+.ev .niv{font-size:11px;font-weight:700;letter-spacing:.03em;padding:1px 6px;border-radius:4px;justify-self:start}
+.ev.error .niv{color:var(--err);background:var(--err-bg)}
+.ev.aviso .niv{color:var(--aviso);background:var(--aviso-bg)}
+.ev .txt{min-width:0;overflow-wrap:anywhere}
+.ev .area{font-size:11.5px;color:var(--mu);font-weight:600;margin-right:6px}
+.ev.nuevo .hora{color:var(--nuevo);font-weight:600}
+.ev .det{margin:3px 0 0;padding:0;list-style:none;color:var(--mu);font-size:12.5px}
+.ev details{margin-top:4px;font-size:12px}
+.ev summary{cursor:pointer;color:var(--mu)}
+.ev pre{margin:6px 0 0;padding:8px 10px;background:var(--bg);border:1px solid var(--bd);border-radius:7px;overflow:auto;max-height:260px;
+  font:11.5px/1.45 ui-monospace,Consolas,monospace;white-space:pre}
+.mas{padding:10px 16px}
+@media (max-width:640px){.ev{grid-template-columns:62px minmax(0,1fr)}.ev .niv{grid-column:1}.ev .txt{grid-column:2;grid-row:1/span 2}
+  th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5){display:none}}
+
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:9px 14px;border-radius:9px;
+  font-size:13.5px;max-width:min(560px,calc(100vw - 32px));box-shadow:0 6px 24px rgba(0,0,0,.25);display:none;z-index:5}
+#toast.err{background:var(--err);color:#fff}
+.sin-conexion{display:none;background:var(--err-bg);border:1px solid var(--err);color:var(--tx);border-radius:10px;padding:10px 14px;font-size:13.5px}
+.sin-conexion b{color:var(--err)}
+.cargando{color:var(--mu);padding:30px 0;text-align:center}
+
+/* páginas del panel: se cambia de una a otra en la misma pestaña */
+.pestanas{max-width:1120px;margin:0 auto;padding:0 20px;display:flex;gap:4px}
+.pestanas a{border-bottom:2px solid transparent;padding:8px 12px 9px;color:var(--mu);font-weight:600;text-decoration:none;
+  display:inline-flex;align-items:center;gap:6px}
+.pestanas a:hover{color:var(--tx);border-color:var(--bd2)}
+.pestanas a[aria-current=page]{color:var(--tx);border-color:var(--ac)}
+/* estadísticas */
+.est-barra{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.est-barra .sep{flex:1}
+.est-barra .cuenta{color:var(--mu);font-size:12.5px}
+.tile .v .grande{font-size:22px;font-variant-numeric:tabular-nums;line-height:1.2}
+.tend{font-size:12px;font-weight:600;white-space:nowrap}
+.tend.mejor{color:var(--ok)}.tend.peor{color:var(--err)}.tend.igual{color:var(--mu)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.barra-c{min-width:150px;width:34%}
+.barra-f{display:flex;align-items:center;gap:8px}
+.barra-f .pista{flex:1;height:10px;background:var(--bg);border-radius:0 4px 4px 0;min-width:40px;position:relative}
+.barra-f .relleno{position:absolute;left:0;top:0;bottom:0;background:var(--ac);border-radius:0 4px 4px 0;min-width:2px}
+.barra-f .relleno.cero{min-width:0}
+.barra-f .val{font-variant-numeric:tabular-nums;font-size:12.5px;min-width:46px;text-align:right}
+.pct{font-variant-numeric:tabular-nums;font-weight:600}
+.pct.bajo{color:var(--ok)}.pct.medio{color:var(--aviso)}.pct.alto{color:var(--err)}
+tr.actual td:first-child{font-weight:600}
+tr.vacia td{color:var(--mu)}
+td .nom{font-weight:600;overflow-wrap:anywhere}
+.mu{color:var(--mu)}
+.leyenda-pct{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--mu);margin:10px 0 0}
+.leyenda-pct span{display:inline-flex;align-items:center;gap:5px}
+.leyenda-pct i{width:9px;height:9px;border-radius:50%;display:inline-block}
+/* Por médico y Por estudio van uno debajo del otro: los nombres de los estudios son largos y en media columna no se leían */
+.est-dos{display:grid;grid-template-columns:1fr;gap:16px}
+td .nom .parte{white-space:nowrap}
+td .nom .mas-e{color:var(--mu);font-weight:400;margin-right:4px}
+td.col-nom{width:100%;min-width:220px}
+@media (max-width:640px){.ocultable{display:none}td.barra-c{min-width:110px}td .nom .parte{white-space:normal}td.col-nom{min-width:0}}
+
+/* desde una PC del trabajo no se abren carpetas de la PC del servidor */
+.panel-remoto [data-abrir]{display:none!important}
+/* tiempos de procesamiento */
+.mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.mini .tile{box-shadow:none;background:var(--bg)}
+.sub-t{font-size:13px;font-weight:600;margin:16px 0 6px}
+.lenta{color:var(--err);font-weight:600}
+.tabla-borde{border:1px solid var(--bd);border-radius:9px;overflow-x:auto}
+.tabla-borde th,.tabla-borde td{padding:8px 12px}
+
+/* correcciones */
+.controles{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap}
+.controles .sep{flex:1}
+.controles select{font:inherit;color:var(--tx);background:var(--panel);border:1px solid var(--bd2);border-radius:7px;padding:5px 8px}
+.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:13px}
+.cambio{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;font-size:14px}
+.cambio .de{background:var(--err-bg);color:var(--err);text-decoration:line-through;text-decoration-thickness:1px;padding:0 4px;border-radius:4px;overflow-wrap:anywhere}
+.cambio .a{background:var(--ok-suave);color:var(--ok);padding:0 4px;border-radius:4px;font-weight:600;overflow-wrap:anywhere}
+.cambio .fl{color:var(--mu)}
+.cambio .tipo{font-size:11.5px;color:var(--mu)}
+.etqs{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+tr.una td{opacity:.86}
+tr.sep-una td{background:var(--bg);color:var(--mu);font-size:12.5px;font-weight:600;padding:7px 16px}
+details.ej{margin-top:6px;font-size:12.5px}
+details.ej summary{cursor:pointer;color:var(--mu)}
+.ejemplo{margin:6px 0 0;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;background:var(--bg);display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 8px}
+.ejemplo .q{color:var(--mu);font-size:11.5px;font-weight:600;white-space:nowrap}
+.ejemplo mark.m-de{background:var(--err-bg);color:var(--err);text-decoration:line-through}
+.ejemplo mark.m-a{background:var(--ok-suave);color:var(--ok);font-weight:600}
+.ejemplo .meta{grid-column:1/-1;color:var(--mu);font-size:11.5px}
+.regla-form{margin-top:8px;padding:10px;border:1px solid var(--ac);border-radius:8px;background:var(--ac-suave);display:flex;flex-direction:column;gap:8px}
+.regla-form textarea{font:inherit;color:var(--tx);background:var(--panel);border:1px solid var(--bd2);border-radius:7px;padding:7px 9px;width:100%;resize:vertical;min-height:44px}
+.regla-form .fila{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.panel-remoto .solo-local{display:none!important}
+td.col-c{width:100%;min-width:260px}
+@media (max-width:640px){td.col-c{min-width:0}}
+</style>
+</head>
+<body>
+<header>
+  <div class="barra">
+    <h1>Correcciones</h1>
+    <span class="sub" id="sub">Lo que más se corrige de lo que escribe la IA</span>
+    <span class="sep"></span>
+    <button id="bSalirPanel" type="button" title="Vuelve a la lista de informes">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      Salir del panel</button>
+    <button id="bTema" class="ico" title="Cambiar entre modo claro y oscuro" aria-label="Cambiar entre modo claro y oscuro">
+      <svg class="solo-claro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      <svg class="solo-oscuro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+    </button>
+  </div>
+  <nav class="pestanas" aria-label="Páginas del panel">
+    <a href="/admin">Estado del servidor</a><a href="/admin/estadisticas">Estadísticas</a><a href="/admin/correcciones" aria-current="page">Correcciones</a>
+  </nav>
+</header>
+<main>
+  <div class="controles">
+    <div class="filtro" role="group" aria-label="Período" id="periodo">
+      <button data-d="30" aria-pressed="false">30 días</button><button data-d="90" aria-pressed="false">3 meses</button><button data-d="0" aria-pressed="true">Todo</button>
+    </div>
+    <label class="chk">Médico <select id="selMed"><option value="">Todos</option></select></label>
+    <label class="chk"><input type="checkbox" id="chkPunt"> Incluir puntuación y mayúsculas</label>
+    <span class="sep"></span>
+    <span class="cuenta" id="corAct" style="color:var(--mu);font-size:12.5px"></span>
+  </div>
+  <div class="sin-conexion" id="corSinCon" role="status"><b>No se pudieron leer las correcciones.</b> <span id="corErr"></span></div>
+  <div class="cargando" id="corCargando">Calculando…</div>
+  <div id="corAvisos"></div>
+  <section class="resumen" id="corResumen" aria-label="Resumen" hidden></section>
+  <section class="card" aria-labelledby="tCor" id="secCor" hidden>
+    <div class="cab"><h2 id="tCor">Lo más corregido</h2><span class="cuenta" id="corCuenta"></span></div>
+    <div class="tabla-env" id="corLista"></div>
+    <div class="mas" id="corMas" hidden><button class="chico" id="bCorMas">Ver más</button></div>
+    <p class="nota" style="margin:0;padding:10px 16px">Compara lo que escribió la IA con el informe guardado de cada ejemplo aprendido.
+      Cuenta en cuántos informes aparece cada cambio. No incluye los cambios con números (salen del dictado) ni las reescrituras de más de 12 palabras.
+      <span class="solo-local"><b>Convertir en regla</b> agrega un renglón a <span class="cod">conocimiento\reglas_dictado.md</span> (con copia de la versión anterior en <span class="cod">conocimiento\copias</span>): la IA lo lee desde el próximo informe.</span>
+      <span class="solo-remoto" hidden>Las reglas se agregan desde la PC del servidor.</span></p>
+  </section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const leerLS = k => { try { return localStorage.getItem(k); } catch(e){ return null; } };
+const grabarLS = (k, v) => { try { localStorage.setItem(k, v); } catch(e){} };
+let E = null, filtro = 'todos', cuantos = 25, ultimo = {};
+const VISTO_ANTES = +(leerLS('adminVisto') || 0);       // para marcar los eventos nuevos desde la última visita
+
+/* ---------- tema (el mismo que la página de informes) */
+function aplicarTema(){
+  const t = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  document.documentElement.dataset.temaEfectivo = t;
+}
+$('#bTema').onclick = () => {
+  const t = document.documentElement.dataset.temaEfectivo === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t; grabarLS('tema', t); aplicarTema();
+};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', aplicarTema);
+aplicarTema();
+
+/* ---------- utilidades */
+function hace(seg){
+  if(seg == null) return '';
+  seg = Math.max(0, Math.round(seg));
+  if(seg < 10) return 'recién';
+  if(seg < 60) return `hace ${seg} s`;
+  const m = Math.round(seg / 60); if(m < 60) return `hace ${m} min`;
+  const h = Math.floor(seg / 3600); if(h < 24) return `hace ${h} h ${Math.round((seg % 3600) / 60)} min`;
+  const d = Math.floor(seg / 86400); return d === 1 ? 'hace 1 día' : `hace ${d} días`;
+}
+function duracion(seg){
+  const m = Math.floor(seg / 60), h = Math.floor(m / 60);
+  return h ? `${h} h ${m % 60} min` : m ? `${m} min` : 'menos de 1 min';
+}
+const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : (varios || uno + 's')}`;
+function fechaCorta(s){         // "2026-10-24 23:47" -> "24/10 23:47"
+  const m = /^(\d{4})-(\d\d)-(\d\d)(?: (\d\d:\d\d))?/.exec(s || ''); return m ? `${m[3]}/${m[2]}${m[4] ? ' ' + m[4] : ''}` : (s || '');
+}
+function fechaDe(t){ const d = new Date(t * 1000); return d.toLocaleDateString('es-AR', {day:'2-digit', month:'2-digit'}) + ' ' + d.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'}); }
+let toastT;
+function toast(msg, error){
+  const t = $('#toast'); t.textContent = msg; t.className = error ? 'err' : ''; t.style.display = 'block';
+  clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', error ? 9000 : 6000);
+}
+async function accion(ruta, datos, boton){
+  if(boton) boton.disabled = true;
+  try {
+    const r = await fetch('/api/admin/' + ruta, {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Panel': '1'}, body: JSON.stringify(datos || {})});
+    const j = await r.json().catch(() => ({}));
+    if(r.status === 401 && j.entrar_panel){ location.reload(); return null; }
+    if(!r.ok) throw new Error(j.error || 'Error ' + r.status);
+    if(j.msg) toast(j.msg);
+    cargar();
+    return j;
+  } catch(e){ toast(e.message, true); return null; }
+  finally { if(boton) boton.disabled = false; }
+}
+function poner(id, html){ if(ultimo[id] !== html){ ultimo[id] = html; $(id).innerHTML = html; } }
+function tile(et, punto, v, d){ return `<div class="tile"><div class="et">${et}</div><div class="v">${punto != null ? `<span class="punto ${punto}"></span>` : ''}${v}</div>${d ? `<div class="d">${d}</div>` : ''}</div>`; }
+/* ---------- usado desde una PC del trabajo (con la contraseña del panel) */
+function modoRemoto(v, subNormal){
+  const rem = !!(v && v.remoto);
+  document.documentElement.classList.toggle('panel-remoto', rem);
+  $('#bSalirPanel').title = rem ? 'Cierra la sesión del panel en esta PC y vuelve a los informes' : 'Vuelve a la lista de informes';
+  $('#sub').textContent = rem ? `Desde ${v.pc} · la sesión del panel se cierra sola tras 30 min sin usarla` : subNormal;
+}
+$('#bSalirPanel').onclick = async () => {
+  // un solo botón: desde una PC del trabajo además cierra la sesión del panel
+  if(document.documentElement.classList.contains('panel-remoto'))
+    try { await fetch('/api/admin/salir', {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Panel': '1'}, body: '{}'}); } catch(e){}
+  location.href = '/';
+};
+let C = null, corDias = +(leerLS('corDias') || 0), corMed = leerLS('corMed') || '', corPunt = leerLS('corPunt') === '1', corCuantos = 40, abierta = null, pidiendo = false;
+if(![30, 90, 0].includes(corDias)) corDias = 0;
+const ent = v => v == null ? '—' : Math.round(v).toLocaleString('es-AR');
+function fechaT(t){ const d = new Date(t * 1000); return d.toLocaleDateString('es-AR', {day:'2-digit', month:'2-digit'}); }
+function nombrePeriodo(d){ return d === 30 ? 'los últimos 30 días' : d === 90 ? 'los últimos 3 meses' : 'todo el historial'; }
+function barra(valor, max, texto, titulo){
+  const w = max > 0 && valor ? Math.max(0, Math.min(100, 100 * valor / max)) : 0;
+  return `<div class="barra-f" title="${esc(titulo || texto)}"><div class="pista"><div class="relleno${w ? '' : ' cero'}" style="width:${w}%"></div></div><span class="val">${texto}</span></div>`;
+}
+const TIPO = {replace: 'reemplazo', insert: 'agregado', delete: 'borrado'};
+
+function cargar(){ cargarCor(true); }
+async function cargarCor(forzar){
+  if(pidiendo && !forzar) return;
+  pidiendo = true;
+  try {
+    const q = new URLSearchParams({dias: corDias, medico: corMed, puntuacion: corPunt ? '1' : ''});
+    const r = await fetch('/api/admin/correcciones?' + q, {cache: 'no-store'});
+    if(r.status === 403 || r.status === 401){ location.reload(); return; }
+    if(r.status === 404) throw new Error('el servidor todavía es la versión anterior: cerrá su ventana y abrilo de nuevo para usar esta página.');
+    if(!r.ok) throw new Error('el servidor respondió ' + r.status);
+    C = await r.json();
+    modoRemoto(C.visor, 'Lo que más se corrige de lo que escribe la IA');
+    document.querySelectorAll('.solo-remoto').forEach(x => x.hidden = !(C.visor && C.visor.remoto));
+    $('#corSinCon').style.display = 'none';
+    armar();
+  } catch(err){
+    $('#corSinCon').style.display = 'block';
+    $('#corErr').textContent = /fetch|network/i.test(err.message) ? '¿Se cerró la ventana del servidor? Se vuelve a intentar sola.' : err.message;
+  } finally { pidiendo = false; $('#corCargando').hidden = true; }
+}
+
+function armar(){
+  const c = C;
+  $('#corAct').textContent = `${nombrePeriodo(c.dias)[0].toUpperCase() + nombrePeriodo(c.dias).slice(1)} · ${new Date(c.ahora * 1000).toLocaleTimeString('es-AR', {hour: '2-digit', minute: '2-digit', hourCycle: 'h23'})}`;
+  // médicos
+  const sel = $('#selMed');
+  const opts = '<option value="">Todos</option>' + c.medicos.map(([m, n]) => `<option value="${esc(m)}">${esc(m)} (${n})</option>`).join('')
+    + (c.medico && !c.medicos.some(([m]) => m === c.medico) ? `<option value="${esc(c.medico)}">${esc(c.medico)} (0)</option>` : '');
+  if(sel.dataset.h !== opts){ sel.dataset.h = opts; sel.innerHTML = opts; }
+  sel.value = c.medico || '';
+  const hay = c.informes > 0;
+  $('#corResumen').hidden = !hay; $('#secCor').hidden = !hay;
+  let av = '';
+  if(!c.total_ejemplos) av = '<div class="vacio card"><b>Todavía no hay informes aprendidos.</b>Esta página se llena cuando se guardan informes con «Guardar Word y aprender».</div>';
+  else if(!hay) av = `<div class="vacio card"><b>No hay informes guardados ${c.medico ? 'de ' + esc(c.medico) + ' ' : ''}en ${nombrePeriodo(c.dias)}.</b>Probá con otro período o con «Todos».</div>`;
+  else if(c.medicos.length === 1 && c.medicos[0][0] === 'Sin especificar') av = '<p class="explica">Ningún informe tiene médico: para ver lo que más se corrige de cada uno, elegí el médico antes de mandar los audios (o en el caso abierto antes de guardar).</p>';
+  poner('#corAvisos', av);
+  if(!hay) return;
+  const ex = c.excluidos;
+  poner('#corResumen',
+    tile('Informes analizados', null, `<span class="grande">${ent(c.informes)}</span>`, `${ent(c.palabras)} palabras en los informes finales`)
+    + tile('Cambios distintos', null, `<span class="grande">${ent(c.total_items)}</span>`, c.puntuacion ? 'incluye puntuación y mayúsculas' : 'sin contar puntuación ni mayúsculas')
+    + tile('Repetidos', c.repetidos ? 'av' : null, `<span class="grande">${ent(c.repetidos)}</span>`, 'aparecen en 2 informes o más: candidatos a regla')
+    + tile('No contados', null, `<span class="grande">${ent(ex.numeros + ex.largos + ex.forma)}</span>`, `${ent(ex.numeros)} con números · ${ent(ex.largos)} reescrituras largas${ex.forma ? ` · ${ent(ex.forma)} de puntuación` : ''}`));
+  $('#corCuenta').textContent = c.items.length < c.total_items ? `los ${c.items.length} más frecuentes de ${c.total_items}` : plural(c.total_items, 'cambio');
+  armarLista();
+}
+
+function marcar(linea, frase, cls){
+  const t = String(linea || ''), f = String(frase || '');
+  if(!f) return esc(t);
+  const i = t.toLowerCase().indexOf(f.toLowerCase());
+  return i < 0 ? esc(t) : esc(t.slice(0, i)) + `<mark class="${cls}">${esc(t.slice(i, i + f.length))}</mark>` + esc(t.slice(i + f.length));
+}
+function htmlCambio(x){
+  const de = x.de ? `<span class="de">${esc(x.de)}</span>` : '', a = x.a ? `<span class="a">${esc(x.a)}</span>` : '';
+  return `<div class="cambio">${x.tipo === 'replace' ? de + '<span class="fl" aria-label="se cambió por">→</span>' + a : x.tipo === 'insert' ? '<span class="fl">se agregó</span>' + a : '<span class="fl">se borró</span>' + de}</div>`;
+}
+function armarLista(){
+  const c = C, lista = c.items.slice(0, corCuantos);
+  const max = Math.max(1, ...lista.map(x => x.informes));
+  const local = !(c.visor && c.visor.remoto);
+  let h = '<table><thead><tr><th scope="col">Cambio</th><th scope="col">Informes</th><th scope="col" class="ocultable">Médicos</th><th scope="col" class="num ocultable">Último</th></tr></thead><tbody>';
+  let sepPuesto = false;
+  for(const x of lista){
+    if(x.informes < 2 && !sepPuesto && lista[0].informes >= 2){
+      sepPuesto = true;
+      h += '<tr class="sep-una"><td colspan="4">Corregidos en un solo informe</td></tr>';
+    }
+    const meds = x.medicos.slice(0, 2).map(([m, n]) => `${esc(m)}${x.medicos.length > 1 ? ' (' + n + ')' : ''}`).join(', ') + (x.medicos.length > 2 ? ` y ${x.medicos.length - 2} más` : '');
+    const etqs = (x.en_reglas ? '<span class="etq ok" title="Hay un renglón de reglas_dictado.md que lo menciona">ya está en las reglas</span>' : '')
+      + (x.aprendida ? '<span class="etq" title="Está en correcciones_aprendidas.md: la IA ya lo recibe como corrección frecuente">la IA ya lo recibe como corrección frecuente</span>' : '')
+      + (x.forma ? '<span class="etq">puntuación o mayúsculas</span>' : '');
+    const ejs = x.ejemplos.map(e => `<div class="ejemplo"><span class="q">IA</span><span>${marcar(e.ia, x.de, 'm-de')}</span><span class="q">Final</span><span>${marcar(e.final, x.a, 'm-a')}</span><span class="meta">${fechaT(e.t)} · ${esc(e.medico)}</span></div>`).join('');
+    const abiertaAca = abierta === x.id;
+    h += `<tr class="${x.informes < 2 ? 'una' : ''}"><td class="col-c">${htmlCambio(x)}<span class="tipo sec">${TIPO[x.tipo] || x.tipo}${x.veces > x.informes ? ` · ${x.veces} veces` : ''}</span>`
+       + (etqs ? `<div class="etqs">${etqs}</div>` : '')
+       + `<div class="fila" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px">`
+       + (ejs ? `<details class="ej"><summary>Ver ${x.ejemplos.length === 1 ? 'el renglón' : 'los renglones'}</summary>${ejs}</details>` : '')
+       + (local ? `<button class="chico solo-local" data-regla="${esc(x.id)}" ${abiertaAca ? 'hidden' : ''}>Convertir en regla</button>` : '') + '</div>'
+       + (local && abiertaAca ? `<form class="regla-form" data-form="${esc(x.id)}"><label style="font-weight:600;font-size:13px">Renglón que se agrega a las reglas <span class="mu" style="font-weight:400">(podés cambiarlo)</span>`
+          + `<textarea maxlength="400" rows="2">${esc(x.regla)}</textarea></label><div class="fila"><button class="prim chico" type="submit">Agregar a reglas_dictado.md</button><button class="chico" type="button" data-cancelar>Cancelar</button></div>`
+          + `<span class="mu" style="font-size:12px">Conviene escribirla en general (sin datos de un paciente). La IA la lee en cada informe.</span></form>` : '')
+       + `</td><td class="barra-c">${barra(x.informes, max, ent(x.informes), plural(x.informes, 'informe'))}</td>`
+       + `<td class="ocultable">${meds}</td><td class="num ocultable">${fechaT(x.ultimo)}</td></tr>`;
+  }
+  if(!lista.length) h += '<tr><td colspan="4" class="vacio"><b>Sin cambios para mostrar.</b>La IA acertó todo o solo hubo cambios de números o reescrituras largas.</td></tr>';
+  // no re-armar con un ejemplo abierto o la regla a medio escribir
+  if(document.querySelector('#corLista details[open], #corLista .regla-form') && ultimo['#corLista'] && !armarLista.forzar) return;
+  armarLista.forzar = false;
+  poner('#corLista', h + '</tbody></table>');
+  $('#corMas').hidden = c.items.length <= corCuantos;
+  document.querySelectorAll('[data-regla]').forEach(b => b.onclick = () => { abierta = b.dataset.regla; armarLista.forzar = true; armarLista();
+    const t = document.querySelector('.regla-form textarea'); if(t){ t.focus(); t.setSelectionRange(t.value.length, t.value.length); } });
+  document.querySelectorAll('.regla-form').forEach(f => {
+    f.querySelector('[data-cancelar]').onclick = () => { abierta = null; armarLista.forzar = true; armarLista(); };
+    f.onsubmit = async ev => {
+      ev.preventDefault();
+      const texto = f.querySelector('textarea').value.trim();
+      if(!texto) return;
+      const r = await accion('correcciones/regla', {texto}, f.querySelector('button[type=submit]'));
+      if(r){ abierta = null; armarLista.forzar = true; }
+    };
+  });
+}
+$('#bCorMas').onclick = () => { corCuantos += 40; armarLista.forzar = true; armarLista(); };
+document.querySelectorAll('#periodo button').forEach(b => {
+  b.setAttribute('aria-pressed', +b.dataset.d === corDias);
+  b.onclick = () => {
+    corDias = +b.dataset.d; grabarLS('corDias', String(corDias)); corCuantos = 40; armarLista.forzar = true;
+    document.querySelectorAll('#periodo button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    cargarCor(true);
+  };
+});
+$('#selMed').onchange = () => { corMed = $('#selMed').value; grabarLS('corMed', corMed); corCuantos = 40; armarLista.forzar = true; cargarCor(true); };
+$('#chkPunt').checked = corPunt;
+$('#chkPunt').onchange = () => { corPunt = $('#chkPunt').checked; grabarLS('corPunt', corPunt ? '1' : ''); armarLista.forzar = true; cargarCor(true); };
+cargarCor(true);
+setInterval(() => { if(!document.hidden) cargarCor(); }, 120000);
+</script>
+</body>
+</html>

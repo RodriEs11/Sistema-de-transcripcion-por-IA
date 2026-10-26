@@ -12,6 +12,7 @@ Los casos se identifican con el parámetro o campo `nombre` (validado: sin rutas
 | GET | `/` | Interfaz de revisión (`web/index.html`) |
 | GET | `/admin` | Panel de administración (solo local o con contraseña del panel) |
 | GET | `/admin/estadisticas` | Estadísticas |
+| GET | `/admin/correcciones` | Lo más corregido |
 | GET/POST | `/entrar` | Entrada desde la app (código de un solo uso) o desde un navegador (PC + contraseña) |
 | GET | `/salir` | Cierra la sesión del navegador |
 
@@ -84,3 +85,9 @@ Solo locales (`127.0.0.1` con `Host` local) o con sesión del panel remoto. Los 
 | POST | `/api/admin/contrasena_admin`, `/api/admin/contrasena_admin/quitar` | Contraseña del panel remoto (solo local) |
 | POST | `/api/admin/sesiones_admin/cerrar` | Cierra las sesiones del panel remoto (solo local) |
 | POST | `/api/admin/abrir` | Abre el registro o una carpeta en el Explorador (solo local) |
+| GET | `/api/admin/correcciones?dias=N&medico=X&puntuacion=1` | Cambios más repetidos entre la IA y el informe final |
+| POST | `/api/admin/reinicio` | Programa el reinicio `{en: segundos, avisar, texto}` (prueba antes el código) |
+| POST | `/api/admin/reinicio/cancelar`, `/api/admin/reinicio/ya` | Cancela el reinicio o lo hace sin esperar |
+| POST | `/api/admin/mensaje`, `/api/admin/mensaje/quitar` | Cartel en las PC `{texto, minutos, tipo: aviso\|info}` |
+| POST | `/api/admin/caso/liberar` | Saca un caso abierto a la PC que lo tiene `{nombre}` |
+| POST | `/api/admin/correcciones/regla` | Agrega un renglón a `reglas_dictado.md` `{texto}` (solo local) |

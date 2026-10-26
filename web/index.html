@@ -192,6 +192,19 @@ main{min-width:0;min-height:0;display:flex;flex-direction:column}
 #avisos .chip button:hover{background:rgba(0,0,0,.08)}
 #dictado .rec{text-decoration:underline dotted var(--turq) 2px;text-underline-offset:3px}
 .ayuda{font-size:12px;color:var(--mu);padding:8px 14px;border-top:1px solid var(--bd)}
+/* cartel del panel de administración (mensaje a las PC o aviso de reinicio): arriba a la derecha, también en modo compacto */
+.msj-admin{position:fixed;top:10px;right:10px;z-index:14;width:min(400px,calc(100vw - 20px));display:flex;gap:10px;align-items:flex-start;
+  background:var(--panel);color:var(--tx);border:1px solid var(--ac);border-left-width:4px;border-radius:10px;padding:10px 12px;
+  box-shadow:0 8px 28px rgba(0,0,0,.18);font-size:13px;line-height:1.4}
+.msj-admin[hidden]{display:none}
+.msj-admin.aviso{border-color:var(--aviso)}
+.msj-admin .msj-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;overflow-wrap:anywhere}
+.msj-admin .msj-txt b{font-size:13.5px}
+.msj-admin .msj-cuando{font-weight:600;color:var(--aviso)}
+.msj-admin .msj-cuando b{font-variant-numeric:tabular-nums}
+.msj-admin .msj-ico{flex:none;width:22px;height:22px;color:var(--ac)}
+.msj-admin.aviso .msj-ico{color:var(--aviso)}
+.msj-admin .msj-ico svg{width:22px;height:22px}
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:9px;box-shadow:var(--sombra);display:none;gap:10px;align-items:center;z-index:9;max-width:90vw}
 #toast button{background:transparent;color:inherit;border-color:currentColor}
 @media (max-width:1000px){.app{grid-template-columns:1fr;height:auto}aside{max-height:40vh;border-right:0;border-bottom:1px solid var(--bd)}
@@ -601,6 +614,7 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
     <p id="cfAviso" hidden></p>
     <div class="botones"><button id="cfNo" type="button">Cancelar</button><button id="cfSi" type="button" class="peligro">Borrar</button></div></div>
 </div>
+<div id="msjAdmin" class="msj-admin" role="status" aria-live="polite" hidden></div>
 <div id="toast"><span id="toastTxt"></span><span id="toastBtns"></span></div>
 <!-- ayuda del editor (botón «?»): qué significa cada color y los atajos de teclado -->
 <div id="ayudaPop" class="pop" role="dialog" aria-label="Colores y atajos de teclado" hidden>
@@ -815,7 +829,11 @@ function textoEspera(c){        // "Transcribiendo… · listo en ~2 min" / "En 
 function ponerEstadoSrv(){
   const box = $('#estadoSrv'), p = $('#pOllama'), t = $('#tOllama');
   let h = '', clase = '';
-  if(SRV.ok === false){
+  if(SRV.ok === false && SRV.reinicio){
+    p.className = 'punto av'; t.textContent = 'reiniciando'; clase = 'av';
+    h = '<b>El servidor se está reiniciando</b>Lo pidió el administrador. En unos segundos vuelve y esta pantalla se reconecta sola; no hace falta hacer nada.'
+      + `<small>Reintentando cada 2 s · hace ${haceCuanto(Date.now() - SRV.reinicio)}</small>`;
+  } else if(SRV.ok === false){
     p.className = 'punto mal'; t.textContent = 'sin conexión';
     h = '<b>Sin conexión con el servidor</b>' + (MI.remoto
         ? 'La PC del servidor puede estar apagada, sin internet o con su ventana cerrada.' + (EN_APP && APP ? ' Podés seguir grabando y cargando audios: quedan guardados en esta PC y se envían solos cuando vuelva.'
@@ -841,8 +859,14 @@ function ponerEstadoSrv(){
 
 async function cargarLista(){
   let j; try { j = await api('/api/casos'); }
-  catch(e){ if(SRV.ok !== false){ SRV.ok = false; SRV.desde = Date.now(); } ponerEstadoSrv(); armarVacio(null); return; }
-  SRV = {...SRV, ok: true, ultimoOk: Date.now(), ia: j.ia_estado || (j.ollama ? 'ok' : 'caida'), modelo: j.modelo || ''};
+  catch(e){ if(SRV.ok !== false){ SRV.ok = false; SRV.desde = Date.now();
+      // se cortó justo cuando el administrador reiniciaba el servidor: no es una falla
+      const r = MSJ && MSJ.reinicio; if(r && (r.estado !== 'programado' || r.cuando - ahoraSrvPC() < 10)) SRV.reinicio = Date.now(); }
+    if(SRV.reinicio && Date.now() - SRV.reinicio > 180000) SRV.reinicio = 0;
+    $('#msjAdmin').hidden = true; ponerEstadoSrv(); armarVacio(null); return; }
+  if(SRV.reinicio) toast('El servidor ya se reinició: todo sigue normal.', [], 6000);
+  SRV = {...SRV, ok: true, ultimoOk: Date.now(), ia: j.ia_estado || (j.ollama ? 'ok' : 'caida'), modelo: j.modelo || '', reinicio: 0};
+  ponerMensaje(j.mensaje || null);
   ponerEstadoSrv();
   if(enEspera.length) enviarEnEspera();
   casosCache = j.casos;
@@ -901,6 +925,37 @@ async function cargarLista(){
     ul.appendChild(li);
   }
 }
+/* ------------------------------------------------ cartel del panel de administración */
+let MSJ = null, desfaseSrv = 0;
+const ahoraSrvPC = () => Date.now() / 1000 + desfaseSrv;
+const ICO_MSJ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v5.5M12 16.5v.5"/></svg>';
+function msjCerrado(){ try { return localStorage.getItem('msjCerrado') || ''; } catch(e){ return ''; } }
+function textoCuenta(cuando){
+  const s = Math.round(cuando - ahoraSrvPC());
+  return s > 0 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : null;
+}
+function ponerMensaje(m){
+  MSJ = m; const box = $('#msjAdmin');
+  if(m) desfaseSrv = m.ahora - Date.now() / 1000;
+  if(!m || m.id === msjCerrado()){ box.hidden = true; box.dataset.h = ''; return; }
+  const r = m.reinicio;
+  let cuando = '';
+  if(r) cuando = r.estado === 'reiniciando' ? 'Reiniciando ahora…'
+               : r.estado === 'esperando' ? 'En cuanto termine el audio que se está procesando.'
+               : textoCuenta(r.cuando) ? `En <b data-cuenta="${r.cuando}">${textoCuenta(r.cuando)}</b>` : 'En un instante…';
+  const h = `<span class="msj-ico">${ICO_MSJ}</span><div class="msj-txt"><b>${r ? 'El sistema se va a reiniciar' : 'Mensaje del administrador'}</b>`
+    + (cuando ? `<span class="msj-cuando">${cuando}</span>` : '') + `<span>${esc(m.texto)}</span></div><button type="button" class="chico" id="bMsjOk">Entendido</button>`;
+  box.className = 'msj-admin' + (m.tipo === 'aviso' || r ? ' aviso' : '');
+  if(box.dataset.h !== h){
+    box.dataset.h = h; box.innerHTML = h;
+    $('#bMsjOk').onclick = () => { try { localStorage.setItem('msjCerrado', m.id); } catch(e){} box.hidden = true; };
+  }
+  box.hidden = false;
+}
+setInterval(() => document.querySelectorAll('#msjAdmin [data-cuenta]').forEach(el => {
+  const t = textoCuenta(+el.dataset.cuenta); if(t) el.textContent = t; else el.parentNode.textContent = 'En un instante…';
+}), 1000);
+
 /* ------------------------------------------------ pantalla principal cuando no hay un caso abierto */
 const ICO = {
   audio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
@@ -1004,8 +1059,20 @@ setInterval(cargarLista, 2000); cargarLista(); cargarMiPc();
 function soltarCaso(n){ if(!n) return; try { navigator.sendBeacon('/api/caso/soltar', JSON.stringify({nombre:n, rev: tomarRev()})); } catch(e){} }
 setInterval(async () => { if(!actual) return;
   const rv = tomarRev();
-  try { const b = await api('/api/caso/bloquear', {nombre: actual, rev: rv});
-    if(!b.ok) toast('Atención: ' + b.por + ' abrió este caso. Tus cambios ya no se guardan.', [], 9000); } catch(e){ revPend += rv; } }, 15000);
+  try { const b = await api('/api/caso/bloquear', {nombre: actual, rev: rv, renovar: true});
+    if(!b.ok){ if(b.liberado) casoLiberado(); else toast('Atención: ' + b.por + ' abrió este caso. Tus cambios ya no se guardan.', [], 9000); } }
+  catch(e){ revPend += rv; } }, 15000);
+/* desde el panel de administración le sacaron el caso a esta PC (por ejemplo, para abrirlo en otra) */
+function casoLiberado(){
+  if(!actual) return;
+  audio.pause(); clearTimeout(tBorrador);
+  actual = null; activa = null; ocultarExplica(); onda = null;
+  audio.removeAttribute('src'); audio.load();
+  mostrar('vacio');
+  document.querySelectorAll('#casos li').forEach(li => li.classList.remove('sel'));
+  toast('Desde el panel de administración se liberó este caso para que se pueda abrir en otra PC. Lo que escribiste quedó guardado como borrador hasta el último guardado automático.', [], 15000);
+  cargarLista();
+}
 
 /* ------------------------------------------------ tiempo de revisión (para las estadísticas del panel de administración)
    Cuenta los segundos con un caso abierto en que se está trabajando: hubo teclado, mouse o rueda en el último minuto,
