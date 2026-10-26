@@ -116,7 +116,7 @@ Gemma 4 12B se eligió frente a Qwen 3.5 9B (13 % contra 29 % de palabras a corr
 
 | Componente | Requisito |
 |---|---|
-| Sistema operativo | Windows 10/11 (servidor y PC del trabajo) |
+| Sistema operativo | Servidor: Windows 10/11 o Linux ([docs/linux.md](docs/linux.md)) · PC del trabajo: Windows 10/11 |
 | GPU | NVIDIA con ≥ 10 GB de VRAM (probado con RTX 3080) |
 | Python | 3.10 a 3.13 (recomendado 3.12) |
 | IA local | [Ollama](https://ollama.com) con el modelo `gemma4:12b` |
@@ -139,6 +139,9 @@ interfaz.bat                 :: abre http://127.0.0.1:8765
 En el primer arranque se crean `configuracion.json` y `conocimiento/` a partir de los archivos de ejemplo.
 Después hay que cargar las plantillas propias del servicio (botón **Plantillas** de la interfaz).
 Para habilitar el acceso desde otras PC: `configurar_acceso.bat` y luego `iniciar_servidor.bat`.
+
+En **Linux**: `bash instalar.sh` y luego `./interfaz.sh` o `./iniciar_servidor.sh` (y `./servicio.sh instalar`
+para que arranque solo). Ver [docs/linux.md](docs/linux.md).
 
 Guía completa: [docs/instalacion.md](docs/instalacion.md).
 
@@ -193,6 +196,7 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 ├── vocabulario.txt          Términos médicos sugeridos a Whisper
 ├── requirements.txt
 ├── *.bat                    Instalación y arranque en Windows
+├── *.sh, linux/             Instalación, arranque y servicio en Linux
 └── docs/                    Documentación técnica
 ```
 
@@ -202,6 +206,7 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 |---|---|
 | [Arquitectura](docs/arquitectura.md) | Componentes, flujo de un audio, uso de GPU, concurrencia y archivos de un caso |
 | [Instalación](docs/instalacion.md) | Puesta en marcha del servidor, del acceso remoto y de las PC del trabajo |
+| [Servidor en Linux](docs/linux.md) | Instalación, arranque, servicio de systemd y diferencias con Windows |
 | [Uso diario](docs/uso.md) | Flujo de revisión, atajos de teclado y significado de las marcas |
 | [Pipeline de IA](docs/pipeline.md) | Transcripción, armado del prompt, controles, aprendizaje y evaluación |
 | [Configuración](docs/configuracion.md) | `configuracion.json`, formato de plantillas, reglas, médicos y vocabulario |

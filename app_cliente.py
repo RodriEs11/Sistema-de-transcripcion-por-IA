@@ -12,6 +12,7 @@ Solo se ofrecen estos archivos (nunca otra cosa de la carpeta):
   Transcripcion.exe, Transcripcion.exe.config, LEEME.txt, conexion.json y las .dll (incluida runtimes\\).
 """
 import hashlib
+import os
 import re
 import threading
 import time
@@ -146,4 +147,4 @@ def texto_panel():
         return None
     v = m["version"] or "?"
     pcs = ", ".join(f"{p} {x}" for p, x in sorted(VERSION_PC.items()))
-    return f"versión {v} en sistema\\cliente" + (f" · {pcs}" if pcs else "")
+    return f"versión {v} en sistema{os.sep}cliente" + (f" · {pcs}" if pcs else "")

@@ -21,6 +21,7 @@ import time
 from pathlib import Path
 
 import nucleo as N
+import plataforma as P
 from fase1_transcribir import cargar_modelo, transcribir, duracion
 
 try:
@@ -40,7 +41,7 @@ def config():
             archivo.write_text(ejemplo.read_text(encoding="utf-8-sig"), encoding="utf-8")
     c = json.loads(archivo.read_text(encoding="utf-8-sig"))
     for k in ("carpeta_audios_nuevos", "carpeta_informes"):
-        p = Path(c[k])
+        p = P.ruta_config(c[k])
         c[k] = p if p.is_absolute() else (AQUI / p).resolve()
     return c
 
@@ -258,7 +259,7 @@ def main():
     # 1) Whisper (primero se libera la placa de video)
     N.liberar_ia(cfg["modelo_ia"])
     t0 = time.time()
-    modelo = cargar_modelo(cfg["modelo_whisper"], "cuda")
+    modelo = cargar_modelo(cfg["modelo_whisper"], cfg.get("dispositivo_whisper", "cuda"))
     trans = {}
     for k, a in enumerate(audios, 1):
         print(f"[{k}/{len(audios)}] Transcribiendo {a.name} ({duracion(a):.0f}s)...", flush=True)
@@ -304,12 +305,15 @@ def main():
         hechos.append(docx)
 
     print(f"\nListo: {len(hechos)} informe(s) en {sal}  ({time.time()-t0:.0f}s en total)")
-    if cfg["abrir_word_al_terminar"] and os.name == "nt":
-        if len(hechos) <= 3:
-            for d in hechos:
-                os.startfile(d)
-        else:
-            os.startfile(sal)
+    if cfg["abrir_word_al_terminar"] and P.puede_abrir():
+        try:
+            if len(hechos) <= 3:
+                for d in hechos:
+                    P.abrir(d)
+            else:
+                P.abrir(sal)
+        except OSError:
+            pass
 
 
 if __name__ == "__main__":

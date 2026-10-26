@@ -58,6 +58,9 @@ cliente_codigo/lib/
 
 # --- Herramientas descargadas -----------------------------------------
 cloudflared.exe
+# Linux: cloudflared que baja iniciar_servidor.sh
+/cloudflared
+cloudflared.descarga
 
 # --- Respaldos y archivos de trabajo ----------------------------------
 respaldo/
@@ -71,6 +74,7 @@ _ia_vuelve
 __pycache__/
 *.py[cod]
 .venv/
+.venv-linux/
 venv/
 .pytest_cache/
 
@@ -81,3 +85,6 @@ venv/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# Archivos de prueba sueltos
+*.tgz

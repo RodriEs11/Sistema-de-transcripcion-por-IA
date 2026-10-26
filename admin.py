@@ -12,6 +12,7 @@ import re
 import threading
 import time
 
+import plataforma as P
 import registro as L
 import remoto as R
 
@@ -133,8 +134,6 @@ def puede_cambiar(handler, puerto):
 
 
 def abrir_en_windows(ruta):
-    """Abre una carpeta o archivo con el programa de Windows (Explorador, Bloc de notas)."""
-    if os.name != "nt":
-        return False
-    os.startfile(str(ruta))
-    return True
+    """Abre una carpeta o archivo con el programa del escritorio (Explorador y Bloc de notas en Windows,
+    xdg-open en Linux). False si en esta PC no se puede (Linux sin pantalla)."""
+    return P.abrir(ruta)

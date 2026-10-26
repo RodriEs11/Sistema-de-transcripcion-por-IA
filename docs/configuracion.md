@@ -8,10 +8,11 @@ Se crea en el primer arranque copiando `configuracion.ejemplo.json`. No se versi
 |---|---|---|
 | `modelo_ia` | `"gemma4:12b"` | Modelo de Ollama que arma el informe |
 | `modelo_whisper` | `"large-v3"` | Modelo de faster-whisper |
+| `dispositivo_whisper` | `"cuda"` | Opcional. `"cpu"` para usar el procesador si no hay placa NVIDIA (mucho más lento) |
 | `fuente`, `tamano_fuente` | `"Tahoma"`, `12` | Fuente del Word, de la vista previa y de "Copiar para Word" |
 | `lineas_vacias_para_encabezado` | `6` | Renglones vacíos al principio para el encabezado del paciente |
 | `linea_vacia_entre_titulo_y_texto` | `true` | Línea en blanco después de cada título |
-| `carpeta_audios_nuevos` | `"..\\Audios_nuevos"` | Carpeta de audios recibidos (relativa a `sistema\`) |
+| `carpeta_audios_nuevos` | `"..\\Audios_nuevos"` | Carpeta de audios recibidos (relativa a `sistema\`; en Linux la barra invertida vale como `/`) |
 | `carpeta_informes` | `"..\\Informes"` | Carpeta de los Word y de los datos de revisión |
 | `abrir_word_al_terminar` | `true` | Modo consola: abrir el Word generado |
 | `ejemplos_por_informe` | `3` | Ejemplos *few-shot* por informe |
@@ -27,6 +28,7 @@ Se crea en el primer arranque copiando `configuracion.ejemplo.json`. No se versi
 |---|---|
 | `PUERTO_INTERFAZ` | Puerto del servidor (por defecto `8765`) |
 | `NO_COLOR` / `FORZAR_COLOR` | Desactivar / forzar colores en la consola |
+| `TRANSCRIPCION_REINICIO` | Linux: la ponen los .sh y el servicio; habilita «Reiniciar servidor» en el panel |
 | `SIMULAR_IA`, `SIMULAR_SIN_IA`, `SIMULAR_HUECOS`, `SIMULAR_DEMORA` | Modo de prueba sin GPU ni Ollama ([desarrollo.md](desarrollo.md)) |
 
 ## Base de conocimiento (`conocimiento/`)

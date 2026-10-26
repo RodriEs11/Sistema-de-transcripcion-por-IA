@@ -766,6 +766,12 @@ let cacheRango = new Map(), lineaCursor = null, rangoCursor = null, lineaSonando
 
 /* ------------------------------------------------ util */
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* Servidor en Linux o en Windows: nombres de sus scripts (.sh / .bat) en los textos */
+let ES_LINUX = /Linux|X11|CrOS/.test(navigator.userAgent) && !/Android|Windows/.test(navigator.userAgent);
+function deSistema(h){
+  return ES_LINUX ? String(h).replace(/\b(iniciar_servidor|interfaz|configurar_acceso|instalar)\.bat\b/g, '$1.sh')
+    .replace(/cloudflared\.exe/g, 'cloudflared').replace(/Abrí Ollama( \(el ícono de la llama\))?/g, 'Iniciá Ollama (sudo systemctl start ollama)') : h;
+}
 const mmss = t => isFinite(t) ? Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0') : '0:00';
 /* Cuando el servidor no está, lo que responde no es del servidor: el túnel devuelve una página de error (HTML)
    o directamente no hay respuesta. Nunca se intenta leer eso como JSON: se convierte en un error claro. */
@@ -839,13 +845,13 @@ function ponerEstadoSrv(){
         ? 'La PC del servidor puede estar apagada, sin internet o con su ventana cerrada.' + (EN_APP && APP ? ' Podés seguir grabando y cargando audios: quedan guardados en esta PC y se envían solos cuando vuelva.'
             : EN_APP ? ' Los audios que grabes quedan guardados en esta PC y se envían solos cuando vuelva.'
             : ' Podés cargar audios igual: esperan en esta página y se envían solos cuando vuelva.')
-        : '¿Se cerró la ventana del servidor? Abrí <code>iniciar_servidor.bat</code> (o <code>interfaz.bat</code>) y esta página se reconecta sola.')
+        : deSistema('¿Se cerró la ventana del servidor? Abrí <code>iniciar_servidor.bat</code> (o <code>interfaz.bat</code>) y esta página se reconecta sola.'))
       + `<small>Reintentando cada 2 s · ${SRV.ultimoOk ? 'última conexión hace ' + haceCuanto(Date.now() - SRV.ultimoOk) : 'todavía no se pudo conectar'}</small>`;
   } else if(SRV.ia === 'caida'){
     p.className = 'punto av'; t.textContent = 'IA no lista'; clase = 'av';
     h = '<b>La IA no está lista: Ollama está cerrado</b>' + (MI.remoto
         ? 'Hay que abrir Ollama en la PC del servidor. Mientras tanto los audios llegan, se transcriben y esperan en la cola: se terminan solos cuando se abra.'
-        : 'Abrí Ollama (el ícono de la llama) y esperá unos segundos. Mientras tanto los audios se transcriben y esperan en la cola: se terminan solos.');
+        : deSistema('Abrí Ollama (el ícono de la llama) y esperá unos segundos. Mientras tanto los audios se transcriben y esperan en la cola: se terminan solos.'));
   } else if(SRV.ia === 'sin_modelo'){
     p.className = 'punto av'; t.textContent = 'IA sin modelo'; clase = 'av';
     h = `<b>A Ollama le falta el modelo ${esc(SRV.modelo || '')}</b>` + (MI.remoto ? 'Hay que instalarlo en la PC del servidor.' : 'Instalalo abriendo una consola y escribiendo')
@@ -987,7 +993,7 @@ function armarVacio(lista, todos){
   } else if(lista === null){
     h = card('corte', 'err', '<h2>Sin conexión con el servidor</h2><p>' + (MI.remoto
         ? 'La PC del servidor puede estar apagada, sin internet o con su ventana cerrada. Cuando vuelva, esta pantalla se actualiza sola.'
-        : 'La ventana del servidor parece cerrada. Abrí <b>iniciar_servidor.bat</b> (o <b>interfaz.bat</b>) y esta página se reconecta sola.')
+        : deSistema('La ventana del servidor parece cerrada. Abrí <b>iniciar_servidor.bat</b> (o <b>interfaz.bat</b>) y esta página se reconecta sola.'))
       + '</p><p class="vac-nota"><span class="spin"></span> Reintentando cada 2 segundos…</p>');
   } else {
     const listos = lista.filter(c => c.estado==='listo' && !c.bloqueado_por).sort((a, b) => a.fecha - b.fecha);

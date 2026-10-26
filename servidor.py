@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-INTERFAZ WEB. Se abre con interfaz.bat (solo esta PC) o con iniciar_servidor.bat
+INTERFAZ WEB. Se abre con interfaz.bat o .sh (solo esta PC) o con iniciar_servidor.bat o .sh
 (esta PC + las PC del trabajo por el tunel rapido de Cloudflare).
 Todo se procesa en esta PC: las otras solo envian audios y muestran la pagina.
 """
@@ -31,6 +31,7 @@ import app_cliente as A
 import mantenimiento as M
 import nucleo as N
 import paciente as PAC
+import plataforma as P
 import registro as L
 import remoto as R
 from informe import config, escribir_docx, parrafos_docx, pagina, aplicar_formato, texto_parrafo, EXT_AUDIO
@@ -51,14 +52,14 @@ for d in (NUEVOS, DATOS):
     d.mkdir(parents=True, exist_ok=True)
 
 SIMULAR = os.environ.get("SIMULAR_IA") == "1"   # solo para pruebas
-VERSION = "2026.10.27"
+VERSION = "2026.10.28"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
                  "/admin/correcciones": "correcciones.html"}
 FIN_LOCK = threading.Lock()
 INICIO = time.time()
-TUNEL = {"modo": False, "exe": AQUI / "cloudflared.exe"}     # "modo": se abrió con iniciar_servidor.bat (--tunel)
+TUNEL = {"modo": False, "exe": P.ruta_cloudflared()}     # "modo": se abrió con iniciar_servidor.bat (--tunel)
 _IA_CACHE = {"t": 0, "ok": False}
 
 
@@ -573,10 +574,10 @@ def trabajador():
                     if whisper is None:
                         from fase1_transcribir import cargar_modelo
                         poner_estado(n, "transcribiendo", "Cargando Whisper…")
-                        L.info("WHISPER", f"Cargando Whisper {CFG['modelo_whisper']} en la placa de video…")
+                        L.info("WHISPER", f"Cargando Whisper {CFG['modelo_whisper']} " + ("en la placa de video…" if CFG.get("dispositivo_whisper", "cuda") == "cuda" else "en el procesador (más lento)…"))
                         tc = time.time()
                         with contextlib.redirect_stdout(L.SalidaAlRegistro("WHISPER")):
-                            whisper = cargar_modelo(CFG["modelo_whisper"], "cuda")
+                            whisper = cargar_modelo(CFG["modelo_whisper"], CFG.get("dispositivo_whisper", "cuda"))
                         L.ok("WHISPER", f"Whisper cargado en {L.seg(time.time() - tc)}.")
                         poner_estado(n, "transcribiendo", "Transcribiendo el audio…")
                         t0 = time.time()
@@ -1650,8 +1651,11 @@ class H(BaseHTTPRequestHandler):
                 return self._json(finalizar(n, datos.get("texto", ""), self.pc))
             if u.path == "/api/abrir":
                 p = INFORMES / f"{n}.docx"
-                if p.exists() and os.name == "nt" and not self.remoto:
-                    os.startfile(p)
+                if p.exists() and not self.remoto:
+                    try:
+                        P.abrir(p)
+                    except OSError:
+                        pass
                 return self._json({"ok": p.exists()})
             self.send_error(404)
         except PermissionError:
@@ -1769,7 +1773,8 @@ def estado_admin():
     return {
         "ahora": ahora,
         "servidor": {"version": VERSION, "desde": INICIO, "simulado": SIMULAR, "url": f"http://127.0.0.1:{PUERTO}",
-                     "registros": str(L.CARPETA)},
+                     "registros": str(L.CARPETA),
+                     "sistema": P.NOMBRE, "puede_abrir": P.puede_abrir()},
         "ia": {"estado": E_IA["e"], "modelo": CFG["modelo_ia"],
                "trabajando": f"armando el informe de «{titulo_de(gen[0])}»" if gen else None},
         "whisper": {"modelo": CFG["modelo_whisper"],
@@ -2079,9 +2084,9 @@ def filas_encabezado(url, tunel):
         filas.append(("Modo", "PRUEBA: Whisper y la IA están simulados", "aviso"))
     # acceso remoto
     if not tunel:
-        filas.append(("Acceso remoto", "apagado: solo esta PC (para el trabajo usá iniciar_servidor.bat)", None))
+        filas.append(("Acceso remoto", f"apagado: solo esta PC (para el trabajo usá {P.script('iniciar_servidor')})", None))
     elif not R.configurado():
-        filas.append(("Acceso remoto", "falta la contraseña: ejecutá configurar_acceso.bat", "aviso"))
+        filas.append(("Acceso remoto", f"falta la contraseña: ejecutá {P.script('configurar_acceso')}", "aviso"))
     elif R.URL_TUNEL.get("url"):
         desde = R.URL_TUNEL.get("desde")
         filas.append(("Acceso remoto", "túnel de Cloudflare activo" + (f" desde hace {L.hace(ahora - desde)}" if desde else ""), "ok"))
@@ -2170,13 +2175,19 @@ def main():
     reanudar_cola()
     if tunel:
         if not R.configurado():
-            L.aviso("TÚNEL", "Todavía no hay contraseña para el acceso remoto: ejecutá configurar_acceso.bat. "
+            L.aviso("TÚNEL", f"Todavía no hay contraseña para el acceso remoto: ejecutá {P.script('configurar_acceso')}. "
                              "Por ahora el sistema funciona solo en esta PC.")
         else:
             R.escribir_conexion_cliente()
             R.iniciar_tunel(PUERTO, TUNEL["exe"])
     if "--sin-navegador" not in sys.argv:
         threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+    if not P.ES_WINDOWS:     # Linux: "kill" o "systemctl stop" apagan en orden, igual que Ctrl+C
+        import signal
+
+        def _apagar(*_):
+            raise KeyboardInterrupt
+        signal.signal(signal.SIGTERM, _apagar)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

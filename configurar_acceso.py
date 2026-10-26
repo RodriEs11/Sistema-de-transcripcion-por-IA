@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Contraseña del acceso remoto y PC del trabajo autorizadas. Se abre con configurar_acceso.bat"""
+"""Contraseña del acceso remoto y PC del trabajo autorizadas. Se abre con configurar_acceso.bat (Windows)
+o configurar_acceso.sh (Linux)."""
 import getpass
 import json
 import sys
 
+import plataforma as P
 import registro as L
 import remoto as R
 
@@ -36,14 +38,14 @@ def main():
             ya = R.configurado()
             R.poner_contrasena(c1)
             L.ok("ACCESO", "Contraseña del acceso remoto " + ("cambiada" if ya else "configurada")
-                 + " desde configurar_acceso.bat.")
+                 + " desde " + P.script("configurar_acceso") + ".")
             print("\nListo. La carpeta 'cliente' tiene el archivo conexion.json que va junto a")
             print("Transcripcion.exe en las PC del trabajo. Las PC ya vinculadas siguen funcionando.")
         elif op == "2":
             nombre = input("Nombre de la PC a anular (ej. info-02): ").strip()
             n = R.anular_pc(nombre)
             if n:
-                L.aviso("ACCESO", f"PC anulada desde configurar_acceso.bat: {nombre} ({n} llaves).")
+                L.aviso("ACCESO", f"PC anulada desde {P.script('configurar_acceso')}: {nombre} ({n} llaves).")
             print(f"Anuladas {n} llaves de {nombre}." if n else "No encontré esa PC.")
         elif op == "3":
             return

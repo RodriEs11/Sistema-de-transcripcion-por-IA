@@ -3,6 +3,21 @@
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El servidor se versiona por fecha; la app del trabajo, con [versionado semántico](https://semver.org/lang/es/).
 
+## [Servidor 2026.10.28] — 2026-10-26
+
+### Agregado
+- **El servidor corre en Linux** ([docs/linux.md](docs/linux.md)): `instalar.sh` (entorno, dependencias, placa de video, Ollama y modelo, Whisper), `interfaz.sh`, `iniciar_servidor.sh` (baja `cloudflared` para Linux) y `configurar_acceso.sh`, equivalentes a los .bat, con el reinicio desde el panel (código 75).
+- `servicio.sh`: el servidor como servicio de systemd del usuario (arranca solo, se vuelve a abrir si se cae, el panel lo puede reiniciar).
+- `plataforma.py`: lo que cambia entre Windows y Linux en un solo lugar (nombres de los scripts, cloudflared, abrir archivos, rutas).
+- `dispositivo_whisper` en `configuracion.json` (opcional, `"cpu"` sin placa NVIDIA).
+
+### Cambiado
+- En Linux, las rutas de `configuracion.json` con barras de Windows (`..\\Informes`) se leen como `../Informes`.
+- Bibliotecas de CUDA instaladas con pip: en Linux se agregan a `LD_LIBRARY_PATH` (scripts) o se cargan a mano.
+- Panel y página de informes nombran los scripts del sistema donde corre el servidor (.sh en Linux) y esconden «Abrir…» en un Linux sin escritorio.
+- Linux: `kill`/`systemctl stop` apagan en orden (cierran el túnel), igual que Ctrl+C.
+- Windows: sin cambios de comportamiento.
+
 ## [Servidor 2026.10.27] — 2026-10-26
 
 ### Agregado

@@ -2,6 +2,8 @@
 
 ## 1. Servidor
 
+> ¿Servidor en Linux? Ver [linux.md](linux.md). Las secciones 2 y 3 valen igual.
+
 ### Requisitos
 
 - Windows 10/11 con placa NVIDIA de al menos 10 GB de VRAM y drivers actualizados.

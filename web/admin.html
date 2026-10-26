@@ -183,6 +183,8 @@ details.mas-git ul{margin:4px 0 0;padding-left:18px;font:12px ui-monospace,Conso
 
 /* desde una PC del trabajo no se abren carpetas de la PC del servidor */
 .panel-remoto [data-abrir]{display:none!important}
+/* servidor en Linux sin escritorio: no hay dónde abrir carpetas */
+.sin-abrir [data-abrir]{display:none!important}
 </style>
 </head>
 <body>
@@ -337,6 +339,12 @@ details.mas-git ul{margin:4px 0 0;padding-left:18px;font:12px ui-monospace,Conso
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* Servidor en Linux o en Windows: nombres de sus scripts (.sh / .bat) en los textos */
+let ES_LINUX = /Linux|X11|CrOS/.test(navigator.userAgent) && !/Android|Windows/.test(navigator.userAgent);
+function deSistema(h){
+  return ES_LINUX ? String(h).replace(/\b(iniciar_servidor|interfaz|configurar_acceso|instalar)\.bat\b/g, '$1.sh')
+    .replace(/cloudflared\.exe/g, 'cloudflared').replace(/Abrí Ollama( \(el ícono de la llama\))?/g, 'Iniciá Ollama (sudo systemctl start ollama)') : h;
+}
 const leerLS = k => { try { return localStorage.getItem(k); } catch(e){ return null; } };
 const grabarLS = (k, v) => { try { localStorage.setItem(k, v); } catch(e){} };
 let E = null, filtro = 'todos', cuantos = 25, ultimo = {};
@@ -391,7 +399,7 @@ async function accion(ruta, datos, boton, siFalla){
   } catch(e){ toast(e.message, true); return null; }
   finally { if(boton) boton.disabled = false; }
 }
-function poner(id, html){ if(ultimo[id] !== html){ ultimo[id] = html; $(id).innerHTML = html; } }
+function poner(id, html){ html = deSistema(html); if(ultimo[id] !== html){ ultimo[id] = html; $(id).innerHTML = html; } }
 
 /* ---------- resumen */
 const T_TUNEL = {
@@ -765,7 +773,7 @@ function sinConexion(){
       ? '<b>El servidor no volvió después de 2 minutos.</b> Mirá la ventana del servidor en esa PC: si dice «Presione una tecla para continuar», se cerró con un error (el detalle está arriba de ese mensaje y en la carpeta registros).'
       : '<b>Reiniciando el servidor…</b> Esta página se reconecta sola en unos segundos.'
         + (rem ? ' Como entraste por el túnel, la dirección cambia: la app se reconecta sola y vas a tener que volver a escribir la contraseña del panel.' : '');
-  } else { box.className = 'sin-conexion'; box.innerHTML = SIN_CONEXION; }
+  } else { box.className = 'sin-conexion'; box.innerHTML = deSistema(SIN_CONEXION); }
   box.style.display = 'block';
   $('#sub').textContent = reiniciandoDesde ? 'Reiniciando · reintentando' : 'Sin conexión · reintentando';
 }
@@ -781,6 +789,8 @@ async function cargar(){
   desdeVisto = e.servidor.desde; reiniciandoDesde = 0;
   desfase = e.ahora - Date.now() / 1000;
   E = e;
+  if(e.servidor && e.servidor.sistema) ES_LINUX = e.servidor.sistema === 'linux';
+  document.documentElement.classList.toggle('sin-abrir', !!(e.servidor && e.servidor.puede_abrir === false));
   $('#cargando').hidden = true;
   ['#resumen', '#filaMant', '#filaCola', '#fila1', '#secPanel', '#secPcs', '#secReg'].forEach(s => $(s).hidden = false);
   modoRemoto(e.visor, 'Solo en esta PC · se actualiza sola');

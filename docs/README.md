@@ -4,6 +4,7 @@
 |---|---|---|
 | [arquitectura.md](arquitectura.md) | Desarrollo | Componentes, flujo de un audio, GPU, concurrencia y archivos de un caso |
 | [instalacion.md](instalacion.md) | Instalación | Servidor, acceso remoto y PC del trabajo |
+| [linux.md](linux.md) | Instalación | Servidor en Linux: scripts, servicio y diferencias con Windows |
 | [uso.md](uso.md) | Usuarios | Flujo de revisión, atajos y marcas |
 | [pipeline.md](pipeline.md) | Desarrollo | Whisper, prompt, controles, aprendizaje y evaluación |
 | [configuracion.md](configuracion.md) | Administración | `configuracion.json`, plantillas, reglas, médicos, vocabulario |

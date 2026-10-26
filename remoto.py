@@ -26,6 +26,7 @@ import time
 import urllib.request
 from pathlib import Path
 
+import plataforma as P
 import registro as L
 
 AQUI = Path(__file__).resolve().parent
@@ -488,7 +489,7 @@ def reiniciar_tunel():
         return "El túnel no está en marcha (el servidor se abrió sin acceso remoto)."
     p = URL_TUNEL.get("proceso")
     if URL_TUNEL.get("estado") == "sin cloudflared" or p is None:
-        return "No encuentro cloudflared.exe: ejecutá iniciar_servidor.bat para descargarlo."
+        return f"No encuentro cloudflared: ejecutá {P.script('iniciar_servidor')} para descargarlo."
     if p.poll() is not None:
         return "El túnel ya se está volviendo a abrir."
     _PEDIDO["reinicio"] = True
@@ -526,7 +527,7 @@ def iniciar_tunel(puerto, exe):
                                      encoding="utf-8", errors="replace",
                                      creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
             except FileNotFoundError:
-                L.error("TÚNEL", f"No encuentro {Path(exe).name}. Ejecutá iniciar_servidor.bat para descargarlo. "
+                L.error("TÚNEL", f"No encuentro {Path(exe).name}. Ejecutá {P.script('iniciar_servidor')} para descargarlo. "
                                  f"Mientras tanto el sistema funciona solo en esta PC.")
                 _estado_tunel("sin cloudflared")
                 return

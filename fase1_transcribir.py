@@ -35,17 +35,18 @@ except Exception:
     pass
 
 
-# ----------------------------------------------------------------- GPU (Windows)
+# ----------------------------------------------------------------- GPU
 def preparar_cuda():
-    """Hace visibles las DLL de CUDA/cuDNN instaladas con pip (Windows)."""
-    if os.name != "nt":
-        return
+    """Hace visibles las bibliotecas de CUDA/cuDNN instaladas con pip (paquetes nvidia-*)."""
     bases = {sys.prefix, os.path.join(sys.prefix, "Lib", "site-packages")}
     try:
         import site
         bases.update(site.getsitepackages())
     except Exception:
         pass
+    if os.name != "nt":
+        _preparar_cuda_linux(bases)
+        return
     for base in bases:
         for d in glob.glob(os.path.join(base, "nvidia", "*", "bin")):
             try:
@@ -53,6 +54,31 @@ def preparar_cuda():
             except Exception:
                 pass
             os.environ["PATH"] = d + os.pathsep + os.environ.get("PATH", "")
+
+
+def _preparar_cuda_linux(bases):
+    """Linux: los .sh ya ponen las carpetas nvidia/*/lib en LD_LIBRARY_PATH. Si el programa se abrió de otra
+    forma, se cargan acá a mano (RTLD_GLOBAL) para que CTranslate2 las encuentre. Si no hay GPU o las
+    bibliotecas son las del sistema, no hace nada."""
+    import ctypes
+    ld = os.environ.get("LD_LIBRARY_PATH", "")
+    pendientes = []
+    for base in bases:
+        for d in glob.glob(os.path.join(base, "nvidia", "*", "lib")):
+            if d in ld:
+                continue
+            for patron in ("libcublasLt.so*", "libcublas.so*", "libcudnn*.so*"):
+                pendientes += sorted(glob.glob(os.path.join(d, patron)))
+    for _ in range(3):                  # algunas dependen de otras: reintentar las que fallaron
+        fallaron = []
+        for f in pendientes:
+            try:
+                ctypes.CDLL(f, mode=ctypes.RTLD_GLOBAL)
+            except OSError:
+                fallaron.append(f)
+        if not fallaron or len(fallaron) == len(pendientes):
+            break
+        pendientes = fallaron
 
 
 def cargar_modelo(nombre, device):
@@ -393,8 +419,8 @@ def main():
         except Exception as e:
             print("\n[ERROR] No se pudo usar el modelo:", e)
             if a.device == "cuda":
-                print("Sugerencias: actualizá el driver de NVIDIA y volvé a correr instalar.bat.\n"
-                      "Como alternativa podés probar con:  fase1_transcribir.bat --device cpu")
+                print("Sugerencias: actualizá el driver de NVIDIA y volvé a correr " + ("instalar.bat" if os.name == "nt" else "instalar.sh") + ".\n"
+                      "Como alternativa podés probar con:  " + ("fase1_transcribir.bat" if os.name == "nt" else "python fase1_transcribir.py") + " --device cpu")
             sys.exit(1)
 
     prompt = leer_vocabulario(a.vocabulario)

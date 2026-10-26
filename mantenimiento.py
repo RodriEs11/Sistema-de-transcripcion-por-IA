@@ -22,6 +22,8 @@ import time
 import zlib
 from pathlib import Path
 
+import plataforma as P
+
 AQUI = Path(__file__).resolve().parent
 GIT = AQUI / ".git"
 CODIGO_REINICIO = 75          # el .bat vuelve a abrir el servidor cuando termina con este código
@@ -253,7 +255,8 @@ def git_al_arrancar():
 
 # ------------------------------------------------------------------- reinicio
 def bat_del_modo(tunel):
-    return AQUI / ("iniciar_servidor.bat" if tunel else "interfaz.bat")
+    """El script que abrió el servidor: iniciar_servidor / interfaz (.bat en Windows, .sh en Linux)."""
+    return AQUI / P.script("iniciar_servidor" if tunel else "interfaz")
 
 
 def soporta_reinicio(tunel):
@@ -262,8 +265,12 @@ def soporta_reinicio(tunel):
     if os.environ.get("REINICIO_BUCLE") == "1":       # pruebas: un script que hace lo mismo que el .bat
         return True, None
     bat = bat_del_modo(tunel)
-    if os.name != "nt":
-        return False, "El reinicio desde el panel funciona en Windows, con el servidor abierto desde su .bat."
+    if not P.ES_WINDOWS:
+        # Linux: los .sh (y el servicio de systemd) avisan con esta variable que vuelven a abrir el servidor
+        if os.environ.get("TRANSCRIPCION_REINICIO") != "1":
+            return False, (f"El servidor no se abrió con {bat.name} (ni como servicio): cerralo y abrilo con "
+                           f"./{bat.name} para poder reiniciarlo desde acá.")
+        return True, None
     t = _ARRANQUE["titulo"] or ""
     if not (t.lower().startswith("transcripcion - ") or t.startswith("Transcripción · Servidor")):
         return False, (f"El servidor no se abrió con {bat.name}: cerralo y abrilo con {bat.name} para poder "
