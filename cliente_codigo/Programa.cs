@@ -21,14 +21,14 @@ using Microsoft.Win32;
 [assembly: System.Reflection.AssemblyDescription("Envía los audios del sistema de gestión al Servidor de transcripción")]
 [assembly: System.Reflection.AssemblyCompany("Rodrigo Espíndola")]
 [assembly: System.Reflection.AssemblyCopyright("Creada por Rodrigo Espíndola")]
-[assembly: System.Reflection.AssemblyVersion("1.10.0.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.10.0.0")]
+[assembly: System.Reflection.AssemblyVersion("1.11.0.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.11.0.0")]
 
 namespace Transcripcion
 {
     static class Programa
     {
-        public const string VERSION = "1.10";
+        public const string VERSION = "1.11";
         public static EventWaitHandle SenalMostrar;
 
         [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
@@ -90,6 +90,7 @@ namespace Transcripcion
             Config.Cargar();
             Registro.Escribir("Inicio versión " + VERSION + " en " + Environment.MachineName + (recienActualizada ? " (recién actualizada)" : ""));
             Actualizador.AlIniciar();
+            Notificaciones.PrepararIdentidad();   // 1.11: antes de abrir cualquier ventana
             RefrescarIconoDeWindows();
 
             if (!Config.Vinculada)
@@ -110,6 +111,12 @@ namespace Transcripcion
         [DllImport("shell32.dll", EntryPoint = "SHChangeNotify")] static extern void SHChangeNotifyId(int evento, uint flags, IntPtr item1, IntPtr item2);
         const int SHCNE_UPDATEITEM = 0x2000, SHCNE_ASSOCCHANGED = 0x08000000;
         const uint SHCNF_IDLIST = 0, SHCNF_PATHW = 5, SHCNF_FLUSHNOWAIT = 0x3000;
+
+        // Le avisa a Windows que cambió un archivo (para que vuelva a leer su ícono o sus propiedades).
+        public static void AvisarCambio(string ruta)
+        {
+            try { SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATHW | SHCNF_FLUSHNOWAIT, ruta, IntPtr.Zero); } catch { }
+        }
 
         static void RefrescarIconoDeWindows()
         {
@@ -145,7 +152,7 @@ namespace Transcripcion
         }
 
         // Accesos directos de esta persona que abren Transcripcion.exe (anclados en la barra de tareas, escritorio, menú Inicio).
-        static List<string> AccesosDirectos()
+        public static List<string> AccesosDirectos()
         {
             var lista = new List<string>();
             string ad = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -269,6 +276,7 @@ namespace Transcripcion
         public static string BordesCompacto = "";                  // "x,y,ancho,alto" de la ventana compacta
         public static string HuellaApp = "", HuellaFallida = "";    // versión de la app que ya está al día / que falló acá
         public static string IconoAlDia = "";                      // versión que ya le pidió a Windows refrescar el ícono (1.10)
+        public static string IdentidadAlDia = "";                  // identidad de Windows ya preparada para las notificaciones (1.11)
         static readonly object cerrojoGuardar = new object();
         static string llaveCifrada = "";
         static readonly byte[] Entropia = Encoding.UTF8.GetBytes("Transcripcion-llave-v1");
@@ -331,6 +339,7 @@ namespace Transcripcion
                     if (d.TryGetValue("app_huella", out v)) HuellaApp = v + "";
                     if (d.TryGetValue("app_huella_fallida", out v)) HuellaFallida = v + "";
                     if (d.TryGetValue("icono_al_dia", out v)) IconoAlDia = v + "";
+                    if (d.TryGetValue("identidad_al_dia", out v)) IdentidadAlDia = v + "";
                     if (Tema == "" && d.TryGetValue("tema", out v)) Tema = v + "";
                 }
             }
@@ -345,7 +354,7 @@ namespace Transcripcion
                 var d = new Dictionary<string, object> {
                     { "pc", Pc }, { "url", Url }, { "llave", llaveCifrada }, { "pausado", Pausado }, { "tema", Tema }, { "avisar_listos", AvisarListos }, { "carpeta_word", CarpetaWord },
                     { "compacto", Compacto }, { "oscuro", Oscuro }, { "bordes_compacto2", BordesCompacto },
-                    { "app_huella", HuellaApp }, { "app_huella_fallida", HuellaFallida }, { "icono_al_dia", IconoAlDia } };
+                    { "app_huella", HuellaApp }, { "app_huella_fallida", HuellaFallida }, { "icono_al_dia", IconoAlDia }, { "identidad_al_dia", IdentidadAlDia } };
                 Directory.CreateDirectory(Carpeta);
                 string tmp = Archivo + ".tmp";
                 File.WriteAllText(tmp, Json.Serialize(d), Encoding.UTF8);

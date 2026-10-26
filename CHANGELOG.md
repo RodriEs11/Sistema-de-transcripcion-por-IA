@@ -74,6 +74,10 @@ El servidor se versiona por fecha; la app del trabajo, con [versionado semántic
 
 ## App del trabajo
 
+### [1.11] — 2026-10-26
+- Si el Servidor está caído o reiniciándose, la ventana ya no muestra la página de error de Cloudflare (ni la de Edge sin conexión): muestra un cartel propio con lo que pasó (el programa del Servidor no responde, el canal está cerrado, la dirección cambió, sin internet), recuerda que los audios se siguen tomando, y vuelve sola a la pantalla cuando el Servidor responde. Botón «Reintentar ahora». Queda anotado en el registro.
+- Las notificaciones de Windows muestran el ícono nuevo: la app tiene una identidad propia para Windows (`Transcripcion.Informes.2`, registrada con un PNG del ícono) en lugar de la que Windows tenía guardada con el ícono viejo, y el globo lleva el ícono de la app en grande en lugar de la «i». Los accesos directos anclados se marcan con la misma identidad para que la barra de tareas no muestre dos botones.
+
 ### [1.10] — 2026-10-26
 - La barra de tareas muestra el ícono nuevo: la primera vez que abre cada versión, la app le pide a Windows que vuelva a leer el ícono de `Transcripcion.exe` y de sus accesos directos (el anclado a la barra de tareas seguía con el ícono viejo en la memoria de íconos de Windows).
 - Se quitó de la barra superior la casilla «Tomar los audios del sistema automáticamente»: está en Configuración (y en el menú del ícono junto al reloj).

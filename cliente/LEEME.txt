@@ -129,6 +129,14 @@ SI ALGO NO ANDA
 Lo que guarda en esta PC (carpeta %LOCALAPPDATA%\Transcripcion): la configuración, la llave
 de esta PC cifrada con tu usuario de Windows, el registro y los audios pendientes (cifrados).
 
+VERSIÓN 1.11
+- Si el Servidor está caído o reiniciándose, en lugar de la página de error de Cloudflare se ve
+  un cartel que explica qué pasó. Los audios se siguen tomando y la pantalla vuelve sola cuando
+  el Servidor responde (o con "Reintentar ahora").
+- Las notificaciones de Windows muestran el ícono nuevo. Como para Windows es una app "nueva",
+  si alguna vez se apagaron sus notificaciones en Configuración de Windows → Notificaciones,
+  aparece otra vez como "Transcripción" y hay que apagarlas de nuevo.
+
 VERSIÓN 1.10
 - El ícono de la barra de tareas ya es el nuevo: la primera vez que abre esta versión, la app
   le pide a Windows que vuelva a leer el ícono (el anclado a la barra y los accesos directos).
