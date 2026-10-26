@@ -47,7 +47,15 @@ COL_AREA = {"AUDIO": "94", "WHISPER": "95", "IA": "96", "INFORME": "92", "ACCESO
 DIAS = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
 ANCHO_AREA = 8
 _COLOR = False
-_lock = threading.Lock()
+# RLock: un mismo hilo puede volver a entrar (p. ej. escribir el archivo desde dentro de la consola) sin trabarse
+_lock = threading.RLock()
+
+
+def _out():
+    """La ventana real del servidor. Nunca sys.stdout: mientras se carga Whisper, sys.stdout apunta a
+    SalidaAlRegistro (que a su vez escribe en el registro con _lock tomado) y escribir ahí desde la consola,
+    el encabezado o el título trababa el registro entero y, con él, todos los pedidos (26/10/2026)."""
+    return sys.__stdout__ or sys.stdout
 
 
 # ------------------------------------------------------------------ colores
@@ -57,7 +65,7 @@ def _activar_colores():
     if os.environ.get("FORZAR_COLOR"):
         return True
     try:
-        if not sys.stdout.isatty():
+        if not _out().isatty():
             return False
     except Exception:
         return False
@@ -160,8 +168,8 @@ class Consola(logging.Handler):
                     salida.append(sangria + c("2", tec if len(tec) <= lim else tec[:lim - 1] + "…"))
                 salida.append(sangria + c("2", f"detalle técnico en {ruta_corta(archivo_del_dia(r.created))}"))
             with _lock:
-                sys.stdout.write("\n".join(salida) + "\n")
-                sys.stdout.flush()
+                _out().write("\n".join(salida) + "\n")
+                _out().flush()
         except Exception:
             self.handleError(r)
 
@@ -287,8 +295,8 @@ def cartel(titulo, derecha, filas, pie=None, archivo=True):
             out.append("   " + c("2", p))
     out.append("")
     with _lock:
-        sys.stdout.write("\n".join(out) + "\n")
-        sys.stdout.flush()
+        _out().write("\n".join(out) + "\n")
+        _out().flush()
     if archivo:
         escribir_archivo("\n".join(plano) + "\n")
 
@@ -360,8 +368,8 @@ class Panel:
         with _lock:
             if filas_t < alto + 6:          # ventana muy baja: sin encabezado fijo hasta que se agrande
                 if self.region:
-                    sys.stdout.write(f"\x1b[r\x1b[{filas_t};1H")
-                    sys.stdout.flush()
+                    _out().write(f"\x1b[r\x1b[{filas_t};1H")
+                    _out().flush()
                 self.region, self.previo = False, None
                 return
             nuevo = not self.region or (cols, filas_t) != self.tam or len(self.previo or []) != alto
@@ -379,8 +387,8 @@ class Panel:
                 self.primera = False
             else:
                 out.append(f"\x1b[{filas_t};1H" if nuevo else "\x1b8")
-            sys.stdout.write("".join(out))
-            sys.stdout.flush()
+            _out().write("".join(out))
+            _out().flush()
             self.previo = [p for p, _ in lineas]
             self.tam, self.region = (cols, filas_t), True
 
@@ -396,8 +404,8 @@ class Panel:
         self.vivo = False
         with _lock:
             filas_t = shutil.get_terminal_size((120, 30)).lines
-            sys.stdout.write(f"\x1b[r\x1b[?25h\x1b[{filas_t};1H\n")
-            sys.stdout.flush()
+            _out().write(f"\x1b[r\x1b[?25h\x1b[{filas_t};1H\n")
+            _out().flush()
 
 
 _PANEL = None
@@ -414,8 +422,8 @@ def encabezado(titulo, derecha, fn_filas, pie):
         cartel(titulo, derecha, filas, pie=[pie], archivo=False)
         return
     with _lock:
-        sys.stdout.write("\x1b[?25l\x1b[2J\x1b[3J\x1b[H")     # sin cursor parpadeando, pantalla limpia
-        sys.stdout.flush()
+        _out().write("\x1b[?25l\x1b[2J\x1b[3J\x1b[H")     # sin cursor parpadeando, pantalla limpia
+        _out().flush()
     _PANEL = Panel(titulo, derecha, fn_filas, pie)
     _PANEL.dibujar()
     threading.Thread(target=_PANEL.bucle, daemon=True, name="encabezado").start()
@@ -462,8 +470,8 @@ def estado(**campos):
             import ctypes
             ctypes.windll.kernel32.SetConsoleTitleW(texto)
         elif _COLOR:
-            sys.stdout.write(f"\x1b]0;{texto}\x07")
-            sys.stdout.flush()
+            _out().write(f"\x1b]0;{texto}\x07")
+            _out().flush()
     except Exception:
         pass
 
@@ -580,13 +588,25 @@ class SalidaAlRegistro:
 
     def __init__(self, area):
         self.area, self.buf = area, ""
+        self.hilo = threading.get_ident()      # solo se captura lo que imprime el hilo que la puso
+        self.dentro = threading.local()
 
     def write(self, s):
-        self.buf += s
-        while "\n" in self.buf:
-            linea, self.buf = self.buf.split("\n", 1)
-            if linea.strip():
-                debug(self.area, linea.strip())
+        # redirect_stdout cambia sys.stdout para TODOS los hilos: lo que imprimen los demás va a la ventana
+        if threading.get_ident() != self.hilo or getattr(self.dentro, "si", False):
+            try:
+                return _out().write(s)
+            except Exception:
+                return len(s)
+        self.dentro.si = True
+        try:
+            self.buf += s
+            while "\n" in self.buf:
+                linea, self.buf = self.buf.split("\n", 1)
+                if linea.strip():
+                    debug(self.area, linea.strip())
+        finally:
+            self.dentro.si = False
         return len(s)
 
     def flush(self):

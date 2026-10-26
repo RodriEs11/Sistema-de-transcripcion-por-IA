@@ -3,6 +3,17 @@
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El servidor se versiona por fecha; la app del trabajo, con [versionado semántico](https://semver.org/lang/es/).
 
+## [Servidor 2026.10.31] — 2026-10-26
+
+### Arreglado
+- **El servidor se trababa al cargar Whisper** y las PC del trabajo veían «Sin conexión con el servidor ·
+  reintentando» en la pantalla, aunque la barra de la app dijera «Conectado» y los audios se enviaran. La carga de
+  Whisper desvía `print` al registro con `redirect_stdout`, que cambia `sys.stdout` para todos los hilos: la consola,
+  el encabezado fijo o el título escribían ahí con el candado del registro tomado y el propio hilo quedaba esperando
+  ese candado para siempre. Desde ese momento todo pedido que anotara algo en el registro (la lista de casos, el
+  panel, las transcripciones) quedaba colgado. Ahora la ventana se escribe siempre en la salida real
+  (`sys.__stdout__`), `SalidaAlRegistro` solo captura lo que imprime el hilo que la puso y el candado es reentrante.
+
 ## [Servidor 2026.10.30] — 2026-10-26
 
 ### Agregado
