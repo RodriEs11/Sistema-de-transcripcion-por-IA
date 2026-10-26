@@ -12,4 +12,4 @@ fi
 asegurar_cloudflared || exit 1
 "$PY" -c "import docx" 2>/dev/null || "$PY" -m pip install -q python-docx
 preparar_cuda
-bucle_servidor --tunel "$@"
+bucle_servidor --tunel --sin-navegador "$@"
