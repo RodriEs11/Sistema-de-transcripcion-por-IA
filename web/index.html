@@ -1352,7 +1352,36 @@ editor.addEventListener('input', () => {
   const el = marcaEnCursor(); if(el) resolver(el);
   else { actualizarPend(); programarBorrador(); }
 });
-editor.addEventListener('paste', e => { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')); });
+/* Pegar: siempre como texto sin formato. Si son varios renglones, el navegador copia la clase del renglón
+   donde está el cursor (p. ej. el título: negrita y centrado) a todos los renglones nuevos; después de pegar
+   se dejan con el formato normal del informe y solo los que parecen título de estudio quedan centrados. */
+function pareceTitulo(l){
+  const x = (l || '').trim();
+  if(!x || x.startsWith('-') || /[.:]$/.test(x) || x.length > 110) return false;
+  const w = (sinAcentos(x.toLowerCase()).match(/[a-z]+/) || [''])[0];
+  return (FORMATO.palabras_titulo || []).includes(w);
+}
+function limpiarPegado(ln){
+  ln.className = 'ln';
+  ['linea','motivo','seg'].forEach(k => delete ln.dataset[k]);
+  ln.removeAttribute('title'); ln.removeAttribute('style');
+  ln.querySelectorAll('b,strong,i,em,u,span,font').forEach(m => m.replaceWith(...m.childNodes));
+  if(pareceTitulo(ln.textContent)) ln.classList.add('tit');
+}
+editor.addEventListener('paste', e => {
+  e.preventDefault();
+  const t = (e.clipboardData.getData('text/plain') || '').replace(/\r\n?/g, '\n').replace(/\t/g, ' ').replace(/\u00a0/g, ' ');
+  if(!t) return;
+  if(!t.includes('\n')){ document.execCommand('insertText', false, t); return; }
+  const antes = new Map([...editor.children].map(el => [el, el.textContent]));
+  document.execCommand('insertText', false, t);
+  for(const el of [...editor.children]){
+    if(el.tagName !== 'DIV') continue;
+    if(!antes.has(el)) limpiarPegado(el);
+    else if(antes.get(el) !== el.textContent) el.classList.toggle('tit', pareceTitulo(el.textContent));
+  }
+  actualizarPend(); programarBorrador();
+});
 
 /* ------------------------------------------------ audio */
 const bPlay = $('#bPlay');

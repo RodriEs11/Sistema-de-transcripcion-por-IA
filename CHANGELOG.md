@@ -6,6 +6,11 @@ El servidor se versiona por fecha; la app del trabajo, con [versionado semántic
 ## [Servidor 2026.10.31] — 2026-10-26
 
 ### Arreglado
+- **Pegar en el editor del informe ponía todo en negrita y centrado.** Al pegar varios renglones (por ejemplo,
+  copiados del sistema de gestión) el navegador copiaba la clase del renglón donde estaba el cursor —casi siempre
+  el título— a todos los renglones nuevos. Ahora el texto pegado queda con el formato normal del informe y solo los
+  renglones que parecen título de estudio quedan centrados en negrita (misma regla que el Word). Solo cambia
+  `web/index.html`: no hace falta reiniciar el servidor ni actualizar la app.
 - **El servidor se trababa al cargar Whisper** y las PC del trabajo veían «Sin conexión con el servidor ·
   reintentando» en la pantalla, aunque la barra de la app dijera «Conectado» y los audios se enviaran. La carga de
   Whisper desvía `print` al registro con `redirect_stdout`, que cambia `sys.stdout` para todos los hilos: la consola,
