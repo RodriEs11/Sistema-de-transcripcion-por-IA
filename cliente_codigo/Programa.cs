@@ -21,14 +21,14 @@ using Microsoft.Win32;
 [assembly: System.Reflection.AssemblyDescription("Envía los audios del sistema de gestión al Servidor de transcripción")]
 [assembly: System.Reflection.AssemblyCompany("Rodrigo Espíndola")]
 [assembly: System.Reflection.AssemblyCopyright("Creada por Rodrigo Espíndola")]
-[assembly: System.Reflection.AssemblyVersion("1.9.0.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.9.0.0")]
+[assembly: System.Reflection.AssemblyVersion("1.10.0.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.10.0.0")]
 
 namespace Transcripcion
 {
     static class Programa
     {
-        public const string VERSION = "1.9";
+        public const string VERSION = "1.10";
         public static EventWaitHandle SenalMostrar;
 
         [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
@@ -90,6 +90,7 @@ namespace Transcripcion
             Config.Cargar();
             Registro.Escribir("Inicio versión " + VERSION + " en " + Environment.MachineName + (recienActualizada ? " (recién actualizada)" : ""));
             Actualizador.AlIniciar();
+            RefrescarIconoDeWindows();
 
             if (!Config.Vinculada)
             {
@@ -99,6 +100,97 @@ namespace Transcripcion
             bool oculta = Array.IndexOf(args, "--oculta") >= 0;
             Application.Run(new VentanaPrincipal(oculta));
             if (Actualizador.Saliendo) Environment.Exit(0);   // que la versión nueva no tenga que esperar
+        }
+
+        // 1.10: Windows guarda en su memoria de íconos el de Transcripcion.exe y lo usa para la barra de tareas
+        // (el botón anclado) y los accesos directos. Desde el cambio de ícono (1.8) la app se actualiza sola
+        // reemplazando el .exe, así que la barra de tareas seguía con el ícono viejo aunque junto al reloj ya
+        // estaba el nuevo (ese lo dibuja la app). Una vez por versión se le pide a Windows que lo vuelva a leer.
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode)] static extern void SHChangeNotify(int evento, uint flags, string item1, IntPtr item2);
+        [DllImport("shell32.dll", EntryPoint = "SHChangeNotify")] static extern void SHChangeNotifyId(int evento, uint flags, IntPtr item1, IntPtr item2);
+        const int SHCNE_UPDATEITEM = 0x2000, SHCNE_ASSOCCHANGED = 0x08000000;
+        const uint SHCNF_IDLIST = 0, SHCNF_PATHW = 5, SHCNF_FLUSHNOWAIT = 0x3000;
+
+        static void RefrescarIconoDeWindows()
+        {
+            if (Config.IconoAlDia == VERSION) return;
+            var hilo = new Thread(() =>
+            {
+                try
+                {
+                    int n = 0;
+                    SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATHW | SHCNF_FLUSHNOWAIT, Application.ExecutablePath, IntPtr.Zero);
+                    foreach (string lnk in AccesosDirectos())
+                    {
+                        SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATHW | SHCNF_FLUSHNOWAIT, lnk, IntPtr.Zero);
+                        n++;
+                    }
+                    SHChangeNotifyId(SHCNE_ASSOCCHANGED, SHCNF_IDLIST | SHCNF_FLUSHNOWAIT, IntPtr.Zero, IntPtr.Zero);
+                    try
+                    {   // la herramienta de Windows que vuelve a armar la memoria de íconos del usuario
+                        string ie4 = Path.Combine(Environment.SystemDirectory, "ie4uinit.exe");
+                        if (File.Exists(ie4))
+                            using (var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(ie4, "-show")
+                                   { UseShellExecute = false, CreateNoWindow = true }))
+                                p.WaitForExit(15000);
+                    }
+                    catch { }
+                    Config.IconoAlDia = VERSION;
+                    Config.GuardarSeguro();
+                    Registro.Escribir("Ícono: se pidió a Windows que actualice el ícono de la barra de tareas (" + n + (n == 1 ? " acceso directo)." : " accesos directos)."));
+                }
+                catch (Exception ex) { Registro.Escribir("Ícono: no se pudo pedir a Windows que lo actualice: " + ex.Message); }
+            }) { IsBackground = true };
+            hilo.Start();
+        }
+
+        // Accesos directos de esta persona que abren Transcripcion.exe (anclados en la barra de tareas, escritorio, menú Inicio).
+        static List<string> AccesosDirectos()
+        {
+            var lista = new List<string>();
+            string ad = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var carpetas = new[] {
+                Path.Combine(ad, @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar"),
+                Path.Combine(ad, @"Microsoft\Internet Explorer\Quick Launch"),
+                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory),
+                Environment.GetFolderPath(Environment.SpecialFolder.Programs) };
+            byte[] ascii = Encoding.ASCII.GetBytes("transcripcion.exe"), uni = Encoding.Unicode.GetBytes("transcripcion.exe");
+            foreach (string c in carpetas)
+            {
+                try
+                {
+                    if (string.IsNullOrEmpty(c) || !Directory.Exists(c)) continue;
+                    foreach (string f in Directory.GetFiles(c, "*.lnk", SearchOption.TopDirectoryOnly))
+                    {
+                        try
+                        {
+                            var b = File.ReadAllBytes(f);
+                            if (b.Length < 64 * 1024 && (Contiene(b, ascii) || Contiene(b, uni))) lista.Add(f);
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+            }
+            return lista;
+        }
+
+        // búsqueda sin distinguir mayúsculas (solo letras ASCII), sirve para texto ASCII y UTF-16
+        static bool Contiene(byte[] datos, byte[] buscado)
+        {
+            for (int i = 0; i + buscado.Length <= datos.Length; i++)
+            {
+                int j = 0;
+                for (; j < buscado.Length; j++)
+                {
+                    byte a = datos[i + j];
+                    if (a >= (byte)'A' && a <= (byte)'Z') a = (byte)(a + 32);
+                    if (a != buscado[j]) break;
+                }
+                if (j == buscado.Length) return true;
+            }
+            return false;
         }
 
         // El cargador nativo de WebView2 depende de si Windows es de 64 o 32 bits.
@@ -176,6 +268,7 @@ namespace Transcripcion
         public static bool Compacto = false, Oscuro = false;      // modo compacto y tema (los elige la persona)
         public static string BordesCompacto = "";                  // "x,y,ancho,alto" de la ventana compacta
         public static string HuellaApp = "", HuellaFallida = "";    // versión de la app que ya está al día / que falló acá
+        public static string IconoAlDia = "";                      // versión que ya le pidió a Windows refrescar el ícono (1.10)
         static readonly object cerrojoGuardar = new object();
         static string llaveCifrada = "";
         static readonly byte[] Entropia = Encoding.UTF8.GetBytes("Transcripcion-llave-v1");
@@ -237,6 +330,7 @@ namespace Transcripcion
                     if (d.TryGetValue("bordes_compacto2", out v)) BordesCompacto = v + "";   // desde la 1.4 (la de antes era más ancha)
                     if (d.TryGetValue("app_huella", out v)) HuellaApp = v + "";
                     if (d.TryGetValue("app_huella_fallida", out v)) HuellaFallida = v + "";
+                    if (d.TryGetValue("icono_al_dia", out v)) IconoAlDia = v + "";
                     if (Tema == "" && d.TryGetValue("tema", out v)) Tema = v + "";
                 }
             }
@@ -251,7 +345,7 @@ namespace Transcripcion
                 var d = new Dictionary<string, object> {
                     { "pc", Pc }, { "url", Url }, { "llave", llaveCifrada }, { "pausado", Pausado }, { "tema", Tema }, { "avisar_listos", AvisarListos }, { "carpeta_word", CarpetaWord },
                     { "compacto", Compacto }, { "oscuro", Oscuro }, { "bordes_compacto2", BordesCompacto },
-                    { "app_huella", HuellaApp }, { "app_huella_fallida", HuellaFallida } };
+                    { "app_huella", HuellaApp }, { "app_huella_fallida", HuellaFallida }, { "icono_al_dia", IconoAlDia } };
                 Directory.CreateDirectory(Carpeta);
                 string tmp = Archivo + ".tmp";
                 File.WriteAllText(tmp, Json.Serialize(d), Encoding.UTF8);

@@ -48,7 +48,6 @@ namespace Transcripcion
         readonly Button btnEdge = new Button();
         readonly Panel punto = new Panel();
         readonly Label lblEstado = new Label(), lblDetalle = new Label();
-        readonly CheckBox chkTomar = new CheckBox();
         readonly Button btnWord = new Button(), btnOpciones = new Button(), btnCompacto = new Button(), btnActualizar = new Button();
         bool aplicandoActualizacion = false, avisoActualizacionMostrado = false;
         DateTime sinFocoDesde = DateTime.Now;
@@ -213,10 +212,8 @@ namespace Transcripcion
             };
             lblEstado.AutoSize = true; lblEstado.Font = Estilo.Negrita; lblEstado.Anchor = AnchorStyles.Left; lblEstado.Margin = new Padding(4, 0, 6, 0);
             lblDetalle.AutoSize = true; lblDetalle.ForeColor = Estilo.TextoSuave; lblDetalle.Anchor = AnchorStyles.Left; lblDetalle.AutoEllipsis = true;
-            chkTomar.Text = "Tomar los audios del sistema automáticamente"; chkTomar.AutoSize = true;
-            chkTomar.Anchor = AnchorStyles.Left; chkTomar.Margin = new Padding(12, 0, 12, 0);
-            chkTomar.Checked = !Config.Pausado;
-            chkTomar.CheckedChanged += (s, e) => Pausar(!chkTomar.Checked);
+            // 1.10: la casilla "Tomar los audios del sistema automáticamente" ya no está en la barra:
+            // se cambia en Configuración (y en el menú junto al reloj).
 
             VentanaVincular.Boton(btnActualizar, "Actualizar", true);
             btnActualizar.Anchor = AnchorStyles.Right; btnActualizar.Margin = new Padding(6, 0, 6, 0); btnActualizar.Visible = false;
@@ -277,7 +274,6 @@ namespace Transcripcion
             barra.Controls.Add(lblEstado, 1, 0);
             barra.Controls.Add(lblDetalle, 2, 0);
             barra.Controls.Add(btnActualizar, 3, 0);
-            barra.Controls.Add(chkTomar, 4, 0);
             barra.Controls.Add(btnWord, 5, 0);
             barra.Controls.Add(btnCompacto, 6, 0);
             barra.Controls.Add(btnOpciones, 7, 0);
@@ -582,7 +578,6 @@ namespace Transcripcion
         {
             Config.Pausado = si; GuardarConfig();
             miPausar.Checked = si;
-            if (chkTomar.Checked == si) chkTomar.Checked = !si;
             Registro.Escribir(si ? "Toma de audios en pausa" : "Toma de audios activada");
             ActualizarBarra();
         }
@@ -764,7 +759,7 @@ namespace Transcripcion
 
         void AjustarBarra()
         {
-            chkTomar.Visible = !compacto; btnWord.Visible = !compacto; lblDetalle.Visible = !compacto;
+            btnWord.Visible = !compacto; lblDetalle.Visible = !compacto;
             TextoBotonActualizar();
             if (compacto) { BotonIcono(btnCompacto, "Agrandar"); BotonIcono(btnOpciones, "Opciones"); }
             else { BotonTexto(btnCompacto, "Compacto"); BotonTexto(btnOpciones, "Opciones ▾"); }
@@ -957,7 +952,7 @@ namespace Transcripcion
             BackColor = cFondo;
             web.DefaultBackgroundColor = cFondo;
             cartel.BackColor = cFondo; cartel.ForeColor = cSuave;
-            lblEstado.ForeColor = cTexto; lblDetalle.ForeColor = cSuave; chkTomar.ForeColor = cTexto;
+            lblEstado.ForeColor = cTexto; lblDetalle.ForeColor = cSuave;
             foreach (var b in new[] { btnWord, btnCompacto, btnOpciones })
             {
                 b.BackColor = cPanel; b.ForeColor = cTexto; b.FlatAppearance.BorderColor = cBorde;

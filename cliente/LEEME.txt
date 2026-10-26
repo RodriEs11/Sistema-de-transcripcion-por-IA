@@ -128,3 +128,10 @@ SI ALGO NO ANDA
 
 Lo que guarda en esta PC (carpeta %LOCALAPPDATA%\Transcripcion): la configuración, la llave
 de esta PC cifrada con tu usuario de Windows, el registro y los audios pendientes (cifrados).
+
+VERSIÓN 1.10
+- El ícono de la barra de tareas ya es el nuevo: la primera vez que abre esta versión, la app
+  le pide a Windows que vuelva a leer el ícono (el anclado a la barra y los accesos directos).
+  Si todavía se viera el viejo, desanclá la app de la barra de tareas y volvé a anclarla.
+- La casilla "Tomar los audios del sistema automáticamente" ya no está en la barra de arriba:
+  se cambia en Opciones → Configuración → Esta PC (o en el menú del ícono junto al reloj).
