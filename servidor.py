@@ -56,7 +56,7 @@ for d in (NUEVOS, DATOS):
     d.mkdir(parents=True, exist_ok=True)
 
 SIMULAR = os.environ.get("SIMULAR_IA") == "1"   # solo para pruebas
-VERSION = "2026.10.34"
+VERSION = "2026.10.35"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
@@ -1339,8 +1339,26 @@ def _reiniciar_ahora():
                         + " Las PC del trabajo se reconectan solas.")
     time.sleep(1.5)                          # que las páginas alcancen a ver «reiniciando»
     SRV["salida"] = M.CODIGO_REINICIO
+
+    def _vigia():                            # si el cierre se traba, salir igual para que el .bat lo vuelva a abrir
+        time.sleep(30)
+        L.aviso("SERVIDOR", "El cierre para reiniciar se demoró más de 30 s: salgo igual para volver a abrir.")
+        _salir_para_reiniciar()
+    threading.Thread(target=_vigia, daemon=True, name="vigia-reinicio").start()
     if SRV["http"]:
         SRV["http"].shutdown()
+
+
+def _salir_para_reiniciar():
+    """Termina el proceso con el código de reinicio sin pasar por el cierre normal de Python.
+    Con Whisper (CUDA/ctranslate2) y ONNX cargados, ese cierre en Windows puede colgarse o terminar con
+    otro código, y entonces el .bat no lo vuelve a abrir."""
+    for f in (sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__):
+        try:
+            f.flush()
+        except Exception:
+            pass
+    os._exit(M.CODIGO_REINICIO)
 
 
 def reanudar_cola():
@@ -2725,13 +2743,18 @@ def main():
     R.cerrar_tunel()
     if TUNEL["http"]:
         try:
+            TUNEL["http"].shutdown()         # primero que deje de atender; si no, server_close tira WinError 10038
             TUNEL["http"].server_close()
         except Exception:
             pass
+    try:
+        srv.server_close()
+    except Exception:
+        pass
     h = L.HOY
     if SRV["salida"] == M.CODIGO_REINICIO:
         L.info("SERVIDOR", "Servidor cerrado para reiniciarse: se vuelve a abrir solo en esta misma ventana.")
-        sys.exit(M.CODIGO_REINICIO)
+        _salir_para_reiniciar()
     L.info("SERVIDOR", f"Servidor apagado. Hoy: {L.plural(h['recibidos'], 'audio recibido', 'audios recibidos')}, "
                        f"{L.plural(h['generados'], 'informe generado', 'informes generados')}, "
                        f"{L.plural(h['guardados'], 'guardado')}, {L.plural(h['errores'], 'error', 'errores')}.")

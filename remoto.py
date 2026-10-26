@@ -52,7 +52,7 @@ URL_TUNEL = {"url": None, "desde": None, "proceso": None,
              # para el panel de administración
              "estado": None, "publicada": None, "error_pub": None, "reinicios": 0, "centro": None,
              "iniciado": False, "cambio": None, "servicio": None, "url_publicada": None}
-_PEDIDO = {"reinicio": False, "despertar": False}
+_PEDIDO = {"reinicio": False, "despertar": False, "cerrando": False}
 ULTIMA_GRABADA = {}  # pc -> cuándo se guardó por última vez su última conexión (para no escribir en cada pedido)
 
 
@@ -549,6 +549,8 @@ def reiniciar_tunel():
 
 def cerrar_tunel():
     """Al apagar el servidor: cerrar el programa del túnel para que no quede andando solo."""
+    _PEDIDO["cerrando"] = True          # que el hilo del túnel no lo vuelva a abrir mientras el servidor se cierra
+    _PEDIDO["despertar"] = True
     p = URL_TUNEL.get("proceso")
     if p and p.poll() is None:
         try:
@@ -702,6 +704,8 @@ def _hilo_devtunnel(puerto):
                 if L.una_vez(("devtunnel", clave), 300):
                     L.aviso("TÚNEL", "Microsoft Dev Tunnels informó un problema: " + linea.strip()[:200])
         cod = p.wait()
+        if _PEDIDO["cerrando"]:
+            return                           # el servidor se está cerrando (o reiniciando): no reabrir
         URL_TUNEL["reinicios"] += 1
         URL_TUNEL["proceso"] = None
         if _PEDIDO["reinicio"]:
@@ -772,6 +776,8 @@ def _hilo_cloudflare(puerto):
                     if L.una_vez(("cloudflared", clave), 300):
                         L.aviso("TÚNEL", "Cloudflare informó un problema: " + e.group(1)[:200])
         cod = p.wait()
+        if _PEDIDO["cerrando"]:
+            return                           # el servidor se está cerrando (o reiniciando): no reabrir
         URL_TUNEL.update(url=None, desde=None, centro=None, proceso=None)
         URL_TUNEL["reinicios"] += 1
         _estado_tunel("reconectando")

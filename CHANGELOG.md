@@ -3,6 +3,17 @@
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El servidor se versiona por fecha; la app del trabajo, con [versionado semántico](https://semver.org/lang/es/).
 
+## [Servidor 2026.10.35] — 2026-10-26
+
+### Corregido
+- **«Reiniciar servidor» desde el panel no volvía a abrir el servidor** (había que abrirlo a mano). Con Whisper
+  (CUDA) cargado, el cierre normal de Python en Windows podía colgarse o terminar con otro código, y el .bat no lo
+  reabría. Ahora el reinicio sale con `os._exit(75)` después de cerrar todo en orden, y si el cierre se traba más
+  de 30 s sale igual.
+- Error `WinError 10038` en el hilo «puerto-tunel» al reiniciar o apagar con Microsoft Dev Tunnels: el puerto del
+  túnel se cerraba mientras todavía atendía. Ahora primero deja de atender y después se cierra.
+- Al cerrarse el servidor, el hilo del túnel ya no avisa «Lo vuelvo a abrir en 10 s».
+
 ## [Servidor 2026.10.34] — 2026-10-26
 
 ### Agregado
