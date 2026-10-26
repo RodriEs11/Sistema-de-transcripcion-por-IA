@@ -108,6 +108,41 @@ main{min-width:0;min-height:0;display:flex;flex-direction:column}
 .vac-pasos li::before{content:counter(p);width:22px;height:22px;border-radius:50%;background:var(--bg);border:1px solid var(--bd2);display:grid;place-items:center;font-size:12px;font-weight:600;color:var(--mu)}
 .vac-bot{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
 .vac-nota{font-size:12.5px;margin-top:12px}
+/* ---------- pantalla de inicio (botón Inicio de la lista; también al cerrar o guardar un informe) */
+#vacio.inicio{margin:0;width:100%;flex:1;min-height:0;overflow:auto;padding:22px 24px 36px}
+.ini{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.ini-cab{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.ini-cab h1{margin:0;font-size:22px;color:var(--tx);line-height:1.2}
+.ini-cab p{margin:2px 0 0;font-size:13px}
+.ini-cab .ini-ia{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;border:1px solid var(--bd);border-radius:999px;padding:3px 10px;background:var(--panel);color:var(--tx)}
+.ini-cifras{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.ini-cifra{background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;text-align:left;font:inherit;color:var(--mu);display:flex;flex-direction:column;gap:2px}
+.ini-cifra b{font-size:22px;color:var(--tx);font-variant-numeric:tabular-nums;line-height:1.15}
+.ini-cifra span{font-size:12.5px}
+button.ini-cifra{cursor:pointer}
+button.ini-cifra:hover{border-color:var(--ac)}
+.ini-cifra.ac b{color:var(--ac)} .ini-cifra.err b{color:var(--err)}
+.ini .vac-card{margin:0}
+.ini-sec{background:var(--panel);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;box-shadow:var(--sombra)}
+.ini-sec h3{margin:0 0 8px;font-size:14px;color:var(--tx);display:flex;gap:8px;align-items:baseline}
+.ini-sec h3 small{font-weight:400;color:var(--mu);font-size:12px}
+.ini-filas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.ini-filas li{display:flex;align-items:center;gap:8px;border-top:1px solid var(--bd);padding:7px 0}
+.ini-filas li:first-child{border-top:0}
+.ini-filas .ini-abrir{flex:1;min-width:0;text-align:left;background:none;border:0;padding:2px 4px;border-radius:6px;cursor:pointer;color:var(--tx);font:inherit;display:flex;flex-direction:column}
+.ini-filas .ini-abrir:hover{background:var(--bg)}
+.ini-filas .ini-abrir:disabled{cursor:default;background:none}
+.ini-filas .n{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ini-filas .e{font-size:12.5px;color:var(--mu);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ini-filas .chico{flex:none}
+.ini-mas{font-size:12.5px;margin:6px 0 0}
+.ini-accesos{display:flex;flex-wrap:wrap;gap:8px}
+.ini-accesos button{display:inline-flex;align-items:center;gap:6px}
+.ini-accesos svg{width:15px;height:15px}
+.ini-dos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+#vacio.inicio{container-type:inline-size}
+@container (max-width:720px){ .ini-dos{grid-template-columns:minmax(0,1fr)} }
+@container (max-width:480px){ .ini-cifras{grid-template-columns:repeat(2,minmax(0,1fr))} }
 .vac-titulo{color:var(--tx);font-weight:600}
 .tit-caso{display:flex;align-items:center;gap:4px;min-width:0;margin-right:6px}
 .tit-caso h1{margin:0!important}
@@ -172,6 +207,9 @@ main{min-width:0;min-height:0;display:flex;flex-direction:column}
 /* con la lista angosta los íconos pasan a una segunda fila (a la derecha) en vez de salirse de la columna */
 .pie{border-top:1px solid var(--bd);padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;row-gap:6px}
 .pie > button{flex:1 1 auto;min-width:0}
+.pie > button.on{background:var(--ac-suave);border-color:var(--ac);color:var(--ac);font-weight:600}
+#bInicio{display:inline-flex;align-items:center;justify-content:center;gap:5px}
+#bInicio svg{width:14px;height:14px;flex:none}
 .pie-ico{display:flex;gap:8px;flex:none;margin-left:auto}
 .pie #bAdmin{flex:none;padding:3px 8px;line-height:0;color:var(--mu)}
 .pie #bAdmin:hover{color:var(--tx)}
@@ -514,7 +552,7 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
     <label class="selmed"><span id="medSubirTxt">Médico de los audios que subas</span><select id="medSubir"></select></label>
     <div class="limpiar" id="limpiar" hidden><button id="bLimpiar" type="button"></button></div>
     <ul id="casos"></ul>
-    <div class="pie"><button id="bVerPlant" class="chico">Plantillas</button><button id="bVerMed" class="chico">Médicos</button>
+    <div class="pie"><button id="bInicio" class="chico" title="Pantalla de inicio: resumen del día y lo que queda por revisar" aria-label="Inicio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg>Inicio</button><button id="bVerPlant" class="chico">Plantillas</button><button id="bVerMed" class="chico">Médicos</button>
       <span class="pie-ico"><button id="bConfig" class="chico ico-pie" title="Configuración" aria-label="Configuración">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>
       </button>
@@ -527,6 +565,7 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
       <button id="bMostrarLista" class="ico" title="Mostrar la lista de informes" aria-label="Mostrar la lista de informes" aria-controls="lista" aria-expanded="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M14 10l2 2-2 2"/></svg>
       </button>
+      <button id="rielInicio" class="ico" title="Inicio" aria-label="Inicio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg></button>
       <span class="riel-ia" id="rielIa" title="IA lista"><span class="punto" id="rielPunto"></span></span>
       <button id="rielPend" class="riel-pend" hidden title="Informes para revisar" aria-label="Informes para revisar"></button>
       <span class="sep"></span>
@@ -1069,7 +1108,9 @@ function armarVacio(lista, todos){
         + (MI.remoto ? 'Los audios nuevos que grabes aparecen en la lista solos.' : 'Arrastrá audios nuevos a la lista cuando quieras.') + '</p>'
         + (bloq.length ? `<p class="vac-nota">${bloq.length} ${bloq.length===1 ? 'caso lo está' : 'casos los están'} revisando en otra PC.</p>` : ''));
     }
+    h = armarInicio(h, lista, todos || lista, listos, enProc, errores);
   }
+  box.classList.toggle('inicio', h.startsWith('<div class="ini">'));
   if(h === vacioHtml) return;
   vacioHtml = h; box.innerHTML = h;
   box.querySelectorAll('[data-acc]').forEach(b => b.onclick = async () => {
@@ -1077,6 +1118,11 @@ function armarVacio(lista, todos){
     if(acc==='elegir') $('#archivos').click();
     else if(acc==='todas') ponerFiltro('todas');
     else if(acc==='abrir') abrirCaso(b.dataset.n);
+    else if(acc==='word') abrirWord(b.dataset.n, b.dataset.t);
+    else if(acc==='plant') $('#bVerPlant').click();
+    else if(acc==='med') $('#bVerMed').click();
+    else if(acc==='config') $('#bConfig').click();
+    else if(acc==='admin') $('#bAdmin').click();
     else if(acc==='pausar' || acc==='reanudar') pausarCaso(b.dataset.n, acc==='pausar', b);
     else {
       b.disabled = true;
@@ -1087,6 +1133,76 @@ function armarVacio(lista, todos){
     }
   });
 }
+/* Pantalla de inicio: encabezado con la fecha y la IA, cifras del día, la tarjeta de «qué hacer ahora» (la de arriba),
+   lo que queda para revisar, lo último que se revisó (con su Word) y accesos rápidos. Usa la misma lista que la
+   columna de la izquierda (pestaña «Esta PC» o «Todas»). */
+const ICO_INI = {
+  subir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>',
+  plant: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+  med:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  config:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>',
+  admin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>',
+  word:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>'};
+function esHoy(t){ if(!t) return false; const d = new Date(t*1000), h = new Date(); return d.toDateString() === h.toDateString(); }
+function cuandoCorto(t){ if(!t) return ''; if(esHoy(t)) return 'hoy ' + hhmm(t);
+  const d = new Date(t*1000); return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + ' ' + hhmm(t); }
+function marcasDe(c){ const a = c.avisos; return a ? a.rojo + a.amarillo + a.turq + a.gris + a.faltan.length + a.huecos.length : (c.marcas || 0); }
+function armarInicio(foco, lista, todos, listos, enProc, errores){
+  const conHora = lista.some(c => c.revisado_en !== undefined);          // servidor 2026.10.32 en adelante
+  const rev = lista.filter(c => c.estado==='revisado').sort((a, b) => (b.revisado_en || b.fecha) - (a.revisado_en || a.fecha));
+  const revHoy = conHora ? rev.filter(c => esHoy(c.revisado_en)).length : rev.length;
+  const fecha = new Date().toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'});
+  const ia = SRV.ia === 'ok' ? ['', 'IA lista'] : SRV.ia === 'sin_modelo' ? ['av', 'IA sin modelo'] : ['av', 'IA no lista'];
+  const cifra = (n, txt, clase, acc) => acc && n
+    ? `<button class="ini-cifra ${clase}" data-acc="${acc}" data-n="${acc==='abrir' ? esc(listos[0].nombre) : ''}" title="Abrir el más antiguo"><b>${n}</b><span>${txt}</span></button>`
+    : `<div class="ini-cifra ${n ? clase : ''}"><b>${n}</b><span>${txt}</span></div>`;
+  let h = '<div class="ini"><header class="ini-cab"><div><h1>Inicio</h1><p>'
+    + esc(fecha.charAt(0).toUpperCase() + fecha.slice(1)) + ' · ' + (MI.remoto ? 'PC ' + esc(MI.pc) : 'PC del servidor')
+    + (todos.length !== lista.length ? ' · mostrando solo los de esta PC' : '') + '</p></div>'
+    + `<span class="ini-ia"><span class="punto ${ia[0]}"></span>${ia[1]}</span></header>`
+    + '<div class="ini-cifras">' + cifra(listos.length, 'para revisar', 'ac', 'abrir') + cifra(enProc.length, 'en proceso', 'ac')
+    + cifra(revHoy, conHora ? 'revisados hoy' : 'revisados', '') + cifra(errores.length, 'con error', 'err') + '</div>'
+    + foco;
+  const fila = (c, revisado) => {
+    const det = [c.estudios, revisado ? (c.revisado_en ? 'guardado ' + cuandoCorto(c.revisado_en) : '') : hhmm(c.fecha), c.medico,
+      todos.length !== lista.length || c.origen === MI.pc ? '' : c.origen,
+      c.bloqueado_por ? 'lo está revisando ' + c.bloqueado_por : revisado ? '' : (n => n ? n + (n===1 ? ' marca' : ' marcas') : 'sin marcas')(marcasDe(c))]
+      .filter(Boolean).join(' · ');
+    const nom = c.paciente || c.titulo || c.nombre;
+    return `<li><button class="ini-abrir" data-acc="abrir" data-n="${esc(c.nombre)}"${c.bloqueado_por ? ' disabled' : ''} title="${revisado ? 'Volver a abrir' : 'Abrir y revisar'}">`
+      + `<span class="n">${esc(nom)}</span><span class="e">${esc(det)}</span></button>`
+      + (revisado ? `<button class="chico" data-acc="word" data-n="${esc(c.nombre)}" data-t="${esc(nom)}" title="${MI.remoto ? 'Descargar el Word en esta PC' : 'Abrir el Word'}">${MI.remoto ? 'Descargar Word' : 'Abrir Word'}</button>` : '')
+      + '</li>';
+  };
+  const secs = [];
+  if(listos.length > 1) secs.push(`<section class="ini-sec"><h3>Para revisar <small>del más antiguo al más nuevo</small></h3><ul class="ini-filas">`
+    + listos.slice(0, 6).map(c => fila(c, false)).join('') + '</ul>'
+    + (listos.length > 6 ? `<p class="ini-mas">y ${listos.length - 6} más en la lista de la izquierda.</p>` : '') + '</section>');
+  if(rev.length) secs.push(`<section class="ini-sec"><h3>Últimos revisados</h3><ul class="ini-filas">`
+    + rev.slice(0, 5).map(c => fila(c, true)).join('') + '</ul></section>');
+  if(secs.length) h += secs.length === 2 ? `<div class="ini-dos">${secs.join('')}</div>` : secs[0];
+  const acc = (a, ico, txt) => `<button data-acc="${a}">${ICO_INI[ico]}${txt}</button>`;
+  h += '<section class="ini-sec"><h3>Accesos rápidos</h3><div class="ini-accesos">'
+    + acc('elegir', 'subir', 'Cargar audio…') + acc('plant', 'plant', 'Plantillas') + acc('med', 'med', 'Médicos')
+    + acc('config', 'config', 'Configuración') + ($('#bAdmin').hidden ? '' : acc('admin', 'admin', 'Administración'))
+    + '</div></section></div>';
+  return h;
+}
+function abrirWord(n, t){
+  if(MI.remoto){
+    const a = document.createElement('a'); a.href = '/api/word?nombre=' + encodeURIComponent(n);
+    a.download = (t || n) + '.docx'; document.body.appendChild(a); a.click(); a.remove();
+    toast('Word descargado en esta PC.');
+  } else api('/api/abrir', {nombre: n}).catch(e => toast(e.message));
+}
+/* botón Inicio (lista y riel): cierra el informe abierto (queda como borrador y libre para otra PC) y muestra el inicio */
+async function irAInicio(){
+  if(vpAbierta()) cerrarVistaPrevia();
+  if(actual) await cerrarCaso();
+  else mostrar('vacio');
+}
+$('#bInicio').onclick = irAInicio;
+$('#rielInicio').onclick = irAInicio;
 $('#bAdmin').onclick = async () => { if(actual) await guardarBorrador(); location.href = '/admin'; };
 $('#tabMia').onclick = () => ponerFiltro('mia'); $('#tabTodas').onclick = () => ponerFiltro('todas');
 setInterval(cargarLista, 2000); cargarLista(); cargarMiPc();
@@ -1446,7 +1562,7 @@ function guardarBorrador(){
   return api('/api/borrador', {nombre: actual, html: htmlLimpio(), omisiones_ok: omisOk}).catch(()=>{});
 }
 /* Cerrar el estudio: guarda el borrador, lo libera para las otras PC y vuelve a la lista */
-async function cerrarCaso(){
+async function cerrarCaso(silencioso){
   if(!actual) return;
   const n = actual, tit = $('#titulo').dataset.t || n;
   audio.pause();
@@ -1456,7 +1572,7 @@ async function cerrarCaso(){
   audio.removeAttribute('src'); audio.load();
   mostrar('vacio');
   document.querySelectorAll('#casos li').forEach(li => li.classList.remove('sel'));
-  toast('Cerraste ' + tit + '. Tus cambios quedaron guardados y el estudio está libre.');
+  if(!silencioso) toast('Cerraste ' + tit + '. Tus cambios quedaron guardados y el estudio está libre.');
   cargarLista();
 }
 $('#bCerrar').onclick = cerrarCaso;
@@ -1900,15 +2016,20 @@ $('#bFin').onclick = async () => {
     await guardarFormato();
     const rv = tomarRev();
     const r = await api('/api/finalizar', {nombre: actual, texto: t, rev: rv}).catch(e => { revPend += rv; throw e; });
-    guardarBorrador();
-    $('#titulo').textContent = ($('#titulo').dataset.t || actual) + ' ✓';
+    const n = actual, tit = $('#titulo').dataset.t || n;
     if(MI.remoto){
-      const a = document.createElement('a'); a.href = '/api/word?nombre=' + encodeURIComponent(actual);
-      a.download = ($('#titulo').dataset.t || actual) + '.docx'; document.body.appendChild(a); a.click(); a.remove();
-      toast(`Word descargado en esta PC · corregiste el ${r.pct}% de las palabras. La IA ya lo usa como ejemplo.`, [], 9000);
-    } else
-    toast(`Word guardado · corregiste el ${r.pct}% de las palabras. La IA ya lo usa como ejemplo.`, [['Abrir Word', () => api('/api/abrir', {nombre: actual})]], 9000);
-    cargarLista();
+      const a = document.createElement('a'); a.href = '/api/word?nombre=' + encodeURIComponent(n);
+      a.download = tit + '.docx'; document.body.appendChild(a); a.click(); a.remove();
+    }
+    // el informe se cierra (queda libre para las otras PC) y se vuelve a la pantalla de inicio
+    const sig = casosCache.filter(c => c.estado==='listo' && !c.bloqueado_por && c.nombre!==n && (filtro!=='mia' || c.origen===MI.pc))
+      .sort((a, b) => a.fecha - b.fecha)[0];
+    if(vpAbierta()) cerrarVistaPrevia();
+    await cerrarCaso(true);
+    const botones = [];
+    if(!MI.remoto) botones.push(['Abrir Word', () => api('/api/abrir', {nombre: n})]);
+    if(sig) botones.push(['Revisar el siguiente', () => abrirCaso(sig.nombre)]);
+    toast(`${MI.remoto ? 'Word descargado en esta PC' : 'Word guardado'} (${tit}) · corregiste el ${r.pct}% de las palabras. La IA ya lo usa como ejemplo.`, botones, 9000);
   }catch(e){ toast(e.message); }
 };
 $('#bRegen').onclick = async () => {
@@ -1922,6 +2043,8 @@ function mostrar(v){
   $('#vacio').hidden = v!=='vacio';
   for(const [id,k] of [['#caso','caso'],['#vPlant','plant'],['#vMed','med']]){ const el=$(id); el.hidden = v!==k; el.style.display = v===k ? 'flex' : 'none'; }
   if(v==='vacio' && typeof cargarLista === 'function'){ vacioHtml = ''; cargarLista(); }   // la pantalla vacía se arma con la lista
+  for(const [id,k] of [['#bInicio','vacio'],['#bVerPlant','plant'],['#bVerMed','med']]){
+    const b = $(id); if(b){ b.classList.toggle('on', v===k); if(v===k) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); } }
 }
 mostrar('vacio');
 

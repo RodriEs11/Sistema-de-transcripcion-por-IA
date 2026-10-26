@@ -55,7 +55,7 @@ for d in (NUEVOS, DATOS):
     d.mkdir(parents=True, exist_ok=True)
 
 SIMULAR = os.environ.get("SIMULAR_IA") == "1"   # solo para pruebas
-VERSION = "2026.10.31"
+VERSION = "2026.10.32"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
@@ -417,6 +417,14 @@ def resumen_avisos(n, m):
     return r
 
 
+def revisado_en(n):
+    """Cuándo se guardó el Word por última vez (para «Revisados hoy» en la pantalla de inicio)."""
+    try:
+        return (DATOS / f"{n}.final.txt").stat().st_mtime
+    except OSError:
+        return None
+
+
 def listar_casos(pc=LOCAL, remoto=False):
     nombres = {p.stem: p for p in NUEVOS.iterdir() if p.suffix.lower() in EXT_AUDIO}
     for f in DATOS.glob("*.informe_ia.txt"):
@@ -445,6 +453,7 @@ def listar_casos(pc=LOCAL, remoto=False):
                       "medico": medico_de(n), "origen": origen_de(n), "avisos": avisos, "bloqueado_por": R.bloqueado_por(n, pc),
                       "titulo": titulo_de(n), "espera": esp.get(n), "paciente": PAC.de(DATOS, n),
                       "estudios": estudios_de(n) if listo else None, "dur": duracion_de(n),
+                      "revisado_en": revisado_en(n) if revisado else None,
                       "puede_borrar": not (remoto and (origen_de(n) != pc or pc == LOCAL))
                                       and est["estado"] not in ("transcribiendo", "generando"),
                       "puede_pausar": not remoto and est["estado"] == "transcribiendo" and n not in PAUSAS,

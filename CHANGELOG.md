@@ -3,6 +3,21 @@
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El servidor se versiona por fecha; la app del trabajo, con [versionado semántico](https://semver.org/lang/es/).
 
+## [Servidor 2026.10.32] — 2026-10-26
+
+### Agregado
+- **Pantalla de inicio y botón «Inicio»** en el pie de la lista (junto a Plantillas y Médicos) y en el riel de la
+  lista oculta. Muestra la fecha, el estado de la IA, cifras (para revisar, en proceso, revisados hoy, con error), la
+  tarjeta de «qué hacer ahora» que ya existía, la lista de informes para revisar (del más antiguo al más nuevo),
+  los últimos revisados con «Abrir Word» (o «Descargar Word» en las PC del trabajo) y accesos rápidos (Cargar
+  audio, Plantillas, Médicos, Configuración, Administración). Respeta la pestaña «Esta PC» / «Todas». El botón de la
+  vista actual queda marcado. Ir al inicio con un informe abierto lo cierra (queda como borrador y libre).
+- `/api/casos` trae `revisado_en` (cuándo se guardó el Word) para contar los «revisados hoy».
+
+### Cambiado
+- **Al «Guardar Word y aprender» el informe se cierra y se vuelve al inicio.** El aviso trae «Abrir Word» (en la PC
+  del servidor) y «Revisar el siguiente» si queda otro para revisar.
+
 ## [Servidor 2026.10.31] — 2026-10-26
 
 ### Arreglado
