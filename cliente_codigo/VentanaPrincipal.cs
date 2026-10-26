@@ -1151,7 +1151,7 @@ namespace Transcripcion
             var a = Autocorreccion.Error;
             var d = new Dictionary<string, object> {
                 { "version", Programa.VERSION }, { "pc", Config.Pc },
-                { "inicio", Programa.IniciaConWindows() }, { "tomar", !Config.Pausado }, { "avisar", Config.AvisarListos },
+                { "inicio", Programa.IniciaConWindows() }, { "tomar", !Config.Pausado }, { "avisar", Config.AvisarListos }, { "notif", Config.NotificacionesWindows },
                 { "compacto", compacto }, { "carpetaAudios", vigilante.Carpeta.TrimEnd(new[] { '\\', '/' }) },
                 { "carpetaWord", Programa.CarpetaDescargas() }, { "wordPropia", Config.CarpetaWord != "" },
                 { "pendientes", cola.Pendientes }, { "registro", Registro.Archivo },
@@ -1186,6 +1186,10 @@ namespace Transcripcion
                         break;
                     case "tomar": Pausar(!EsSi(valor)); break;
                     case "avisar": Config.AvisarListos = EsSi(valor); GuardarConfig(); break;
+                    case "notif":
+                        Config.NotificacionesWindows = EsSi(valor); GuardarConfig();
+                        Registro.Escribir(Config.NotificacionesWindows ? "Configuración: notificaciones de Windows activadas" : "Configuración: notificaciones de Windows desactivadas");
+                        break;
                     case "compacto": if (compacto) SalirCompacto(); else EntrarCompacto(); break;
                     case "abrirWord":
                         try { Directory.CreateDirectory(Programa.CarpetaDescargas()); } catch { }
@@ -1278,9 +1282,11 @@ namespace Transcripcion
                 var cInicio = opcion("Abrir al iniciar Windows", Programa.IniciaConWindows());
                 var cTomar = opcion("Tomar los audios del sistema automáticamente", !Config.Pausado);
                 var cAvisar = opcion("Avisar cuando un informe queda listo", Config.AvisarListos);
+                var cNotif = opcion("Notificaciones de Windows", Config.NotificacionesWindows);
                 cInicio.CheckedChanged += (s, e) => Programa.IniciarConWindows(cInicio.Checked);
                 cTomar.CheckedChanged += (s, e) => Pausar(!cTomar.Checked);
                 cAvisar.CheckedChanged += (s, e) => { Config.AvisarListos = cAvisar.Checked; GuardarConfig(); };
+                cNotif.CheckedChanged += (s, e) => CambioDeConfig("notif", cNotif.Checked);
 
                 texto("Carpeta de los Word descargados", true);
                 texto(Programa.CarpetaDescargas(), false);

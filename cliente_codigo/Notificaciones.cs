@@ -207,6 +207,7 @@ namespace Transcripcion
         // Como NotifyIcon.ShowBalloonTip, pero con el ícono de la app en grande. Si algo falla, el globo de siempre.
         public static void Globo(NotifyIcon n, int ms, string titulo, string texto)
         {
+            if (!Config.NotificacionesWindows) return;   // apagadas en Configuración (por defecto, desde la 1.14)
             try
             {
                 if (Mostrar(n, ms, titulo, texto)) return;

@@ -727,8 +727,10 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
             <label class="interruptor"><input type="checkbox" data-app="inicio"><span></span></label></div>
           <div class="cfg-fila"><div class="cfg-txt"><b>Tomar los audios del sistema automáticamente</b><small id="cfgCarpetaAudios">Los que el sistema de gestión deja en la carpeta temporal.</small></div>
             <label class="interruptor"><input type="checkbox" data-app="tomar"><span></span></label></div>
-          <div class="cfg-fila"><div class="cfg-txt"><b>Avisar cuando un informe queda listo</b><small>Notificación de Windows cuando un audio de esta PC queda para revisar.</small></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Avisar cuando un informe queda listo</b><small>Aviso en la ventana cuando un audio de esta PC queda para revisar.</small></div>
             <label class="interruptor"><input type="checkbox" data-app="avisar"><span></span></label></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Notificaciones de Windows</b><small>Carteles de Windows junto al reloj (informe listo, avisos con la ventana escondida). Apagadas por defecto.</small></div>
+            <label class="interruptor"><input type="checkbox" data-app="notif"><span></span></label></div>
           <div class="cfg-fila"><div class="cfg-txt"><b>Modo compacto</b><small>Ventana chica, siempre visible al costado, con la cola y los avisos.</small></div>
             <button type="button" data-app-accion="compacto" id="cfgCompacto">Pasar a modo compacto</button></div>
           <div class="cfg-fila cfg-bloque"><div class="cfg-txt"><b>Carpeta de los Word descargados</b><small class="ruta" id="cfgCarpetaWord">—</small></div>
@@ -2874,7 +2876,7 @@ function pintarConfig(){
   $('#cfgFilaAdmin').hidden = $('#bAdmin').hidden;
   if(!A) return;
   // aplicación del trabajo
-  document.querySelectorAll('#config [data-app]').forEach(c => c.checked = !!A[c.dataset.app]);
+  document.querySelectorAll('#config [data-app]').forEach(c => { c.checked = !!A[c.dataset.app]; const f = c.closest('.cfg-fila'); if (f) f.hidden = !(c.dataset.app in A); });
   $('#cfgCarpetaAudios').textContent = 'Los que el sistema de gestión deja en ' + (A.carpetaAudios || 'la carpeta temporal') + '.';
   $('#cfgCompacto').textContent = A.compacto ? 'Volver al tamaño normal' : 'Pasar a modo compacto';
   $('#cfgCarpetaWord').textContent = A.carpetaWord || '—';

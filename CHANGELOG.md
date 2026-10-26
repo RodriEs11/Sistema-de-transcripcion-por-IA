@@ -156,6 +156,12 @@ El servidor se versiona por fecha; la app del trabajo, con [versionado semántic
 
 ## App del trabajo
 
+### [1.14] — 2026-10-26
+- Opción nueva en Configuración → Esta PC: **Notificaciones de Windows** (los carteles junto al reloj: informe listo,
+  avisos con la ventana escondida). **Apagada por defecto**; se guarda en `config.json` como `notificaciones_windows`.
+  El aviso dentro de la ventana sigue funcionando igual. También aparece en la configuración propia de la app (sin
+  conexión). La pantalla del Servidor muestra el interruptor solo si la app lo informa (1.14 en adelante).
+
 ### [1.13] — 2026-10-26
 - La autocorrección de Word encuentra el Normal.dotm con Office en español (`%APPDATA%\Microsoft\Plantillas`) y en
   otros idiomas (Modelos, Modèles, Vorlagen, Modelli, Sjablonen); como último recurso usa el Normal.dotm más reciente
