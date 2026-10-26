@@ -1,4 +1,4 @@
-// Comunicación con el Servidor (por HTTPS, a través del túnel rápido de Cloudflare).
+// Comunicación con el Servidor (por HTTPS, a través del túnel: el rápido de Cloudflare o Microsoft Dev Tunnels).
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -24,7 +24,18 @@ namespace Transcripcion
 
     static class Servidor
     {
-        static readonly Regex DireccionValida = new Regex(@"^https://[a-z0-9-]+\.trycloudflare\.com$");
+        // Direcciones que se aceptan del canal de avisos (solo de estos dos servicios: si alguien conociera el
+        // canal, no podría mandar la app a otro sitio). 1.12: también Microsoft Dev Tunnels; nunca api.trycloudflare.com.
+        static readonly Regex DireccionValida = new Regex(
+            @"^https://((?!api\.)[a-z0-9]+(-[a-z0-9]+)+\.trycloudflare\.com|[a-z0-9-]+\.[a-z0-9]+\.devtunnels\.ms)$");
+
+        // Microsoft Dev Tunnels muestra una página de aviso ("anti-phishing") la primera vez; este encabezado la saltea.
+        public const string SaltarAviso = "X-Tunnel-Skip-AntiPhishing-Page";
+
+        public static bool EsDevTunnel(string url)
+        {
+            return url != null && url.IndexOf(".devtunnels.ms", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
 
         // Pedido HTTP con HttpWebRequest (viene en el núcleo de .NET Framework, sin dependencias extra).
         static async Task<Respuesta> Enviar(string metodo, string url, string ruta, bool conLlave, byte[] cuerpo,
@@ -39,6 +50,7 @@ namespace Transcripcion
                 r.Timeout = r.ReadWriteTimeout = segundos * 1000;
                 r.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
                 if (conLlave) r.Headers["Authorization"] = "Bearer " + Config.Llave;
+                if (EsDevTunnel(url)) r.Headers[SaltarAviso] = "true";
                 if (extra != null) foreach (var kv in extra) r.Headers[kv.Key] = kv.Value;
                 if (cuerpo != null)
                 {

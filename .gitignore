@@ -61,6 +61,11 @@ cloudflared.exe
 # Linux: cloudflared que baja iniciar_servidor.sh
 /cloudflared
 cloudflared.descarga
+# Microsoft Dev Tunnels (lo baja configurar_tunel)
+devtunnel.exe
+/devtunnel
+devtunnel.exe.descarga
+devtunnel.descarga
 
 # --- Respaldos y archivos de trabajo ----------------------------------
 respaldo/

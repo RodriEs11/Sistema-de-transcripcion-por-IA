@@ -34,6 +34,24 @@ sequenceDiagram
 - El túnel rápido no tiene disponibilidad garantizada ni admite SSE; la interfaz consulta el estado cada 2 s, así
   que no le afecta. El panel de administración permite reiniciarlo y volver a publicar la dirección.
 
+### Alternativa: Microsoft Dev Tunnels (servidor 2026.10.30, app 1.12)
+
+`configurar_tunel.bat` / `.sh` elige el servicio (`acceso_remoto.json` → `tunel.servicio`: `cloudflare` o `devtunnel`).
+Con Dev Tunnels:
+
+- Solo la PC del servidor necesita una cuenta (Microsoft o GitHub): `devtunnel user login`. Las PC del trabajo
+  entran sin cuenta porque el túnel se crea con `--allow-anonymous`; la contraseña y las llaves del sistema siguen
+  protegiendo todo.
+- Túnel persistente (`devtunnel create transcripcion-xxxxxxxx --allow-anonymous --expiration 30d` + `port create -p 8766`):
+  la dirección `https://<id>-8766.<región>.devtunnels.ms` no cambia con los reinicios. Se publica igual en ntfy.
+- `devtunnel host <id>` reenvía al **puerto propio del túnel** (`PUERTO_TUNEL`, 8766, solo 127.0.0.1). El servidor
+  atiende ese puerto con `HTunel`, que trata todo pedido como remoto (no depende de `X-Forwarded-For` ni de `Host`).
+  La IP mostrada sale de `X-Forwarded-For`.
+- La app 1.12 manda `X-Tunnel-Skip-AntiPhishing-Page: true` (HttpWebRequest y WebView2 `WebResourceRequested`)
+  para no ver la página intermedia de Microsoft.
+- Si Microsoft borró el túnel por falta de uso, el servidor lo recrea con el mismo nombre; si venció la sesión,
+  queda en estado `sin_sesion` hasta que se vuelva a iniciar sesión con `configurar_tunel` (opción 3).
+
 ## Autenticación
 
 | Origen del pedido | Requisito |

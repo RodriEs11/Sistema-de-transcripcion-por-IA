@@ -3,6 +3,31 @@
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El servidor se versiona por fecha; la app del trabajo, con [versionado semántico](https://semver.org/lang/es/).
 
+## [Servidor 2026.10.30] — 2026-10-26
+
+### Agregado
+- **Microsoft Dev Tunnels como alternativa al túnel rápido de Cloudflare** (temporal, mientras `api.trycloudflare.com`
+  no resuelve desde la PC del servidor). Se elige con `configurar_tunel.bat` / `.sh` (nuevo): descarga `devtunnel.exe`
+  de Microsoft, inicia sesión con una cuenta de Microsoft o GitHub (solo en la PC del servidor) y crea un túnel
+  persistente con acceso anónimo. La dirección (`https://<túnel>-8766.<región>.devtunnels.ms`) es **siempre la misma**.
+  La opción 2 vuelve a Cloudflare. Queda en `acceso_remoto.json` → `tunel`.
+- Puerto propio del túnel de Microsoft (`PUERTO_TUNEL`, 8766 por defecto, solo en 127.0.0.1): todo lo que entra por
+  ahí cuenta como remoto (llave o sesión obligatoria), sin depender de los encabezados que agregue Microsoft.
+- Si el túnel de Microsoft ya no existe (Microsoft los borra tras 30 días sin uso), el servidor lo crea de nuevo con
+  el mismo nombre. Si la sesión venció, lo avisa (panel: «Sin sesión en Microsoft») y reintenta cada 5 minutos o al
+  tocar «Reiniciar túnel».
+- Panel: renglón «Servicio» en la tarjeta del túnel y estados nuevos (falta devtunnel, sin sesión, sin configurar,
+  puerto ocupado).
+
+### Arreglado
+- Con `api.trycloudflare.com` sin resolver, el servidor tomaba `https://api.trycloudflare.com` como dirección del
+  túnel, la publicaba en ntfy.sh cada 10 s (ntfy respondía 429) y la app del trabajo la podía adoptar. Ahora esa
+  línea no cuenta como dirección, la espera entre intentos crece (10 s → 5 min), se avisa una sola vez que el DNS
+  no encuentra el servicio y la misma dirección no se vuelve a publicar antes de una hora (salvo el botón del panel
+  y la republicación cada 3 h).
+- El botón «Volver a publicar» del panel de un dispositivo remoto comprueba el Origin también contra
+  `X-Forwarded-Host`.
+
 ## [Servidor 2026.10.29] — 2026-10-26
 
 ### Agregado
@@ -89,6 +114,13 @@ El servidor se versiona por fecha; la app del trabajo, con [versionado semántic
 - Consola con eventos por área, registro diario y `actividad.csv`.
 
 ## App del trabajo
+
+### [1.12] — 2026-10-26
+- Acepta direcciones de Microsoft Dev Tunnels (`*.devtunnels.ms`) publicadas en el canal de avisos, además de las de
+  Cloudflare; ya no acepta `api.trycloudflare.com`.
+- Saltea la página de aviso («anti-phishing») de Dev Tunnels: encabezado `X-Tunnel-Skip-AntiPhishing-Page` en los
+  pedidos de la app y, en WebView2, en todo lo que pide la pantalla del Servidor.
+- Textos: «termina en devtunnels.ms o en trycloudflare.com»; el error 530 ya no nombra a Cloudflare.
 
 ### [1.11] — 2026-10-26
 - Si el Servidor está caído o reiniciándose, la ventana ya no muestra la página de error de Cloudflare (ni la de Edge sin conexión): muestra un cartel propio con lo que pasó (el programa del Servidor no responde, el canal está cerrado, la dirección cambió, sin internet), recuerda que los audios se siguen tomando, y vuelve sola a la pantalla cuando el Servidor responde. Botón «Reintentar ahora». Queda anotado en el registro.

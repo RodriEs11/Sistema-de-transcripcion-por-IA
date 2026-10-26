@@ -773,7 +773,7 @@ const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','
 /* Servidor en Linux o en Windows: nombres de sus scripts (.sh / .bat) en los textos */
 let ES_LINUX = /Linux|X11|CrOS/.test(navigator.userAgent) && !/Android|Windows/.test(navigator.userAgent);
 function deSistema(h){
-  return ES_LINUX ? String(h).replace(/\b(iniciar_servidor|interfaz|configurar_acceso|instalar)\.bat\b/g, '$1.sh')
+  return ES_LINUX ? String(h).replace(/\b(iniciar_servidor|interfaz|configurar_acceso|configurar_tunel|instalar)\.bat\b/g, '$1.sh')
     .replace(/cloudflared\.exe/g, 'cloudflared').replace(/Abrí Ollama( \(el ícono de la llama\))?/g, 'Iniciá Ollama (sudo systemctl start ollama)') : h;
 }
 const mmss = t => isFinite(t) ? Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0') : '0:00';
@@ -2824,9 +2824,9 @@ document.querySelectorAll('#config [data-app-accion]').forEach(b => b.onclick = 
   hacerApp(que, true);
 });
 $('#cfgDireccion').onclick = async () => {
-  const v = await pedirTexto({titulo: 'Dirección del Servidor', html: '<p>Pegá la dirección que muestra la ventana del Servidor (termina en <b>trycloudflare.com</b>).</p>',
-    etiqueta: 'Dirección', valor: (CFG.app && CFG.app.servidor) || '', placeholder: 'https://…trycloudflare.com', boton: 'Conectar',
-    validar: t => /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}(:\d+)?(\/\S*)?$/i.test(t) ? '' : 'No parece una dirección. Copiala completa, por ejemplo https://algo.trycloudflare.com'});
+  const v = await pedirTexto({titulo: 'Dirección del Servidor', html: '<p>Pegá la dirección que muestra la ventana del Servidor (termina en <b>devtunnels.ms</b> o en <b>trycloudflare.com</b>).</p>',
+    etiqueta: 'Dirección', valor: (CFG.app && CFG.app.servidor) || '', placeholder: 'https://…devtunnels.ms', boton: 'Conectar',
+    validar: t => /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}(:\d+)?(\/\S*)?$/i.test(t) ? '' : 'No parece una dirección. Copiala completa, por ejemplo https://algo-8766.brs.devtunnels.ms'});
   if(v) { hacerApp('direccion', v); toast('Probando la dirección nueva…'); }
 };
 $('#cfgDesvincular').onclick = async () => {

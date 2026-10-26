@@ -120,7 +120,10 @@ def mismo_origen(handler, puerto):
         return False
     origen = (handler.headers.get("Origin") or "").lower()
     if handler.remoto:
-        validos = ("https://" + (handler.headers.get("Host") or "").lower(),)
+        # Cloudflare deja el Host como lo escribió el navegador; Microsoft Dev Tunnels puede cambiarlo y
+        # manda el original en X-Forwarded-Host.
+        validos = tuple("https://" + h.split(",")[0].strip().lower()
+                        for h in (handler.headers.get("Host"), handler.headers.get("X-Forwarded-Host")) if h)
     else:
         validos = (f"http://127.0.0.1:{puerto}", f"http://localhost:{puerto}")
     if origen and origen not in validos:

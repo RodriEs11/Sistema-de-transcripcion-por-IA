@@ -188,6 +188,7 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 ├── registro.py              Consola con colores, archivos de log y actividad.csv
 ├── app_cliente.py           Manifiesto de actualización de la app del trabajo
 ├── configurar_acceso.py     Contraseña del acceso remoto y PC autorizadas
+├── configurar_tunel.py      Elegir el túnel: Cloudflare o Microsoft Dev Tunnels
 ├── web/                     Interfaz de revisión, panel de administración y estadísticas
 ├── cliente_codigo/          Código fuente de la app de Windows (C#)
 ├── cliente/                 Carpeta de distribución de la app (solo el manual y el .config se versionan)

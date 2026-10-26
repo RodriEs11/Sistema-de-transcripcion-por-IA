@@ -1,6 +1,6 @@
 // Transcripción: aplicación de escritorio para las PC del trabajo (info-01, info-02, info-03).
 // Toma los audios que el sistema de gestión deja en %TEMP%, los envía al Servidor por el túnel
-// de Cloudflare y muestra la interfaz de revisión del Servidor dentro de la ventana.
+// (Cloudflare o Microsoft Dev Tunnels) y muestra la interfaz de revisión del Servidor dentro de la ventana.
 // No se instala: es una carpeta con Transcripcion.exe. Usa .NET Framework 4.8 y WebView2 (Edge),
 // que ya vienen con Windows 10/11.
 using System;
@@ -21,14 +21,14 @@ using Microsoft.Win32;
 [assembly: System.Reflection.AssemblyDescription("Envía los audios del sistema de gestión al Servidor de transcripción")]
 [assembly: System.Reflection.AssemblyCompany("Rodrigo Espíndola")]
 [assembly: System.Reflection.AssemblyCopyright("Creada por Rodrigo Espíndola")]
-[assembly: System.Reflection.AssemblyVersion("1.11.0.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.11.0.0")]
+[assembly: System.Reflection.AssemblyVersion("1.12.0.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.12.0.0")]
 
 namespace Transcripcion
 {
     static class Programa
     {
-        public const string VERSION = "1.11";
+        public const string VERSION = "1.12";
         public static EventWaitHandle SenalMostrar;
 
         [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
@@ -80,7 +80,7 @@ namespace Transcripcion
                 SenalMostrar = new EventWaitHandle(false, EventResetMode.AutoReset, "Transcripcion-cliente-mostrar", out nueva);
             }
             try { SetProcessDPIAware(); } catch { }
-            // TLS 1.2 y 1.3 para hablar con Cloudflare
+            // TLS 1.2 y 1.3 para hablar con el túnel
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | (SecurityProtocolType)12288;
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

@@ -61,7 +61,7 @@ namespace Transcripcion
             t.Controls.Add(lnkUrl);
             panelUrl.Size = new Size(ancho, 34); panelUrl.Visible = string.IsNullOrEmpty(Config.Tema); panelUrl.Margin = new Padding(0);
             Caja(txtUrl, ancho); txtUrl.Location = new Point(0, 2);
-            SetCue(txtUrl, "https://….trycloudflare.com");
+            SetCue(txtUrl, "https://….devtunnels.ms");
             panelUrl.Controls.Add(txtUrl); t.Controls.Add(panelUrl);
 
             lblPasos.AutoSize = false; lblPasos.Size = new Size(ancho, 70); lblPasos.ForeColor = Estilo.TextoSuave;

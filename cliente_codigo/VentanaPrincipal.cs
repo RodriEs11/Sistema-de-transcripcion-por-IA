@@ -448,6 +448,16 @@ namespace Transcripcion
             c.Settings.AreBrowserAcceleratorKeysEnabled = true;
             c.Settings.IsPasswordAutosaveEnabled = false;
             c.Settings.IsGeneralAutofillEnabled = false;
+            // 1.12: sin la página de aviso de Microsoft Dev Tunnels (la pantalla del Servidor y todo lo que pide)
+            try
+            {
+                c.AddWebResourceRequestedFilter("https://*.devtunnels.ms/*", CoreWebView2WebResourceContext.All);
+                c.WebResourceRequested += (s, e) =>
+                {
+                    try { e.Request.Headers.SetHeader(Servidor.SaltarAviso, "true"); } catch { }
+                };
+            }
+            catch (Exception ex) { Registro.Escribir("No se pudo preparar el encabezado de Dev Tunnels: " + ex.Message); }
             c.NavigationStarting += (s, e) =>
             {
                 Uri u;
@@ -565,7 +575,7 @@ namespace Transcripcion
                 return "El canal hasta el Servidor funciona, pero el programa del Servidor no respondió (error " + codigo + ").\n" +
                        "Puede estar reiniciándose, cerrado o muy ocupado.";
             if (codigo == 530)
-                return "El canal hasta el Servidor está cerrado (error 530 de Cloudflare).\n" +
+                return "El canal hasta el Servidor está cerrado (error 530).\n" +
                        "La PC del Servidor puede estar apagada, sin internet o con el programa cerrado.";
             if (codigo == 503)
                 return "El Servidor no está disponible en este momento (error 503).\nPuede estar reiniciándose.";
@@ -1325,7 +1335,7 @@ namespace Transcripcion
 
         async void DireccionAMano()
         {
-            string url = Pedir("Dirección del Servidor", "Pegá la dirección del Servidor (termina en trycloudflare.com):", Config.Url);
+            string url = Pedir("Dirección del Servidor", "Pegá la dirección del Servidor (termina en devtunnels.ms o en trycloudflare.com):", Config.Url);
             if (url == null) return;
             url = Servidor.Normalizar(url);
             if (url == "") return;

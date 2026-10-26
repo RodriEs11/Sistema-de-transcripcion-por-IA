@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 INTERFAZ WEB. Se abre con interfaz.bat o .sh (solo esta PC) o con iniciar_servidor.bat o .sh
-(esta PC + las PC del trabajo por el tunel rapido de Cloudflare).
+(esta PC + las PC del trabajo por un tunel: el rapido de Cloudflare o Microsoft Dev Tunnels).
 Todo se procesa en esta PC: las otras solo envian audios y muestran la pagina.
 """
 import contextlib
@@ -44,6 +44,9 @@ except Exception:
 AQUI = Path(__file__).resolve().parent
 WEB = AQUI / "web"
 PUERTO = int(os.environ.get("PUERTO_INTERFAZ", "8765"))
+# Puerto propio del túnel de Microsoft (Dev Tunnels): todo lo que entra por acá es de las PC del trabajo,
+# tenga los encabezados que tenga. Solo escucha en 127.0.0.1 y solo con ese túnel elegido.
+PUERTO_TUNEL = int(os.environ.get("PUERTO_TUNEL", str(PUERTO + 1)))
 CFG = config()
 NUEVOS = CFG["carpeta_audios_nuevos"]
 INFORMES = CFG["carpeta_informes"]
@@ -52,14 +55,14 @@ for d in (NUEVOS, DATOS):
     d.mkdir(parents=True, exist_ok=True)
 
 SIMULAR = os.environ.get("SIMULAR_IA") == "1"   # solo para pruebas
-VERSION = "2026.10.29"
+VERSION = "2026.10.30"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
                  "/admin/correcciones": "correcciones.html"}
 FIN_LOCK = threading.Lock()
 INICIO = time.time()
-TUNEL = {"modo": False, "exe": P.ruta_cloudflared()}     # "modo": se abrió con iniciar_servidor.bat (--tunel)
+TUNEL = {"modo": False, "http": None, "error": None}     # "modo": se abrió con iniciar_servidor.bat (--tunel)
 _IA_CACHE = {"t": 0, "ok": False}
 
 
@@ -882,6 +885,25 @@ def casos_abiertos():
 
 # ------------------------------------------------- mensajes a las PC y reinicio desde el panel
 SRV = {"http": None, "salida": 0}
+
+
+def abrir_tunel():
+    """Abre el túnel elegido (configurar_tunel). Con Microsoft Dev Tunnels, antes abre el puerto propio
+    del túnel; si no se puede, no abre el túnel (devtunnel publicaría lo que haya en ese puerto)."""
+    if R.URL_TUNEL.get("iniciado"):
+        return
+    if R.servicio_tunel() == "devtunnel" and not TUNEL["http"]:
+        try:
+            TUNEL["http"] = Servidor(("127.0.0.1", PUERTO_TUNEL), HTunel)
+        except OSError as ex:
+            TUNEL["error"] = f"El puerto {PUERTO_TUNEL} está ocupado por otro programa ({ex})."
+            L.error("TÚNEL", f"No se pudo abrir el puerto {PUERTO_TUNEL} para el túnel de Microsoft: lo usa otro "
+                             f"programa. Cerralo o cambiá PUERTO_TUNEL. Mientras tanto el sistema funciona solo en esta PC.")
+            return
+        threading.Thread(target=TUNEL["http"].serve_forever, daemon=True, name="puerto-tunel").start()
+        L.debug("TÚNEL", f"Puerto propio del túnel abierto: 127.0.0.1:{PUERTO_TUNEL}")
+    R.escribir_conexion_cliente()
+    R.iniciar_tunel(PUERTO, PUERTO_TUNEL)
 TRABAJO = {"ocupado": False, "esperando_ia": False, "desde": None, "en_pausa": None}
 REINICIO = {}       # reinicio programado desde el panel: id, cuando, estado (programado|esperando|reiniciando)...
 MENSAJE = {}        # cartel en la pantalla de todas las PC: id, texto, tipo, desde, hasta, por, reinicio
@@ -1885,14 +1907,21 @@ def estado_tunel():
         e = "apagado"
     elif not R.configurado():
         e = "sin_contrasena"
+    elif TUNEL["error"]:
+        e = "puerto_ocupado"
     elif not t.get("iniciado"):
         e = "detenido"
     else:
         e = {"activo": "activo", "abriendo": "abriendo", "reconectando": "reconectando",
-             "sin cloudflared": "sin_cloudflared"}.get(t.get("estado") or "", "abriendo")
-        if e == "abriendo" and t.get("url"):
+             "sin cloudflared": "sin_cloudflared", "sin devtunnel": "sin_devtunnel",
+             "sin sesion": "sin_sesion", "sin configurar": "sin_configurar",
+             "error": "reconectando"}.get(t.get("estado") or "", "abriendo")
+        if e == "abriendo" and t.get("url") and t.get("servicio") != "devtunnel":
             e = "conectando"           # ya tiene dirección, falta que Cloudflare confirme la conexión
+    servicio = t.get("servicio") or R.servicio_tunel()
     return {"modo": TUNEL["modo"], "estado": e, "url": t.get("url"), "desde": t.get("desde"),
+            "servicio": servicio, "nombre_servicio": R.nombre_servicio(servicio), "error": TUNEL["error"],
+            "puerto_tunel": PUERTO_TUNEL if servicio == "devtunnel" else None,
             "cambio": t.get("cambio"), "publicada": t.get("publicada"), "error_pub": t.get("error_pub"),
             "reinicios": t.get("reinicios", 0), "centro": t.get("centro")}
 
@@ -1960,12 +1989,14 @@ def accion_admin(accion, d, quien=None):
         if err:
             return {"error": err}, 409
         L.info("TÚNEL", f"Reinicio del túnel pedido {desde}.")
+        if R.URL_TUNEL.get("servicio") == "devtunnel":
+            return {"ok": True, "msg": "Túnel reiniciándose: en unos segundos vuelve, con la misma dirección."}, 200
         return {"ok": True, "msg": "Túnel reiniciándose: en unos segundos tiene dirección nueva y se publica sola."}, 200
     if accion == "tunel/publicar":
         url = R.URL_TUNEL.get("url")
         if not url:
             return {"error": "Todavía no hay dirección para publicar."}, 409
-        if not R.publicar_url(url):
+        if not R.publicar_url(url, forzar=True):
             return {"error": "No se pudo publicar en ntfy.sh: " + (R.URL_TUNEL.get("error_pub") or "sin detalle")}, 502
         L.ok("TÚNEL", f"Dirección publicada de nuevo {desde}.")
         return {"ok": True, "msg": "Dirección publicada: las aplicaciones del trabajo la encuentran solas."}, 200
@@ -1994,8 +2025,7 @@ def accion_admin(accion, d, quien=None):
              + f" {desde}. Las PC ya vinculadas siguen funcionando.")
         msg = "Contraseña " + ("cambiada" if ya else "guardada") + ". Las PC ya vinculadas siguen funcionando."
         if TUNEL["modo"] and not R.URL_TUNEL.get("iniciado"):
-            R.escribir_conexion_cliente()
-            R.iniciar_tunel(PUERTO, TUNEL["exe"])
+            abrir_tunel()
             msg += " Abriendo el túnel para las PC del trabajo…"
         return {"ok": True, "msg": msg}, 200
     if accion == "contrasena_admin":
@@ -2191,6 +2221,16 @@ button{font:inherit;font-weight:600;background:var(--ac);color:#fff;border:0;bor
 <button>Entrar</button></form></body></html>"""
 
 
+class HTunel(H):
+    """Pedidos que entran por el puerto propio del túnel de Microsoft: siempre de las PC del trabajo."""
+    def _es_remoto(self):
+        return True
+
+    def _ip(self):
+        xff = (self.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+        return xff or self.headers.get("Cf-Connecting-Ip") or self.client_address[0]
+
+
 class Servidor(ThreadingHTTPServer):
     daemon_threads = True
 
@@ -2247,13 +2287,17 @@ def filas_encabezado(url, tunel):
         filas.append(("Acceso remoto", f"apagado: solo esta PC (para el trabajo usá {P.script('iniciar_servidor')})", None))
     elif not R.configurado():
         filas.append(("Acceso remoto", f"falta la contraseña: ejecutá {P.script('configurar_acceso')}", "aviso"))
-    elif R.URL_TUNEL.get("url"):
+    elif R.URL_TUNEL.get("url") and R.URL_TUNEL.get("estado") == "activo":
         desde = R.URL_TUNEL.get("desde")
-        filas.append(("Acceso remoto", "túnel de Cloudflare activo" + (f" desde hace {L.hace(ahora - desde)}" if desde else ""), "ok"))
+        filas.append(("Acceso remoto", f"túnel de {R.nombre_servicio(R.URL_TUNEL.get('servicio'))} activo"
+                      + (f" desde hace {L.hace(ahora - desde)}" if desde else ""), "ok"))
+    elif R.URL_TUNEL.get("estado") in ("sin sesion", "sin configurar", "sin devtunnel") or TUNEL["error"]:
+        filas.append(("Acceso remoto", TUNEL["error"] or f"Microsoft Dev Tunnels no está listo: ejecutá "
+                                                         f"{P.script('configurar_tunel')}", "error"))
     else:
         filas.append(("Acceso remoto", "túnel abriéndose o reconectando…", "aviso"))
     if tunel and R.configurado():      # en su propio renglón, para que la dirección entre entera
-        filas.append(("Dirección", R.URL_TUNEL.get("url") or "esperando a Cloudflare…", None))
+        filas.append(("Dirección", R.URL_TUNEL.get("url") or f"esperando a {R.nombre_servicio()}…", None))
     if tunel:
         activas = sorted((p, t) for p, t in VISTO.items() if ahora - t < 60)
         filas.append(("PC conectadas", ", ".join(p if ahora - t < 10 else f"{p} (hace {L.hace(ahora - t)})"
@@ -2338,8 +2382,7 @@ def main():
             L.aviso("TÚNEL", f"Todavía no hay contraseña para el acceso remoto: ejecutá {P.script('configurar_acceso')}. "
                              "Por ahora el sistema funciona solo en esta PC.")
         else:
-            R.escribir_conexion_cliente()
-            R.iniciar_tunel(PUERTO, TUNEL["exe"])
+            abrir_tunel()
     if "--sin-navegador" not in sys.argv:
         threading.Timer(1.0, lambda: webbrowser.open(url)).start()
     if not P.ES_WINDOWS:     # Linux: "kill" o "systemctl stop" apagan en orden, igual que Ctrl+C
@@ -2354,6 +2397,11 @@ def main():
         pass
     L.cerrar_encabezado()
     R.cerrar_tunel()
+    if TUNEL["http"]:
+        try:
+            TUNEL["http"].server_close()
+        except Exception:
+            pass
     h = L.HOY
     if SRV["salida"] == M.CODIGO_REINICIO:
         L.info("SERVIDOR", "Servidor cerrado para reiniciarse: se vuelve a abrir solo en esta misma ventana.")

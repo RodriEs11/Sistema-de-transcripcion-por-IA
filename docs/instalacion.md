@@ -56,6 +56,9 @@ Si hay informes Word terminados sin audio (útiles para TC, PET u otros estudios
    desde las *releases* oficiales de Cloudflare y abre el túnel.
 3. La dirección pública (`https://….trycloudflare.com`) se publica sola en el canal secreto de ntfy.sh y se
    vuelve a publicar cada 3 horas.
+4. Alternativa al túnel de Cloudflare: **`configurar_tunel.bat`** → opción 1 (Microsoft Dev Tunnels). Descarga
+   `devtunnel.exe`, pide entrar con una cuenta de Microsoft o GitHub y crea un túnel con dirección fija
+   (`https://….devtunnels.ms`). Se toma al reiniciar el servidor. La opción 2 vuelve a Cloudflare.
 
 Detalles de seguridad en [acceso-remoto.md](acceso-remoto.md).
 

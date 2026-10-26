@@ -129,6 +129,13 @@ SI ALGO NO ANDA
 Lo que guarda en esta PC (carpeta %LOCALAPPDATA%\Transcripcion): la configuración, la llave
 de esta PC cifrada con tu usuario de Windows, el registro y los audios pendientes (cifrados).
 
+VERSIÓN 1.12
+- Funciona también con el túnel de Microsoft (la dirección termina en devtunnels.ms y es
+  siempre la misma). Si el Servidor cambia de túnel, la primera vez escribí la dirección en
+  Opciones → Configuración → Conexión → "Cambiar…"; después la aplicación la encuentra sola.
+- Si al abrir la pantalla aparece una página de Microsoft que dice que estás por conectarte a
+  un "dev tunnel", tocá "Continue" (pasa una sola vez y solo con versiones anteriores a la 1.12).
+
 VERSIÓN 1.11
 - Si el Servidor está caído o reiniciándose, en lugar de la página de error de Cloudflare se ve
   un cartel que explica qué pasó. Los audios se siguen tomando y la pantalla vuelve sola cuando

@@ -35,6 +35,27 @@ def ruta_cloudflared():
     return Path(otro) if otro else propio
 
 
+def ruta_devtunnel():
+    """Ruta de devtunnel (Microsoft Dev Tunnels): devtunnel.exe en la carpeta sistema; en Linux, el de la
+    carpeta o el del PATH."""
+    if ES_WINDOWS:
+        return AQUI / "devtunnel.exe"
+    propio = AQUI / "devtunnel"
+    if propio.exists():
+        return propio
+    otro = shutil.which("devtunnel")
+    return Path(otro) if otro else propio
+
+
+def descarga_devtunnel():
+    """Dirección oficial de Microsoft para bajar devtunnel en este sistema."""
+    import platform
+    if ES_WINDOWS:
+        return "https://aka.ms/TunnelsCliDownload/win-x64"
+    arq = platform.machine().lower()
+    return "https://aka.ms/TunnelsCliDownload/linux-" + ("arm64" if arq in ("aarch64", "arm64") else "x64")
+
+
 def ruta_config(texto):
     """Ruta de configuracion.json -> Path. En Linux "..\\Audios_nuevos" se lee como "../Audios_nuevos"."""
     texto = str(texto)

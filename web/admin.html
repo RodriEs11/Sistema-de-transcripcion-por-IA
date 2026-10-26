@@ -342,8 +342,8 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 /* Servidor en Linux o en Windows: nombres de sus scripts (.sh / .bat) en los textos */
 let ES_LINUX = /Linux|X11|CrOS/.test(navigator.userAgent) && !/Android|Windows/.test(navigator.userAgent);
 function deSistema(h){
-  return ES_LINUX ? String(h).replace(/\b(iniciar_servidor|interfaz|configurar_acceso|instalar)\.bat\b/g, '$1.sh')
-    .replace(/cloudflared\.exe/g, 'cloudflared').replace(/Abrí Ollama( \(el ícono de la llama\))?/g, 'Iniciá Ollama (sudo systemctl start ollama)') : h;
+  return ES_LINUX ? String(h).replace(/\b(iniciar_servidor|interfaz|configurar_acceso|configurar_tunel|instalar)\.bat\b/g, '$1.sh')
+    .replace(/cloudflared\.exe/g, 'cloudflared').replace(/devtunnel\.exe/g, 'devtunnel').replace(/Abrí Ollama( \(el ícono de la llama\))?/g, 'Iniciá Ollama (sudo systemctl start ollama)') : h;
 }
 const leerLS = k => { try { return localStorage.getItem(k); } catch(e){ return null; } };
 const grabarLS = (k, v) => { try { localStorage.setItem(k, v); } catch(e){} };
@@ -406,11 +406,15 @@ const T_TUNEL = {
   apagado: ['', 'Apagado', 'Solo esta PC. Para el trabajo abrí iniciar_servidor.bat.'],
   sin_contrasena: ['av', 'Falta la contraseña', 'Configurala acá al lado para abrir el túnel.'],
   detenido: ['av', 'Detenido', 'Todavía no se abrió.'],
-  abriendo: ['av', 'Abriéndose…', 'Esperando a Cloudflare.'],
+  abriendo: ['av', 'Abriéndose…', 'Esperando al servicio del túnel.'],
   conectando: ['av', 'Conectando…', 'Ya tiene dirección; falta la confirmación de Cloudflare.'],
   activo: ['ok', 'Activo', ''],
   reconectando: ['err', 'Reconectando…', 'Se cortó y se vuelve a abrir solo.'],
   sin_cloudflared: ['err', 'Falta cloudflared.exe', 'Ejecutá iniciar_servidor.bat para descargarlo.'],
+  sin_devtunnel: ['err', 'Falta devtunnel.exe', 'Ejecutá configurar_tunel.bat para descargarlo.'],
+  sin_sesion: ['err', 'Sin sesión en Microsoft', 'Ejecutá configurar_tunel.bat y volvé a entrar con tu cuenta.'],
+  sin_configurar: ['err', 'Sin configurar', 'Ejecutá configurar_tunel.bat.'],
+  puerto_ocupado: ['err', 'Puerto ocupado', 'Otro programa usa el puerto del túnel.'],
 };
 function tile(et, punto, v, d){ return `<div class="tile"><div class="et">${et}</div><div class="v">${punto != null ? `<span class="punto ${punto}"></span>` : ''}${v}</div>${d ? `<div class="d">${d}</div>` : ''}</div>`; }
 function armarResumen(e){
@@ -440,27 +444,34 @@ function armarTunel(e){
     h += `<p class="explica">El servidor se abrió solo para esta PC (con <span class="cod">interfaz.bat</span>). Para que lo usen las PC del trabajo, cerrá esta ventana del servidor y abrí <span class="cod">iniciar_servidor.bat</span>.</p>`;
   } else if(t.estado === 'sin_contrasena'){
     h += `<p class="explica av">Todavía no hay contraseña para el acceso remoto, así que el túnel no se abrió. Guardala en el recuadro de <b>Contraseña</b> y el túnel se abre solo.</p>`;
+  } else if(['sin_devtunnel', 'sin_sesion', 'sin_configurar', 'puerto_ocupado'].includes(t.estado)){
+    h += `<p class="explica err">${t.estado === 'puerto_ocupado' ? esc(t.error || 'El puerto del túnel está ocupado.') + ' Cerrá ese programa y reiniciá el servidor.'
+      : t.estado === 'sin_sesion' ? 'Microsoft Dev Tunnels necesita que inicies sesión (la sesión venció o no se inició). Ejecutá <span class="cod">configurar_tunel.bat</span> → opción 3, y el túnel se abre solo en unos minutos.'
+      : 'Microsoft Dev Tunnels no está listo. Ejecutá <span class="cod">configurar_tunel.bat</span> → opción 1 y reiniciá el servidor.'}</p>`;
   } else if(t.estado === 'sin_cloudflared'){
     h += `<p class="explica err">No encuentro <span class="cod">cloudflared.exe</span> en la carpeta sistema. Ejecutá <span class="cod">iniciar_servidor.bat</span>: lo descarga y abre el servidor con el túnel.</p>`;
   } else {
+    const fija = t.servicio === 'devtunnel';
     h += '<dl class="dl">';
-    h += `<dt>Dirección</dt><dd>${t.url ? `<div class="url"><a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.url)}</a><button class="chico" id="bCopiarUrl">Copiar</button></div>` : '<span style="color:var(--mu)">esperando a Cloudflare…</span>'}</dd>`;
-    if(t.estado === 'activo' && t.desde) h += `<dt>Activo</dt><dd>${hace(e.ahora - t.desde)}${t.centro ? ` · centro de Cloudflare ${esc(t.centro)}` : ''}</dd>`;
+    h += `<dt>Servicio</dt><dd>${esc(t.nombre_servicio || 'Cloudflare')}${fija ? ' · la dirección es siempre la misma' : ' · la dirección cambia en cada reinicio'}</dd>`;
+    h += `<dt>Dirección</dt><dd>${t.url ? `<div class="url"><a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.url)}</a><button class="chico" id="bCopiarUrl">Copiar</button></div>` : `<span style="color:var(--mu)">esperando a ${esc(t.nombre_servicio || 'Cloudflare')}…</span>`}</dd>`;
+    if(t.estado === 'activo' && t.desde) h += `<dt>Activo</dt><dd>${hace(e.ahora - t.desde)}${t.centro ? (fija ? ` · región de Microsoft ${esc(t.centro)}` : ` · centro de Cloudflare ${esc(t.centro)}`) : ''}</dd>`;
     h += `<dt>Publicada</dt><dd>${t.publicada ? `${hace(e.ahora - t.publicada)} en ntfy.sh: las apps del trabajo la encuentran solas` : (t.error_pub ? `<span style="color:var(--err)">no se pudo publicar</span>` : 'todavía no')}</dd>`;
     if(t.reinicios) h += `<dt>Reinicios</dt><dd>${plural(t.reinicios, 'vez', 'veces')} desde que se abrió el servidor</dd>`;
     h += '</dl>';
     if(t.error_pub && !t.publicada) h += `<p class="explica av">ntfy.sh respondió: ${esc(t.error_pub)}. Si las apps no se conectan solas, escribí la dirección a mano en cada app (menú de la app → <i>Escribir la dirección del Servidor…</i>).</p>`;
     if(t.estado === 'reconectando') h += `<p class="explica err">El túnel se cortó y se está volviendo a abrir solo. Si tarda más de un minuto, probá <b>Reiniciar túnel</b>.</p>`;
   }
-  const puede = t.modo && !['apagado', 'sin_contrasena', 'sin_cloudflared'].includes(t.estado);
-  h += `<div class="acciones"><button id="bReiniciar" ${puede ? '' : 'disabled'} title="Cierra y vuelve a abrir el túnel. La dirección cambia y se publica sola; las apps del trabajo se reconectan en unos segundos.">Reiniciar túnel</button>`
+  const puede = t.modo && !['apagado', 'sin_contrasena', 'sin_cloudflared', 'sin_devtunnel', 'sin_configurar', 'puerto_ocupado'].includes(t.estado);
+  const fija = t.servicio === 'devtunnel';
+  h += `<div class="acciones"><button id="bReiniciar" ${puede ? '' : 'disabled'} title="Cierra y vuelve a abrir el túnel. ${fija ? 'La dirección no cambia' : 'La dirección cambia y se publica sola'}; las apps del trabajo se reconectan en unos segundos.">Reiniciar túnel</button>`
      + `<button id="bPublicar" ${t.url ? '' : 'disabled'} title="Vuelve a publicar la dirección en ntfy.sh para que las apps la encuentren">Volver a publicar la dirección</button></div>`;
-  if(puede) h += `<p class="nota">Reiniciar sirve cuando las PC del trabajo no se conectan aunque el servidor ande. La dirección cambia y las apps la encuentran solas.</p>`;
+  if(puede) h += `<p class="nota">Reiniciar sirve cuando las PC del trabajo no se conectan aunque el servidor ande. ${fija ? 'La dirección sigue siendo la misma.' : 'La dirección cambia y las apps la encuentran solas.'} Para cambiar de servicio (Cloudflare o Microsoft): <span class="cod">configurar_tunel.bat</span>.</p>`;
   poner('#tunel', h);
   const c = $('#bCopiarUrl'); if(c) c.onclick = () => navigator.clipboard.writeText(t.url).then(() => toast('Dirección copiada.'), () => toast('No se pudo copiar.', true));
   $('#bReiniciar').onclick = ev => {
     const rem = E.visor && E.visor.remoto;
-    if(confirm('¿Reiniciar el túnel?\n\nLas PC del trabajo se desconectan unos segundos y la dirección cambia (se publica sola).'
+    if(confirm('¿Reiniciar el túnel?\n\nLas PC del trabajo se desconectan unos segundos' + (fija ? ' (la dirección no cambia).' : ' y la dirección cambia (se publica sola).')
                + (rem ? '\n\nVos también estás entrando por el túnel: la app se reconecta sola y vas a tener que volver a escribir la contraseña del panel.' : '')))
       accion('tunel/reiniciar', {}, ev.currentTarget);
   };
