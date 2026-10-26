@@ -3,6 +3,22 @@
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El servidor se versiona por fecha; la app del trabajo, con [versionado semántico](https://semver.org/lang/es/).
 
+## [Servidor 2026.10.29] — 2026-10-26
+
+### Agregado
+- **Pausar una transcripción en curso** (solo en la PC del servidor): botón **Pausar** en el audio que se está
+  transcribiendo, en la lista de informes y en la cola del panel de administración. Whisper se detiene al terminar
+  el tramo actual y conserva lo transcrito; **Reanudar** sigue desde ahí. Mientras tanto los audios que siguen en
+  la cola esperan. Las PC del trabajo ven el estado «en pausa» pero no tienen el botón (el servidor responde 403).
+- Mientras transcribe, la lista muestra por dónde va («Transcribiendo el audio · 1:10 de 3:20»).
+- Título de la ventana del servidor: «transcripción EN PAUSA».
+
+### Cambiado
+- Un caso en pausa se puede borrar (el trabajador lo deja y sigue con el próximo).
+- El reinicio desde el panel no espera a una transcripción en pausa: ese audio queda «sin procesar» y lo demás
+  de la cola se retoma.
+- El tiempo de Whisper de `actividad.csv` y de las estadísticas no cuenta el rato en pausa.
+
 ## [Servidor 2026.10.28] — 2026-10-26
 
 ### Agregado

@@ -60,7 +60,7 @@ def regiones_sospechosas(audio, palabras, gap_min=1.0, palabra_max=1.4, voz_min=
     return out
 
 
-def reparar(modelo, audio, palabras, prompt_base=None, margen=0.3):
+def reparar(modelo, audio, palabras, prompt_base=None, margen=0.3, al_avanzar=None):
     """Re-transcribe las regiones sospechosas y empalma lo recuperado.
     Devuelve (palabras_nuevas, huecos_sin_recuperar)."""
     regiones = regiones_sospechosas(audio, palabras)
@@ -69,6 +69,8 @@ def reparar(modelo, audio, palabras, prompt_base=None, margen=0.3):
     palabras = list(palabras)
     pendientes = []
     for a, b, mot, voz in sorted(regiones, reverse=True):     # de atras para adelante
+        if al_avanzar:           # pausa del servidor (entre tramo y tramo)
+            al_avanzar(a, len(audio) / SR)
         a0, b0 = max(0.0, a - margen), min(len(audio) / SR, b + margen)
         clip = audio[int(a0 * SR): int(b0 * SR)]
         previas = [w["p"] for w in palabras if w["fin"] <= a][-25:]

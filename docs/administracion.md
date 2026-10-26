@@ -59,7 +59,10 @@ configurar la contraseña del panel remoto, abrir el registro o las carpetas (so
   compacto), por un tiempo o hasta quitarlo. Cada PC lo cierra con «Entendido». Vive en memoria: se borra al
   reiniciar. El aviso del reinicio usa el mismo cartel, con la cuenta regresiva.
 - **Cola de procesamiento**: qué se transcribe o genera, cuánto lleva cada etapa, el orden y cuánto falta
-  (estimado con los tiempos de los últimos informes).
+  (estimado con los tiempos de los últimos informes). **Pausar / Reanudar** (solo en la PC del servidor): detiene
+  la transcripción en curso al terminar el tramo actual, conservando lo transcrito; lo que sigue en la cola espera.
+  La parte de la IA (unos segundos) no se puede pausar. Si se reinicia el servidor con una transcripción en pausa,
+  ese audio queda «sin procesar» (botón Procesar en la lista).
 - **Casos abiertos ahora**: qué PC tiene cada caso, desde cuándo y si sigue dando señal. **Liberar** se lo saca:
   la página de esa PC se cierra con un aviso en la próxima renovación (15 s) y sus guardados se rechazan hasta
   que lo vuelva a abrir desde la lista.

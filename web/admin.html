@@ -697,29 +697,37 @@ $('#fMsj').onsubmit = async ev => {
 };
 
 /* ---------- cola */
-const ETQ_COLA = {transcribiendo: 'transcribiendo', generando: 'armando el informe', 'en cola': 'en cola'};
+const ETQ_COLA = {transcribiendo: 'transcribiendo', 'en pausa': 'en pausa', generando: 'armando el informe', 'en cola': 'en cola'};
 function armarCola(e){
   const c = e.cola, it = c.items;
-  $('#colaCuenta').textContent = it.length ? `${plural(it.length, 'audio')} · todo listo en ~${aprox(c.eta_total)}` : '';
+  $('#colaCuenta').textContent = it.length ? `${plural(it.length, 'audio')} · ` + (c.en_pausa ? 'transcripción en pausa' : `todo listo en ~${aprox(c.eta_total)}`) : '';
+  const local = !(e.visor && e.visor.remoto);      // pausar/reanudar: solo en la PC del servidor
+  const conPausa = local && it.some(x => x.puede_pausar || x.estado === 'en pausa' || x.pausa_pedida);
   const pie = `<p class="nota" style="margin:0;padding:10px 16px">${c.pausada ? '<b>En pausa:</b> hay un reinicio en camino; lo que espera se retoma al volver. ' : ''}`
+    + (c.en_pausa ? '<b>Transcripción en pausa:</b> Whisper quedó detenido con lo transcrito hasta ahora y lo que sigue en la cola espera hasta que se reanude. ' : '')
+    + (local && !c.en_pausa && it.some(x => x.puede_pausar) ? '<b>Pausar</b> detiene la transcripción al terminar el tramo actual (unos segundos) y conserva lo transcrito. ' : '')
     + `Estimado con los últimos informes: Whisper tarda ${String(c.tiempos.whisper_x).replace('.', ',')} s por segundo de audio y la IA unos ${Math.round(c.tiempos.ia)} s por informe.`
     + (c.errores ? ` ${plural(c.errores, 'caso')} con error: se reintenta${c.errores === 1 ? '' : 'n'} desde la lista de informes.` : '') + '</p>';
   if(!it.length){
     poner('#cola', `<div class="vacio"><b>No se está procesando nada.</b>Los audios que lleguen aparecen acá, con cuánto lleva cada uno y cuánto falta.</div>` + pie);
     return;
   }
-  let h = '<div class="tabla-env"><table><thead><tr><th scope="col">#</th><th scope="col">Audio</th><th scope="col">Etapa</th><th scope="col" class="num">Lleva</th><th scope="col" class="num">Listo en</th></tr></thead><tbody>';
+  let h = '<div class="tabla-env"><table><thead><tr><th scope="col">#</th><th scope="col">Audio</th><th scope="col">Etapa</th><th scope="col" class="num">Lleva</th><th scope="col" class="num">Listo en</th>'
+    + (conPausa ? '<th scope="col"><span style="position:absolute;left:-9999px">Acciones</span></th>' : '') + '</tr></thead><tbody>';
   it.forEach((x, i) => {
     const activo = x.estado === 'transcribiendo' || x.estado === 'generando';
-    const cls = activo ? 'ahora' : x.espera_ia ? 'espera' : '';
+    const cls = activo ? 'ahora' : x.espera_ia || x.estado === 'en pausa' ? 'espera' : '';
     const etq = x.espera_ia ? 'esperando la IA' : (ETQ_COLA[x.estado] || x.estado);
+    const rean = x.estado === 'en pausa' || x.pausa_pedida;
+    const bot = !conPausa ? '' : `<td style="text-align:right">${x.puede_pausar || rean ? `<button class="chico" data-pausa="${rean ? 'reanudar' : 'pausar'}" data-n="${esc(x.nombre)}">${rean ? (x.pausa_pedida ? 'Cancelar pausa' : 'Reanudar') : 'Pausar'}</button>` : ''}</td>`;
     const det = [x.pc, x.medico || 'sin médico', x.dur ? mmss(x.dur) + ' de audio' : null].filter(Boolean).join(' · ');
     h += `<tr><td class="num">${i + 1}</td><td><span class="nom">${esc(x.paciente || x.titulo)}</span><span class="sec">${esc(det)}</span></td>`
        + `<td><span class="badge-e ${cls}">${activo ? '<span class="spin"></span>' : ''}${etq}</span>${x.msg && !activo ? `<span class="sec">${esc(x.msg)}</span>` : ''}</td>`
        + `<td class="num">${x.etapa_desde != null ? mmss(x.etapa_desde) : '—'}${x.en_cola != null && x.en_cola > (x.etapa_desde || 0) + 5 ? `<span class="sec">llegó ${hace(x.en_cola)}</span>` : ''}</td>`
-       + `<td class="num">${x.espera_ia ? '<span style="color:var(--mu)">cuando vuelva la IA</span>' : '~' + aprox(x.eta)}</td></tr>`;
+       + `<td class="num">${x.espera_ia ? '<span style="color:var(--mu)">cuando vuelva la IA</span>' : x.estado === 'en pausa' || c.en_pausa ? '<span style="color:var(--mu)">al reanudar</span>' : '~' + aprox(x.eta)}</td>${bot}</tr>`;
   });
   poner('#cola', h + '</tbody></table></div>' + pie);
+  document.querySelectorAll('#cola [data-pausa]').forEach(b => b.onclick = () => accion('caso/' + b.dataset.pausa, {nombre: b.dataset.n}, b));
 }
 
 /* ---------- casos abiertos */

@@ -29,6 +29,7 @@ Los casos se identifican con el parámetro o campo `nombre` (validado: sin rutas
 | POST | `/api/borrador` | Autoguardado del borrador |
 | POST | `/api/caso/bloquear` | Toma o renueva el bloqueo del caso (y suma tiempo de revisión `rev`) |
 | POST | `/api/caso/soltar` | Libera el bloqueo |
+| POST | `/api/caso/pausar`, `/api/caso/reanudar` | Pausa o reanuda la transcripción en curso `{nombre}` (solo local; por el túnel, 403) |
 | POST | `/api/caso_medico` | Cambia el médico de un caso |
 | POST | `/api/paciente` | Corrige el nombre del paciente |
 | POST | `/api/finalizar` | Guarda el Word, aprende y registra estadísticas |
@@ -90,4 +91,5 @@ Solo locales (`127.0.0.1` con `Host` local) o con sesión del panel remoto. Los 
 | POST | `/api/admin/reinicio/cancelar`, `/api/admin/reinicio/ya` | Cancela el reinicio o lo hace sin esperar |
 | POST | `/api/admin/mensaje`, `/api/admin/mensaje/quitar` | Cartel en las PC `{texto, minutos, tipo: aviso\|info}` |
 | POST | `/api/admin/caso/liberar` | Saca un caso abierto a la PC que lo tiene `{nombre}` |
+| POST | `/api/admin/caso/pausar`, `/api/admin/caso/reanudar` | Pausa o reanuda la transcripción en curso `{nombre}` (solo local) |
 | POST | `/api/admin/correcciones/regla` | Agrega un renglón a `reglas_dictado.md` `{texto}` (solo local) |

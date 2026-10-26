@@ -52,7 +52,7 @@ for d in (NUEVOS, DATOS):
     d.mkdir(parents=True, exist_ok=True)
 
 SIMULAR = os.environ.get("SIMULAR_IA") == "1"   # solo para pruebas
-VERSION = "2026.10.28"
+VERSION = "2026.10.29"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
@@ -165,10 +165,19 @@ def poner_estado(nombre, estado, msg=""):
     L.estado(cola=en_proceso())
 
 
-EN_PROCESO = ("en cola", "transcribiendo", "generando")
+EN_PROCESO = ("en cola", "transcribiendo", "en pausa", "generando")
 ENCOLADO = {}         # nombre -> cuándo entró a la cola (para el orden y la espera estimada)
 DURACION = {}         # nombre -> duración del audio en segundos (cache)
 BORRADOS = set()      # casos borrados mientras esperaban en la cola: el trabajador los saltea
+# Pausa de la transcripción (solo desde la PC del servidor). Whisper se detiene entre tramo y tramo y se queda
+# esperando con lo transcrito hasta ese momento; como todo se procesa de a uno, lo que sigue en la cola espera.
+PAUSAS = {}           # nombre -> {"pedida": t, "por": dónde se pidió, "desde": t en que quedó detenida}
+PAUSA_CV = threading.Condition()
+PAUSADO_S = {}        # nombre -> segundos que estuvo en pausa (no cuentan como tiempo de Whisper)
+
+
+class Cancelado(Exception):
+    """El caso se borró mientras estaba en pausa: el trabajador deja de transcribirlo y sigue con el próximo."""
 # Tiempos de referencia para estimar cuánto falta. Arrancan con los de actividad.csv y se ajustan con cada informe.
 TIEMPOS = {"whisper_x": 0.15, "ia": 25.0, "n": 0}
 
@@ -225,6 +234,8 @@ def trabajo_pendiente(n, est, ahora):
         return max(ia - desde, 3)
     if e == "transcribiendo":
         return max(w - desde, 2) + ia
+    if e == "en pausa":
+        return w + ia
     if e == "en cola" and msg.startswith("Esperando a la IA"):
         return ia
     return w + ia
@@ -433,6 +444,9 @@ def listar_casos(pc=LOCAL, remoto=False):
                       "estudios": estudios_de(n) if listo else None, "dur": duracion_de(n),
                       "puede_borrar": not (remoto and (origen_de(n) != pc or pc == LOCAL))
                                       and est["estado"] not in ("transcribiendo", "generando"),
+                      "puede_pausar": not remoto and est["estado"] == "transcribiendo" and n not in PAUSAS,
+                      "puede_reanudar": not remoto and (est["estado"] == "en pausa" or n in PAUSAS),
+                      "pausa_pedida": n in PAUSAS and est["estado"] != "en pausa",
                       "fecha": (a.stat().st_mtime if a else (DATOS / f"{n}.informe_ia.txt").stat().st_mtime)})
     casos.sort(key=lambda c: c["fecha"], reverse=True)
     return casos
@@ -563,32 +577,45 @@ def trabajador():
                     continue
                 t0 = time.time()
                 recuperadas = 0
-                if SIMULAR:
-                    of = DATOS / f"{n}.original.txt"
-                    fuente = Path(of.read_text(encoding="utf-8").strip()).stem if of.exists() else n
-                    trans[n] = json.loads((AQUI / "resultados" / "fase1" / "json" / f"{fuente}.json")
-                                          .read_text(encoding="utf-8"))["con_vocab"]
-                    trans[n]["huecos"] = json.loads(os.environ.get("SIMULAR_HUECOS", "[]"))
-                    time.sleep(float(os.environ.get("SIMULAR_DEMORA", "0")))
-                else:
-                    if whisper is None:
-                        from fase1_transcribir import cargar_modelo
-                        poner_estado(n, "transcribiendo", "Cargando Whisper…")
-                        L.info("WHISPER", f"Cargando Whisper {CFG['modelo_whisper']} " + ("en la placa de video…" if CFG.get("dispositivo_whisper", "cuda") == "cuda" else "en el procesador (más lento)…"))
-                        tc = time.time()
-                        with contextlib.redirect_stdout(L.SalidaAlRegistro("WHISPER")):
-                            whisper = cargar_modelo(CFG["modelo_whisper"], CFG.get("dispositivo_whisper", "cuda"))
-                        L.ok("WHISPER", f"Whisper cargado en {L.seg(time.time() - tc)}.")
-                        poner_estado(n, "transcribiendo", "Transcribiendo el audio…")
-                        t0 = time.time()
-                    from fase1_transcribir import transcribir, leer_vocabulario, cargar_audio, VOCAB_DEF
-                    import huecos as H
-                    prompt = leer_vocabulario(VOCAB_DEF)
-                    t = transcribir(whisper, a, prompt)
-                    poner_estado(n, "transcribiendo", "Revisando partes que Whisper pudo saltear…")
-                    pal, pend = H.reparar(whisper, cargar_audio(a), t["palabras"], prompt)
-                    recuperadas = max(0, len(pal) - len(t["palabras"]))
-                    trans[n] = {"texto": H.texto_de(pal), "palabras": pal, "huecos": pend}
+                PAUSADO_S[n] = 0
+                try:
+                    if SIMULAR:
+                        of = DATOS / f"{n}.original.txt"
+                        fuente = Path(of.read_text(encoding="utf-8").strip()).stem if of.exists() else n
+                        trans[n] = json.loads((AQUI / "resultados" / "fase1" / "json" / f"{fuente}.json")
+                                              .read_text(encoding="utf-8"))["con_vocab"]
+                        trans[n]["huecos"] = json.loads(os.environ.get("SIMULAR_HUECOS", "[]"))
+                        dem, paso = float(os.environ.get("SIMULAR_DEMORA", "0")), 0.25
+                        for k in range(int(dem / paso)):      # tramos simulados (para probar la pausa)
+                            time.sleep(paso)
+                            avance(n, "Transcribiendo el audio")((k + 1) * paso * 10, dem * 10)
+                    else:
+                        if whisper is None:
+                            from fase1_transcribir import cargar_modelo
+                            poner_estado(n, "transcribiendo", "Cargando Whisper…")
+                            L.info("WHISPER", f"Cargando Whisper {CFG['modelo_whisper']} " + ("en la placa de video…" if CFG.get("dispositivo_whisper", "cuda") == "cuda" else "en el procesador (más lento)…"))
+                            tc = time.time()
+                            with contextlib.redirect_stdout(L.SalidaAlRegistro("WHISPER")):
+                                whisper = cargar_modelo(CFG["modelo_whisper"], CFG.get("dispositivo_whisper", "cuda"))
+                            L.ok("WHISPER", f"Whisper cargado en {L.seg(time.time() - tc)}.")
+                            poner_estado(n, "transcribiendo", "Transcribiendo el audio…")
+                            t0 = time.time()
+                        from fase1_transcribir import transcribir, leer_vocabulario, cargar_audio, VOCAB_DEF
+                        import huecos as H
+                        prompt = leer_vocabulario(VOCAB_DEF)
+                        punto_de_pausa(n)           # se pidió la pausa mientras se cargaba Whisper
+                        t = transcribir(whisper, a, prompt, al_avanzar=avance(n, "Transcribiendo el audio"))
+                        poner_estado(n, "transcribiendo", "Revisando partes que Whisper pudo saltear…")
+                        pal, pend = H.reparar(whisper, cargar_audio(a), t["palabras"], prompt,
+                                              al_avanzar=avance(n, "Revisando partes que Whisper pudo saltear"))
+                        recuperadas = max(0, len(pal) - len(t["palabras"]))
+                        trans[n] = {"texto": H.texto_de(pal), "palabras": pal, "huecos": pend}
+                    punto_de_pausa(n)           # una pausa pedida justo al final se cumple acá
+                except Cancelado:
+                    PAUSADO_S.pop(n, None)
+                    trans.pop(n, None)
+                    L.info("WHISPER", f"Se dejó de transcribir {visible(n)}: se borró mientras estaba en pausa.")
+                    continue
                 (DATOS / f"{n}.json").write_text(json.dumps(trans[n], ensure_ascii=False, indent=1), encoding="utf-8")
                 (DATOS / f"{n}.dictado.txt").write_text(trans[n]["texto"], encoding="utf-8")
                 PAC.calcular(DATOS, n, forzar=True)      # nombre del paciente para la lista (no va al informe)
@@ -596,7 +623,8 @@ def trabajador():
                 dur = duracion_wav(ruta=a)
                 if dur is None and trans[n]["palabras"]:
                     dur = trans[n]["palabras"][-1].get("fin")
-                info[n] = {"dur": dur, "whisper": time.time() - t0, "palabras": len(trans[n]["palabras"])}
+                info[n] = {"dur": dur, "whisper": time.time() - t0 - PAUSADO_S.pop(n, 0),
+                           "palabras": len(trans[n]["palabras"])}
                 partes = [f"audio {L.mmss(dur)}" if dur else None, L.plural(info[n]["palabras"], "palabra")]
                 if recuperadas:
                     partes.append(f"la segunda pasada recuperó {L.plural(recuperadas, 'palabra')}")
@@ -703,6 +731,109 @@ def esperar_ia(n, lote):
         time.sleep(5)
 
 
+def avance(n, texto):
+    """Función que Whisper llama después de cada tramo: muestra por dónde va y hace de punto de pausa."""
+    def f(pos=None, total=None):
+        if pos is not None and total and n not in PAUSAS:
+            with LOCK:
+                e = ESTADO.get(n)
+                if e and e.get("estado") == "transcribiendo":
+                    e.update(msg=f"{texto} · {mmss(min(pos, total))} de {mmss(total)}", pos=pos, total=total)
+        punto_de_pausa(n, pos, total)
+    return f
+
+
+def punto_de_pausa(n, pos=None, total=None):
+    """Si se pidió pausar este caso, el trabajador se queda acá (Whisper conserva lo transcrito) hasta que se
+    reanude. Si mientras tanto se borra el caso, corta con Cancelado."""
+    with PAUSA_CV:
+        p = PAUSAS.get(n)
+        if p:
+            p["desde"] = time.time()
+    if not p:
+        return
+    t0 = time.time()
+    with LOCK:
+        prev = dict(ESTADO.get(n, {}))
+        pos = pos if pos is not None else prev.get("pos")
+        total = total or prev.get("total")
+        donde = f"iba por {mmss(min(pos, total))} de {mmss(total)}" if pos is not None and total else ""
+        ESTADO[n] = {"estado": "en pausa", "msg": "En pausa" + (f" · {donde}" if donde else ""), "t": t0,
+                     "pos": pos, "total": total, "por": p.get("por")}
+    TRABAJO["en_pausa"] = n
+    L.estado(cola=en_proceso(), pausa=1)
+    espera = sum(1 for x in cola_pendiente() if x != n)
+    L.info("WHISPER", f"{visible(n)} en pausa" + (f" ({donde})" if donde else "") + ". Whisper queda detenido con lo "
+                      f"transcrito hasta ahora" + (f"; {L.plural(espera, 'audio')} de la cola espera" + ("" if espera == 1 else "n")
+                                                   if espera else "") + " hasta que se reanude.")
+    with PAUSA_CV:
+        while n in PAUSAS:
+            PAUSA_CV.wait(1.0)
+    seg_ = time.time() - t0
+    PAUSADO_S[n] = PAUSADO_S.get(n, 0) + seg_
+    TRABAJO["en_pausa"] = None
+    L.estado(pausa=0)
+    if n in BORRADOS:
+        raise Cancelado()
+    msg = prev.get("msg") or ""
+    with LOCK:
+        ESTADO[n] = {"estado": "transcribiendo", "msg": "Transcribiendo el audio…" if msg.startswith("Pausando") else msg,
+                     "t": prev.get("t", t0) + seg_, "pos": pos, "total": total}
+    L.estado(cola=en_proceso())
+    L.ok("WHISPER", f"{visible(n)} reanudado desde {p.get('reanudo') or 'la PC del servidor'} después de "
+                    f"{L.seg(seg_)} en pausa: sigue desde donde quedó.")
+
+
+def pausar(n, desde):
+    """Pide la pausa de la transcripción en curso. Devuelve (respuesta, código)."""
+    with LOCK:
+        e = ESTADO.get(n, {}).get("estado")
+    if e == "en pausa" or n in PAUSAS:
+        return {"error": "Ya está en pausa."}, 409
+    if e == "generando":
+        return {"error": "Ya se transcribió y la IA está armando el informe: termina en unos segundos y esa parte "
+                         "no se puede pausar."}, 409
+    if e == "en cola":
+        return {"error": "Todavía no se está transcribiendo: la pausa es para la transcripción en curso."}, 409
+    if e != "transcribiendo":
+        return {"error": "Ese audio no se está transcribiendo."}, 409
+    with PAUSA_CV:
+        PAUSAS[n] = {"pedida": time.time(), "por": desde}
+    with LOCK:
+        if ESTADO.get(n, {}).get("estado") == "transcribiendo":
+            ESTADO[n]["msg"] = "Pausando… (termina el tramo que está transcribiendo)"
+    L.info("WHISPER", f"Pausa de {visible(n)} pedida desde {desde}: se detiene al terminar el tramo que está "
+                      f"transcribiendo.")
+    return {"ok": True, "msg": "Pausando: se detiene en unos segundos, al terminar el tramo que está transcribiendo. "
+                               "Lo ya transcrito se conserva."}, 200
+
+
+def reanudar(n, desde):
+    with PAUSA_CV:
+        p = PAUSAS.pop(n, None)
+        if p:
+            p["reanudo"] = desde      # el trabajador lo dice en el registro al seguir
+        PAUSA_CV.notify_all()
+    if not p:
+        return {"error": "Ese audio no está en pausa."}, 409
+    if not p.get("desde"):        # todavía no se había detenido: se cancela el pedido
+        with LOCK:
+            e = ESTADO.get(n)
+            if e and e.get("estado") == "transcribiendo" and (e.get("msg") or "").startswith("Pausando"):
+                e["msg"] = "Transcribiendo el audio…"
+        L.info("WHISPER", f"Pausa de {visible(n)} cancelada desde {desde} antes de que se detuviera.")
+        return {"ok": True, "msg": "Pausa cancelada: sigue transcribiendo."}, 200
+    return {"ok": True, "msg": "Reanudado: sigue transcribiendo desde donde quedó."}, 200
+
+
+def origen_local(h):
+    """Para los botones solo locales (pausa): que el pedido no venga de una página de otro sitio."""
+    o = (h.headers.get("Origin") or "").lower()
+    if o and o not in (f"http://127.0.0.1:{PUERTO}", f"http://localhost:{PUERTO}"):
+        return False
+    return h.headers.get("Sec-Fetch-Site") in (None, "same-origin", "none")
+
+
 def encolar(nombre):
     with LOCK:
         BORRADOS.discard(nombre)
@@ -728,9 +859,11 @@ def cola_en_vivo():
                       "medico": medico_de(n), "estado": e.get("estado"), "msg": msg,
                       "etapa_desde": s_.get("desde"), "adelante": s_.get("adelante"), "eta": s_.get("eta"),
                       "en_cola": round(ahora - ENCOLADO[n]) if n in ENCOLADO else None, "dur": duracion_de(n),
-                      "espera_ia": e.get("estado") == "en cola" and msg.startswith("Esperando a la IA (")})
+                      "espera_ia": e.get("estado") == "en cola" and msg.startswith("Esperando a la IA ("),
+                      "puede_pausar": e.get("estado") == "transcribiendo" and n not in PAUSAS,
+                      "pausa_pedida": n in PAUSAS and e.get("estado") != "en pausa"})
     return {"items": items, "eta_total": max((i["eta"] or 0 for i in items), default=0), "errores": errores,
-            "pausada": bool(REINICIO.get("detener")),
+            "pausada": bool(REINICIO.get("detener")), "en_pausa": bool(TRABAJO.get("en_pausa")),
             "tiempos": {"whisper_x": round(TIEMPOS["whisper_x"], 3), "ia": round(TIEMPOS["ia"], 1), "n": TIEMPOS["n"]}}
 
 
@@ -749,7 +882,7 @@ def casos_abiertos():
 
 # ------------------------------------------------- mensajes a las PC y reinicio desde el panel
 SRV = {"http": None, "salida": 0}
-TRABAJO = {"ocupado": False, "esperando_ia": False, "desde": None}
+TRABAJO = {"ocupado": False, "esperando_ia": False, "desde": None, "en_pausa": None}
 REINICIO = {}       # reinicio programado desde el panel: id, cuando, estado (programado|esperando|reiniciando)...
 MENSAJE = {}        # cartel en la pantalla de todas las PC: id, texto, tipo, desde, hasta, por, reinicio
 COLA_AL_REINICIAR = INFORMES / "revision" / "cola_al_reiniciar.json"
@@ -892,7 +1025,7 @@ def _hilo_reinicio(rid):
             if time.time() < REINICIO["cuando"]:
                 continue
             REINICIO["detener"] = True       # el trabajador no empieza nada nuevo
-            ocupado = TRABAJO["ocupado"] and not TRABAJO["esperando_ia"]
+            ocupado = TRABAJO["ocupado"] and not TRABAJO["esperando_ia"] and not TRABAJO.get("en_pausa")
             if ocupado and not REINICIO.get("forzar"):
                 REINICIO["estado"] = "esperando"
                 if not avisado:
@@ -910,6 +1043,10 @@ def _reiniciar_ahora():
     por = REINICIO.get("por") or LOCAL
     FIN_LOCK.acquire(timeout=60)             # que no quede un «Guardar Word» a medias (no se suelta: se cierra)
     pend = cola_pendiente()
+    pausados = [n for n in pend if ESTADO.get(n, {}).get("estado") == "en pausa"]
+    pend = [n for n in pend if n not in pausados]
+    for n in pausados:
+        L.aviso("SERVIDOR", f"{visible(n)} estaba en pausa: queda sin procesar (botón Procesar en la lista cuando quieras).")
     try:
         COLA_AL_REINICIAR.write_text(json.dumps({"t": time.time(), "nombres": pend}, ensure_ascii=False),
                                      encoding="utf-8")
@@ -1049,6 +1186,9 @@ def borrar_caso(n, quien=LOCAL, remoto=False):
     R.BLOQUEOS.pop(n, None)
     with LOCK:
         ESTADO.pop(n, None)
+    with PAUSA_CV:          # si estaba en pausa, el trabajador se despierta, ve que se borró y sigue con otro
+        PAUSAS.pop(n, None)
+        PAUSA_CV.notify_all()
     for d in (ENCOLADO, DURACION, _ESTUDIOS):
         d.pop(n, None)
     L.estado(cola=en_proceso())
@@ -1318,7 +1458,8 @@ class H(BaseHTTPRequestHandler):
             ok = ia_lista()
             self._json({"casos": listar_casos(self.pc, self.remoto), "ollama": ok, "pc": self.pc,
                         "ia_estado": "caida" if not ok else ("sin_modelo" if E_IA["e"] == "sin_modelo" else "ok"),
-                        "modelo": CFG["modelo_ia"], "mensaje": mensaje_para_pcs()})
+                        "modelo": CFG["modelo_ia"], "mensaje": mensaje_para_pcs(),
+                        "pausa": bool(TRABAJO.get("en_pausa"))})
         elif u.path == "/api/formato":
             self._json({"palabras_titulo": sorted(N.PALABRAS_ESTUDIO),
                         "negrita_titulos": CFG.get("negrita_titulos", True),
@@ -1567,6 +1708,18 @@ class H(BaseHTTPRequestHandler):
             n = datos.get("nombre", "")
             if not self._nombre_valido(n):
                 return self._json({"error": "nombre inválido"}, 400)
+            if u.path in ("/api/caso/pausar", "/api/caso/reanudar"):
+                accion = "pausar" if u.path.endswith("/pausar") else "reanudar"
+                if self.remoto:
+                    if L.una_vez(("pausa_remota", self.pc), 600):
+                        L.aviso("ACCESO", f"{self.pc} intentó {accion} la transcripción de {visible(n)}: solo se "
+                                          f"puede desde la PC del servidor.")
+                    return self._json({"error": "Pausar o reanudar una transcripción solo se puede en la PC del "
+                                                "servidor."}, 403)
+                if not origen_local(self):
+                    return self._json({"error": "Pedido rechazado: no viene de esta página."}, 403)
+                r, code = (pausar if accion == "pausar" else reanudar)(n, "la lista de informes")
+                return self._json(r, code)
             if u.path == "/api/caso/bloquear":
                 previo = R.BLOQUEOS.get(n)
                 # la página que ya lo tenía abierto avisa cada 15 s que sigue ahí (manda el tiempo de revisión)
@@ -1612,6 +1765,8 @@ class H(BaseHTTPRequestHandler):
                                                                        else "vuelto a sacar del dictado") + f" ({self.pc}).")
                 return self._json({"ok": True, "paciente": p})
             if u.path == "/api/procesar":
+                if n in PAUSAS or ESTADO.get(n, {}).get("estado") == "en pausa":
+                    return self._json({"error": "Está en pausa: reanudalo desde la lista."}, 409)
                 L.info("IA", f"{self.pc} pidió volver a generar {visible(n)}.")
                 encolar(n)
                 return self._json({"ok": True})
@@ -1897,6 +2052,11 @@ def accion_admin(accion, d, quien=None):
             return {"error": "No hay ningún mensaje en pantalla."}, 409
         L.info("SERVIDOR", f"Mensaje para las PC quitado {desde}.")
         return {"ok": True, "msg": "Mensaje quitado."}, 200
+    if accion in ("caso/pausar", "caso/reanudar"):
+        n = str(d.get("nombre", ""))
+        if not n or "/" in n or "\\" in n or ".." in n:
+            return {"error": "Caso inválido."}, 400
+        return (pausar if accion == "caso/pausar" else reanudar)(n, "el panel de administración")
     if accion == "caso/liberar":
         n = str(d.get("nombre", ""))
         if not n or "/" in n or "\\" in n or ".." in n:
@@ -1934,7 +2094,7 @@ def _cerradas(n):
 # Lo que desde una PC del trabajo no se puede hacer aunque se tenga la contraseña del panel: abrir carpetas o
 # archivos (se abrirían en la pantalla del servidor) y tocar la contraseña del propio panel o sus sesiones.
 SOLO_EN_EL_SERVIDOR = {"abrir", "contrasena_admin", "contrasena_admin/quitar", "sesiones_admin/cerrar",
-                       "correcciones/regla"}
+                       "correcciones/regla", "caso/pausar", "caso/reanudar"}
 
 PAGINA_PANEL_NO_HABILITADO = """<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Administración · Transcripción</title>

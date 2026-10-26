@@ -84,6 +84,10 @@ body.redimensionando iframe,body.redimensionando #editor,body.redimensionando #d
 .badge.revisado{border-color:var(--ok);color:var(--ok);background:var(--ok-suave)}
 .badge.trabajando{border-color:var(--turq);color:var(--turq)}
 .badge.error{border-color:var(--err);color:var(--err)}
+.badge.pausa{border-color:var(--aviso);color:var(--aviso);font-weight:600}
+#casos .bpausa{display:inline-flex;align-items:center;gap:5px}
+#casos .bpausa svg,.vac-bot .bpausa svg{width:12px;height:12px;display:block}
+.vac-bot .bpausa{display:inline-flex;align-items:center;gap:6px}
 @keyframes gira{to{transform:rotate(360deg)}}
 .spin{display:inline-block;width:10px;height:10px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:gira .8s linear infinite;vertical-align:-1px;margin-right:4px}
 /* ---------- principal */
@@ -805,7 +809,26 @@ function toast(msg, botones=[], ms=4500){
 
 /* ------------------------------------------------ lista */
 const TACHO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
-const ETIQ = {nuevo:'nuevo', 'en cola':'en cola', transcribiendo:'transcribiendo', generando:'generando', listo:'para revisar', revisado:'revisado', error:'error'};
+const ETIQ = {nuevo:'nuevo', 'en cola':'en cola', transcribiendo:'transcribiendo', 'en pausa':'en pausa', generando:'generando', listo:'para revisar', revisado:'revisado', error:'error'};
+/* pausa de la transcripción: solo en la PC del servidor (el servidor manda puede_pausar / puede_reanudar) */
+const ICO_PAUSA = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4.2" height="15" rx="1.2"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.2"/></svg>';
+const ICO_SEGUIR = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.6-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8z"/></svg>';
+function botonPausa(c){         // "Pausar" / "Reanudar" / "Cancelar pausa" (null si no corresponde)
+  if(!c.puede_pausar && !c.puede_reanudar) return null;
+  const rean = !!c.puede_reanudar, b = document.createElement('button');
+  b.type = 'button'; b.className = 'chico bpausa';
+  b.innerHTML = (rean ? ICO_SEGUIR : ICO_PAUSA) + (rean ? (c.pausa_pedida ? 'Cancelar pausa' : 'Reanudar') : 'Pausar');
+  b.title = rean ? (c.pausa_pedida ? 'Todavía no se detuvo: sigue transcribiendo como si nada.' : 'Sigue transcribiendo desde donde quedó.')
+                 : 'Detiene la transcripción al terminar el tramo que está transcribiendo (unos segundos). Lo transcrito se conserva y los audios que siguen en la cola esperan hasta que la reanudes.';
+  b.onclick = ev => { ev.stopPropagation(); pausarCaso(c.nombre, !rean, b); };
+  return b;
+}
+async function pausarCaso(n, pausar, boton){
+  if(boton) boton.disabled = true;
+  try { const r = await api(pausar ? '/api/caso/pausar' : '/api/caso/reanudar', {nombre: n}); if(r.msg) toast(r.msg, [], 5000); }
+  catch(e){ toast(e instanceof SinConexion ? 'Sin conexión con el servidor.' : e.message); }
+  cargarLista();
+}
 /* PC desde la que se usa la página: "Servidor" en esta PC, info-01... por el túnel */
 let MI = {pc:'Servidor', remoto:false, medico:''};
 let filtro = (()=>{ try { return localStorage.getItem('filtroCasos') || ''; } catch(e){ return ''; } })();
@@ -821,15 +844,16 @@ async function cargarMiPc(){
 }
 /* ------------------------------------------------ estado del servidor y de la IA */
 let SRV = {ok: null, desde: Date.now(), ultimoOk: 0, ia: 'ok', modelo: ''}, abriendo = null;
-const EN_PROC = ['en cola','transcribiendo','generando'];
+const EN_PROC = ['en cola','transcribiendo','en pausa','generando'];
 function minutos(s){ if(s == null) return ''; if(s < 45) return 'menos de 1 min'; const m = Math.round(s/60); return m < 60 ? `~${m} min` : `~${Math.floor(m/60)} h ${m%60} min`; }
 function haceCuanto(ms){ const s = Math.round(ms/1000); return s < 60 ? `${s} s` : s < 3600 ? `${Math.round(s/60)} min` : `${Math.floor(s/3600)} h`; }
 const esperaIA = c => c.estado==='en cola' && (c.msg||'').startsWith('Esperando a la IA') && SRV.ia !== 'ok';
 function textoEspera(c){        // "Transcribiendo… · listo en ~2 min" / "En cola · 1 audio antes · listo en ~3 min"
   if(esperaIA(c)) return 'Transcrito · espera a que la IA esté lista';
+  if(c.estado==='en pausa') return (c.msg || 'En pausa') + (MI.remoto ? ' · la pausaron en la PC del servidor' : ' · sigue cuando la reanudes');
   const e = c.espera, partes = [c.msg ? c.msg.replace(/…$/, '') : ETIQ[c.estado]];
   if(e && e.adelante && c.estado==='en cola') partes.push(e.adelante + (e.adelante===1 ? ' audio antes' : ' audios antes'));
-  if(e && SRV.ia === 'ok') partes.push('listo en ' + minutos(e.eta));
+  if(e && SRV.ia === 'ok') partes.push(SRV.pausa ? 'espera: hay una transcripción en pausa' : 'listo en ' + minutos(e.eta));
   return partes.join(' · ');
 }
 function ponerEstadoSrv(){
@@ -871,7 +895,7 @@ async function cargarLista(){
     if(SRV.reinicio && Date.now() - SRV.reinicio > 180000) SRV.reinicio = 0;
     $('#msjAdmin').hidden = true; ponerEstadoSrv(); armarVacio(null); return; }
   if(SRV.reinicio) toast('El servidor ya se reinició: todo sigue normal.', [], 6000);
-  SRV = {...SRV, ok: true, ultimoOk: Date.now(), ia: j.ia_estado || (j.ollama ? 'ok' : 'caida'), modelo: j.modelo || '', reinicio: 0};
+  SRV = {...SRV, ok: true, ultimoOk: Date.now(), ia: j.ia_estado || (j.ollama ? 'ok' : 'caida'), modelo: j.modelo || '', reinicio: 0, pausa: !!j.pausa};
   ponerMensaje(j.mensaje || null);
   ponerEstadoSrv();
   if(enEspera.length) enviarEnEspera();
@@ -899,7 +923,7 @@ async function cargarLista(){
     const li = document.createElement('li'); li.dataset.n = c.nombre;
     if(c.nombre === actual) li.classList.add('sel');
     const trab = EN_PROC.includes(c.estado);
-    const cls = trab ? 'trabajando' : c.estado;
+    const cls = c.estado==='en pausa' ? 'pausa' : trab ? 'trabajando' : c.estado;
     let det = trab ? textoEspera(c) : (c.msg || '');
     if(c.estado==='error'){ const m = c.msg || 'error desconocido'; det = 'No se pudo procesar: ' + (m.length > 110 ? m.slice(0, 107) + '…' : m); }
     if(c.estado==='listo' && c.marcas!=null){
@@ -914,13 +938,15 @@ async function cargarLista(){
     const etiq = c.nombre === abriendo ? 'abriendo' : esperaIA(c) ? 'esperando IA' : (ETIQ[c.estado]||c.estado);
     if(c.nombre === abriendo) li.classList.add('abriendo');
     const audio = c.titulo || c.nombre;
-    li.innerHTML = `<span class="n" title="${esc(c.paciente ? c.paciente + ' · audio ' + audio : 'Audio ' + audio + (c.estado==='nuevo' || trab ? '' : ' · no se encontró el nombre del paciente en el dictado'))}">${c.paciente ? esc(c.paciente) : '<span class="sinnom">' + esc(audio) + '</span>'}</span><span class="der">${c.puede_borrar && !c.bloqueado_por && c.nombre!==abriendo ? `<button type="button" class="borrar" title="Borrar este informe" aria-label="Borrar este informe">${TACHO}</button>` : ''}<span class="badge ${cls}">${trab && !esperaIA(c) || c.nombre===abriendo ?'<span class="spin"></span>':''}${etiq}</span></span>${lineaEstudio(c)}<span class="e">${esc(det)}</span>` + htmlAvisos(c);
+    li.innerHTML = `<span class="n" title="${esc(c.paciente ? c.paciente + ' · audio ' + audio : 'Audio ' + audio + (c.estado==='nuevo' || trab ? '' : ' · no se encontró el nombre del paciente en el dictado'))}">${c.paciente ? esc(c.paciente) : '<span class="sinnom">' + esc(audio) + '</span>'}</span><span class="der">${c.puede_borrar && !c.bloqueado_por && c.nombre!==abriendo ? `<button type="button" class="borrar" title="Borrar este informe" aria-label="Borrar este informe">${TACHO}</button>` : ''}<span class="badge ${cls}">${trab && !esperaIA(c) && c.estado!=='en pausa' || c.nombre===abriendo ?'<span class="spin"></span>':''}${etiq}</span></span>${lineaEstudio(c)}<span class="e">${esc(det)}</span>` + htmlAvisos(c);
     if(c.estado==='nuevo' || c.estado==='error'){
       const b=document.createElement('button'); b.className='chico'; b.textContent= c.estado==='error'?'Reintentar':'Procesar';
       b.style.gridColumn='1/-1'; b.style.justifySelf='start';
       b.onclick = async ev => { ev.stopPropagation(); await api('/api/procesar',{nombre:c.nombre}); cargarLista(); };
       li.appendChild(b);
     }
+    const bp = botonPausa(c);
+    if(bp){ bp.style.gridColumn='1/-1'; bp.style.justifySelf='start'; li.appendChild(bp); }
     const bb = li.querySelector('.borrar');
     if(bb) bb.onclick = ev => { ev.stopPropagation(); borrarCasos([c]); };
     li.onclick = () => {
@@ -976,9 +1002,9 @@ const hhmm = t => { const d = new Date(t*1000); return String(d.getHours()).padS
 const nombreDe = c => '«' + esc(c.paciente || c.titulo || c.nombre) + '»';
 function etapas(c){           // Transcribir -> Armar el informe -> Para revisar, con la etapa actual resaltada
   const paso = c.estado==='generando' || (c.estado==='en cola' && (c.msg||'').startsWith('Esperando a la IA')) ? 1
-             : c.estado==='transcribiendo' ? 0 : -1;
-  const est = i => i < paso ? 'hecho' : i === paso ? (esperaIA(c) ? 'espera' : 'ahora') : '';
-  const txt = ['Transcribir el audio', 'Armar el informe', 'Para revisar'];
+             : c.estado==='transcribiendo' || c.estado==='en pausa' ? 0 : -1;
+  const est = i => i < paso ? 'hecho' : i === paso ? (esperaIA(c) || c.estado==='en pausa' ? 'espera' : 'ahora') : '';
+  const txt = [c.estado==='en pausa' ? 'Transcripción en pausa' : 'Transcribir el audio', 'Armar el informe', 'Para revisar'];
   return '<div class="etapas">' + txt.map((t, i) => `<span class="${est(i)}">${est(i)==='ahora' ? '<span class="spin"></span>' : est(i)==='hecho' ? '✓ ' : ''}${t}</span>`).join('<i></i>') + '</div>';
 }
 let vacioHtml = '';
@@ -999,7 +1025,8 @@ function armarVacio(lista, todos){
     const listos = lista.filter(c => c.estado==='listo' && !c.bloqueado_por).sort((a, b) => a.fecha - b.fecha);
     const enProc = lista.filter(c => EN_PROC.includes(c.estado)).sort((a, b) => ((a.espera||{}).eta ?? 1e9) - ((b.espera||{}).eta ?? 1e9));
     const errores = lista.filter(c => c.estado==='error'), nuevos = lista.filter(c => c.estado==='nuevo');
-    const prox = enProc[0], proxTxt = prox ? (esperaIA(prox) ? 'cuando la IA esté lista' : (prox.espera ? 'en ' + minutos(prox.espera.eta) : 'en unos minutos')) : '';
+    const prox = enProc[0], proxTxt = prox ? (prox.estado==='en pausa' ? 'cuando se reanude la transcripción (está en pausa)' : esperaIA(prox) ? 'cuando la IA esté lista'
+      : SRV.pausa ? 'cuando se reanude la transcripción en pausa' : (prox.espera ? 'en ' + minutos(prox.espera.eta) : 'en unos minutos')) : '';
     const extra = [];
     if(enProc.length) extra.push(`${enProc.length} ${enProc.length===1 ? 'audio en proceso' : 'audios en proceso'}: el próximo estará listo ${proxTxt}.`);
     if(errores.length) extra.push(`${errores.length} con error (botón <b>Reintentar</b> en la lista).`);
@@ -1020,8 +1047,10 @@ function armarVacio(lista, todos){
         + `<div class="vac-bot"><button class="prim" data-acc="abrir" data-n="${esc(c.nombre)}">Abrir ${nombreDe(c)}</button></div>`
         + (extra.length ? `<p class="vac-nota">${extra.join(' ')}</p>` : ''));
     } else if(enProc.length){
+      const bp = botonPausa(prox);
       h = card('reloj', '', `<h2>${enProc.length===1 ? 'Procesando 1 audio' : `Procesando ${enProc.length} audios`}</h2>`
         + `<p><span class="vac-titulo">${nombreDe(prox)}</span> estará listo ${proxTxt}.</p>` + etapas(prox)
+        + (bp ? `<div class="vac-bot"><button class="bpausa" data-acc="${prox.puede_reanudar ? 'reanudar' : 'pausar'}" data-n="${esc(prox.nombre)}" title="${esc(bp.title)}">${bp.innerHTML}</button></div>` : '')
         + `<p class="vac-nota">No hace falta esperar en esta pantalla: cuando termine aparece en la lista como <b>para revisar</b>.`
         + (errores.length ? ` ${errores.length} con error (botón <b>Reintentar</b> en la lista).` : '') + '</p>');
     } else if(errores.length){
@@ -1048,6 +1077,7 @@ function armarVacio(lista, todos){
     if(acc==='elegir') $('#archivos').click();
     else if(acc==='todas') ponerFiltro('todas');
     else if(acc==='abrir') abrirCaso(b.dataset.n);
+    else if(acc==='pausar' || acc==='reanudar') pausarCaso(b.dataset.n, acc==='pausar', b);
     else {
       b.disabled = true;
       const est = acc==='reintentar' ? 'error' : 'nuevo';

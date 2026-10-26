@@ -445,6 +445,8 @@ def estado(**campos):
         partes.append("IA lista" if d["ia"] else "IA NO DISPONIBLE")
     if d.get("cola"):
         partes.append(f"{d['cola']} en proceso")
+    if d.get("pausa"):
+        partes.append("transcripción EN PAUSA")
     if d.get("tunel"):
         partes.append(f"túnel {d['tunel']}")
     partes.append(f"hoy {HOY['generados']} informes, {HOY['guardados']} guardados")

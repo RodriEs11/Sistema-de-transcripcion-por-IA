@@ -220,7 +220,9 @@ def cargar_audio(ruta, sr=16000):
     return np.ascontiguousarray(x, dtype=np.float32)
 
 
-def transcribir(modelo, ruta_wav, prompt):
+def transcribir(modelo, ruta_wav, prompt, al_avanzar=None):
+    """al_avanzar(pos, total): se llama después de cada tramo (el servidor lo usa para mostrar por dónde va y
+    para la pausa: si la función no vuelve, Whisper queda detenido ahí con lo transcrito hasta ese momento)."""
     segs, info = modelo.transcribe(
         cargar_audio(ruta_wav), language="es", beam_size=5, vad_filter=True,
         word_timestamps=True, condition_on_previous_text=False,
@@ -231,6 +233,8 @@ def transcribir(modelo, ruta_wav, prompt):
         for w in (s.words or []):
             palabras.append({"p": w.word, "ini": round(w.start, 2),
                              "fin": round(w.end, 2), "conf": round(w.probability, 3)})
+        if al_avanzar:
+            al_avanzar(s.end, getattr(info, "duration", None))
     return {"texto": " ".join(textos), "palabras": palabras}
 
 

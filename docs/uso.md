@@ -55,6 +55,9 @@ junto con el tramo del dictado correspondiente.
 - **Paneles ajustables**: arrastrar los divisores; doble clic vuelve al tamaño original.
 - **Autocorrección de Word** (solo en la app del trabajo): los activadores del Normal.dotm (por ejemplo `ECOABD`)
   se expanden con su formato al escribir espacio, Enter o un signo. Ctrl+Z enseguida lo deshace.
+- **Pausar una transcripción** (solo en la PC del servidor): botón **Pausar** debajo del audio que se está
+  transcribiendo. Se detiene en unos segundos y conserva lo transcrito; **Reanudar** sigue desde ahí. Los audios
+  que siguen en la cola esperan hasta que se reanude.
 - **Borrar informes**: tacho en cada caso o "Borrar revisados". Cada PC del trabajo solo borra lo que envió.
 - **Nombre del paciente**: se detecta del inicio del dictado y se puede corregir con el lápiz del título.
   Solo se muestra en la lista; nunca va al informe ni a la IA.
