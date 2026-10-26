@@ -131,6 +131,12 @@ El servidor se versiona por fecha; la app del trabajo, con [versionado semántic
 
 ## App del trabajo
 
+### [1.13] — 2026-10-26
+- La autocorrección de Word encuentra el Normal.dotm con Office en español (`%APPDATA%\Microsoft\Plantillas`) y en
+  otros idiomas (Modelos, Modèles, Vorlagen, Modelli, Sjablonen); como último recurso usa el Normal.dotm más reciente
+  de cualquier carpeta de `%APPDATA%\Microsoft`. Antes solo miraba `Templates` y la carpeta del registro (USER-DOTS),
+  que Word anota solo si se cambió a mano.
+
 ### [1.12] — 2026-10-26
 - Acepta direcciones de Microsoft Dev Tunnels (`*.devtunnels.ms`) publicadas en el canal de avisos, además de las de
   Cloudflare; ya no acepta `api.trycloudflare.com`.

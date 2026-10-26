@@ -24,7 +24,8 @@ namespace Transcripcion
         public static string Error = "";          // por qué no se pudo leer ("" si está bien)
         static string firma = null;               // tamaño + fecha del archivo leído
 
-        // Busca el Normal.dotm: la carpeta de plantillas que Word tenga configurada o la de siempre.
+        // Busca el Normal.dotm: la carpeta de plantillas que Word tenga configurada, la de siempre
+        // (con su nombre en cada idioma: Templates, Plantillas…) o cualquier carpeta de %APPDATA%\\Microsoft.
         public static string Ruta()
         {
             var carpetas = new List<string>();
@@ -40,11 +41,32 @@ namespace Transcripcion
                 }
                 catch { }
             }
-            carpetas.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Templates"));
+            // La carpeta de plantillas tiene el nombre en el idioma de Office ("Plantillas" en español).
+            string ms = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Microsoft");
+            foreach (var n in new[] { "Templates", "Plantillas", "Modelos", "Modèles", "Vorlagen", "Modelli", "Sjablonen" })
+                carpetas.Add(Path.Combine(ms, n));
             foreach (var c in carpetas)
             {
                 try { var r = Path.Combine(c, "Normal.dotm"); if (File.Exists(r)) return r; } catch { }
             }
+            // Último recurso: cualquier carpeta de %APPDATA%\Microsoft que tenga un Normal.dotm (el más reciente).
+            try
+            {
+                string mejor = ""; DateTime fecha = DateTime.MinValue;
+                foreach (var d in Directory.GetDirectories(ms))
+                {
+                    try
+                    {
+                        var r = Path.Combine(d, "Normal.dotm");
+                        if (!File.Exists(r)) continue;
+                        var t = File.GetLastWriteTimeUtc(r);
+                        if (t > fecha) { fecha = t; mejor = r; }
+                    }
+                    catch { }
+                }
+                if (mejor != "") return mejor;
+            }
+            catch { }
             return "";
         }
 
