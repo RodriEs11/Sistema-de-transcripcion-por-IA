@@ -3,6 +3,35 @@
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El servidor se versiona por fecha; la app del trabajo, con [versionado semántico](https://semver.org/lang/es/).
 
+## [Servidor 2026.10.34] — 2026-10-26
+
+### Agregado
+- **Médico reconocido por la voz** (`voces.py`, [docs/voz.md](docs/voz.md)). Después de Whisper se calcula la huella
+  de voz del audio (WeSpeaker ResNet34 en ONNX, en el procesador, 1 a 2 s) y se compara con las muestras de cada
+  médico. **Seguro** → se asigna solo y la IA usa sus estilos, notas y ejemplos. **Dudoso** → se sugiere y la IA
+  usa la plantilla general sin estilos de médico. **Sin reconocer** → sin médico. Con 3 muestras un médico ya se
+  puede reconocer solo.
+- La voz de cada audio queda como **muestra** de su médico al «Guardar Word y aprender» (o al cambiar el médico de
+  un informe ya guardado). Al arrancar se calcula la huella de los casos anteriores y los ya guardados con médico
+  suman su voz.
+- Barra del caso: botón de la voz junto al médico (*por la voz · 82 %*, *¿Pérez? 64 %* con un clic para
+  elegirlo, *voz sin reconocer*, *elegido a mano*). Al cambiar el médico, si la IA usó otro, el aviso ofrece
+  «Regenerar con este médico».
+- Lista: «🎙 Médico» si se reconoció por la voz, «¿Médico?» si es dudoso, «médico sin reconocer».
+- Médicos: cantidad de muestras de voz por médico, lista de muestras con ▶ y «Quitar», y la vista
+  **Agrupar voces** para etiquetar de a grupos los audios sin médico.
+- Estadísticas: sección **Médico reconocido por la voz** (reconocidos solos, acierto, dudosos, sin reconocer,
+  equivocados, por médico).
+- `actividad.csv`: columnas `medico_voz`, `voz_estado`, `voz_puntaje`. Registro: área VOZ.
+- API: `/api/voces`, `/api/voces/muestras`, `/api/voces/agrupar`, `/api/voces/etiquetar`, `/api/voces/quitar`;
+  `voz` en `/api/casos`, `/api/caso` y `/api/caso_medico` (+ `regenerar`); `voz` (muestras) en `/api/medicos`.
+- `configuracion.json` → `voces` (opcional) para ajustar los umbrales.
+
+### Cambiado
+- «Médico de los audios que subas»: la opción vacía ahora se llama **Automático (por la voz)**.
+- `nucleo.armar_mensajes(..., sin_estilos=True)` no manda las variantes «(estilo X)» de otros médicos.
+- El modelo de voz (`modelos/`) y las huellas (`voces/`) no se suben al repositorio.
+
 ## [Servidor 2026.10.33] — 2026-10-26
 
 ### Arreglado

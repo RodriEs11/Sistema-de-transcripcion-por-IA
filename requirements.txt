@@ -3,3 +3,6 @@ av<16
 nvidia-cublas-cu12
 nvidia-cudnn-cu12==9.*
 python-docx>=1.1
+# reconocimiento del médico por la voz (ya lo instala faster-whisper)
+onnxruntime
+numpy

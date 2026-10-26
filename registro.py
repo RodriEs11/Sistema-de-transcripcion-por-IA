@@ -43,7 +43,7 @@ COL_NIVEL = {logging.DEBUG: "2", logging.INFO: "36", OK: "1;32", logging.WARNING
              logging.ERROR: "1;97;41", logging.CRITICAL: "1;97;41"}
 COL_AREA = {"AUDIO": "94", "WHISPER": "95", "IA": "96", "INFORME": "92", "ACCESO": "93",
             "CASO": "37", "TÚNEL": "34", "CONFIG": "37", "SERVIDOR": "97",
-            "APP": "35"}
+            "APP": "35", "VOZ": "36"}
 DIAS = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
 ANCHO_AREA = 8
 _COLOR = False
@@ -492,7 +492,8 @@ def contar(clave, n=1):
 COLUMNAS = ["fecha", "hora", "evento", "caso", "audio_original", "pc", "medico", "estudios", "duracion_audio_s",
             "whisper_s", "ia_s", "palabras_dictado", "marcas_rojas", "marcas_amarillas", "marcas_turquesa",
             "marcas_grises", "datos_faltantes", "partes_no_transcritas", "estudios_sin_plantilla",
-            "porcentaje_corregido", "palabras_informe", "revision_s", "detalle"]
+            "porcentaje_corregido", "palabras_informe", "revision_s", "medico_voz", "voz_estado", "voz_puntaje",
+            "detalle"]
 _COLUMNAS_OK = {"ok": False}      # ya se comprobó que el archivo tiene estas columnas
 
 

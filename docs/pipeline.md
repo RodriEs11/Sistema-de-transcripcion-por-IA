@@ -52,7 +52,9 @@ mezclan con radiografías o ecografías. Si no se reconoce el estudio, se envía
 ### Plantillas por médico
 
 Una sección llamada `## ESTUDIO (estilo Apellido)` reemplaza a la general cuando el médico elegido es *Apellido*.
-Sin médico elegido, se envían marcadas como *variante de otro médico*.
+Sin médico elegido, se envían marcadas como *variante de otro médico*; si el audio tiene huella de voz y el médico no
+se reconoció con seguridad (voz dudosa o sin reconocer), no se envían: solo la plantilla general. El médico se
+reconoce por la voz antes de llamar a la IA: ver [voz.md](voz.md).
 
 ### Selección de ejemplos (*few-shot*)
 

@@ -7,6 +7,7 @@
 | [linux.md](linux.md) | Instalación | Servidor en Linux: scripts, servicio y diferencias con Windows |
 | [uso.md](uso.md) | Usuarios | Flujo de revisión, atajos y marcas |
 | [pipeline.md](pipeline.md) | Desarrollo | Whisper, prompt, controles, aprendizaje y evaluación |
+| [voz.md](voz.md) | Usuarios / Desarrollo | Médico reconocido por la voz: cómo funciona, pantallas, ajustes y API |
 | [configuracion.md](configuracion.md) | Administración | `configuracion.json`, plantillas, reglas, médicos, vocabulario |
 | [acceso-remoto.md](acceso-remoto.md) | Administración / Desarrollo | Túnel, autenticación, app del trabajo y actualizaciones |
 | [compilacion.md](compilacion.md) | Desarrollo | Compilar, verificar y publicar la app de Windows |

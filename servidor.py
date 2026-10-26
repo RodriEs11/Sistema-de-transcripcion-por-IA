@@ -34,6 +34,7 @@ import paciente as PAC
 import plataforma as P
 import registro as L
 import remoto as R
+import voces as VOZ
 from informe import config, escribir_docx, parrafos_docx, pagina, aplicar_formato, texto_parrafo, EXT_AUDIO
 
 try:
@@ -55,7 +56,7 @@ for d in (NUEVOS, DATOS):
     d.mkdir(parents=True, exist_ok=True)
 
 SIMULAR = os.environ.get("SIMULAR_IA") == "1"   # solo para pruebas
-VERSION = "2026.10.33"
+VERSION = "2026.10.34"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
@@ -382,6 +383,239 @@ def medico_de(n):
     return f.read_text(encoding="utf-8").strip() if f.exists() else ""
 
 
+# ------------------------------------------------- médico reconocido por la voz (voces.py)
+# <caso>.voz.json = {"h": huella, "seg": segundos de voz, "det": resultado de la detección, "medico_por": quién
+# puso el médico del caso ("voz" = se reconoció solo, "usuaria" = se eligió al revisar, "pc" = el médico elegido
+# para los audios de esa PC, "" = sin médico), "medico_ia": con qué médico armó el informe la IA}.
+# La muestra de voz de un médico se guarda en voces/huellas.json recién cuando se guarda el informe con ese médico
+# (o cuando se etiqueta a mano desde «Agrupar voces»).
+VOZ_CACHE = {}
+VOZ_LOCK = threading.Lock()
+
+
+def voz_de(n):
+    try:
+        return json.loads((DATOS / f"{n}.voz.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def guardar_voz(n, v):
+    f = DATOS / f"{n}.voz.json"
+    tmp = f.with_name(f.name + ".nuevo")
+    tmp.write_text(json.dumps(v, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    os.replace(tmp, f)
+    VOZ_CACHE.pop(n, None)
+
+
+def anotar_voz(n, **campos):
+    """Cambia campos de <caso>.voz.json (si existe)."""
+    with VOZ_LOCK:
+        v = voz_de(n)
+        if v is not None:
+            v.update(campos)
+            guardar_voz(n, v)
+
+
+def pct_voz(p):
+    return f"{round((p or 0) * 100)} %"
+
+
+def resumen_voz(n):
+    """Lo que la lista y la barra del caso muestran del reconocimiento de voz (sin la huella)."""
+    f = DATOS / f"{n}.voz.json"
+    try:
+        mt = f.stat().st_mtime_ns
+    except OSError:
+        return None
+    c = VOZ_CACHE.get(n)
+    if not c or c[0] != mt:
+        v = voz_de(n)
+        if not v:
+            return None
+        d = v.get("det") or {}
+        c = (mt, {"estado": d.get("estado"), "medico": d.get("medico"), "puntaje": d.get("puntaje"),
+                  "segundo": d.get("segundo"), "puntaje2": d.get("puntaje2"), "motivo": d.get("motivo"),
+                  "muestras": d.get("muestras"), "seg": v.get("seg"), "por": v.get("medico_por") or "",
+                  "medico_ia": v.get("medico_ia")})
+        VOZ_CACHE[n] = c
+    r = dict(c[1])
+    m = VOZ.muestra(n)
+    r["muestra"] = m.get("medico") if m else None       # su voz ya cuenta como muestra de ese médico
+    return r
+
+
+def calcular_voz(n, a, palabras, al_procesar=True):
+    """Huella de voz del audio y detección del médico. Si el resultado es «seguro» y el caso no tiene médico
+    elegido, lo asigna. Nunca frena el procesamiento: si algo falla, se anota y el caso sigue sin médico."""
+    if not VOZ.modelo_listo():
+        if L.una_vez("voz_sin_modelo", 3600):
+            err = VOZ._DESCARGA.get("error")
+            L.aviso("VOZ", "El reconocimiento de voz todavía no está listo (falta el modelo"
+                           + (f": {err}" if err else ", se está bajando") + "). Este audio queda sin médico automático.")
+        return None
+    t0 = time.time()
+    try:
+        h, seg = VOZ.huella_archivo(a, palabras, CFG)
+    except Exception as ex:
+        L.aviso("VOZ", f"{visible(n)}: no se pudo calcular la huella de voz ({mensaje_amigable(ex)}).", exc=True)
+        return None
+    det = VOZ.detectar(h, excluir=n, cfg=CFG)
+    with VOZ_LOCK:
+        prev = voz_de(n) or {}
+        med = medico_de(n)
+        por = prev.get("medico_por") or ""
+        if med and por == "voz" and al_procesar:         # lo había puesto la voz: se vuelve a decidir
+            (DATOS / f"{n}.medico.txt").unlink(missing_ok=True)
+            med = ""
+        if med:
+            por = por or "pc"
+        elif det.get("estado") == "seguro":
+            (DATOS / f"{n}.medico.txt").write_text(det["medico"], encoding="utf-8")
+            por = "voz"
+        else:
+            por = ""
+        guardar_voz(n, {"v": 1, "modelo": VOZ.VERSION_HUELLA, "h": h, "seg": seg, "det": det, "fecha": time.time(),
+                        "medico_por": por, "medico_ia": prev.get("medico_ia")})
+    e = det.get("estado")
+    if det.get("ranking"):
+        L.debug("VOZ", f"{visible(n)}: huella en {L.seg(time.time() - t0)} con {seg} s de voz · "
+                       + ", ".join(f"{m} {pct_voz(p)}" for m, p in det["ranking"]))
+    if med and por != "voz":
+        L.info("VOZ", f"{visible(n)}: médico ya elegido «{med}»" + (
+            f"; la voz se parece más a «{det['medico']}» ({pct_voz(det['puntaje'])})" if det.get("medico") and det["medico"] != med
+            else f"; la voz coincide ({pct_voz(det.get('puntaje'))})" if det.get("medico") == med else "") + ".")
+    elif e == "seguro":
+        L.ok("VOZ", f"{visible(n)}: médico reconocido por la voz: «{det['medico']}» (parecido {pct_voz(det['puntaje'])}, "
+                    f"{L.plural(det['muestras'], 'muestra')}).")
+    elif e == "dudoso":
+        L.info("VOZ", f"{visible(n)}: voz dudosa, ¿«{det['medico']}»? ({pct_voz(det['puntaje'])}; {det.get('motivo')}). "
+                      f"La IA usa la plantilla general; el médico se confirma al revisar.")
+    elif e == "corto":
+        L.info("VOZ", f"{visible(n)}: muy poca voz ({seg} s) para reconocer al médico.")
+    else:
+        L.info("VOZ", f"{visible(n)}: voz sin reconocer ({det.get('motivo')}). Elegí el médico al revisar: al "
+                      f"guardar, su voz queda registrada.")
+    return det
+
+
+def muestra_al_guardar(n):
+    """Al guardar el Word: la voz del caso pasa a ser muestra del médico elegido (o deja de serlo si se quitó)."""
+    v = voz_de(n)
+    if not v or not v.get("h") or v.get("modelo") != VOZ.VERSION_HUELLA:
+        return v
+    med = medico_de(n)
+    antes = VOZ.muestra(n)
+    if not med:
+        if antes:
+            VOZ.quitar(n)
+            L.info("VOZ", f"{visible(n)} se guardó sin médico: su voz ya no cuenta como muestra de «{antes['medico']}».")
+        return v
+    k = VOZ.agregar(n, med, v["h"], "guardado", v.get("seg"))
+    if not antes or antes.get("medico") != med:
+        minimo = int(VOZ.parametros(CFG)["min_muestras"])
+        L.ok("VOZ", f"Voz de «{med}» registrada con {visible(n)}: tiene {L.plural(k, 'muestra')}"
+                    + (" (desde ahora se puede reconocer solo)" if k == minimo else
+                       f" (con {minimo} se reconoce solo)" if k < minimo else "") + ".")
+    return v
+
+
+def actualizar_muestra(n, med):
+    """El médico de un caso ya guardado se cambió a mano: se corrige su muestra de voz al momento."""
+    v = voz_de(n)
+    if not v or not v.get("h") or v.get("modelo") != VOZ.VERSION_HUELLA:
+        return
+    if med:
+        VOZ.agregar(n, med, v["h"], "guardado", v.get("seg"))
+    else:
+        VOZ.quitar(n)
+
+
+def casos_sin_etiquetar():
+    """Casos sin médico cuya huella de voz todavía no es muestra de nadie (para «Agrupar voces»). Los que ya
+    tienen médico no aparecen: su voz se registra sola al guardar el informe."""
+    out = []
+    with LOCK:
+        ocupados = {k for k, e in ESTADO.items() if e.get("estado") in EN_PROCESO}
+    for f in DATOS.glob("*.voz.json"):
+        n = f.name[:-len(".voz.json")]
+        if n in ocupados or VOZ.muestra(n) or medico_de(n):
+            continue
+        v = voz_de(n)
+        if v and v.get("h") and v.get("modelo") == VOZ.VERSION_HUELLA:
+            out.append((n, v))
+    return out
+
+
+def ficha_caso(n):
+    return {"nombre": n, "titulo": titulo_de(n), "paciente": PAC.de(DATOS, n), "medico": medico_de(n),
+            "audio": ruta_audio(n) is not None, "origen": origen_de(n), "revisado": (DATOS / f"{n}.final.txt").exists(),
+            "fecha": (lambda a: a.stat().st_mtime if a else None)(ruta_audio(n)), "dur": duracion_de(n)}
+
+
+def grupos_de_voces():
+    items = casos_sin_etiquetar()
+    hs = {n: v["h"] for n, v in items}
+    grupos = []
+    for g in VOZ.agrupar(list(hs.items()), CFG):
+        det = VOZ.detectar(VOZ.centro([hs[x] for x in g]), cfg=CFG)
+        fichas = []
+        for x in g:
+            try:
+                fichas.append(dict(ficha_caso(x), voz=resumen_voz(x)))
+            except OSError:
+                pass
+        fichas.sort(key=lambda c: c.get("fecha") or 0, reverse=True)
+        grupos.append({"casos": fichas, "sugerencia": {k: det.get(k) for k in ("estado", "medico", "puntaje",
+                                                                               "segundo", "puntaje2")}})
+    return {"grupos": grupos, "total": len(items)}
+
+
+def hilo_voces():
+    """Al arrancar: baja el modelo de voz si falta y calcula la huella de los casos que todavía no la tienen
+    (sin cambiarles el médico). Los ya guardados con médico suman su voz como muestra."""
+    if not VOZ.modelo_listo():
+        L.info("VOZ", "Bajando el modelo de reconocimiento de voz (unos 26 MB, una sola vez)…")
+        if not VOZ.descargar_modelo():
+            L.aviso("VOZ", f"No se pudo bajar el modelo de reconocimiento de voz ({VOZ._DESCARGA['error']}). Se vuelve "
+                           f"a intentar al reiniciar el servidor; mientras tanto los audios quedan sin médico automático.")
+            return
+        L.ok("VOZ", "Modelo de reconocimiento de voz listo.")
+    hechos = sumadas = 0
+    for f in sorted(DATOS.glob("*.dictado.txt")):
+        n = f.name[:-len(".dictado.txt")]
+        v = voz_de(n)
+        if v and v.get("modelo") == VOZ.VERSION_HUELLA:
+            continue
+        while TRABAJO.get("ocupado"):          # primero lo que está en la cola
+            time.sleep(5)
+        with LOCK:
+            if ESTADO.get(n, {}).get("estado") in EN_PROCESO:
+                continue
+        a = ruta_audio(n)
+        if a is None:
+            continue
+        try:
+            pal = json.loads((DATOS / f"{n}.json").read_text(encoding="utf-8")).get("palabras")
+            h, seg = VOZ.huella_archivo(a, pal, CFG)
+        except Exception:
+            L.debug("VOZ", f"No se pudo calcular la huella de voz de {visible(n)}.", det=[repr(sys.exc_info()[1])])
+            continue
+        med = medico_de(n)
+        with VOZ_LOCK:
+            guardar_voz(n, {"v": 1, "modelo": VOZ.VERSION_HUELLA, "h": h, "seg": seg,
+                            "det": VOZ.detectar(h, excluir=n, cfg=CFG), "fecha": time.time(),
+                            "medico_por": "pc" if med else "", "medico_ia": med or None})
+        hechos += 1
+        if h and med and (DATOS / f"{n}.final.txt").exists() and not VOZ.muestra(n):
+            VOZ.agregar(n, med, h, "revisado antes", seg)
+            sumadas += 1
+    if hechos:
+        L.ok("VOZ", f"Huella de voz calculada para {L.plural(hechos, 'caso anterior', 'casos anteriores')}"
+                    + (f"; {L.plural(sumadas, 'informe ya guardado', 'informes ya guardados')} con médico "
+                       f"{'sumó su voz' if sumadas == 1 else 'sumaron su voz'} a las muestras" if sumadas else "") + ".")
+
+
 COLOR_TIPO = {"numero": "rojo", "completar": "rojo", "dudoso": "amarillo", "bajaconf": "amarillo",
               "verificar": "turq", "plantilla": "gris"}
 
@@ -452,6 +686,7 @@ def listar_casos(pc=LOCAL, remoto=False):
         casos.append({"nombre": n, "estado": est["estado"], "msg": est.get("msg", ""), "marcas": marcas,
                       "medico": medico_de(n), "origen": origen_de(n), "avisos": avisos, "bloqueado_por": R.bloqueado_por(n, pc),
                       "titulo": titulo_de(n), "espera": esp.get(n), "paciente": PAC.de(DATOS, n),
+                      "voz": resumen_voz(n),
                       "estudios": estudios_de(n) if listo else None, "dur": duracion_de(n),
                       "revisado_en": revisado_en(n) if revisado else None,
                       "puede_borrar": not (remoto and (origen_de(n) != pc or pc == LOCAL))
@@ -515,7 +750,7 @@ def cargar_caso(nombre):
     # cada palabra con su forma normalizada ("veintitrés" -> "23"), para ubicar cada línea del informe en el dictado
     palabras = [dict(w, n=re.sub(r"[^a-z0-9.]", "", N.normalizar(w["p"])).strip(".")) for w in trans["palabras"]]
     return {"nombre": nombre, "dictado": trans["texto"], "palabras": palabras, "lineas": lineas,
-            "omisiones": om, "omisiones_ok": om_ok, "medico": medico_de(nombre),
+            "omisiones": om, "omisiones_ok": om_ok, "medico": medico_de(nombre), "voz": resumen_voz(nombre),
             "paciente": PAC.de(DATOS, nombre), "titulo": titulo_de(nombre),
             "estudios": estudios_de(nombre), "dur": duracion_de(nombre),
             "estudios_nuevos": N.estudios_sin_plantilla(ia.read_text(encoding="utf-8")),
@@ -632,6 +867,7 @@ def trabajador():
                 (DATOS / f"{n}.dictado.txt").write_text(trans[n]["texto"], encoding="utf-8")
                 PAC.calcular(DATOS, n, forzar=True)      # nombre del paciente para la lista (no va al informe)
                 (DATOS / f"{n}.audio.txt").write_text(str(a.resolve()), encoding="utf-8")
+                calcular_voz(n, a, trans[n]["palabras"])     # médico por la voz (antes de la IA)
                 dur = duracion_wav(ruta=a)
                 if dur is None and trans[n]["palabras"]:
                     dur = trans[n]["palabras"][-1].get("fin")
@@ -671,10 +907,13 @@ def trabajador():
                     time.sleep(float(os.environ.get("SIMULAR_DEMORA", "0")))
                 else:
                     med = medico_de(n) or None
+                    # sin médico confirmado (voz dudosa o sin reconocer): plantilla general, sin estilos de médico
+                    sin_est = not med and resumen_voz(n) is not None
                     ej = N.elegir_ejemplos(dic, banco, k=CFG["ejemplos_por_informe"], excluir=n, medico=med)
-                    salida, _, t_in, t_out = N.llamar_ia(CFG["modelo_ia"], N.armar_mensajes(dic, ej, med))
+                    salida, _, t_in, t_out = N.llamar_ia(CFG["modelo_ia"], N.armar_mensajes(dic, ej, med, sin_estilos=sin_est))
                     tokens = f"{t_in or '?'} tokens de entrada, {t_out or '?'} de salida"
                 (DATOS / f"{n}.informe_ia.txt").write_text(salida, encoding="utf-8")
+                anotar_voz(n, medico_ia=medico_de(n) or "")
                 for viejo in (f"{n}.marcas.json", f"{n}.borrador.html", f"{n}.final.txt", f"{n}.formato.json"):
                     (DATOS / viejo).unlink(missing_ok=True)
                 (DATOS / f"{n}.omisiones_ok.json").unlink(missing_ok=True)
@@ -687,13 +926,16 @@ def trabajador():
                 nuevos = N.estudios_sin_plantilla(salida)
                 L.contar("generados")
                 med = medico_de(n)
+                vz = resumen_voz(n) or {}
                 det = []
                 if r["faltan"]:
                     det.append("Dictado pero no está en el informe: " + ", ".join(r["faltan"]))
                 if tokens:
                     L.debug("IA", f"{visible(n)}: {tokens}")
                 L.ok("IA", f"{visible(n)} informe listo en {L.seg(ia_s)}"
-                           + (f" · {med}" if med else " · sin médico elegido") + f" · {texto_marcas(r)}", det)
+                           + (f" · {med}" + (" (por la voz)" if vz.get("por") == "voz" else "") if med
+                              else " · sin médico (plantilla general)" if vz else " · sin médico elegido")
+                           + f" · {texto_marcas(r)}", det)
                 for e in nuevos:
                     L.aviso("IA", f"{visible(n)}: estudio sin plantilla «{e}». Conviene crearla desde Plantillas.")
                 L.actividad("generado", **datos_csv(n), duracion_audio_s=info.get(n, {}).get("dur"),
@@ -701,7 +943,8 @@ def trabajador():
                             palabras_dictado=info.get(n, {}).get("palabras"),
                             marcas_rojas=r["rojo"], marcas_amarillas=r["amarillo"], marcas_turquesa=r["turq"],
                             marcas_grises=r["gris"], datos_faltantes=" ".join(r["faltan"]),
-                            partes_no_transcritas=" ".join(r["huecos"]), estudios_sin_plantilla=" | ".join(nuevos))
+                            partes_no_transcritas=" ".join(r["huecos"]), estudios_sin_plantilla=" | ".join(nuevos),
+                            **campos_voz(vz))
         except Exception as ex:
             msg = mensaje_amigable(ex)
             afectados = [n for n in lote if ESTADO.get(n, {}).get("estado") not in ("listo", "error")
@@ -714,6 +957,14 @@ def trabajador():
         TRABAJO.update(ocupado=False, esperando_ia=False)
         if not en_proceso() and COLA.empty():
             L.debug("SERVIDOR", "Cola vacía.")
+
+
+def campos_voz(vz):
+    """Columnas del reconocimiento de voz para actividad.csv."""
+    if not vz:
+        return {}
+    return {"medico_voz": vz.get("medico") or "", "voz_estado": vz.get("estado") or "",
+            "voz_puntaje": round(vz["puntaje"] * 100, 1) if vz.get("puntaje") is not None else None}
 
 
 def esperar_ia(n, lote):
@@ -1123,7 +1374,7 @@ def estado_mantenimiento():
 # los de otro llamado «tmp9177.tmp».
 SUFIJOS_CASO = (".json", ".dictado.txt", ".informe_ia.txt", ".marcas.json", ".borrador.html", ".final.txt",
                 ".medico.txt", ".audio.txt", ".ejemplo.txt", ".onda.json", ".origen.txt", ".original.txt",
-                ".paciente.json", ".formato.json", ".omisiones_ok.json", ".revision.json")
+                ".paciente.json", ".formato.json", ".omisiones_ok.json", ".revision.json", ".voz.json")
 
 
 def puede_borrar(n, pc, remoto):
@@ -1289,12 +1540,18 @@ def _finalizar(nombre, texto, quien=LOCAL):
     except Exception:
         L.debug("INFORME", f"No se pudo anotar {docx.name} como procesado", det=[repr(sys.exc_info()[1])])
     L.contar("guardados")
+    try:
+        vz = muestra_al_guardar(nombre) and resumen_voz(nombre)
+    except Exception:
+        vz = None
+        L.aviso("VOZ", f"{visible(nombre)}: no se pudo registrar la muestra de voz.", exc=True)
     rev = revision_de(nombre)
     L.ok("INFORME", f"{visible(nombre)} {'guardado de nuevo' if ya_guardado else 'guardado'} por {quien} · "
                     f"{f'{pc * 100:.1f}'.replace('.', ',')}% corregido"
                     + (f" · revisión {mmss(rev)}" if rev else "") + f" · Word {docx.name} · ejemplo aprendido")
     L.actividad("guardado", **datos_csv(nombre), porcentaje_corregido=pc * 100, palabras_informe=len(final.split()),
-                revision_s=rev, detalle=("guardado de nuevo" if ya_guardado else "guardado") + f" desde {quien}")
+                revision_s=rev, detalle=("guardado de nuevo" if ya_guardado else "guardado") + f" desde {quien}",
+                **campos_voz(vz))
     EST.invalidar()
     return {"docx": str(docx), "pct": round(pc * 100, 1)}
 
@@ -1497,7 +1754,28 @@ class H(BaseHTTPRequestHandler):
                         "prefijos": CFG.get("negrita_si_empieza_con", N.NEGRITA_DEF),
                         "exactas": CFG.get("negrita_lineas_exactas", N.NEGRITA_EXACTAS)})
         elif u.path == "/api/medicos":
-            self._json({"medicos": [{"nombre": m, "notas": N.notas_medico(m)} for m in N.lista_medicos()]})
+            rv = VOZ.resumen()
+            self._json({"medicos": [{"nombre": m, "notas": N.notas_medico(m), "voz": rv.get(m, {}).get("n", 0)}
+                                    for m in N.lista_medicos()]})
+        elif u.path == "/api/voces":
+            rv = VOZ.resumen()
+            self._json({"modelo": VOZ.estado_modelo(), "error": VOZ._DESCARGA.get("error") or "",
+                        "parametros": VOZ.parametros(CFG), "medicos": rv,
+                        "sin_etiquetar": len(casos_sin_etiquetar())})
+        elif u.path == "/api/voces/muestras":
+            med = q.get("medico", [""])[0]
+            out = []
+            for c, m in VOZ.muestras(med or None):
+                f = {"caso": c, "medico": m.get("medico"), "fecha": m.get("fecha"), "fuente": m.get("fuente"),
+                     "seg": m.get("seg"), "titulo": c, "paciente": "", "audio": False}
+                try:
+                    f.update(titulo=titulo_de(c), paciente=PAC.de(DATOS, c), audio=ruta_audio(c) is not None)
+                except OSError:
+                    pass
+                out.append(f)
+            self._json({"muestras": out})
+        elif u.path == "/api/voces/agrupar":
+            self._json(grupos_de_voces())
         elif u.path == "/api/plantillas":
             self._json({"secciones": [{"nombre": a, "cuerpo": b} for a, b in N.secciones_plantillas()[1]]})
         elif u.path == "/api/caso":
@@ -1704,6 +1982,34 @@ class H(BaseHTTPRequestHandler):
                 nom = N.guardar_medico(datos.get("medico", ""), datos.get("notas", ""))
                 L.ok("CONFIG", f"Notas del médico {nom} guardadas ({self.pc}).")
                 return self._json({"ok": True, "medico": nom})
+            if u.path == "/api/voces/etiquetar":     # {"nombres": [...], "medico": "..."} desde «Agrupar voces»
+                med = str(datos.get("medico") or "").strip()
+                nombres = datos.get("nombres") or []
+                if not med or not isinstance(nombres, list) or not nombres or len(nombres) > 500:
+                    return self._json({"error": "Elegí el médico y al menos un audio."}, 400)
+                ok, salteados = [], []
+                for x in dict.fromkeys(str(v) for v in nombres):
+                    v = voz_de(x) if self._nombre_valido(x) else None
+                    otro = R.bloqueado_por(x, self.pc) if v else None
+                    if not v or not v.get("h") or otro:
+                        salteados.append({"nombre": x, "motivo": f"lo está revisando {otro}" if otro else "sin huella de voz"})
+                        continue
+                    (DATOS / f"{x}.medico.txt").write_text(med, encoding="utf-8")
+                    anotar_voz(x, medico_por="usuaria")
+                    VOZ.agregar(x, med, v["h"], "etiquetado", v.get("seg"))
+                    ok.append(x)
+                k = VOZ.resumen().get(med, {}).get("n", 0)
+                L.ok("VOZ", f"{self.pc} etiquetó {L.plural(len(ok), 'audio')} como de «{med}» (ahora tiene "
+                            f"{L.plural(k, 'muestra')} de voz)" + (f"; {len(salteados)} salteado(s)" if salteados else "") + ".")
+                return self._json({"ok": True, "etiquetados": ok, "salteados": salteados, "muestras": k})
+            if u.path == "/api/voces/quitar":       # {"caso": "..."}: sacar una muestra mal etiquetada
+                c = str(datos.get("caso") or "")
+                viejo = VOZ.quitar(c) if self._nombre_valido(c) else None
+                if viejo:
+                    if (DATOS / f"{c}.voz.json").exists() and medico_de(c) == viejo and not (DATOS / f"{c}.final.txt").exists():
+                        anotar_voz(c, medico_por="")
+                    L.info("VOZ", f"{self.pc} quitó la muestra de voz de {visible(c)} de «{viejo}».")
+                return self._json({"ok": bool(viejo)})
             if u.path == "/api/importar":
                 from importar_informes import importar
                 ok, mal = importar()
@@ -1788,8 +2094,14 @@ class H(BaseHTTPRequestHandler):
                     f.write_text(med, encoding="utf-8")
                 else:
                     f.unlink(missing_ok=True)
+                anotar_voz(n, medico_por="usuaria" if med else "")
+                if (DATOS / f"{n}.final.txt").exists():
+                    actualizar_muestra(n, med)       # ya guardado: la muestra de voz se corrige al momento
                 L.info("CASO", f"{visible(n)}: médico cambiado a {med or 'ninguno'} ({self.pc}).")
-                return self._json({"ok": True})
+                vz = resumen_voz(n) or {}
+                return self._json({"ok": True, "voz": vz,
+                                   "regenerar": bool(vz) and (vz.get("medico_ia") or "") != med
+                                   and not (DATOS / f"{n}.final.txt").exists()})
             if u.path == "/api/paciente":
                 p = PAC.corregir(DATOS, n, datos.get("paciente", ""))
                 L.info("CASO", f"{visible(n)}: nombre del paciente " + ("corregido a mano" if datos.get("paciente", "").strip()
@@ -2385,6 +2697,7 @@ def main():
     cargar_tiempos()
     threading.Thread(target=trabajador, daemon=True, name="procesamiento").start()
     threading.Thread(target=vigilar_ia, args=(e_ia,), daemon=True, name="vigilancia-ia").start()
+    threading.Thread(target=hilo_voces, daemon=True, name="voces").start()
     g = M.git_al_arrancar() or {}
     L.ok("SERVIDOR", f"Servidor iniciado en {url}" + ("" if e_ia == "ok" else " (sin IA hasta que se abra Ollama)")
          + (f" · código {g['commit']}" + (f" + {L.plural(len(g['sucios']), 'cambio')} sin commitear" if g.get("sucios") else "")

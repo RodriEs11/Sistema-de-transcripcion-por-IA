@@ -55,7 +55,9 @@ Los casos se identifican con el parámetro o campo `nombre` (validado: sin rutas
 | GET | `/api/medicos` | Médicos y sus notas |
 | POST | `/api/medico` | Crea o actualiza las notas de un médico |
 | GET | `/api/mi_pc` | Identidad de quien consulta (local/remoto, PC, permisos de panel) |
-| POST | `/api/mi_medico` | Médico predeterminado de la PC |
+| POST | `/api/mi_medico` | Médico predeterminado de la PC (vacío = automático por la voz) |
+| GET | `/api/voces`, `/api/voces/muestras`, `/api/voces/agrupar` | Reconocimiento por la voz (ver [voz.md](voz.md)) |
+| POST | `/api/voces/etiquetar`, `/api/voces/quitar` | Etiquetar audios con su médico / quitar una muestra |
 
 ## App del trabajo
 

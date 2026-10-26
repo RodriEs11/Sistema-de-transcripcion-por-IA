@@ -21,6 +21,7 @@ Se crea en el primer arranque copiando `configuracion.ejemplo.json`. No se versi
 | `negrita_si_empieza_con` | `["Categorización conjunta", …]` | Líneas que van en negrita si empiezan así |
 | `negrita_lineas_exactas` | `["Tórax", "Abdomen", "Pelvis"]` | Líneas que van en negrita si son exactamente así |
 | `pagina` | `{"nombre": "A4", "ancho_cm": 21.0, …}` | Tamaño de hoja y márgenes (superior, inferior, izquierdo, derecho) en cm |
+| `voces` | `{"umbral_seguro": 0.62, …}` | Opcional. Umbrales del reconocimiento del médico por la voz (ver [voz.md](voz.md)) |
 
 ## Variables de entorno
 

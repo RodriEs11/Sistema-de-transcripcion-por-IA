@@ -57,6 +57,7 @@ flowchart TB
 | `remoto.py` | Túnel (`cloudflared`), publicación en ntfy, contraseñas PBKDF2, llaves por PC, sesiones y cookies |
 | `admin.py` | Permisos del panel y lectura de los registros |
 | `estadisticas.py` | Métricas de calidad y tiempo (solo lectura) |
+| `voces.py` | Huella de voz (WeSpeaker ONNX), muestras por médico, detección y agrupamiento ([voz.md](voz.md)) |
 | `registro.py` | Consola con colores, título de ventana, logs diarios, `actividad.csv` |
 | `app_cliente.py` | Manifiesto (SHA-256) de la carpeta `cliente\` para la actualización automática |
 
@@ -125,6 +126,7 @@ Para un audio `NOMBRE`, el servidor guarda en `Informes\revision\datos\`:
 | `NOMBRE.revision.json` | Segundos de revisión activa por PC |
 | `NOMBRE.onda.json` | 1600 picos para dibujar la forma de onda |
 | `NOMBRE.medico.txt`, `.origen.txt`, `.original.txt` | Médico, PC de origen y nombre original del audio |
+| `NOMBRE.voz.json` | Huella de voz y médico reconocido ([voz.md](voz.md)) |
 
 El Word final queda en `Informes\NOMBRE.docx`.
 

@@ -230,9 +230,11 @@ def es_del_medico(estilos, medico):
     return bool(m) and any(e in m or m in e for e in estilos)
 
 
-def plantillas_relevantes(dictado, medico=None):
+def plantillas_relevantes(dictado, medico=None, sin_estilos=False):
     """Solo las secciones de plantillas.md que corresponden a lo dictado (el modelo se confunde menos).
     Las secciones '(estilo X)' reemplazan a la general cuando el medico es X.
+    sin_estilos: sin médico confirmado (la voz no lo reconoció con seguridad) no van las variantes de otros
+    médicos, solo la plantilla general.
     Si no se reconoce el estudio, van todas las generales."""
     pre, secs = secciones_plantillas()
     d = categorias(dictado)
@@ -260,7 +262,7 @@ def plantillas_relevantes(dictado, medico=None):
         if est:
             if es_del_medico(est, medico):
                 final.append((nombre, cuerpo))
-            elif not medico and d:
+            elif not medico and d and not sin_estilos:
                 final.append((nombre, "VARIANTE DE OTRO MÉDICO: usala solo si el dictado usa estas mismas frases.\n"
                               + cuerpo))
         elif _base(nombre) not in propias:
@@ -295,8 +297,8 @@ def elegir_referencias(dictado, k=2, medico=None):
     return [x[2] for x in cand[:k] if x[0] >= 0.5]
 
 
-def armar_mensajes(dictado, ejemplos, medico=None):
-    sis = SISTEMA.format(plantillas=plantillas_relevantes(dictado, medico), reglas=leer("reglas_dictado.md"))
+def armar_mensajes(dictado, ejemplos, medico=None, sin_estilos=False):
+    sis = SISTEMA.format(plantillas=plantillas_relevantes(dictado, medico, sin_estilos), reglas=leer("reglas_dictado.md"))
     # referencias: solo si los ejemplos con dictado no cubren bien este tipo de estudio
     d = categorias(dictado)
     cubre = max((len(d & categorias(e["dictado"])) / len(d | categorias(e["dictado"])) for e in ejemplos),

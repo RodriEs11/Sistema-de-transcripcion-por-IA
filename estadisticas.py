@@ -165,6 +165,8 @@ def _informes(actual):
             "estudios": estudios or SIN_ESTUDIO, "pct": pct, "palabras": palabras,
             "rev": rev if rev and rev > 0 else None, "marcas": marcas,
             "dur": _num(ge.get("duracion_audio_s")) if ge else None,
+            "voz_estado": (g.get("voz_estado") or "").strip(), "voz_medico": (g.get("medico_voz") or "").strip(),
+            "voz_puntaje": _num(g.get("voz_puntaje")),
         })
     salida.sort(key=lambda x: x["t"])
     generados = []
@@ -321,6 +323,31 @@ def tiempos(desde, dias, ahora):
             "desde_registro": todos[0]["t"] if todos else None}
 
 
+def _voz(lista):
+    """Acierto del reconocimiento del médico por la voz: lo que se detectó al llegar el audio contra el médico con
+    el que se guardó el informe. Solo cuentan los informes con huella de voz y médico elegido."""
+    con = [i for i in lista if i.get("voz_estado") and i["medico"] != SIN_MEDICO]
+    if not con:
+        return None
+
+    def grupo(estados):
+        g = [i for i in con if i["voz_estado"] in estados]
+        return {"n": len(g), "bien": sum(1 for i in g if i["voz_medico"] == i["medico"])}
+    por_med = {}
+    for i in con:
+        x = por_med.setdefault(i["medico"], {"medico": i["medico"], "n": 0, "seguro": 0, "bien": 0, "mal": 0})
+        x["n"] += 1
+        if i["voz_estado"] == "seguro":
+            x["seguro"] += 1
+            x["bien" if i["voz_medico"] == i["medico"] else "mal"] += 1
+    mal = [{"t": i["t"], "titulo": i["titulo"], "medico": i["medico"], "voz_medico": i["voz_medico"],
+            "puntaje": i["voz_puntaje"]}
+           for i in reversed(con) if i["voz_estado"] == "seguro" and i["voz_medico"] != i["medico"]][:10]
+    return {"n": len(con), "seguro": grupo(("seguro",)), "dudoso": grupo(("dudoso",)),
+            "sin": grupo(("desconocido", "corto")),
+            "medicos": sorted(por_med.values(), key=lambda x: (-x["n"], x["medico"])), "errores": mal}
+
+
 def calcular(dias=30, medico_actual=None, estudios_actual=None):
     """Estadísticas de los informes guardados en los últimos `dias` días (0 = todos)."""
     actual = {"medico": medico_actual or (lambda n: ""), "estudios": estudios_actual or (lambda n: None)}
@@ -353,4 +380,5 @@ def calcular(dias=30, medico_actual=None, estudios_actual=None):
         "estudios": _por(lista, "estudios", medida),
         "ultimos": ultimos,
         "tiempos": tiempos(desde, dias, ahora),
+        "voz": _voz(lista),
     }

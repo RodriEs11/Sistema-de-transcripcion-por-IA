@@ -392,6 +392,29 @@ body.compacto #bCompacto .agr{display:block}body.compacto #bCompacto .cmp{displa
 @container (max-width:900px){ .f1 .tit-audio{display:none} }
 @container (max-width:760px){ #tiempo{display:none} .barra select.med{min-width:96px} }
 .barra select.med{flex:0 1 190px;min-width:110px;max-width:190px}
+/* médico reconocido por la voz */
+.voz-chip{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:1.2;border-radius:12px;padding:4px 9px;border:1px solid var(--bd2);background:var(--panel);color:var(--mu);cursor:pointer;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.voz-chip svg{width:13px;height:13px;flex:none}
+.voz-chip .vz-txt{overflow:hidden;text-overflow:ellipsis}
+.voz-chip.seguro{border-color:var(--ok);color:var(--ok);background:var(--ok-suave)}
+.voz-chip.dudoso{border-color:var(--amar-f);color:var(--tx);background:var(--amarillo)}
+.voz-chip.sin{border-style:dashed}
+@container (max-width:900px){ .voz-chip .vz-txt{display:none} }
+.lista2 li .mvz{float:right;color:var(--mu);font-size:11.5px;font-weight:400}
+#medVoz{border:1px solid var(--bd);border-radius:8px;background:var(--panel);padding:10px 12px;max-height:40%;overflow:auto;font-size:13px;flex:none}
+#medVoz:empty{display:none}
+#medVoz ul,.grupo-voz ul{list-style:none;margin:6px 0 0;padding:0}
+#medVoz li,.grupo-voz li{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--bd)}
+#medVoz .n,.grupo-voz .n{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#medVoz .mu,.grupo-voz .mu{color:var(--mu);font-size:12px}
+#medVoz li .mu{flex:1;min-width:0}
+#grupos{display:flex;flex-direction:column;gap:12px}
+.grupo-voz{border:1px solid var(--bd);border-radius:10px;background:var(--panel);padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.grupo-voz header{font-size:14px}
+.grupo-voz label{display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer}
+.grupo-voz select{border:1px solid var(--bd2);border-radius:7px;padding:5px 6px;background:var(--panel);color:var(--tx);min-width:220px;max-width:100%}
+.grupo-voz .fila{margin-top:8px}
+.play-m{min-width:34px}
 .f1 .player{flex:1 1 320px;flex-wrap:nowrap;gap:5px}
 .f1 .player button{padding:5px 9px}
 #bPlay{width:38px}
@@ -583,6 +606,7 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
             <button id="bPaciente" class="ico" title="Corregir el nombre del paciente (solo se muestra en la lista, no va al informe)" aria-label="Corregir el nombre del paciente">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button></div>
           <select id="medCaso" class="med" title="Médico que dictó este audio"></select>
+          <button id="vozCaso" class="voz-chip" type="button" hidden></button>
           <div class="player">
             <button id="bAtras" title="Atrás 3 segundos (F3)">−3s</button>
             <button id="bPlay" title="Reproducir / pausar (F4)">▶</button>
@@ -641,12 +665,19 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
           <div class="fila"><span class="sep"></span><button id="bBorrarPl" class="chico">Eliminar este estudio</button></div></div></div>
     </section>
     <section class="vista" id="vMed">
-      <div class="fila"><h2>Médicos</h2><span class="sep"></span><button id="bNuevoMed">+ Agregar médico</button><button id="bGuardarMed" class="prim">Guardar notas</button></div>
+      <div class="fila"><h2>Médicos</h2><span class="sep"></span><button id="bAgrupar" title="Audios cuya voz todavía no está registrada, agrupados por parecido, para etiquetarlos de a grupos">Agrupar voces</button><button id="bNuevoMed">+ Agregar médico</button><button id="bGuardarMed" class="prim">Guardar notas</button></div>
       <div class="nota">Anotá cómo dicta cada médico: la IA lo tiene en cuenta en sus informes, y además usa como ejemplo
         informes anteriores del mismo médico. Ej: "Dice 'eco' por ecografía. Dicta las medidas del útero como tres números
         seguidos. Al final dice 'BI-RADS' y el número. Suele decir 'perdón' y repetir la frase corregida."</div>
       <div class="fila2"><ul class="lista2" id="listaMed"></ul><div class="divisor div-lista2" role="separator" aria-orientation="vertical" aria-label="Ancho de la lista" tabindex="0" title="Arrastrá para cambiar el ancho · doble clic: tamaño original"><span class="agarre"></span></div>
-        <div class="edit2"><input id="medNombre" readonly><textarea id="medNotas" placeholder="Cómo dicta este médico…"></textarea></div></div>
+        <div class="edit2"><input id="medNombre" readonly><textarea id="medNotas" placeholder="Cómo dicta este médico…"></textarea><div id="medVoz" aria-live="polite"></div></div></div>
+    </section>
+    <section class="vista" id="vVoces">
+      <div class="fila"><h2>Agrupar voces</h2><span class="sep"></span><button id="bVolverMed">Volver a Médicos</button><button id="bActVoces">Actualizar</button></div>
+      <div class="nota" id="vocesNota">Audios cuya voz todavía no está registrada, agrupados por parecido. Escuchá uno o dos, elegí el médico y tocá
+        <b>Etiquetar</b>: su voz queda como muestra de ese médico y, con 3 muestras, los audios siguientes se reconocen solos.
+        Destildá los que no sean de ese médico. No cambia el texto de ningún informe.</div>
+      <div id="grupos"></div>
     </section>
   </main>
 </div>
@@ -971,7 +1002,9 @@ async function cargarLista(){
       const a = c.avisos, n = a ? a.rojo + a.amarillo + a.turq + a.gris + a.faltan.length + a.huecos.length : c.marcas;
       det = n ? n + (n===1?' marca':' marcas') + ' para revisar' : 'Sin marcas pendientes'; }
     if(c.estado==='nuevo') det = 'Sin procesar';
-    if(c.medico) det = (det ? det + ' · ' : '') + c.medico;
+    const vz = c.voz, vzMed = c.medico ? (vz && vz.por==='voz' ? '🎙 ' : '') + c.medico
+      : vz && c.estado==='listo' ? (vz.estado==='dudoso' && vz.medico ? '¿' + vz.medico + '?' : 'médico sin reconocer') : '';
+    if(vzMed) det = (det ? det + ' · ' : '') + vzMed;
     if(filtro !== 'mia' && c.origen !== MI.pc) det = c.origen + (det ? ' · ' + det : '');
     if(c.bloqueado_por){ det = 'Lo está revisando ' + c.bloqueado_por; li.classList.add('bloq'); }
     if(c.titulo && c.titulo !== c.nombre){ const d = new Date(c.fecha*1000);
@@ -1356,6 +1389,7 @@ async function abrirCaso2(n){
   $('#bBorrarCaso').hidden = !((casosCache.find(x => x.nombre===n) || {}).puede_borrar);
   document.querySelectorAll('#casos li').forEach(li => li.classList.toggle('sel', li.dataset.n===n));
   mostrar('caso'); requestAnimationFrame(ajustarBarra); llenarMedicos($('#medCaso'), c.medico, 'Médico: sin especificar');
+  ponerVoz(c.voz, c.medico);
   armarNuevoEstudio(c.estudios_nuevos || []);
   ponerTitulo(c.paciente, c.titulo || (casosCache.find(x => x.nombre===n) || {}).titulo || n, c.revisado, {estudios: c.estudios, dur: c.dur});
   if(PREF.leer('velInicial')) $('#vel').value = PREF.leer('velInicial');      // Configuración → velocidad al abrir
@@ -2043,7 +2077,8 @@ $('#bRegen').onclick = async () => {
 /* ------------------------------------------------ vistas */
 function mostrar(v){
   $('#vacio').hidden = v!=='vacio';
-  for(const [id,k] of [['#caso','caso'],['#vPlant','plant'],['#vMed','med']]){ const el=$(id); el.hidden = v!==k; el.style.display = v===k ? 'flex' : 'none'; }
+  for(const [id,k] of [['#caso','caso'],['#vPlant','plant'],['#vMed','med'],['#vVoces','voces']]){ const el=$(id); el.hidden = v!==k; el.style.display = v===k ? 'flex' : 'none'; }
+  if(v!=='med' && v!=='voces') pararMuestra();
   if(v==='vacio' && typeof cargarLista === 'function'){ vacioHtml = ''; cargarLista(); }   // la pantalla vacía se arma con la lista
   for(const [id,k] of [['#bInicio','vacio'],['#bVerPlant','plant'],['#bVerMed','med']]){
     const b = $(id); if(b){ b.classList.toggle('on', v===k); if(v===k) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); } }
@@ -2053,11 +2088,12 @@ mostrar('vacio');
 /* ------------------------------------------------ medicos */
 let medicos = [];
 const NUEVO_MED = '__nuevo__';
+const AUTO_MED = 'Automático (por la voz)';
 const leerLS = k => { try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } };
 const grabarLS = (k,v) => { try { localStorage.setItem(k, v); } catch(e){} };
 async function cargarMedicos(){
   try { medicos = (await api('/api/medicos')).medicos; } catch(e){ medicos = []; }
-  llenarMedicos($('#medSubir'), MI.medico, 'Sin especificar');
+  llenarMedicos($('#medSubir'), MI.medico, AUTO_MED);
   if(actual) llenarMedicos($('#medCaso'), $('#medCaso').value, 'Médico: sin especificar');
 }
 function llenarMedicos(sel, valor, vacio){
@@ -2084,35 +2120,162 @@ async function nuevoMedico(){
   } catch(e){ toast(e.sinConexion ? 'Sin conexión con el servidor: no se pudo agregar el médico. Probá de nuevo cuando vuelva.' : 'No se pudo agregar el médico: ' + e.message, [], 8000); return null; }
 }
 $('#medSubir').onchange = async e => {
-  if(e.target.value===NUEVO_MED){ const n = await nuevoMedico(); llenarMedicos(e.target, n||'', 'Sin especificar'); }
+  if(e.target.value===NUEVO_MED){ const n = await nuevoMedico(); llenarMedicos(e.target, n||'', AUTO_MED); }
   MI.medico = e.target.value;
   try { await api('/api/mi_medico', {medico: e.target.value}); } catch(err){ toast(err.message); }
 };
 $('#medCaso').onchange = async e => {
   let v = e.target.value;
   if(v===NUEVO_MED){ v = await nuevoMedico() || ''; llenarMedicos(e.target, v, 'Médico: sin especificar'); }
-  await api('/api/caso_medico', {nombre: actual, medico: v});
-  toast(v ? `Médico: ${v}. Para que la IA use sus notas y sus informes anteriores, tocá "Regenerar".` : 'Médico quitado.', [], 6000);
-  cargarLista();
+  cambiarMedicoCaso(v);
 };
 let medSel = null;
 function armarListaMed(){
   const ul = $('#listaMed'); ul.innerHTML = medicos.length ? '' : '<li style="cursor:default;color:var(--mu)">Todavía no hay médicos.</li>';
   for(const m of medicos){
-    const li = document.createElement('li'); li.textContent = m.nombre; if(m.nombre===medSel) li.classList.add('sel');
-    li.onclick = () => { medSel = m.nombre; $('#medNombre').value = m.nombre; $('#medNotas').value = m.notas; armarListaMed(); };
+    const li = document.createElement('li'); li.innerHTML = esc(m.nombre) + (m.voz ? `<span class="mvz" title="Muestras de voz registradas">${m.voz} ${m.voz===1 ? 'muestra' : 'muestras'}</span>` : '');
+    if(m.nombre===medSel) li.classList.add('sel');
+    li.onclick = () => { medSel = m.nombre; $('#medNombre').value = m.nombre; $('#medNotas').value = m.notas; armarListaMed(); armarVozMedico(m.nombre); };
     ul.appendChild(li);
   }
 }
 $('#bVerMed').onclick = async () => { if(actual) guardarBorrador(); await cargarMedicos(); mostrar('med');
   if(!medSel && medicos[0]){ medSel = medicos[0].nombre; }
-  const m = medicos.find(x=>x.nombre===medSel); $('#medNombre').value = m ? m.nombre : ''; $('#medNotas').value = m ? m.notas : ''; armarListaMed(); };
+  const m = medicos.find(x=>x.nombre===medSel); $('#medNombre').value = m ? m.nombre : ''; $('#medNotas').value = m ? m.notas : ''; armarListaMed();
+  armarVozMedico(m ? m.nombre : ''); contarSinEtiquetar(); };
 $('#bNuevoMed').onclick = async () => { const n = await nuevoMedico(); if(n){ medSel = n; $('#bVerMed').click(); } };
 $('#bGuardarMed').onclick = async () => {
   if(!medSel){ toast('Elegí o agregá un médico.'); return; }
   await api('/api/medico', {medico: medSel, notas: $('#medNotas').value}); await cargarMedicos(); armarListaMed(); toast('Notas guardadas.');
 };
 cargarMedicos();
+
+/* ------------------------------------------------ médico reconocido por la voz
+   El servidor calcula la huella de voz de cada audio y la compara con las muestras de cada médico (voces.py).
+   seguro = se asignó solo · dudoso = se sugiere (la IA usó la plantilla general) · sin reconocer.
+   Al guardar el Word con un médico, la voz del audio queda como muestra suya. */
+const ICO_VOZ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+const pctV = p => p == null ? '' : Math.round(p * 100) + ' %';
+let VOZ_CASO = null;
+function ponerVoz(v, med){
+  VOZ_CASO = v || null;
+  const b = $('#vozCaso');
+  if(!v){ b.hidden = true; return; }
+  let cls = '', txt = '', tit = '';
+  if(med && v.por === 'voz'){
+    cls = 'seguro'; txt = 'por la voz · ' + pctV(v.puntaje);
+    tit = `Médico reconocido por la voz (se parece ${pctV(v.puntaje)} a sus muestras). Si no es, elegí el correcto en la lista: al guardar se corrige.`;
+  } else if(med){
+    cls = 'ok'; txt = v.muestra === med ? 'voz registrada' : 'elegido a mano';
+    tit = v.muestra === med ? `La voz de este audio ya es una muestra de ${med}.`
+      : `Al guardar, la voz de este audio queda como muestra de ${med}` + (v.medico && v.medico !== med && v.puntaje != null ? ` (la voz se parecía más a ${v.medico}, ${pctV(v.puntaje)}).` : '.');
+  } else if(v.estado === 'dudoso' && v.medico){
+    cls = 'dudoso'; txt = '¿' + v.medico + '? ' + pctV(v.puntaje);
+    tit = `La voz se parece a ${v.medico} (${pctV(v.puntaje)})` + (v.segundo ? ` y a ${v.segundo} (${pctV(v.puntaje2)})` : '')
+      + (v.motivo ? `; ${v.motivo}` : '') + `. La IA usó la plantilla general. Clic: es ${v.medico}.`;
+  } else if(v.estado === 'corto'){
+    cls = 'sin'; txt = 'voz muy corta'; tit = 'El audio tiene muy poca voz para reconocer al médico. Elegilo en la lista.';
+  } else {
+    cls = 'sin'; txt = 'voz sin reconocer';
+    tit = (v.motivo ? v.motivo[0].toUpperCase() + v.motivo.slice(1) + '. ' : '') + 'Elegí el médico en la lista: al guardar, su voz queda registrada y los audios siguientes se reconocen solos.';
+  }
+  b.className = 'voz-chip ' + cls; b.innerHTML = ICO_VOZ + '<span class="vz-txt">' + esc(txt) + '</span>';
+  b.title = tit; b.setAttribute('aria-label', 'Reconocimiento por la voz: ' + tit); b.hidden = false;
+}
+$('#vozCaso').onclick = () => {
+  const v = VOZ_CASO; if(!v) return;
+  if(!$('#medCaso').value && v.estado === 'dudoso' && v.medico && medicos.some(m => m.nombre === v.medico)){
+    $('#medCaso').value = v.medico; cambiarMedicoCaso(v.medico);
+  } else toast($('#vozCaso').title, [], 9000);
+};
+async function cambiarMedicoCaso(v){
+  const n = actual; if(!n) return;
+  let r; try { r = await api('/api/caso_medico', {nombre: n, medico: v}); } catch(e){ toast(e.message); return; }
+  if(actual === n) ponerVoz(r.voz, v);
+  if(v && r.regenerar) toast(`Médico: ${v}. La IA armó este informe sin su estilo: podés regenerarlo con sus plantillas y ejemplos (se pierden los cambios). Al guardar, su voz queda registrada.`,
+    [['Regenerar con este médico', () => $('#bRegen').click()]], 12000);
+  else toast(v ? `Médico: ${v}. Al guardar, la voz de este audio queda como muestra de ${v}.` : 'Médico quitado.', [], 6000);
+  cargarLista();
+}
+/* escuchar un audio desde Médicos o Agrupar voces (aparte del reproductor del caso) */
+var AUDIO_M = null, BOTON_M = null;
+function pararMuestra(){ if(AUDIO_M && !AUDIO_M.paused) AUDIO_M.pause(); if(BOTON_M){ BOTON_M.textContent = '▶'; BOTON_M = null; } }
+function escucharMuestra(n, b){
+  if(BOTON_M === b){ pararMuestra(); return; }
+  pararMuestra(); audio.pause();
+  if(!AUDIO_M){ AUDIO_M = new Audio(); AUDIO_M.onended = pararMuestra; }
+  AUDIO_M.src = '/audio/' + encodeURIComponent(n);
+  AUDIO_M.play().catch(() => { pararMuestra(); toast('No se pudo reproducir el audio.'); });
+  BOTON_M = b; b.textContent = '❚❚';
+}
+const FUENTE_VOZ = {'guardado': 'al guardar', 'etiquetado': 'etiquetado a mano', 'revisado antes': 'informe anterior'};
+async function armarVozMedico(nombre){
+  const el = $('#medVoz');
+  if(!nombre){ el.innerHTML = ''; return; }
+  let r; try { r = await api('/api/voces/muestras?medico=' + encodeURIComponent(nombre)); } catch(e){ el.innerHTML = ''; return; }
+  if(medSel !== nombre) return;
+  const ms = r.muestras;
+  el.innerHTML = `<div><b>Voz</b> · ${ms.length ? ms.length + (ms.length === 1 ? ' muestra' : ' muestras') : 'sin muestras'} <span class="mu">· `
+    + (ms.length >= 3 ? 'se reconoce solo por la voz' : `con 3 se reconoce solo (faltan ${3 - ms.length})`) + '</span></div>'
+    + (ms.length ? '<ul>' + ms.map(m => `<li><span class="n">${esc(m.paciente || m.titulo || m.caso)}</span><span class="mu">${esc([cuandoCorto(m.fecha), m.seg ? Math.round(m.seg) + ' s de voz' : '', FUENTE_VOZ[m.fuente] || ''].filter(Boolean).join(' · '))}</span>`
+        + (m.audio ? `<button class="chico play-m" data-n="${esc(m.caso)}" title="Escuchar">▶</button>` : '')
+        + `<button class="chico quitar-m" data-n="${esc(m.caso)}" title="No es de este médico: deja de usarse para reconocerlo">Quitar</button></li>`).join('') + '</ul>'
+      : '<p class="mu" style="margin:6px 0 0">Cuando guardes un informe de este médico (o etiquetes audios en «Agrupar voces»), su voz queda registrada acá.</p>');
+  el.querySelectorAll('.play-m').forEach(b => b.onclick = () => escucharMuestra(b.dataset.n, b));
+  el.querySelectorAll('.quitar-m').forEach(b => b.onclick = async () => {
+    if(!await confirmar('¿Quitar esta muestra de voz?', `<p>Deja de usarse para reconocer a ${esc(nombre)}. El informe no se toca.</p>`, 'Quitar')) return;
+    try { await api('/api/voces/quitar', {caso: b.dataset.n}); } catch(e){ toast(e.message); return; }
+    pararMuestra(); await cargarMedicos(); armarListaMed(); armarVozMedico(nombre); });
+}
+async function contarSinEtiquetar(){
+  const b = $('#bAgrupar');
+  try { const r = await api('/api/voces'); b.textContent = 'Agrupar voces' + (r.sin_etiquetar ? ' · ' + r.sin_etiquetar : '');
+    b.dataset.modelo = r.modelo; b.dataset.error = r.error || ''; } catch(e){}
+}
+async function armarGrupos(){
+  const el = $('#grupos');
+  el.innerHTML = '<p class="mu">Buscando voces parecidas…</p>';
+  let g, est;
+  try { [g, est] = await Promise.all([api('/api/voces/agrupar'), api('/api/voces')]); }
+  catch(e){ el.innerHTML = `<div class="vac-card">No se pudo leer: ${esc(e.message)}</div>`; return; }
+  if(est.modelo !== 'listo'){
+    el.innerHTML = `<div class="vac-card"><b>El reconocimiento de voz todavía no está listo.</b><p>${est.modelo === 'bajando' ? 'Se está bajando el modelo (unos 26 MB, una sola vez).' : 'Falta el modelo de voz' + (est.error ? ': ' + esc(est.error) : '') + '. Se vuelve a intentar al reiniciar el servidor.'}</p></div>`;
+    return;
+  }
+  if(!g.grupos.length){
+    el.innerHTML = '<div class="vac-card"><b>No hay audios con la voz sin etiquetar.</b><p>Los audios nuevos aparecen acá hasta que se guardan con su médico o se etiquetan.</p></div>';
+    return;
+  }
+  el.innerHTML = '';
+  g.grupos.forEach((gr, i) => {
+    const d = document.createElement('section'); d.className = 'grupo-voz';
+    const s = gr.sugerencia || {}, conSug = s.medico && s.estado !== 'desconocido';
+    const sug = conSug ? `parece ${s.medico} (${pctV(s.puntaje)})` : 'no se parece a ningún médico con muestras';
+    d.innerHTML = `<header><b>${gr.casos.length > 1 ? 'Grupo ' + (i + 1) : 'Audio suelto'}</b> · ${gr.casos.length} ${gr.casos.length === 1 ? 'audio' : 'audios'} · <span class="mu">${esc(sug)}</span></header><ul>`
+      + gr.casos.map(c => `<li><label><input type="checkbox" checked data-n="${esc(c.nombre)}"><span class="n">${esc(c.paciente || c.titulo || c.nombre)}</span>`
+        + `<span class="mu">${esc([c.medico ? 'médico: ' + c.medico : '', c.dur ? mmss(c.dur) : '', c.fecha ? cuandoCorto(c.fecha) : '', c.origen && c.origen !== 'Servidor' ? c.origen : ''].filter(Boolean).join(' · '))}</span></label>`
+        + (c.audio ? `<button class="chico play-m" data-n="${esc(c.nombre)}" title="Escuchar">▶</button>` : '') + '</li>').join('')
+      + '</ul><div class="fila"><select class="selG" aria-label="Médico de estos audios"></select><button class="prim bEtiq">Etiquetar</button></div>';
+    const sel = d.querySelector('.selG');
+    llenarMedicos(sel, conSug ? s.medico : '', 'Elegí el médico…');
+    sel.onchange = async e => { if(e.target.value === NUEVO_MED){ const n = await nuevoMedico(); llenarMedicos(e.target, n || '', 'Elegí el médico…'); } };
+    d.querySelector('.bEtiq').onclick = async () => {
+      const med = sel.value, ns = [...d.querySelectorAll('input:checked')].map(x => x.dataset.n);
+      if(!med || med === NUEVO_MED){ toast('Elegí el médico de estos audios.'); sel.focus(); return; }
+      if(!ns.length){ toast('Tildá al menos un audio.'); return; }
+      let r; try { r = await api('/api/voces/etiquetar', {nombres: ns, medico: med}); } catch(e){ toast(e.message); return; }
+      const k = r.etiquetados.length;
+      toast(`${k} ${k === 1 ? 'audio etiquetado' : 'audios etiquetados'} como de ${med}: ahora tiene ${r.muestras} ${r.muestras === 1 ? 'muestra' : 'muestras'} de voz.`
+        + (r.salteados.length ? ` ${r.salteados.length} salteado(s): ${r.salteados.map(x => x.motivo).join(', ')}.` : ''), [], 8000);
+      pararMuestra(); await cargarMedicos(); armarGrupos(); cargarLista();
+    };
+    el.appendChild(d);
+  });
+  el.querySelectorAll('.play-m').forEach(b => b.onclick = () => escucharMuestra(b.dataset.n, b));
+}
+$('#bAgrupar').onclick = () => { mostrar('voces'); armarGrupos(); };
+$('#bActVoces').onclick = () => { pararMuestra(); armarGrupos(); };
+$('#bVolverMed').onclick = () => $('#bVerMed').click();
 
 /* ------------------------------------------------ plantillas */
 let secs = [], plSel = -1;

@@ -234,6 +234,11 @@ td.col-nom{width:100%;min-width:220px}
     <div class="cuerpo" id="tiempos"></div>
   </section>
 
+  <section class="card" aria-labelledby="tVoz" id="secVoz" hidden>
+    <div class="cab"><h2 id="tVoz">Médico reconocido por la voz</h2><span class="cuenta" id="vozCuenta"></span></div>
+    <div class="cuerpo" id="vozEst"></div>
+  </section>
+
   <section class="card" aria-labelledby="tUlt" id="secUlt" hidden>
     <div class="cab"><h2 id="tUlt">Informes del período</h2><span class="cuenta" id="ultCuenta"></span><span class="sep"></span>
       <button class="chico" data-abrir="registros" title="Abre la carpeta registros: actividad.csv tiene una fila por informe y se abre con Excel">Abrir carpeta (actividad.csv)</button></div>
@@ -367,6 +372,7 @@ function armarEst(){
   const hay = r.n > 0;
   ['#estResumen', '#secSem', '#filaGrupos', '#secUlt'].forEach(id => $(id).hidden = !hay);
   armarTiempos();
+  armarVoz();
 
   // avisos
   let av = '';
@@ -378,7 +384,7 @@ function armarEst(){
     const sinMed = (s.medicos.find(m => m.nombre === 'Sin especificar') || {}).n || 0;
     if(!r.rev_n) av += `<p class="explica">El <b>tiempo de revisión</b> se empezó a medir con esta versión: aparece en los informes que se guarden de ahora en adelante. Cuenta solo el tiempo con el caso abierto y trabajándolo (teclado, mouse o audio sonando); las pausas de más de un minuto no cuentan.</p>`;
     else if(r.rev_n < r.n) av += `<p class="nota">El tiempo de revisión está medido en ${r.rev_n} de ${r.n} informes (se mide desde el ${fechaT(s.rev_desde).slice(0, 5)}). Los promedios de tiempo usan solo esos.</p>`;
-    if(sinMed && sinMed >= r.n / 2) av += `<p class="explica av">${sinMed} de ${r.n} informes no tienen médico. Para que la tabla <b>Por médico</b> sirva, elegí el médico en «Médico de los audios que subas» (o en cada PC del trabajo) antes de mandar los audios, o en el caso abierto antes de guardar.</p>`;
+    if(sinMed && sinMed >= r.n / 2) av += `<p class="explica av">${sinMed} de ${r.n} informes no tienen médico. Para que la tabla <b>Por médico</b> sirva, elegí el médico en el caso abierto antes de guardar: así además el sistema aprende su voz y lo reconoce solo en los audios siguientes.</p>`;
   }
   poner('#estAvisos', av);
   if(!hay) return;
@@ -471,6 +477,35 @@ function armarTiempos(){
       `<li class="ev error" style="grid-template-columns:96px minmax(0,1fr)"><span class="hora">${fechaT(x.t)}</span><div class="txt"><b>${esc(x.titulo)}</b> <span class="mu">· ${esc(x.pc)}</span><ul class="det"><li>${esc(x.detalle || 'sin detalle')}</li></ul></div></li>`).join('') + '</ul>';
   }
   poner('#tiempos', h);
+}
+
+/* ---------- médico reconocido por la voz: lo detectado al llegar el audio contra el médico con el que se guardó */
+function armarVoz(){
+  const V = S.voz;
+  $('#secVoz').hidden = !V;
+  if(!V) return;
+  $('#vozCuenta').textContent = `${plural(V.n, 'informe guardado', 'informes guardados')} con médico y huella de voz`;
+  const pc = (a, b) => b ? Math.round(a / b * 100) + ' %' : '—';
+  const sg = V.seguro, du = V.dudoso, si = V.sin;
+  let h = '<div class="mini">'
+    + tile('Reconocidos solos', null, `<span class="grande">${pc(sg.n, V.n)}</span>`, `${ent(sg.n)} de ${ent(V.n)} · la IA usó el estilo de su médico`)
+    + tile('Acierto al reconocerlo solo', sg.n && sg.bien < sg.n ? 'err' : null, `<span class="grande">${pc(sg.bien, sg.n)}</span>`, sg.n ? `${ent(sg.bien)} de ${ent(sg.n)}` + (sg.n > sg.bien ? ` · ${ent(sg.n - sg.bien)} con otro médico (ver abajo)` : ' · ninguno equivocado') : 'todavía ninguno')
+    + tile('Dudosos', null, `<span class="grande">${ent(du.n)}</span>`, du.n ? `la sugerencia era la correcta en ${pc(du.bien, du.n)}` : 'ninguno en el período')
+    + tile('Sin reconocer', null, `<span class="grande">${ent(si.n)}</span>`, 'médicos nuevos o con pocas muestras de voz')
+    + '</div>';
+  if(V.medicos.length){
+    h += '<div class="sub-t">Por médico</div><div class="tabla-borde"><table><thead><tr><th scope="col">Médico</th><th scope="col" class="num">Informes</th><th scope="col" class="num">Reconocidos solos</th><th scope="col" class="num">Equivocados</th></tr></thead><tbody>';
+    for(const m of V.medicos)
+      h += `<tr><td class="col-nom"><span class="nom">${esc(m.medico)}</span></td><td class="num">${ent(m.n)}</td><td class="num">${pc(m.seguro, m.n)}</td><td class="num${m.mal ? ' lenta' : ''}">${m.mal ? ent(m.mal) : '<span class="mu">0</span>'}</td></tr>`;
+    h += '</tbody></table></div>';
+  }
+  if(V.errores.length){
+    h += '<div class="sub-t">Reconocidos con el médico equivocado</div><div class="tabla-borde"><table><thead><tr><th scope="col">Guardado</th><th scope="col">Audio</th><th scope="col">La voz dijo</th><th scope="col">Era</th></tr></thead><tbody>';
+    for(const x of V.errores)
+      h += `<tr><td style="white-space:nowrap">${fechaT(x.t)}</td><td><span class="nom">${esc(x.titulo)}</span></td><td>${esc(x.voz_medico)}${x.puntaje != null ? ` <span class="mu">(${ent(x.puntaje)} %)</span>` : ''}</td><td>${esc(x.medico)}</td></tr>`;
+    h += '</tbody></table></div><p class="nota">Si se repite con los mismos dos médicos, conviene revisar sus muestras en Médicos (quitar las mal etiquetadas). También se puede pedir más parecido para reconocerlo solo en <code>configuracion.json</code> → <code>"voces": {"umbral_seguro": 0.7}</code>.</p>';
+  }
+  poner('#vozEst', h);
 }
 
 // "Mamografía + Eco mamaria" -> cada estudio en un bloque que no se corta; si no entra, pasa al renglón siguiente con su "+"

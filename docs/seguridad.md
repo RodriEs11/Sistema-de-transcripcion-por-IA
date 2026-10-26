@@ -11,6 +11,7 @@
 | Plantillas y notas de médicos | `conocimiento/` | No |
 | Contraseñas y llaves | `acceso_remoto.json` (hashes PBKDF2), DPAPI en cada PC | No |
 | Registros | `registros/` | No |
+| Huellas de voz de los médicos | `voces/huellas.json`, `<caso>.voz.json` | No (no permiten reconstruir la voz ni lo dictado) |
 
 Todo el reconocimiento de voz y la generación con IA se ejecutan **en la PC servidor** (Whisper y Ollama locales):
 ningún dato clínico se envía a servicios de IA externos.

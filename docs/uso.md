@@ -3,7 +3,8 @@
 ## Flujo de trabajo
 
 1. Abrir **Ollama** y luego **`interfaz.bat`** (o `iniciar_servidor.bat` si se usa desde otras PC).
-2. Elegir el **médico** de los audios que se van a subir. Las PC del trabajo tienen su médico predeterminado.
+2. El **médico** se reconoce solo por la voz ([voz.md](voz.md)): dejá «Automático (por la voz)» y confirmalo en
+   cada caso al revisar. Solo hace falta elegirlo antes si todos los audios que vas a subir son del mismo médico.
 3. **Cargar el audio**: arrastrarlo a la lista o hacer clic en *Cargar audio*. En las PC del trabajo la app los toma sola.
    Estados: *en cola → transcribiendo → generando → para revisar*.
 4. **Abrir el caso**: informe editable a la izquierda; dictado a la derecha (se resalta mientras suena) y debajo
@@ -11,7 +12,8 @@
 5. Atender los **avisos** de arriba: datos dictados que no están en el informe, posibles partes no transcritas
    (▶ escuchar, ✕ descartar) y estudios sin plantilla.
 6. Recorrer las marcas con **F2**. Si algo está mal, se escribe encima y la marca desaparece; si está bien, **F8**.
-7. **Leer el informe completo**: puede haber errores sin marcar.
+7. **Leer el informe completo**: puede haber errores sin marcar. Revisar el **médico** (junto al título): si no es o
+   está sin reconocer, elegirlo; al guardar, su voz queda registrada.
 8. **Guardar Word y aprender**: crea `Informes\NOMBRE.docx`, registra el ejemplo, el historial y el tiempo de revisión.
    Alternativa: **Copiar para Word** (con formato) para pegar en un documento con encabezado.
 
