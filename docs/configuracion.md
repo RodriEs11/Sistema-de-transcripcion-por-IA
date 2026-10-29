@@ -10,7 +10,7 @@ Se crea en el primer arranque copiando `configuracion.ejemplo.json`. No se versi
 | `modelo_whisper` | `"large-v3"` | Modelo de faster-whisper |
 | `dispositivo_whisper` | `"cuda"` | Opcional. `"cpu"` para usar el procesador si no hay placa NVIDIA (mucho más lento) |
 | `fuente`, `tamano_fuente` | `"Tahoma"`, `12` | Fuente del Word, de la vista previa y de "Copiar para Word" |
-| `lineas_vacias_para_encabezado` | `6` | Renglones vacíos al principio para el encabezado del paciente |
+| `lineas_vacias_para_encabezado` | `0` | Renglones vacíos al principio para el encabezado del paciente; por defecto no se reservan |
 | `linea_vacia_entre_titulo_y_texto` | `true` | Línea en blanco después de cada título |
 | `carpeta_audios_nuevos` | `"..\\Audios_nuevos"` | Carpeta de audios recibidos (relativa a `sistema\`; en Linux la barra invertida vale como `/`) |
 | `carpeta_informes` | `"..\\Informes"` | Carpeta de los Word y de los datos de revisión |

@@ -61,7 +61,7 @@ def juntar_audios(args, cfg):
 COLORES = None
 
 
-PAGINA_DEF = {"nombre": "A4", "ancho_cm": 21.0, "alto_cm": 29.7, "margen_superior_cm": 7.5,
+PAGINA_DEF = {"nombre": "A4", "ancho_cm": 21.0, "alto_cm": 29.7, "margen_superior_cm": 2.5,
               "margen_inferior_cm": 4.0, "margen_izquierdo_cm": 1.3, "margen_derecho_cm": 3.0}
 ALINEACIONES = ("left", "center", "right", "justify")
 
@@ -80,7 +80,7 @@ def parrafos_docx(marcado, cfg):
     lineas = []
     for ln in marcado:
         vacia = not "".join(t for t, _, _ in ln["segs"]).strip()
-        if vacia and (not lineas or lineas[-1] is None):
+        if vacia and not lineas:
             continue
         lineas.append(None if vacia else ln)
     while lineas and lineas[-1] is None:
@@ -129,8 +129,16 @@ def aplicar_formato(pars, formato):
             if not isinstance(r, dict) or not isinstance(r.get("t"), str) or not r["t"]:
                 continue
             c = r.get("c") or ""
+            h = r.get("h") or ""
+            fuente = r.get("f") or ""
+            tamano = r.get("s")
             runs.append({"t": r["t"], "b": bool(r.get("b")), "i": bool(r.get("i")), "u": bool(r.get("u")),
-                         "c": c if re.fullmatch(r"#[0-9a-fA-F]{6}", c) else ""})
+                         "x": bool(r.get("x")),
+                         "c": c if isinstance(c, str) and re.fullmatch(r"#[0-9a-fA-F]{6}", c) else "",
+                         "h": h if isinstance(h, str) and re.fullmatch(r"#[0-9a-fA-F]{6}", h) else "",
+                         "f": fuente if isinstance(fuente, str) and re.fullmatch(r"[\w .-]{1,80}", fuente) else "",
+                         "s": float(tamano) if isinstance(tamano, (float, int)) and not isinstance(tamano, bool)
+                              and 6 <= tamano <= 96 else None})
         if runs and "".join(r["t"] for r in runs) == t:
             p["runs"] = runs
     return pars
@@ -145,11 +153,10 @@ def escribir_docx(marcado, destino, cfg, formato=None):
              "plantilla": C.GRAY_25, "verificar": C.TURQUOISE}
 
     doc = Document()
-    if cfg.get("pagina"):
-        pg, sec = pagina(cfg), doc.sections[0]
-        sec.page_width, sec.page_height = Cm(pg["ancho_cm"]), Cm(pg["alto_cm"])
-        sec.top_margin, sec.bottom_margin = Cm(pg["margen_superior_cm"]), Cm(pg["margen_inferior_cm"])
-        sec.left_margin, sec.right_margin = Cm(pg["margen_izquierdo_cm"]), Cm(pg["margen_derecho_cm"])
+    pg, sec = pagina(cfg), doc.sections[0]
+    sec.page_width, sec.page_height = Cm(pg["ancho_cm"]), Cm(pg["alto_cm"])
+    sec.top_margin, sec.bottom_margin = Cm(pg["margen_superior_cm"]), Cm(pg["margen_inferior_cm"])
+    sec.left_margin, sec.right_margin = Cm(pg["margen_izquierdo_cm"]), Cm(pg["margen_derecho_cm"])
     st = doc.styles["Normal"]
     st.font.name = cfg["fuente"]
     st.font.size = Pt(cfg["tamano_fuente"])
@@ -180,6 +187,18 @@ def escribir_docx(marcado, destino, cfg, formato=None):
                 r.bold = True if x["b"] else None
                 r.italic = True if x["i"] else None
                 r.underline = True if x["u"] else None
+                r.font.strike = True if x.get("x") else None
+                if x.get("f"):
+                    r.font.name = x["f"]
+                    for att in ("w:ascii", "w:hAnsi", "w:cs", "w:eastAsia"):
+                        r._element.get_or_add_rPr().get_or_add_rFonts().set(qn(att), x["f"])
+                if x.get("s"):
+                    r.font.size = Pt(x["s"])
+                if x.get("h"):
+                    from docx.oxml import OxmlElement
+                    fondo = OxmlElement("w:shd")
+                    fondo.set(qn("w:fill"), x["h"][1:].upper())
+                    r._element.get_or_add_rPr().append(fondo)
                 if x["c"]:
                     r.font.color.rgb = RGBColor.from_string(x["c"][1:].upper())
             continue
