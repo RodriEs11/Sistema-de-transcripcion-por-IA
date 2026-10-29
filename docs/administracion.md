@@ -119,3 +119,17 @@ en `conocimiento/copias/`. La IA lo usa desde el próximo informe.
 - Hacer copia de seguridad de `conocimiento/`, `ejemplos/`, `resultados/` y `acceso_remoto.json`: son lo único
   que no se puede regenerar.
 - Comparar versiones del sistema con la evaluación de [pipeline.md](pipeline.md#evaluación).
+
+### Médicos (desde la versión 2026.10.40)
+
+La pestaña **Médicos** (`/admin/medicos`) permite consultar el listado, agregar un médico,
+modificar su nombre y sus notas para la IA, y eliminarlo con confirmación. Comparte los permisos
+del panel de administración, incluido el acceso remoto autenticado.
+
+El nombre debe tener de 2 a 120 caracteres. Se rechazan nombres repetidos aunque cambien
+mayúsculas, tildes o espacios, tanto al agregar como al renombrar. Las notas se guardan en
+`conocimiento/medicos/`, como las de la pantalla de revisión.
+
+Estas acciones gestionan el listado y sus notas: no reescriben informes, asignaciones anteriores,
+preferencias de PC, estadísticas ni muestras de voz. Al renombrar, los registros anteriores
+conservan el nombre original; al eliminar, se conservan esos registros históricos.

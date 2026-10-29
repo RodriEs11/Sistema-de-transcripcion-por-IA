@@ -7,6 +7,68 @@ El servidor se versiona por fecha; la app del trabajo, con [versionado semántic
 
 Sin cambios pendientes.
 
+## [Servidor 2026.10.44] — 2026-10-29
+
+### Corregido
+- El médico seleccionado conserva el fondo azul y una tilde de confirmación en la lista.
+- El hover y la navegación con teclado usan un resaltado gris independiente de la selección.
+
+## [App 1.20] — 2026-10-29
+
+### Corregido
+- Diferenciación visual entre médico asignado y opción bajo el mouse o el teclado en el visor.
+
+## [Servidor 2026.10.43] — 2026-10-29
+
+### Corregido
+- El menú de médicos resalta cada opción al pasar el mouse.
+- El desplegable ocupa como máximo 320 px o la mitad de la altura de la ventana,
+  con desplazamiento interno y buscador siempre visible.
+- La flecha del selector queda alineada al extremo derecho, con espacio reservado
+  incluso cuando el nombre del médico es largo.
+
+## [App 1.19] — 2026-10-29
+
+### Corregido
+- Resaltado, altura del desplegable y posición de la flecha del selector de médicos del visor.
+
+## [Servidor 2026.10.42] — 2026-10-29
+
+### Corregido
+- Ícono «+» centrado horizontal y verticalmente en el botón para agregar médicos del visor,
+  con tamaño fijo e independiente de la fuente y del tema de pantalla.
+
+## [App 1.18] — 2026-10-29
+
+### Corregido
+- Alineación del botón para agregar médicos en la interfaz de revisión.
+
+## [Servidor 2026.10.41] — 2026-10-29
+
+### Agregado
+- Buscador dentro del selector de médicos del visor del estudio: filtra por nombre o apellido,
+  sin distinguir tildes ni mayúsculas, con selección por teclado y aviso cuando no hay resultados.
+- Botón pequeño «+» junto al selector para agregar y asignar un médico; el alta ya no aparece
+  como opción al final de la lista del visor.
+
+## [App 1.17] — 2026-10-29
+
+### Cambiado
+- Interfaz de revisión con búsqueda de médicos y botón de alta junto al selector.
+
+## [Servidor 2026.10.40] — 2026-10-29
+
+### Agregado
+- Pestaña Médicos del panel con listado, alta, modificación de nombre y notas, y eliminación confirmada.
+- Validación de nombres duplicados en el servidor y la interfaz, ignorando mayúsculas, tildes y espacios.
+- El alta desde la revisión también valida duplicados en el servidor para evitar sobrescribir notas.
+- La gestión del listado conserva las asignaciones y los registros históricos de informes y voz.
+
+## [App 1.16] — 2026-10-29
+
+### Cambiado
+- Versión de escritorio sincronizada con la nueva gestión de médicos de la interfaz compartida.
+
 ## [Servidor 2026.10.39] — 2026-10-29
 
 ### Cambiado

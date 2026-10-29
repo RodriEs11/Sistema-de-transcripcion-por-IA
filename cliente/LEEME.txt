@@ -1,8 +1,11 @@
 TRANSCRIPCIÓN · aplicación para las PC del trabajo (info-01, info-02, info-03)
 =============================================================================
 
-Versión actual: 1.15 (2026-10-29).
-Incluye la revisión con editor A4 y los cambios recientes de formato, menú contextual
+Versión actual: 1.20 (2026-10-29).
+Incluye búsqueda por nombre o apellido en el selector del visor y botón «+» centrado para agregar médicos.
+El médico seleccionado queda marcado con una tilde y color azul; el hover usa un resaltado gris.
+El selector resalta las opciones al pasar el mouse, limita la altura de la lista y mantiene la flecha a la derecha.
+También incluye la pestaña Médicos del panel de administración y la revisión con editor A4 y los cambios recientes de formato, menú contextual
 y atajos configurables. La interfaz de revisión se carga desde el Servidor actualizado.
 
 QUÉ HACE

@@ -56,6 +56,7 @@ los envía por un túnel cifrado y muestra la misma interfaz de revisión.
 - Whisper large-v3 (faster-whisper, CUDA float16) con *prompt* de vocabulario médico y VAD.
 - Detección de fragmentos que Whisper omitió y **segunda pasada** solo sobre esos tramos.
 - Normalización de números, horas y niveles vertebrales ("veintitrés" → 23, "hora 11" → H11, "L5, S1" → L5-S1).
+- Selector de médicos del visor con buscador por nombre o apellido y botón «+» al costado para agregar uno nuevo.
 - Selección automática de plantillas, ejemplos (*few-shot*) y referencias según el estudio y el médico.
 - Orden de estudios impuesto por código (Mamografía → Ecografía mamaria → Categorización → Transvaginal → Tiroides).
 
@@ -74,7 +75,7 @@ los envía por un túnel cifrado y muestra la misma interfaz de revisión.
 - Túnel rápido de Cloudflare con descubrimiento automático de la dirección (ntfy.sh).
 - Autenticación por PC (llave *Bearer* + cookie de sesión), contraseñas con PBKDF2 y bloqueo por intentos.
 - App de escritorio portátil (WinForms + WebView2) con cola cifrada (DPAPI) y **actualización automática verificada**.
-- Panel de administración (estado, túnel, PC vinculadas, errores, estadísticas) y registro estructurado.
+- Panel de administración (estado, túnel, PC vinculadas, errores, estadísticas y gestión de médicos) y registro estructurado.
 
 ## Cómo funciona
 
