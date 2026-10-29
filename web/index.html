@@ -377,6 +377,9 @@ body.compacto #bCompacto .agr{display:block}body.compacto #bCompacto .cmp{displa
 .vp-ed ::selection{background:#b4d0f7}
 /* barra de formato (como la de Word, en chico) */
 .vp-fmt{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 16px;background:var(--panel);border-bottom:1px solid var(--bd)}
+#vp.integrado:not(.ampliado).formato-oculto #vpFmt{display:none}
+#vpAlternarFormato{display:none}
+#vp.integrado:not(.ampliado) #vpAlternarFormato{display:inline-flex}
 .vp-fmt .grupo{display:flex;gap:2px;padding-right:8px;margin-right:4px;border-right:1px solid var(--bd)}
 .vp-fmt .grupo:last-of-type{border-right:0}
 .vp-fmt button{width:32px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-color:transparent;background:transparent;border-radius:6px}
@@ -852,6 +855,7 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
 <div id="vp" role="dialog" aria-modal="true" aria-labelledby="vpTit">
   <div class="vp-barra">
     <h2 id="vpTit">Editor de Word</h2><span id="vpInfo"></span><span class="sep"></span>
+    <button id="vpAlternarFormato" type="button" aria-controls="vpFmt" aria-expanded="true">Ocultar herramientas</button>
     <select id="vpZoom" title="Tamaño de la vista"><option value="ajustar">Ajustar al ancho</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option></select>
     <button id="vpGuardar" class="prim">Guardar Word y aprender</button>
     <button id="vpCopiar" class="prim" title="Copia el texto con su formato para pegar en Word">Copiar para Word</button>
@@ -1580,34 +1584,21 @@ editor.addEventListener('input', () => {
   const el = marcaEnCursor(); if(el) resolver(el);
   else { actualizarPend(); programarBorrador(); }
 });
-/* Pegar: siempre como texto sin formato. Si son varios renglones, el navegador copia la clase del renglón
-   donde está el cursor (p. ej. el título: negrita y centrado) a todos los renglones nuevos; después de pegar
-   se dejan con el formato normal del informe y solo los que parecen título de estudio quedan centrados. */
+/* El editor de respaldo usa el mismo lector de formato que las hojas A4. */
 function pareceTitulo(l){
   const x = (l || '').trim();
   if(!x || x.startsWith('-') || /[.:]$/.test(x) || x.length > 110) return false;
   const w = (sinAcentos(x.toLowerCase()).match(/[a-z]+/) || [''])[0];
   return (FORMATO.palabras_titulo || []).includes(w);
 }
-function limpiarPegado(ln){
-  ln.className = 'ln';
-  ['linea','motivo','seg'].forEach(k => delete ln.dataset[k]);
-  ln.removeAttribute('title'); ln.removeAttribute('style');
-  ln.querySelectorAll('b,strong,i,em,u,span,font').forEach(m => m.replaceWith(...m.childNodes));
-  if(pareceTitulo(ln.textContent)) ln.classList.add('tit');
-}
 editor.addEventListener('paste', e => {
   e.preventDefault();
-  const t = (e.clipboardData.getData('text/plain') || '').replace(/\r\n?/g, '\n').replace(/\t/g, ' ').replace(/\u00a0/g, ' ');
-  if(!t) return;
-  if(!t.includes('\n')){ document.execCommand('insertText', false, t); return; }
-  const antes = new Map([...editor.children].map(el => [el, el.textContent]));
-  document.execCommand('insertText', false, t);
-  for(const el of [...editor.children]){
-    if(el.tagName !== 'DIV') continue;
-    if(!antes.has(el)) limpiarPegado(el);
-    else if(antes.get(el) !== el.textContent) el.classList.toggle('tit', pareceTitulo(el.textContent));
-  }
+  const html = e.clipboardData.getData('text/html'), t = e.clipboardData.getData('text/plain');
+  if(!html && !t) return;
+  const pars = interpretarPegadoWord(html, t);
+  document.execCommand('insertHTML', false, pars.map(p => {
+    const el = parrafoVp(p); el.className = 'ln'; return el.outerHTML;
+  }).join(''));
   actualizarPend(); programarBorrador();
 });
 
@@ -3111,11 +3102,11 @@ $('#cfgOriginal').onclick = async () => {
   if(!await confirmar('¿Volver a la configuración original de la pantalla?',
       '<p>Tema, tamaño del texto, lista, anchos de los paneles y opciones del audio vuelven a como venían. No se toca ningún informe.</p>', 'Restablecer', 'prim')) return;
   try { Object.keys(localStorage).filter(k => k.startsWith('pref_')).forEach(k => localStorage.removeItem(k));
-        ['tema', 'listaOculta', 'velUltima'].forEach(k => localStorage.removeItem(k)); } catch(e){}
+        ['tema', 'listaOculta', 'velUltima', 'barraFormatoOculta'].forEach(k => localStorage.removeItem(k)); } catch(e){}
   delete document.documentElement.dataset.theme;
   $('#vel').value = '1'; audio.playbackRate = 1;
   $('#cfgPaneles').onclick();
-  aplicarTema(); aplicarPrefs(); aplicarLista(); pintarConfig(); mostrarGuardado();
+  aplicarTema(); aplicarPrefs(); aplicarLista(); aplicarBarraFormato(); pintarConfig(); mostrarGuardado();
 };
 // controles de la aplicación del trabajo
 document.querySelectorAll('#config [data-app]').forEach(c => c.onchange = () => { hacerApp(c.dataset.app, c.checked); mostrarGuardado(); });

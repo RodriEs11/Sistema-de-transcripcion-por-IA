@@ -7,6 +7,23 @@ El servidor se versiona por fecha; la app del trabajo, con [versionado semántic
 
 Sin cambios pendientes.
 
+## [Servidor 2026.10.45] — 2026-10-29
+
+### Corregido
+- Pegar desde Word, con Ctrl+V o desde el menú contextual, conserva el formato de los párrafos y tramos de texto del origen: alineación, negrita, cursiva, subrayado, tachado, fuente, tamaño y colores.
+- El texto pegado sin formato deja de heredar la negrita y el centrado del título donde está el cursor.
+
+### Agregado
+- Botón para ocultar y mostrar la barra de formato en la edición con audio, con preferencia recordada en esa PC. La vista ampliada mantiene sus herramientas visibles.
+
+## [App 1.21] — 2026-10-29
+
+### Corregido
+- Pegado desde Word con formato original en el editor de revisión.
+
+### Agregado
+- Control para ocultar y recuperar las herramientas de formato durante la revisión con audio.
+
 ## [Servidor 2026.10.44] — 2026-10-29
 
 ### Corregido

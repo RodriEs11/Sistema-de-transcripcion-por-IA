@@ -66,6 +66,8 @@ los envía por un túnel cifrado y muestra la misma interfaz de revisión.
 - Audio sincronizado: el cursor del informe resalta el tramo del dictado y la forma de onda; atajos configurables (F5 reproducir/pausa, F6/F7 saltos, F3/F4 velocidad, F10 está bien).
 - Vista previa idéntica al Word (A4, márgenes, Tahoma 12) con editor de formato (F9).
 - Autocorrecciones de Word (Normal.dotm) dentro del editor, modo oscuro, modo compacto, paneles ajustables.
+- Pegado desde Word con el formato original (alineación, estilos, fuente, tamaño y colores), tanto con Ctrl+V como desde el menú contextual. El texto sin formato se pega alineado a la izquierda y sin negrita heredada.
+- Botón «Ocultar herramientas» / «Mostrar herramientas» en el editor con audio para liberar espacio; recuerda la elección en esa PC. En la vista ampliada las herramientas permanecen visibles.
 
 **Aprendizaje y medición**
 - Cada informe guardado se convierte en ejemplo; las correcciones repetidas pasan a ser reglas automáticas.
