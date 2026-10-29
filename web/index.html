@@ -327,7 +327,7 @@ body.compacto #bCompacto .agr{display:block}body.compacto #bCompacto .cmp{displa
 #lineaInfo{margin-left:6px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--mu);display:flex;align-items:center;gap:4px}
 #lineaInfo button{padding:0 6px;font-size:11.5px;line-height:1.5}
 /* ---------- explicación de cada marca */
-#explica{position:fixed;z-index:8;max-width:400px;min-width:220px;background:var(--panel);color:var(--tx);border:1px solid var(--bd2);
+#explica{position:fixed;z-index:32;max-width:400px;min-width:220px;background:var(--panel);color:var(--tx);border:1px solid var(--bd2);
   border-radius:9px;box-shadow:0 6px 24px rgba(0,0,0,.18);padding:9px 12px 8px;font-size:13px;line-height:1.4;display:none}
 #explica .ex-tit{display:flex;align-items:center;gap:7px;font-weight:600;margin-bottom:3px}
 #explica .ex-tit i{width:10px;height:10px;border-radius:3px;flex:none}
@@ -348,7 +348,28 @@ body.compacto #bCompacto .agr{display:block}body.compacto #bCompacto .cmp{displa
 .vp-escala{display:flex;flex-direction:column;align-items:center;gap:8px;width:max-content;min-width:100%}
 .vp-pag{background:#fff;color:#000;box-shadow:0 1px 3px rgba(0,0,0,.18),0 8px 28px rgba(0,0,0,.10);flex:none;box-sizing:border-box;overflow:hidden}
 :root[data-tema-efectivo=dark] .vp-pag{box-shadow:0 0 0 1px #4a4945}
-.vp-cuerpo{overflow:hidden}
+.vp-cuerpo{overflow:hidden;position:relative}.vp-ed{min-height:1em}.vp-pag{outline:1px solid #d1d1d1}.vp-escala{gap:10px}.vp-num{margin-bottom:20px}
+.vp-lienzo{position:relative;margin:0 auto}.vp-lienzo .vp-escala{position:absolute;left:50%;top:0;width:21cm;min-width:0;transform-origin:top center}
+/* El mismo editor vive en la revisión. F9 solo cambia su presentación. */
+.hojawrap.word-activo{display:flex;flex-direction:column;overflow:hidden}
+.word-activo > .hoja{display:none}
+#vp.integrado{position:relative;inset:auto;z-index:auto;flex:1;min-height:0;border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+#vp.integrado.ampliado{position:fixed;inset:0;z-index:10;border-radius:0}
+#vp.integrado:not(.ampliado) .vp-barra{padding:6px 8px;gap:6px}
+#vp.integrado:not(.ampliado) .vp-barra h2{font-size:13px}
+#vp.integrado:not(.ampliado) #vpGuardar,#vp.integrado:not(.ampliado) #vpCopiar{display:none}
+#vp.integrado:not(.ampliado) .vp-fmt{padding:5px 8px;gap:3px}
+#vp.integrado:not(.ampliado) #vpFmtEstado{flex-basis:100%;font-size:11px}
+#vp.integrado:not(.ampliado) #vpHojas{padding:14px 8px 24px}
+#vp.integrado:not(.ampliado) #vpAviso{display:none!important}
+.vp-ed mark{color:inherit;border-radius:2px;cursor:pointer;padding:0}
+.vp-ed .m-numero,.vp-ed .m-completar{background:#f8c9c4}
+.vp-ed .m-dudoso,.vp-ed .m-bajaconf{background:#fbe7a6}
+.vp-ed .m-verificar,.vp-ed .l-verificar{background:#e2f5f5;box-shadow:inset 0 -2px #2aa6a6}
+.vp-ed .l-plantilla{background:#ecebe6}
+.vp-ed .activa{outline:2px solid #2557a7;outline-offset:1px}
+.vp-ed p.sonando{box-shadow:inset 3px 0 #2557a7}
+@media(max-width:800px){.hojawrap.word-activo{height:70vh;min-height:360px}}
 .vp-pag p{margin:0;white-space:pre-wrap;overflow-wrap:break-word;line-height:normal}
 .vp-enc{user-select:none}
 .vp-num{font-size:11.5px;color:var(--mu);margin-bottom:14px}
@@ -370,15 +391,23 @@ body.compacto #bCompacto .agr{display:block}body.compacto #bCompacto .cmp{displa
 #vpColorBtn .letra i{display:block;width:16px;height:4px;margin-top:2px;border-radius:1px;background:#c00000}
 #vpPaleta{position:absolute;top:34px;left:0;z-index:12;background:var(--panel);border:1px solid var(--bd2);border-radius:9px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:8px;display:none;width:214px}
 #vpPaleta.abierta{display:block}
-#vpPaleta .cols5{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:6px 0 8px}
-#vpPaleta .cols5 button{width:100%;height:26px;border-radius:5px;border:1px solid rgba(0,0,0,.18)}
-#vpPaleta .cols5 button:hover{outline:2px solid var(--ac);outline-offset:1px}
 #vpPaleta .fila{display:flex;align-items:center;gap:8px;width:100%;justify-content:flex-start;padding:0 6px;height:28px;font-size:13px}
 #vpPaleta .fila i{width:16px;height:16px;border-radius:3px;border:1px solid rgba(0,0,0,.25);display:inline-block}
 #vpPaleta label{display:flex;align-items:center;gap:8px;padding:0 6px;height:28px;font-size:13px;cursor:pointer;border-radius:6px}
 #vpPaleta label:hover{background:var(--bg)}
 #vpPaleta input[type=color]{width:22px;height:20px;padding:0;border:0;background:none}
 #vpFmtEstado{color:var(--mu);font-size:12px;margin-left:auto}
+.vp-fmt label{display:flex;align-items:center;gap:5px;font-size:12px}
+#vpTamano{width:64px;padding:5px}#vpFuente{max-width:160px;padding:5px}
+#vpMenu{position:fixed;z-index:30;width:290px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;padding:12px;background:var(--panel);border:1px solid var(--bd2);border-radius:10px;box-shadow:0 8px 30px #0003;color:var(--tx)}
+#vpMenu[hidden]{display:none}#vpMenu .fila-menu{display:flex;gap:5px;margin:7px 0;align-items:center;flex-wrap:wrap}
+#vpMenu .alineacion-menu button{width:34px;height:32px;display:inline-flex;align-items:center;justify-content:center}#vpMenu .alineacion-menu svg{width:18px;height:18px}
+#vpMenu button{padding:5px 9px}#vpMenu button.on{background:var(--ac-suave);color:var(--ac)}
+#vpMenu label{display:flex;align-items:center;gap:6px;font-size:13px}#vpMenu select{max-width:155px}#vpMenuTamano{width:65px}
+.paleta-word{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0}
+#vpPaleta .paleta-word button,#vpMenu .paleta-word button{width:100%;height:26px;padding:0;border:1px solid #888;border-radius:4px}
+#vpPaleta .paleta-word button:hover,#vpMenu .paleta-word button:hover{outline:2px solid var(--ac);outline-offset:2px}
+#vpPaleta small,#vpMenu small{display:block;color:var(--mu);font-size:12px;margin-top:8px}
 /* ---------- barra del informe compacta (pensada para 1366 × 768): dos filas que nunca se enciman.
    Fila 1: paciente, médico y audio. Fila 2: marcas y acciones; si no entra, ajustarBarra() la achica por pasos
    (clases n1…n6 en #filaAcciones) en lugar de partirla en varias líneas. */
@@ -608,8 +637,8 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
           <select id="medCaso" class="med" title="Médico que dictó este audio"></select>
           <button id="vozCaso" class="voz-chip" type="button" hidden></button>
           <div class="player">
-            <button id="bAtras" title="Atrás 3 segundos (F3)">−3s</button>
-            <button id="bPlay" title="Reproducir / pausar (F4)">▶</button>
+            <button id="bAtras" title="Atrás 3 segundos (F6)">−3s</button>
+            <button id="bPlay" title="Reproducir / pausar (F5)">▶</button>
             <button id="bAdel" title="Adelante 3 segundos">+3s</button>
             <input type="range" id="prog" min="0" max="1000" value="0" aria-label="Posición">
             <span id="tiempo">0:00 / 0:00</span>
@@ -620,8 +649,8 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
              las acciones que se usan poco, después se ocultan las teclas, los botones quedan solo con ícono, etc. -->
         <div class="fila f2" id="filaAcciones">
           <span id="pend"><span class="et-larga">0 marcas</span></span>
-          <button id="bSig" title="Ir a la siguiente marca y escuchar ese momento (F2)"><span class="et">Siguiente marca</span><span class="et-corta">Siguiente</span><kbd>F2</kbd></button>
-          <button id="bAcep" title="La marca seleccionada está bien: quitarla (F8)"><span class="et">Está bien</span><kbd>F8</kbd></button>
+          <button id="bSig" title="Ir a la siguiente marca y escuchar ese momento (F2)"><span class="et">Siguiente marca</span><span class="et-corta">Siguiente</span><kbd data-atajo="siguiente">F2</kbd></button>
+          <button id="bAcep" title="La marca seleccionada está bien: quitarla (F8)"><span class="et">Está bien</span><kbd data-atajo="aceptar">F8</kbd></button>
           <button id="bAyuda" class="ico" type="button" title="Qué significa cada color y atajos de teclado" aria-label="Colores y atajos de teclado" aria-haspopup="dialog" aria-expanded="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17.2h.01"/></svg></button>
           <span class="sep"></span>
@@ -633,11 +662,11 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span class="et">Más</span></button>
             <div id="menuMas" class="menu" role="menu" hidden></div>
           </div>
-          <button id="bVista" class="con-ico" title="Vista previa como Word (F9): hoja, márgenes, Tahoma 12 y negritas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h4"/></svg><span class="et">Vista previa</span><kbd>F9</kbd></button>
+          <button id="bVista" class="con-ico" title="Ampliar el editor de Word (F9)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h4"/></svg><span class="et">Ampliar editor</span><kbd data-atajo="vista">F9</kbd></button>
           <button id="bCopiar" class="con-ico" title="Copiar para Word: copia el texto con formato Tahoma 12 para pegar en tu Word"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2"/></svg><span class="et">Copiar para Word</span></button>
           <button id="bFin" class="prim con-ico" title="Guardar Word y aprender: crea el Word en la carpeta Informes y guarda tu corrección para que la IA aprenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="et">Guardar Word y aprender</span><span class="et-corta">Guardar Word</span></button>
         </div>
-        <div class="ley" id="leyenda"><span style="background:var(--rojo)">dato no dictado / completar</span><span style="background:var(--amarillo)">dudoso</span><span style="background:var(--turq-bg);box-shadow:inset 0 -2px 0 var(--turq)">no dictado junto al hallazgo</span><span style="background:var(--gris-bg);color:var(--gris)">frase de plantilla no dictada</span><span>· pasá el mouse sobre una marca (o usá <kbd>F2</kbd>) para ver qué se dictó · editar una marca la da por revisada</span></div>
+        <div class="ley" id="leyenda"><span style="background:var(--rojo)">dato no dictado / completar</span><span style="background:var(--amarillo)">dudoso</span><span style="background:var(--turq-bg);box-shadow:inset 0 -2px 0 var(--turq)">no dictado junto al hallazgo</span><span style="background:var(--gris-bg);color:var(--gris)">frase de plantilla no dictada</span><span>· pasá el mouse sobre una marca (o usá <kbd data-atajo="siguiente">F2</kbd>) para ver qué se dictó · editar una marca la da por revisada</span></div>
       </div>
       <div class="cols">
         <div class="hojawrap"><div id="nuevoEst"></div><div id="avisos"></div><div class="hoja"><div id="editor" contenteditable="true" spellcheck="true" lang="es"></div></div></div>
@@ -646,7 +675,7 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
           <h2>Dictado <span id="lineaInfo"></span><label><input type="checkbox" id="seguir" checked> seguir el audio</label></h2>
           <div id="dictado"></div>
           <div class="onda" id="ondaCaja" title=""><canvas id="onda"></canvas><div id="ondaTip"></div></div>
-          <div class="ayuda"><kbd>F4</kbd> reproducir/pausa · <kbd>F3</kbd> atrás 3s · <kbd>F2</kbd> siguiente marca · <kbd>Shift</kbd>+<kbd>F2</kbd> anterior · <kbd>F8</kbd> está bien · <kbd>F9</kbd> vista previa como Word · <kbd>Alt</kbd>+clic en una línea = escucharla · clic en una palabra del dictado = escucharla · el cursor en el informe resalta su parte del dictado · clic en la onda = saltar ahí · arrastrar sobre la onda = escuchar mientras se mueve</div>
+          <div class="ayuda"><kbd data-atajo="play">F4</kbd> reproducir/pausa · <kbd data-atajo="atras">F6</kbd> atrás <span class="salto-txt">3</span>s · <kbd data-atajo="adelante">F7</kbd> adelante <span class="salto-txt">3</span>s · <kbd data-atajo="lenta">F3</kbd> −0,25× · <kbd data-atajo="rapida">F4</kbd> +0,25× · <kbd data-atajo="siguiente">F2</kbd> siguiente marca · <kbd data-atajo="aceptar">F8</kbd> está bien · <kbd data-atajo="vista">F9</kbd> vista previa como Word · <kbd>Alt</kbd>+clic en una línea = escucharla · clic en una palabra del dictado = escucharla · el cursor en el informe resalta su parte del dictado · clic en la onda = saltar ahí · arrastrar sobre la onda = escuchar mientras se mueve</div>
         </div>
       </div>
     </section>
@@ -699,15 +728,18 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
     <li><i style="background:var(--turq-bg);box-shadow:inset 0 -2px 0 var(--turq)"></i><span><b>Turquesa</b> · no se dictó junto a ese hallazgo</span></li>
     <li><i style="background:var(--gris-bg);border:1px solid var(--gris)"></i><span><b>Gris</b> · frase de plantilla que el médico no dictó</span></li>
   </ul>
-  <p class="pop-nota">Pasá el mouse sobre una marca (o usá <kbd>F2</kbd>) para ver qué se dictó. Editar una marca la da por revisada.</p>
+  <p class="pop-nota">Pasá el mouse sobre una marca (o usá <kbd data-atajo="siguiente">F2</kbd>) para ver qué se dictó. Editar una marca la da por revisada.</p>
   <h3>Atajos de teclado</h3>
   <dl class="pop-atajos">
-    <dt><kbd>F4</kbd></dt><dd>reproducir / pausa (también <kbd>Ctrl</kbd>+<kbd>Espacio</kbd>)</dd>
-    <dt><kbd>F3</kbd></dt><dd>volver <span class="salto-txt">3</span> segundos</dd>
-    <dt><kbd>F2</kbd></dt><dd>siguiente marca · <kbd>Shift</kbd>+<kbd>F2</kbd> anterior</dd>
-    <dt><kbd>F8</kbd></dt><dd>la marca está bien</dd>
-    <dt><kbd>F9</kbd></dt><dd>vista previa como Word</dd>
-    <dt><kbd>Ctrl</kbd>+<kbd>S</kbd></dt><dd>guardar el borrador</dd>
+    <dt><kbd data-atajo="play">F4</kbd></dt><dd>reproducir / pausa</dd>
+    <dt><kbd data-atajo="atras">F3</kbd></dt><dd>volver <span class="salto-txt">3</span> segundos</dd>
+    <dt><kbd data-atajo="adelante">F7</kbd></dt><dd>adelantar <span class="salto-txt">3</span> segundos</dd>
+    <dt><kbd data-atajo="lenta">F3</kbd> / <kbd data-atajo="rapida">F4</kbd></dt><dd>reducir / aumentar velocidad en 0,25×</dd>
+    <dt><kbd data-atajo="siguiente">F2</kbd></dt><dd>siguiente marca</dd>
+    <dt><kbd data-atajo="aceptar">F8</kbd></dt><dd>la marca está bien</dd>
+    <dt><kbd data-atajo="vista">F9</kbd></dt><dd>vista previa como Word</dd>
+    <dt><kbd>Ctrl</kbd>+<kbd>S</kbd></dt><dd>subrayar en el editor de Word</dd>
+    <dt><kbd>Ctrl</kbd>+<kbd>Q / T / D / J</kbd></dt><dd>alinear izquierda / centrar / derecha / justificar</dd>
     <dt><kbd>Alt</kbd>+clic</dt><dd>en una línea del informe: escucharla</dd>
     <dt>clic</dt><dd>en una palabra del dictado: escucharla · en la onda: saltar ahí · arrastrar sobre la onda: escuchar mientras se mueve</dd>
   </dl>
@@ -722,6 +754,7 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
       <div class="cfg-tabs" role="tablist" aria-label="Secciones" aria-orientation="vertical">
         <button role="tab" type="button" data-tab="pantalla" id="tab-pantalla" aria-controls="cfg-pantalla">Pantalla</button>
         <button role="tab" type="button" data-tab="audio" id="tab-audio" aria-controls="cfg-audio">Audio y revisión</button>
+        <button role="tab" type="button" data-tab="teclado" id="tab-teclado" aria-controls="cfg-teclado">Atajos de teclado</button>
         <button role="tab" type="button" data-tab="pc" id="tab-pc" aria-controls="cfg-pc" class="solo-app">Esta PC</button>
         <button role="tab" type="button" data-tab="conexion" id="tab-conexion" aria-controls="cfg-conexion" class="solo-app">Conexión</button>
         <button role="tab" type="button" data-tab="acerca" id="tab-acerca" aria-controls="cfg-acerca">Acerca de</button>
@@ -732,7 +765,7 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
             <div class="segm" data-pref="tema" role="radiogroup" aria-label="Tema"><button type="button" role="radio" data-v="light">Claro</button><button type="button" role="radio" data-v="dark">Oscuro</button><button type="button" role="radio" data-v="">Como Windows</button></div></div>
           <div class="cfg-fila"><div class="cfg-txt"><b>Lista de informes</b><small>Ocultala para que el informe y el dictado tengan más lugar. También se oculta y se muestra con el botón de arriba de la lista.</small></div>
             <label class="interruptor" title="Mostrar la lista de informes"><input type="checkbox" id="cfgLista"><span></span></label></div>
-          <div class="cfg-fila"><div class="cfg-txt"><b>Tamaño del texto</b><small>Del informe y del dictado en la pantalla. No cambia el Word (siempre Tahoma 12).</small></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Tamaño del texto</b><small>Del informe y del dictado en la pantalla. Para cambiar el tamaño en el Word, usá el editor de Word (F9).</small></div>
             <div class="segm" data-pref="letra" role="radiogroup" aria-label="Tamaño del texto"><button type="button" role="radio" data-v="chica">Chico</button><button type="button" role="radio" data-v="">Normal</button><button type="button" role="radio" data-v="grande">Grande</button></div></div>
           <div class="cfg-fila"><div class="cfg-txt"><b>Referencias de colores arriba del informe</b><small>En pantallas chicas se ocultan solas. Siempre están en el botón <span class="ico-txt">?</span> de la barra.</small></div>
             <select data-pref="leyenda" aria-label="Referencias de colores"><option value="">Automático</option><option value="si">Mostrar siempre</option><option value="no">Ocultar</option></select></div>
@@ -744,14 +777,19 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
         <section class="cfg-panel" id="cfg-audio" role="tabpanel" aria-labelledby="tab-audio" data-panel="audio" hidden>
           <div class="cfg-fila"><div class="cfg-txt"><b>Velocidad al abrir un informe</b><small>Después se puede cambiar en cada informe, junto al audio.</small></div>
             <select data-pref="velInicial" aria-label="Velocidad al abrir un informe"><option value="">La última que usé</option><option value="0.75">0.75×</option><option value="1">1.00× (normal)</option><option value="1.25">1.25×</option><option value="1.5">1.50×</option><option value="1.75">1.75×</option><option value="2">2.00×</option></select></div>
-          <div class="cfg-fila"><div class="cfg-txt"><b>Saltos de los botones − y +</b><small>Cuánto retroceden o adelantan los botones del audio y <kbd>F3</kbd>.</small></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Saltos de los botones − y +</b><small>Cuánto retroceden o adelantan los botones del audio y los atajos para retroceder y adelantar.</small></div>
             <div class="segm" data-pref="salto" role="radiogroup" aria-label="Saltos"><button type="button" role="radio" data-v="2">2 s</button><button type="button" role="radio" data-v="">3 s</button><button type="button" role="radio" data-v="5">5 s</button><button type="button" role="radio" data-v="10">10 s</button></div></div>
           <div class="cfg-fila"><div class="cfg-txt"><b>Al reanudar, volver un poco</b><small>Después de una pausa, el audio retrocede para no perder la palabra en la que paraste.</small></div>
             <div class="segm" data-pref="retroceso" role="radiogroup" aria-label="Retroceso al reanudar"><button type="button" role="radio" data-v="0">No</button><button type="button" role="radio" data-v="">1 s</button><button type="button" role="radio" data-v="2">2 s</button><button type="button" role="radio" data-v="3">3 s</button></div></div>
           <div class="cfg-fila"><div class="cfg-txt"><b>El dictado sigue al audio</b><small>Mientras suena, el dictado se desplaza solo hasta la palabra que se escucha.</small></div>
             <label class="interruptor" title="El dictado sigue al audio"><input type="checkbox" data-pref-si="seguir"><span></span></label></div>
-          <div class="cfg-fila"><div class="cfg-txt"><b>Explicación de las marcas al pasar el mouse</b><small>Si se desactiva, la explicación aparece solo con <kbd>F2</kbd>.</small></div>
+          <div class="cfg-fila"><div class="cfg-txt"><b>Explicación de las marcas al pasar el mouse</b><small>Si se desactiva, la explicación aparece solo con <kbd data-atajo="siguiente">F2</kbd>.</small></div>
             <label class="interruptor" title="Explicación al pasar el mouse"><input type="checkbox" data-pref-si="explicar"><span></span></label></div>
+        </section>
+        <section class="cfg-panel" id="cfg-teclado" role="tabpanel" aria-labelledby="tab-teclado" data-panel="teclado" hidden>
+          <p>Elegí una tecla de función para cada acción. Los cambios se guardan en esta PC. Cada tecla puede usarse para una sola acción.</p>
+          <div id="cfgAtajos"></div>
+          <button type="button" id="cfgAtajosRestablecer">Restablecer atajos predeterminados</button>
         </section>
         <section class="cfg-panel" id="cfg-pc" role="tabpanel" aria-labelledby="tab-pc" data-panel="pc" hidden>
           <div class="cfg-fila"><div class="cfg-txt"><b>Abrir al iniciar Windows</b><small>Arranca escondida, junto al reloj, y ya toma los audios.</small></div>
@@ -794,29 +832,35 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
 </div>
 <div id="vp" role="dialog" aria-modal="true" aria-labelledby="vpTit">
   <div class="vp-barra">
-    <h2 id="vpTit">Vista previa como Word</h2><span id="vpInfo"></span><span class="sep"></span>
+    <h2 id="vpTit">Editor de Word</h2><span id="vpInfo"></span><span class="sep"></span>
     <select id="vpZoom" title="Tamaño de la vista"><option value="ajustar">Ajustar al ancho</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option></select>
-    <button id="vpCopiar" class="prim" title="Copia el texto con formato Tahoma 12 para pegar en tu Word">Copiar para Word</button>
+    <button id="vpGuardar" class="prim">Guardar Word y aprender</button>
+    <button id="vpCopiar" class="prim" title="Copia el texto con su formato para pegar en Word">Copiar para Word</button>
     <button id="vpCerrar" title="Volver al informe">Volver al informe<kbd>Esc</kbd></button>
   </div>
   <div class="vp-fmt" id="vpFmt" role="toolbar" aria-label="Formato del texto">
+    <div class="grupo"><label>Fuente <select id="vpFuente" aria-label="Fuente del texto"><option>Tahoma</option><option>Arial</option><option>Calibri</option><option>Cambria</option><option>Georgia</option><option>Times New Roman</option><option>Verdana</option></select></label>
+      <label>Tamaño <input id="vpTamano" type="number" min="6" max="96" step="0.5" value="12" aria-label="Tamaño de letra en puntos" list="vpTamanos"></label>
+      <datalist id="vpTamanos"><option value="8"><option value="10"><option value="11"><option value="12"><option value="14"><option value="16"><option value="18"><option value="24"><option value="36"><option value="48"></datalist></div>
     <div class="grupo">
       <button type="button" data-cmd="bold" title="Negrita (Ctrl+B)"><span class="tx">N</span></button>
       <button type="button" data-cmd="italic" title="Cursiva (Ctrl+K o Ctrl+I)"><span class="tx" style="font-style:italic;font-weight:400">K</span></button>
       <button type="button" data-cmd="underline" title="Subrayado (Ctrl+S o Ctrl+U)"><span class="tx" style="text-decoration:underline;font-weight:400">S</span></button>
+      <button type="button" data-cmd="strikeThrough" title="Tachado"><span style="text-decoration:line-through">abc</span></button>
+      <button type="button" id="vpResaltar" title="Resaltar en amarillo"><span style="background:#ffff00;color:#000">ab</span></button>
       <div class="vp-color">
         <button type="button" id="vpColorBtn" title="Color del texto"><span class="letra">A<i id="vpColorMuestra"></i></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><path d="m6 9 6 6 6-6"/></svg></button>
         <div id="vpPaleta" role="menu">
           <button type="button" class="fila" data-c="auto"><i style="background:#000"></i>Automático (negro)</button>
-          <div class="cols5"><button type="button" data-c="#000000" title="Negro" style="background:#000000"></button><button type="button" data-c="#C00000" title="Rojo oscuro" style="background:#C00000"></button><button type="button" data-c="#FF0000" title="Rojo" style="background:#FF0000"></button><button type="button" data-c="#ED7D31" title="Naranja" style="background:#ED7D31"></button><button type="button" data-c="#BF8F00" title="Dorado" style="background:#BF8F00"></button><button type="button" data-c="#00B050" title="Verde" style="background:#00B050"></button><button type="button" data-c="#375623" title="Verde oscuro" style="background:#375623"></button><button type="button" data-c="#0070C0" title="Azul" style="background:#0070C0"></button><button type="button" data-c="#002060" title="Azul oscuro" style="background:#002060"></button><button type="button" data-c="#7030A0" title="Violeta" style="background:#7030A0"></button></div>
+          <small>Colores estándar</small><div id="vpColoresPredeterminados" class="paleta-word" aria-label="Colores estándar"></div>
           <label title="Elegir cualquier color">Más colores… <input type="color" id="vpColorLibre" value="#c00000"></label>
         </div>
       </div>
     </div>
     <div class="grupo">
-      <button type="button" data-al="left" title="Alinear a la izquierda (Ctrl+L)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h10M4 14h16M4 18h10"/></svg></button>
-      <button type="button" data-al="center" title="Centrar (Ctrl+E)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 10h10M4 14h16M7 18h10"/></svg></button>
-      <button type="button" data-al="right" title="Alinear a la derecha (Ctrl+R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M10 10h10M4 14h16M10 18h10"/></svg></button>
+      <button type="button" data-al="left" title="Alinear a la izquierda (Ctrl+Q)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h10M4 14h16M4 18h10"/></svg></button>
+      <button type="button" data-al="center" title="Centrar (Ctrl+T)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 10h10M4 14h16M7 18h10"/></svg></button>
+      <button type="button" data-al="right" title="Alinear a la derecha (Ctrl+D)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M10 10h10M4 14h16M10 18h10"/></svg></button>
       <button type="button" data-al="justify" title="Justificar (Ctrl+J)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
     </div>
     <div class="grupo">
@@ -824,13 +868,22 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
       <button type="button" id="vpRehacer" title="Rehacer (Ctrl+Y)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
       <button type="button" id="vpLimpiar" class="ancho" title="Volver al formato normal lo seleccionado (sin selección: todo el informe)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/><path d="m15 14 6 6M21 14l-6 6" stroke-width="1.8"/></svg>Quitar formato</button>
     </div>
-    <span id="vpFmtEstado" title="El texto se corrige en el informe; acá solo se cambia el formato. Si después cambiás el texto de un párrafo, ese párrafo vuelve al formato normal.">Seleccioná texto y elegí el formato · el texto se corrige en el informe</span>
+    <span id="vpFmtEstado" role="status">Editá el texto o seleccioná una parte para darle formato</span>
   </div>
   <div id="vpAviso"></div>
   <div id="vpHojas"></div>
 </div>
+<div id="vpMenu" role="dialog" aria-label="Formato de la selección" hidden>
+  <strong>Formato del texto</strong>
+  <div class="fila-menu"><button type="button" data-cmd="bold" aria-label="Negrita"><b>N</b></button><button type="button" data-cmd="italic" aria-label="Cursiva"><i>K</i></button><button type="button" data-cmd="underline" aria-label="Subrayado"><u>S</u></button><button type="button" data-cmd="strikeThrough" aria-label="Tachado"><s>abc</s></button></div>
+  <div class="fila-menu"><label>Fuente <select id="vpMenuFuente"><option>Tahoma</option><option>Arial</option><option>Calibri</option><option>Cambria</option><option>Georgia</option><option>Times New Roman</option><option>Verdana</option></select></label></div>
+  <div class="fila-menu"><label>Tamaño <input id="vpMenuTamano" type="number" min="6" max="96" step="0.5" value="12"></label><label title="Elegir cualquier color">Más colores <input id="vpMenuColor" type="color" value="#000000"></label></div>
+  <small>Colores estándar</small><div id="vpMenuColores" class="paleta-word" aria-label="Colores estándar"></div>
+  <div class="fila-menu alineacion-menu"><button type="button" data-al="left" title="Alinear a la izquierda (Ctrl+Q)" aria-label="Alinear a la izquierda (Ctrl+Q)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h10M4 14h16M4 18h10"/></svg></button><button type="button" data-al="center" title="Centrar (Ctrl+T)" aria-label="Centrar (Ctrl+T)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 10h10M4 14h16M7 18h10"/></svg></button><button type="button" data-al="right" title="Alinear a la derecha (Ctrl+D)" aria-label="Alinear a la derecha (Ctrl+D)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M10 10h10M4 14h16M10 18h10"/></svg></button><button type="button" data-al="justify" title="Justificar (Ctrl+J)" aria-label="Justificar (Ctrl+J)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button></div>
+  <div class="fila-menu"><button type="button" id="vpMenuCopiar">Copiar selección</button><button type="button" id="vpMenuPegar">Pegar</button><button type="button" id="vpMenuLimpiar">Quitar formato</button></div>
+</div>
 <div id="explica" role="tooltip"><div class="ex-tit"><i></i><span></span></div><div class="ex-mot"></div><div class="ex-dic"></div>
-  <div class="ex-ayuda">Si está bien: <kbd>F8</kbd> · si está mal: escribí encima</div></div>
+  <div class="ex-ayuda">Si está bien: <kbd data-atajo="aceptar">F8</kbd> · si está mal: escribí encima</div></div>
 <script>
 const $ = s => document.querySelector(s);
 const audio = $('#audio'), editor = $('#editor'), dict = $('#dictado');
@@ -1383,7 +1436,7 @@ function marcarAbriendo(n){
 async function abrirCaso2(n){
   let b; try { b = await api('/api/caso/bloquear', {nombre: n}); } catch(e){ toast(e.message); return; }
   if(!b.ok){ toast('Este caso lo está revisando ' + b.por + '.'); return; }
-  if(actual && actual!==n){ guardarBorrador(true); soltarCaso(actual); }
+  if(actual){ await guardarFormato(true); await guardarBorrador(); if(actual!==n) soltarCaso(actual); }
   let c; try{ c = await api('/api/caso?nombre='+encodeURIComponent(n)); }catch(e){ toast('No se pudo abrir el caso: ' + e.message); return; }
   actual = n; palabras = c.palabras; activa = null;
   $('#bBorrarCaso').hidden = !((casosCache.find(x => x.nombre===n) || {}).puede_borrar);
@@ -1400,6 +1453,7 @@ async function abrirCaso2(n){
   omis = c.omisiones || []; omisOk = c.omisiones_ok || []; armarAvisos();
   actualizarPend(); editor.scrollTop = 0;
   cargarOnda(n);
+  await cargarEditorRevision(n);
 }
 function armarEditor(lineas){
   editor.innerHTML = '';
@@ -1461,6 +1515,7 @@ function escuchar(t){ if(t==null || !audio.src) return; audio.currentTime = Math
 function seleccionar(el, sonar=true){
   if(activa) activa.classList.remove('activa');
   activa = el; el.classList.add('activa');
+  if(typeof seleccionarMarcaWord === 'function' && seleccionarMarcaWord(el, sonar)) return;
   el.scrollIntoView({block:'center', behavior:'smooth'});
   const r = document.createRange(), s = getSelection();
   if(el.tagName==='MARK') r.selectNodeContents(el); else { r.setStart(el, 0); r.collapse(true); }
@@ -1482,16 +1537,18 @@ function resolver(el){
   if(el===activa) activa = null;
   if(explicaDe===el) ocultarExplica();
   actualizarPend(); programarBorrador();
+  if(typeof refrescarMarcasWord === 'function') refrescarMarcasWord();
 }
 function marcaEnCursor(){
   const s = getSelection(); if(!s.rangeCount) return null;
   const n = s.anchorNode, el = n && (n.nodeType===1 ? n : n.parentElement);
+  if(el && el.closest('#vpHojas')) return origenMarcaWord(el.closest('[data-marca-word]'));
   if(!el || !editor.contains(el)) return null;
   return el.closest('mark') || el.closest('.ln[data-linea]');
 }
 function aceptar(){
   const el = (activa && editor.contains(activa)) ? activa : marcaEnCursor();
-  if(!el){ toast('Poné el cursor sobre una marca (o usá F2).'); return; }
+  if(!el){ toast('Poné el cursor sobre una marca (o usá ' + atajos.siguiente + ').'); return; }
   resolver(el); siguiente(1);
 }
 editor.addEventListener('click', e => {
@@ -1562,23 +1619,86 @@ audio.addEventListener('timeupdate', () => {
 });
 dict.addEventListener('click', e => { const sp = e.target.closest('span[data-i]'); if(sp){ audio.currentTime = palabras[+sp.dataset.i].ini; audio.play(); }});
 
-/* ------------------------------------------------ teclado */
+/* ------------------------------------------------ teclado configurable */
+const ATAJOS = {
+  play: {tecla:'F5', texto:'Reproducir / pausa', boton:'bPlay'},
+  atras: {tecla:'F6', texto:'Atrás', boton:'bAtras'},
+  adelante: {tecla:'F7', texto:'Adelante', boton:'bAdel'},
+  aceptar: {tecla:'F10', texto:'Está bien', boton:'bAcep'},
+  vista: {tecla:'F9', texto:'Vista previa Word', boton:'bVista'},
+  lenta: {tecla:'F3', texto:'Reducir velocidad en 0,25×'},
+  rapida: {tecla:'F4', texto:'Aumentar velocidad en 0,25×'},
+  siguiente: {tecla:'F2', texto:'Siguiente marca', boton:'bSig'}
+};
+const TECLAS_FUNCION = Array.from({length:12}, (_,i) => 'F' + (i+1));
+let atajos = {};
+function cargarAtajos(){
+  atajos = Object.fromEntries(Object.entries(ATAJOS).map(([id,a]) => [id,a.tecla]));
+  try {
+    const guardados = JSON.parse(leerLS('pref_teclado') || '{}');
+    const candidato = Object.fromEntries(Object.keys(ATAJOS).map(id => [id,guardados[id] || ATAJOS[id].tecla]));
+    if(Object.values(candidato).every(t => TECLAS_FUNCION.includes(t)) && new Set(Object.values(candidato)).size === Object.keys(ATAJOS).length) atajos = candidato;
+  } catch(e){}
+}
+function actualizarAtajos(){
+  cargarAtajos();
+  document.querySelectorAll('[data-atajo]').forEach(el => el.textContent = atajos[el.dataset.atajo]);
+  for(const [id,a] of Object.entries(ATAJOS)){
+    const b = a.boton && document.getElementById(a.boton); if(!b) continue;
+    const texto = id === 'atras' ? `Atrás ${PREF.salto()} segundos` : id === 'adelante' ? `Adelante ${PREF.salto()} segundos` : a.texto;
+    b.title = `${texto} (${atajos[id]})`; b.setAttribute('aria-keyshortcuts', atajos[id]);
+    const k = b.querySelector('kbd'); if(k) k.textContent = atajos[id];
+  }
+  document.querySelectorAll('#cfgAtajos select').forEach(el => el.value = atajos[el.dataset.accion]);
+  if(!$('#vp').classList.contains('ampliado')) $('#vpCerrar').textContent = 'Ampliar · ' + atajos.vista;
+}
+function cambiarVelocidad(paso){
+  const sel = $('#vel'), valores = [...sel.options].map(o => +o.value);
+  sel.value = String(Math.max(Math.min(...valores), Math.min(Math.max(...valores), +sel.value + paso)));
+  sel.dispatchEvent(new Event('change'));
+}
+for(const [id,a] of Object.entries(ATAJOS)){
+  const fila = document.createElement('div'); fila.className = 'cfg-fila';
+  const label = document.createElement('label'); label.className = 'cfg-txt'; label.htmlFor = 'atajo-' + id; label.textContent = a.texto;
+  const sel = document.createElement('select'); sel.id = label.htmlFor; sel.dataset.accion = id;
+  for(const t of TECLAS_FUNCION) sel.add(new Option(t,t));
+  sel.onchange = () => {
+    const otro = Object.keys(atajos).find(k => k !== id && atajos[k] === sel.value);
+    if(otro){ toast(`${sel.value} ya está asignada a «${ATAJOS[otro].texto}».`); sel.value = atajos[id]; return; }
+    atajos[id] = sel.value; grabarLS('pref_teclado', JSON.stringify(atajos)); actualizarAtajos(); mostrarGuardado();
+  };
+  fila.append(label,sel); $('#cfgAtajos').appendChild(fila);
+}
+$('#cfgAtajosRestablecer').onclick = () => { grabarLS('pref_teclado',''); actualizarAtajos(); mostrarGuardado(); };
+// F5 tampoco debe recargar mientras un diálogo intercepta el teclado.
+window.addEventListener('keydown', e => { if(e.key === 'F5') e.preventDefault(); }, true);
 document.addEventListener('keydown', e => {
-  if(!$('#config').hidden) return;                 // con la configuración abierta no actúan los atajos
-  if(vpAbierta()){
-    if(e.key==='Escape' && $('#vpPaleta').classList.contains('abierta')){ e.preventDefault(); cerrarPaleta(); return; }
-    if(e.key==='Escape' || e.key==='F9'){ e.preventDefault(); cerrarVistaPrevia(); return; }
-    tecladoFormato(e);
+  const accion = !e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey && Object.keys(atajos).find(id => atajos[id] === e.key);
+  // Impedir las acciones del navegador incluso con un diálogo abierto o sin informe.
+  if(accion || e.key === 'F5') e.preventDefault();
+  if(!$('#config').hidden || $('#confirma').classList.contains('abierto') || $('#caso').hidden) return;
+  if(accion){
+    e.preventDefault();
+    if(e.repeat && ['play','aceptar','vista'].includes(accion)) return;
+    if(accion === 'play') bPlay.click();
+    else if(accion === 'atras') $('#bAtras').click();
+    else if(accion === 'adelante') $('#bAdel').click();
+    else if(accion === 'aceptar') aceptar();
+    else if(accion === 'vista') abrirVistaPrevia();
+    else if(accion === 'lenta') cambiarVelocidad(-0.25);
+    else if(accion === 'rapida') cambiarVelocidad(0.25);
+    else if(accion === 'siguiente') siguiente(1);
     return;
   }
-  if($('#caso').hidden) return;
-  if(e.key==='F9'){ e.preventDefault(); abrirVistaPrevia(); return; }
+  if(vpAbierta()){
+    if(e.key==='Escape' && !$('#vpMenu').hidden){ e.preventDefault(); return; }
+    if(e.key==='Escape' && $('#vpPaleta').classList.contains('abierta')){ e.preventDefault(); cerrarPaleta(); return; }
+    if(e.key==='Escape'){ e.preventDefault(); if($('#vp').classList.contains('ampliado')) cerrarVistaPrevia(); else ocultarExplica(); return; }
+    if(e.target.closest('#vp')) tecladoFormato(e);
+    return;
+  }
   if(e.key==='Escape' && explicaDe){ ocultarExplica(); return; }
-  if(e.key==='F4' || (e.ctrlKey && e.code==='Space')){ e.preventDefault(); bPlay.click(); }
-  else if(e.key==='F3'){ e.preventDefault(); $('#bAtras').click(); }
-  else if(e.key==='F2'){ e.preventDefault(); siguiente(e.shiftKey?-1:1); }
-  else if(e.key==='F8'){ e.preventDefault(); aceptar(); }
-  else if(e.ctrlKey && e.key.toLowerCase()==='s'){ e.preventDefault(); guardarBorrador(); toast('Borrador guardado.'); }
+  if(e.ctrlKey && e.key.toLowerCase()==='s'){ e.preventDefault(); guardarBorrador(); toast('Borrador guardado.'); }
 });
 $('#bSig').onclick = () => siguiente(1);
 $('#bAcep').onclick = aceptar;
@@ -1602,6 +1722,7 @@ async function cerrarCaso(silencioso){
   if(!actual) return;
   const n = actual, tit = $('#titulo').dataset.t || n;
   audio.pause();
+  await guardarFormato(true);
   await guardarBorrador();
   actual = null; activa = null; ocultarExplica(); onda = null;
   { const rv = tomarRev(); try { await api('/api/caso/soltar', {nombre: n, rev: rv}); } catch(e){ revPend += rv; soltarCaso(n); } }
@@ -1748,7 +1869,8 @@ async function copiarParaWord(){
   const fuente = (VP && VP.fuente) || 'Tahoma', tam = (VP && VP.tamano) || 12;
   const est = `margin:0;font-family:${fuente};font-size:${tam}pt`;
   const run = r => { let h = esc(r.t); if(r.u) h = '<u>'+h+'</u>'; if(r.i) h = '<i>'+h+'</i>'; if(r.b) h = '<b>'+h+'</b>';
-    return r.c ? `<span style="color:${r.c}">${h}</span>` : h; };
+    if(r.x) h = '<s>'+h+'</s>';
+    return `<span style="${r.c ? 'color:'+esc(r.c)+';' : ''}${r.h ? 'background-color:'+esc(r.h)+';' : ''}${r.f ? 'font-family:'+esc(r.f)+';' : ''}${r.s ? 'font-size:'+Number(r.s)+'pt;' : ''}">${h}</span>`; };
   const html = `<div style="font-family:${fuente};font-size:${tam}pt">` + pars.map(p => !p ? `<p style="${est}">&nbsp;</p>`
     : `<p style="${est};text-align:${p.a || 'left'}">${(p.r && p.r.length ? p.r : [{t: p.t, b: p.b}]).map(run).join('')}</p>`).join('') + '</div>';
   const plano = pars.map(p => p ? p.t : '').join('\n');
@@ -1768,288 +1890,37 @@ const vpAbierta = () => $('#vp').classList.contains('abierta');
 const cmPx = cm => cm * 96 / 2.54;
 async function abrirVistaPrevia(){
   if(!actual) return;
-  await guardarFormato();
-  try { VP = await api('/api/vista_previa', {texto: textoFinal(), nombre: actual}); }
-  catch(e){ toast('No se pudo armar la vista previa: ' + e.message); return; }
-  audio.pause(); ocultarExplica();
-  VP.caso = actual; FMT.deshacer = []; FMT.rehacer = []; FMT.pendiente = false;
-  $('#vp').classList.add('abierta');
-  $('#vpZoom').value = leerLS('zoomVp') || 'ajustar';
-  avisoVistaPrevia();
-  paginar(VP);
-  estadoBotonesFmt(); mostrarEstadoFmt();
-  const ed = $('#vpHojas .vp-ed'); if(ed) ed.focus({preventScroll:true});
+  if(!VP || VP.caso !== actual){ if(!await cargarEditorRevision(actual)) return; }
+  const ampliado = !$('#vp').classList.contains('ampliado');
+  $('#vp').classList.toggle('ampliado', ampliado);
+  $('#vp').setAttribute('role', ampliado ? 'dialog' : 'region');
+  if(ampliado) $('#vp').setAttribute('aria-modal', 'true'); else $('#vp').removeAttribute('aria-modal');
+  $('#vpCerrar').textContent = ampliado ? 'Volver junto al audio · Esc' : 'Ampliar · ' + atajos.vista;
+  zoomVistaPrevia();
 }
-function cerrarVistaPrevia(){ cerrarPaleta(); guardarFormato(); $('#vp').classList.remove('abierta'); editor.focus({preventScroll:true}); }
+function cerrarVistaPrevia(){
+  cerrarMenuWord(); cerrarPaleta(); guardarFormato();
+  $('#vp').classList.remove('ampliado'); $('#vp').setAttribute('role','region'); $('#vp').removeAttribute('aria-modal');
+  $('#vpCerrar').textContent = 'Ampliar · ' + atajos.vista; zoomVistaPrevia();
+}
 function avisoVistaPrevia(){
   const box = $('#vpAviso'), n = marcasPend().length + omis.filter(o => !omisOk.includes(o.dato)).length;
   const completar = textoFinal().includes('[COMPLETAR');
   if(!n && !completar){ box.style.display = 'none'; return; }
   box.innerHTML = '<b>' + (completar ? 'Falta completar un dato' + (n ? ` y quedan ${n} ${n===1?'marca':'marcas'} sin revisar` : '')
-                                      : `Quedan ${n} ${n===1?'marca':'marcas'} sin revisar`) + '.</b> La vista previa muestra el texto como está ahora.';
+                                      : `Quedan ${n} ${n===1?'marca':'marcas'} sin revisar`) + '.</b> Las marcas se muestran sobre el informe mientras lo revisás.';
   const b = document.createElement('button'); b.className = 'chico'; b.textContent = completar ? 'Ir al dato' : 'Ir a la siguiente marca';
   b.onclick = () => { cerrarVistaPrevia(); const m = completar && editor.querySelector('.m-completar'); m ? seleccionar(m) : siguiente(1); };
   box.appendChild(b); box.style.display = 'flex';
 }
-function paginar(d){
-  const pg = d.pagina, cont = $('#vpHojas');
-  cont.innerHTML = '';
-  const esc1 = document.createElement('div'); esc1.className = 'vp-escala'; cont.appendChild(esc1);
-  const alto = pg.alto_cm - pg.margen_superior_cm - pg.margen_inferior_cm;
-  let cuerpo = null, ed = null, hojas = [];
-  const nueva = () => {
-    const h = document.createElement('div'); h.className = 'vp-pag';
-    Object.assign(h.style, {width: pg.ancho_cm+'cm', height: pg.alto_cm+'cm',
-      padding: `${pg.margen_superior_cm}cm ${pg.margen_derecho_cm}cm ${pg.margen_inferior_cm}cm ${pg.margen_izquierdo_cm}cm`,
-      fontFamily: `${d.fuente}, Verdana, sans-serif`, fontSize: d.tamano + 'pt'});
-    cuerpo = document.createElement('div'); cuerpo.className = 'vp-cuerpo'; cuerpo.style.height = alto + 'cm';
-    ed = document.createElement('div'); ed.className = 'vp-ed'; ed.contentEditable = 'true'; ed.spellcheck = false;
-    h.appendChild(cuerpo); esc1.appendChild(h);
-    const num = document.createElement('div'); num.className = 'vp-num'; esc1.appendChild(num);
-    hojas.push(num);
-  };
-  const parrafo = parrafoVp;
-  nueva();
-  if(d.encabezado > 0){        // los renglones vacíos de arriba, donde va el encabezado
-    const enc = document.createElement('div'); enc.className = 'vp-enc';
-    for(let i=0; i<d.encabezado; i++) enc.appendChild(parrafo(null));
-    cuerpo.appendChild(enc);
-  }
-  cuerpo.appendChild(ed);
-  for(const p of d.parrafos){
-    const el = parrafo(p); ed.appendChild(el);
-    if(cuerpo.scrollHeight > cuerpo.clientHeight + 1 && ed.children.length > 1){ ed.removeChild(el); nueva(); cuerpo.appendChild(ed); ed.appendChild(el); }
-  }
-  hojas.forEach((x, i) => x.textContent = hojas.length > 1 ? `Página ${i+1} de ${hojas.length}` : '');
-  const cm = x => String(Math.round(x * 10) / 10).replace('.', ',');
-  $('#vpInfo').textContent = hojas.length === 1 ? '1 página' : `${hojas.length} páginas`;
-  zoomVistaPrevia();
-  for(const e of document.querySelectorAll('#vpHojas .vp-ed')){
-    e.addEventListener('beforeinput', bloquearTexto);
-    e.addEventListener('drop', ev => ev.preventDefault());
-  }
-}
-function zoomVistaPrevia(){
-  const esc1 = $('#vpHojas .vp-escala'); if(!esc1 || !VP) return;
-  const v = $('#vpZoom').value;
-  const z = v === 'ajustar' ? Math.min(1.25, Math.max(0.3, ($('#vpHojas').clientWidth - 32) / cmPx(VP.pagina.ancho_cm))) : +v;
-  esc1.style.zoom = z;
-}
-
-/* ------------------------------------------------ editor de formato de la vista previa
-   El texto no se cambia acá (se corrige en el informe, donde están las marcas y el aprendizaje):
-   solo negrita, cursiva, subrayado, color y alineación. Se guarda por caso (<caso>.formato.json) y lo usan
-   el Word, "Copiar para Word" y la próxima vista previa. Un párrafo cuyo texto cambió vuelve al formato normal. */
-const FMT = {deshacer: [], rehacer: [], pendiente: false, guardando: null, tAviso: 0, color: ''};
-function parrafoVp(p){
-  const el = document.createElement('p');
-  if(!p){ el.appendChild(document.createElement('br')); return el; }
-  if(p.a) el.style.textAlign = p.a;
-  for(const r of (p.r && p.r.length ? p.r : [{t: p.t, b: p.b}])){
-    let n = document.createTextNode(r.t);
-    const env = tag => { const e = document.createElement(tag); e.appendChild(n); n = e; };
-    if(r.u) env('u'); if(r.i) env('i'); if(r.b) env('b');
-    if(r.c){ const sp = document.createElement('span'); sp.style.color = r.c; sp.appendChild(n); n = sp; }
-    el.appendChild(n);
-  }
-  if(!el.textContent) el.appendChild(document.createElement('br'));
-  return el;
-}
-const parrafosVp = () => [...document.querySelectorAll('#vpHojas .vp-ed > p')];
-function colorHex(c){
-  const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c || ''); if(!m) return '';
-  return '#' + [m[1], m[2], m[3]].map(x => (+x).toString(16).padStart(2, '0')).join('').toUpperCase();
-}
-function formatoDe(nodo, p){
-  const cs = getComputedStyle(nodo);
-  let u = false;
-  for(let a = nodo; a && a !== p.parentElement; a = a.parentElement) if(getComputedStyle(a).textDecorationLine.includes('underline')){ u = true; break; }
-  const c = colorHex(cs.color);
-  return {b: (parseInt(cs.fontWeight) || 400) >= 600, i: cs.fontStyle === 'italic', u, c: c === '#000000' ? '' : c};
-}
-/* lo que se ve en las hojas -> lista de párrafos con su formato */
-function leerModelo(){
-  const els = parrafosVp(), base = VP.parrafos;
-  if(els.length !== base.length) return base;
-  return base.map((p, k) => {
-    if(!p) return null;
-    const el = els[k], runs = [], w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-    for(let n; (n = w.nextNode());){
-      if(!n.data) continue;
-      const f = formatoDe(n.parentElement, el), u = runs[runs.length - 1];
-      if(u && u.b === f.b && u.i === f.i && u.u === f.u && u.c === f.c) u.t += n.data; else runs.push({t: n.data, ...f});
-    }
-    if(runs.map(r => r.t).join('') !== p.t) return p;         // el texto no cambia acá; si algo raro pasó, queda como estaba
-    const al = el.style.textAlign, q = {...p, a: al === 'left' || al === 'start' ? '' : al,
-      r: runs.map(r => { const x = {t: r.t}; if(r.b) x.b = 1; if(r.i) x.i = 1; if(r.u) x.u = 1; if(r.c) x.c = r.c; return x; })};
-    return esNormal(q) ? {...p, a: p.a0 || '', r: null} : q;
-  });
-}
-var esNormal = p => !p || ((p.a || '') === (p.a0 || '') && (!p.r || (p.r.length === 1 && !!p.r[0].b === !!p.b && !p.r[0].i && !p.r[0].u && !p.r[0].c)));
-/* posición del cursor/selección como (párrafo, letra): sobrevive a volver a armar las hojas */
-function posicion(nodo, off){
-  let el = (nodo.nodeType === 1 ? nodo : nodo.parentElement).closest('.vp-ed > p');
-  if(!el && nodo.nodeType === 1 && nodo.classList.contains('vp-ed')){      // p. ej. triple clic: termina "entre" párrafos
-    const hijos = nodo.children; if(!hijos.length) return null;
-    if(off < hijos.length){ el = hijos[off]; nodo = el; off = 0; }
-    else { el = hijos[hijos.length - 1]; return {k: parrafosVp().indexOf(el), o: el.textContent.length}; }
-  }
-  if(!el) return null;
-  const r = document.createRange(); r.setStart(el, 0);
-  try { r.setEnd(nodo, off); } catch(e){ return null; }
-  return {k: parrafosVp().indexOf(el), o: r.toString().length};
-}
-function selVp(){
-  const s = getSelection(); if(!s.rangeCount) return null;
-  const r = s.getRangeAt(0);
-  if(!r.commonAncestorContainer || !(r.commonAncestorContainer.nodeType === 1 ? r.commonAncestorContainer : r.commonAncestorContainer.parentElement).closest('#vpHojas')) return null;
-  const a = posicion(r.startContainer, r.startOffset), b = posicion(r.endContainer, r.endOffset);
-  return a && b ? {a, b} : null;
-}
-function puntoEn(pos){
-  const el = parrafosVp()[pos.k]; if(!el) return null;
-  let resta = pos.o; const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-  for(let n; (n = w.nextNode());){ if(resta <= n.data.length) return [n, resta]; resta -= n.data.length; }
-  return [el, el.childNodes.length];
-}
-function restaurarSel(sel){
-  if(!sel) return; const a = puntoEn(sel.a), b = puntoEn(sel.b); if(!a || !b) return;
-  const ed = a[0].parentElement.closest('.vp-ed'); if(ed) ed.focus({preventScroll:true});
-  getSelection().setBaseAndExtent(a[0], a[1], b[0], b[1]);
-}
-/* aplicar un cambio: guardar para deshacer, cambiar, leer, volver a armar las hojas (el formato puede mover el corte de página) */
-function cambiarFormato(fn){
-  if(!VP) return;
-  const sel = selVp(), antes = JSON.stringify(VP.parrafos);
-  if(fn(sel) === false) return;
-  const nuevo = leerModelo();
-  if(JSON.stringify(nuevo) === antes){ restaurarSel(sel); estadoBotonesFmt(); return; }
-  FMT.deshacer.push(antes); if(FMT.deshacer.length > 100) FMT.deshacer.shift(); FMT.rehacer = [];
-  ponerModelo(nuevo, sel);
-}
-function ponerModelo(modelo, sel){
-  const sc = $('#vpHojas').scrollTop;
-  VP.parrafos = modelo; paginar(VP); $('#vpHojas').scrollTop = sc;
-  restaurarSel(sel); estadoBotonesFmt();
-  FMT.pendiente = true; mostrarEstadoFmt('Guardando…');
-  clearTimeout(FMT.t); FMT.t = setTimeout(guardarFormato, 700);
-}
-function deshacerFmt(atras){
-  const de = atras ? FMT.deshacer : FMT.rehacer, a = atras ? FMT.rehacer : FMT.deshacer;
-  if(!de.length) return;
-  const sel = selVp(); a.push(JSON.stringify(VP.parrafos)); ponerModelo(JSON.parse(de.pop()), sel);
-}
-async function guardarFormato(){
-  clearTimeout(FMT.t);
-  if(FMT.guardando) await FMT.guardando;
-  if(!FMT.pendiente || !VP || !VP.caso) return;
-  FMT.pendiente = false;
-  const pars = VP.parrafos, normal = pars.every(esNormal);
-  const formato = normal ? null : {v: 1, parrafos: pars.filter(Boolean).map(p => ({t: p.t, a: p.a || '', r: p.r || [{t: p.t, ...(p.b ? {b: 1} : {})}]}))};
-  FMT.guardando = api('/api/formato_caso', {nombre: VP.caso, formato})
-    .then(() => mostrarEstadoFmt(normal ? 'Formato normal' : 'Formato guardado · va al Word y a "Copiar para Word"'))
-    .catch(e => { FMT.pendiente = true; mostrarEstadoFmt('No se pudo guardar el formato: ' + e.message); })
-    .finally(() => { FMT.guardando = null; });
-  await FMT.guardando;
-}
-function mostrarEstadoFmt(txt){
-  const el = $('#vpFmtEstado');
-  if(txt){ el.textContent = txt; return; }
-  el.textContent = VP && !VP.parrafos.every(esNormal) ? 'Este informe tiene formato elegido a mano · va al Word y a "Copiar para Word"'
-                                                    : 'Seleccioná texto y elegí el formato · el texto se corrige en el informe';
-}
-function bloquearTexto(e){
-  if(/^format|^history/.test(e.inputType)){ e.preventDefault(); return; }   // Ctrl+B/I/U y deshacer los maneja la barra
-  e.preventDefault();
-  if(Date.now() - FMT.tAviso > 4000){ FMT.tAviso = Date.now();
-    toast('El texto se corrige en el informe (Esc para volver). En la vista previa se cambia solo el formato.'); }
-}
-function hayTexto(sel){
-  if(sel && (sel.a.k !== sel.b.k || sel.a.o !== sel.b.o)) return true;
-  toast('Primero seleccioná el texto que querés cambiar.'); return false;
-}
-function estilo(cmd, valor){
-  return sel => {
-    if(!hayTexto(sel)) return false;
-    restaurarSel(sel);
-    document.execCommand('styleWithCSS', false, cmd === 'foreColor');
-    document.execCommand(cmd, false, valor);
-  };
-}
-const hastaPar = sel => sel.b.k > sel.a.k && sel.b.o === 0 ? sel.b.k - 1 : sel.b.k;   // la selección que termina al inicio del párrafo siguiente no lo incluye
-function alinearParrafos(al){
-  return sel => {
-    const els = parrafosVp(); if(!sel){ toast('Poné el cursor en el párrafo (o seleccioná varios).'); return false; }
-    for(let k = sel.a.k; k <= hastaPar(sel); k++) if(VP.parrafos[k] && els[k]) els[k].style.textAlign = al;
-  };
-}
-const sinSeleccion = sel => !sel || (sel.a.k === sel.b.k && sel.a.o === sel.b.o);
-function quitarFormato(sel){
-  const todo = sinSeleccion(sel);
-  const els = parrafosVp(), desde = todo ? 0 : sel.a.k, hasta = todo ? els.length - 1 : hastaPar(sel);
-  for(let k = desde; k <= hasta; k++){ const p = VP.parrafos[k]; if(p) els[k].replaceWith(parrafoVp({t: p.t, b: p.b, a: p.a0})); }
-}
-function estadoBotonesFmt(){
-  const sel = selVp();
-  for(const b of document.querySelectorAll('#vpFmt [data-cmd]')){
-    let on = false; try { on = !!sel && document.queryCommandState(b.dataset.cmd); } catch(e){}
-    b.classList.toggle('on', on);
-  }
-  const el = sel && parrafosVp()[sel.a.k], al = el ? (el.style.textAlign || 'left') : '';
-  for(const b of document.querySelectorAll('#vpFmt [data-al]')) b.classList.toggle('on', !!el && b.dataset.al === al);
-  $('#vpDeshacer').disabled = !FMT.deshacer.length; $('#vpRehacer').disabled = !FMT.rehacer.length;
-  if(!FMT.color) FMT.color = leerLS('vpColor') || '#C00000';
-  $('#vpColorMuestra').style.background = FMT.color;
-}
-function tecladoFormato(e){
-  if(!(e.ctrlKey || e.metaKey) || e.altKey) return;
-  const k = e.key.toLowerCase(), acc = {b: 'bold', n: 'bold', i: 'italic', k: 'italic', u: 'underline', s: 'underline'}[k],
-        al = {l: 'left', e: 'center', r: 'right', j: 'justify'}[k];
-  if(acc){ e.preventDefault(); cambiarFormato(estilo(acc)); }
-  else if(al && !e.shiftKey){ e.preventDefault(); cambiarFormato(alinearParrafos(al)); }
-  else if(k === 'z' && !e.shiftKey){ e.preventDefault(); deshacerFmt(true); }
-  else if(k === 'y' || (k === 'z' && e.shiftKey)){ e.preventDefault(); deshacerFmt(false); }
-}
-/* la barra no le saca el foco (ni la selección) a la hoja */
-$('#vpFmt').addEventListener('mousedown', e => { if(e.target.closest('button') && !e.target.closest('#vpPaleta label')) e.preventDefault(); });
-document.querySelectorAll('#vpFmt [data-cmd]').forEach(b => b.onclick = () => cambiarFormato(estilo(b.dataset.cmd)));
-document.querySelectorAll('#vpFmt [data-al]').forEach(b => b.onclick = () => cambiarFormato(alinearParrafos(b.dataset.al)));
-$('#vpDeshacer').onclick = () => deshacerFmt(true);
-$('#vpRehacer').onclick = () => deshacerFmt(false);
-$('#vpLimpiar').onclick = async () => {
-  if(sinSeleccion(selVp()) && !await confirmar('¿Quitar el formato de todo el informe?',
-      '<p>Vuelve al formato normal: títulos centrados y en negrita, el resto sin formato.</p>', 'Quitar formato', 'prim')) return;
-  cambiarFormato(quitarFormato);
-};
-let selPaleta = null;
-function cerrarPaleta(){ $('#vpPaleta').classList.remove('abierta'); }
-$('#vpColorBtn').onclick = () => {
-  const p = $('#vpPaleta');
-  if(p.classList.contains('abierta')){ cerrarPaleta(); return; }
-  selPaleta = selVp(); p.classList.add('abierta');
-};
-function ponerColor(c){
-  cerrarPaleta();
-  if(c !== '#000000'){ FMT.color = c; grabarLS('vpColor', c); }
-  restaurarSel(selPaleta);
-  cambiarFormato(estilo('foreColor', c));
-}
-$('#vpPaleta').addEventListener('click', e => { const b = e.target.closest('button[data-c]'); if(b) ponerColor(b.dataset.c === 'auto' ? '#000000' : b.dataset.c); });
-$('#vpColorLibre').addEventListener('change', e => ponerColor(e.target.value.toUpperCase()));
-document.addEventListener('mousedown', e => { if(vpAbierta() && !e.target.closest('.vp-color')) cerrarPaleta(); });
-document.addEventListener('selectionchange', () => { if(vpAbierta()) estadoBotonesFmt(); });
-$('#bVista').onclick = abrirVistaPrevia;
-$('#vpCerrar').onclick = cerrarVistaPrevia;
-$('#vpCopiar').onclick = copiarParaWord;
-$('#vpZoom').onchange = e => { grabarLS('zoomVp', e.target.value); zoomVistaPrevia(); };
-addEventListener('resize', () => { if(vpAbierta() && $('#vpZoom').value === 'ajustar') zoomVistaPrevia(); });
+/* Editor A4 y formato: web/editor_word.js */
 $('#bFin').onclick = async () => {
   const n = marcasPend().length + omis.filter(o => !omisOk.includes(o.dato)).length, t = textoFinal();
   if(t.includes('[COMPLETAR')){ toast('Todavía hay un [COMPLETAR] en el informe.'); const m = editor.querySelector('.m-completar'); if(m) seleccionar(m,false); return; }
   if(n && !await confirmar(n === 1 ? 'Queda 1 marca sin revisar' : `Quedan ${n} marcas sin revisar`,
       '<p>¿Guardar el Word igual? La IA aprende de lo que quede como está.</p>', 'Guardar igual', 'prim')) return;
   try{
-    await guardarFormato();
+    await guardarFormato(true);
     const rv = tomarRev();
     const r = await api('/api/finalizar', {nombre: actual, texto: t, rev: rv}).catch(e => { revPend += rv; throw e; });
     const n = actual, tit = $('#titulo').dataset.t || n;
@@ -2079,6 +1950,7 @@ function mostrar(v){
   $('#vacio').hidden = v!=='vacio';
   for(const [id,k] of [['#caso','caso'],['#vPlant','plant'],['#vMed','med'],['#vVoces','voces']]){ const el=$(id); el.hidden = v!==k; el.style.display = v===k ? 'flex' : 'none'; }
   if(v!=='med' && v!=='voces') pararMuestra();
+  if(v!=='caso' && typeof ocultarEditorWord === 'function') ocultarEditorWord();
   if(v==='vacio' && typeof cargarLista === 'function'){ vacioHtml = ''; cargarLista(); }   // la pantalla vacía se arma con la lista
   for(const [id,k] of [['#bInicio','vacio'],['#bVerPlant','plant'],['#bVerMed','med']]){
     const b = $(id); if(b){ b.classList.toggle('on', v===k); if(v===k) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); } }
@@ -2564,7 +2436,8 @@ function resaltarMotivo(m){   // "Dictado: 12 / Informe: 2" -> los valores en ne
 }
 function fragmentoDictado(el, k){
   if(!palabras.length) return '';
-  const ln = el.closest('.ln'), r = ln ? rangoDe(ln) : null, t = el.dataset.t ? +el.dataset.t : null;
+  const origen = typeof origenMarcaWord === 'function' ? (origenMarcaWord(el) || el) : el;
+  const ln = origen.closest('.ln'), r = ln ? rangoDe(ln) : null, t = origen.dataset.t ? +origen.dataset.t : null;
   let a, b, claves = null;
   if(r){ a = Math.max(0, r[0]-4); b = Math.min(palabras.length-1, r[1]+4); claves = r[2]; }
   else if(t != null){
@@ -2576,7 +2449,7 @@ function fragmentoDictado(el, k){
   return `Dictado (${mmss(palabras[a].ini)}): «${a > 0 ? '… ' : ''}${txt}${b < palabras.length-1 ? ' …' : ''}»`;
 }
 function mostrarExplica(el, fija=false){
-  const k = tipoDe(el); if(!k || !editor.contains(el)) return;
+  const k = tipoDe(el); if(!k || (!editor.contains(el) && !el.closest('#vpHojas'))) return;
   const box = $('#explica'), [tit, color] = TIPOS[k];
   box.querySelector('.ex-tit i').style.background = color;
   box.querySelector('.ex-tit span').textContent = tit;
@@ -2588,7 +2461,7 @@ function mostrarExplica(el, fija=false){
 }
 function ubicarExplica(){
   if(!explicaDe) return;
-  const box = $('#explica'), r = explicaDe.getBoundingClientRect(), hw = $('.hojawrap').getBoundingClientRect();
+  const box = $('#explica'), r = explicaDe.getBoundingClientRect(), hw = (explicaDe.closest('#vpHojas') ? $('#vpHojas') : $('.hojawrap')).getBoundingClientRect();
   if(!explicaDe.isConnected || r.bottom < hw.top || r.top > hw.bottom){ box.style.display = 'none'; return; }
   box.style.display = 'block';
   const w = box.offsetWidth, h = box.offsetHeight;
@@ -2703,8 +2576,9 @@ document.addEventListener('selectionchange', () => { if(!actual) return; cancelA
 function seguirCursor(){
   const s = getSelection(); if(!s.rangeCount) return;
   const n = s.anchorNode, el = n && (n.nodeType===1 ? n : n.parentElement);
-  if(!el || !editor.contains(el)) return;
-  const ln = el.closest('.ln'); if(!ln) return;
+  if(!el) return;
+  const ln = el.closest('#vpHojas') ? lineaOrigenWord(+el.closest('p[data-k]')?.dataset.k) : el.closest('.ln');
+  if(!ln || (!editor.contains(ln))) return;
   const r = rangoDe(ln);
   if(ln === lineaCursor && r === rangoCursor) return;
   lineaCursor = ln; pintarEco(r);
@@ -2730,6 +2604,7 @@ function marcarLineaSonando(i){     // mientras suena el audio se marca la líne
     const r = rangoDe(ln); if(r && i >= r[0] && i <= r[1] && r[1] - r[0] < Math.min(ancho, 40)){ mejor = ln; ancho = r[1] - r[0]; } }
   // entre dos líneas queda marcada la última que sonó
   if(mejor && mejor !== lineaSonando){ lineaSonando?.classList.remove('sonando'); lineaSonando = mejor; mejor.classList.add('sonando'); }
+  if(typeof marcarSonandoWord === 'function') marcarSonandoWord(lineaSonando);
 }
 
 /* ================================================ forma de onda con marcas y huecos */
@@ -2974,9 +2849,10 @@ const PREF = {
 function aplicarPrefs(){
   for(const k of ['leyenda', 'atajos', 'letra']){ const v = PREF.leer(k); if(v) document.body.dataset[k] = v; else delete document.body.dataset[k]; }
   const s = PREF.salto();
-  $('#bAtras').textContent = '−' + s + 's'; $('#bAtras').title = `Atrás ${s} segundos (F3)`;
+  $('#bAtras').textContent = '−' + s + 's'; $('#bAtras').title = `Atrás ${s} segundos`;
   $('#bAdel').textContent = '+' + s + 's'; $('#bAdel').title = `Adelante ${s} segundos`;
   document.querySelectorAll('.salto-txt').forEach(x => x.textContent = s);
+  actualizarAtajos();
   $('#seguir').checked = PREF.leer('seguir') !== 'no';
   requestAnimationFrame(() => { ajustarBarra(); dibujarOnda(); });
 }
@@ -3155,5 +3031,6 @@ aplicarPrefs(); aplicarLista();
 
 aplicarTema();
 </script>
+<script src="/editor_word.js"></script>
 </body>
 </html>
