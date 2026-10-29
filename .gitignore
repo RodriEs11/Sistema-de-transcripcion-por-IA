@@ -93,6 +93,7 @@ desktop.ini
 
 # Archivos de prueba sueltos
 *.tgz
+pruebas/*.png
 
 # --- Reconocimiento de voz ---------------------------------------------
 # huellas de voz de los médicos (datos biométricos: nunca se suben)

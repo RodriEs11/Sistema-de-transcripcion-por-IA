@@ -56,7 +56,7 @@ for d in (NUEVOS, DATOS):
     d.mkdir(parents=True, exist_ok=True)
 
 SIMULAR = os.environ.get("SIMULAR_IA") == "1"   # solo para pruebas
-VERSION = "2026.10.35"
+VERSION = "2026.10.38"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
@@ -1705,6 +1705,8 @@ class H(BaseHTTPRequestHandler):
             return self._redirigir("/entrar", "ts=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax")
         if u.path in ("/", "/index.html"):
             self._html((WEB / "index.html").read_bytes())
+        elif u.path == "/editor_word.js":
+            self._enviar_archivo(WEB / "editor_word.js")
         elif u.path in PAGINAS_ADMIN or u.path.startswith("/api/admin/"):
             acc = ADM.acceso(self, PUERTO)
             if acc is None:

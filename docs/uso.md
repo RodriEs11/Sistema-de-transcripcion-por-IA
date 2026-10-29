@@ -7,11 +7,11 @@
    cada caso al revisar. Solo hace falta elegirlo antes si todos los audios que vas a subir son del mismo médico.
 3. **Cargar el audio**: arrastrarlo a la lista o hacer clic en *Cargar audio*. En las PC del trabajo la app los toma sola.
    Estados: *en cola → transcribiendo → generando → para revisar*.
-4. **Abrir el caso**: informe editable a la izquierda; dictado a la derecha (se resalta mientras suena) y debajo
-   la forma de onda con las marcas.
+4. **Abrir el caso**: editor de Word con hojas A4 y barra de formato a la izquierda; dictado a la derecha
+   (se resalta mientras suena) y debajo la forma de onda con las marcas. El reproductor queda arriba.
 5. Atender los **avisos** de arriba: datos dictados que no están en el informe, posibles partes no transcritas
    (▶ escuchar, ✕ descartar) y estudios sin plantilla.
-6. Recorrer las marcas con **F2**. Si algo está mal, se escribe encima y la marca desaparece; si está bien, **F8**.
+6. Recorrer las marcas con **F2**. Si algo está mal, se escribe encima y la marca desaparece; si está bien, **F10**.
 7. **Leer el informe completo**: puede haber errores sin marcar. Revisar el **médico** (junto al título): si no es o
    está sin reconocer, elegirlo; al guardar, su voz queda registrada.
 8. **Guardar Word y aprender**: crea `Informes\NOMBRE.docx`, registra el ejemplo, el historial y el tiempo de revisión.
@@ -24,18 +24,52 @@ Los cambios se autoguardan como borrador. **Regenerar** vuelve a pedir el inform
 | Tecla | Acción |
 |---|---|
 | **F2** | Ir a la siguiente marca: la selecciona, reproduce ese momento y muestra la explicación |
-| **F8** | Aceptar la marca actual (estaba bien) |
-| **F4** | Reproducir / pausar |
-| **F3** | Volver 3 segundos |
-| **F9** | Vista previa como Word (con editor de formato) |
+| **F10** | Aceptar la marca actual (estaba bien) |
+| **F5** | Reproducir / pausar |
+| **F6** | Volver 3 segundos |
+| **F7** | Adelantar 3 segundos |
+| **F3** | Reducir la velocidad en 0,25× |
+| **F4** | Aumentar la velocidad en 0,25× |
+| **F9** | Ampliar el editor de Word / volver junto al audio |
 | **Alt + clic** en una línea | Escuchar el tramo del dictado de esa línea |
 | Clic en una palabra del dictado | Escucharla |
 | **Esc** | Cerrar explicación, vista previa o ventana |
-| Ctrl + B / I / U | Negrita / cursiva / subrayado (en la vista previa) |
-| Ctrl + L / E / R / J | Alinear izquierda / centrar / derecha / justificar (en la vista previa) |
+| Ctrl + B / I / S | Negrita / cursiva / subrayado (en el editor de Word) |
+| Ctrl + Q / T / D / J | Alinear izquierda / centrar / derecha / justificar |
 | Ctrl + Z / Y | Deshacer / rehacer |
 
 La velocidad de reproducción va de 0,25× a 2,5×; al reanudar retrocede 1 segundo.
+Los saltos usan 3 segundos por defecto y se ajustan en **Configuración → Audio y revisión**.
+En **Configuración → Atajos de teclado** se puede elegir una tecla de F1 a F12 para cada acción,
+incluida siguiente marca. No se permiten teclas
+duplicadas. Las preferencias se guardan en esta PC y se pueden restablecer a los valores de la tabla
+con **Restablecer atajos predeterminados**. Las ayudas y los botones muestran las teclas elegidas.
+
+## Editor de Word junto al audio
+
+El editor se abre automáticamente al entrar a un caso, junto al dictado y la forma de onda, con hojas A4
+de tamaño fijo, separadas y numeradas. **Ampliar editor** o **F9** permite verlo en pantalla completa;
+**F9** o **Esc** vuelve a la presentación junto al audio, sin detener la reproducción.
+Al llegar al final de una hoja, el texto continúa en otra debajo, incluso dentro de un párrafo largo.
+El zoom cambia la escala de las hojas sin alterar los cortes de página.
+
+Se puede escribir, pegar texto y corregir directamente en las hojas. La barra permite cambiar fuente,
+tamaño (6 a 96 puntos), negrita, cursiva, subrayado, tachado, color, resaltado y alineación, con deshacer
+y rehacer. Seleccionar texto y hacer **clic derecho** abre un menú con opciones de formato,
+**Copiar selección** y **Pegar** (texto sin formato). El menú permanece abierto y conserva la
+selección al encadenar cambios de formato. Se cierra al hacer clic fuera de él.
+Sin selección, el formato de caracteres se aplica a lo que se escriba a continuación.
+
+Los cambios se autoguardan y se conservan al generar el Word o usar **Copiar para Word**.
+**Guardar Word y aprender** termina el informe. Las marcas pendientes y sus explicaciones se muestran
+en las propias hojas: **F2** selecciona la siguiente y la escucha; **F10** la da por revisada.
+**F5** reproduce o pausa; **F6** retrocede y **F7** adelanta. El cursor señala el tramo del dictado y **Alt+clic** en una
+línea permite escucharlo. También funcionan las autocorrecciones con formato del Normal.dotm de Word.
+Dentro del editor, **Ctrl+S** aplica subrayado (también **Ctrl+U**). El guardado sigue siendo automático.
+**Ctrl+Q**, **Ctrl+T**, **Ctrl+D** y **Ctrl+J** alinean a la izquierda, centran, alinean a la derecha
+y justifican. El menú contextual muestra estas acciones con iconos. La barra y el menú ofrecen los
+mismos 12 colores estándar: negro, blanco, rojo oscuro, rojo, naranja, amarillo, verde claro, verde,
+celeste, azul, azul oscuro y violeta, además de un selector para cualquier otro color.
 
 ## Marcas de revisión
 
@@ -67,7 +101,7 @@ junto con el tramo del dictado correspondiente.
 ## Formato del informe
 
 - Tahoma 12, interlineado sencillo, sin espacio entre párrafos, hoja A4.
-- Renglones vacíos arriba para el encabezado del paciente (se completa a mano).
+- Margen superior de 2,5 cm, sin renglones vacíos adicionales reservados para encabezado.
 - Título del estudio (centrado y en negrita), línea en blanco y viñetas que empiezan con `-`.
 - Línea en blanco entre estudios y cierre "Lo saluda atte.".
 

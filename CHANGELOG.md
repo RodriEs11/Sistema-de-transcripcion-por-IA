@@ -3,6 +3,51 @@
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El servidor se versiona por fecha; la app del trabajo, con [versionado semántico](https://semver.org/lang/es/).
 
+## Sin publicar
+
+### Cambiado
+- Atajos predeterminados: F5 reproducir/pausa, F6 atrás, F7 adelante, F10 está bien y F9 vista previa.
+- F3 y F4 reducen y aumentan la velocidad de reproducción en 0,25×, entre 0,25× y 2,50×.
+- Nueva pestaña de configuración de atajos, con persistencia local, detección de teclas duplicadas,
+  restablecimiento de valores predeterminados y ayudas actualizadas según las preferencias.
+- El menú contextual conserva la selección y permanece abierto al aplicar formato; se cierra al hacer clic fuera.
+- Acciones Copiar selección y Pegar en el menú contextual del editor.
+
+## [Servidor 2026.10.38] — 2026-10-29
+
+### Cambiado
+- Atajos del editor: Ctrl+S subraya; Ctrl+Q/T/D/J alinean a la izquierda, centran, alinean
+  a la derecha y justifican. Se mantienen los atajos alternativos anteriores para dar formato.
+- Alineación del menú contextual mediante iconos con descripciones y atajos al pasar el mouse.
+- Paleta compartida de 12 colores estándar en la barra y en el menú de clic derecho, con selector adicional.
+- Margen superior de 2,5 cm, sin renglones adicionales reservados para encabezado, tanto en la configuración
+  de ejemplo como en esta instalación. El editor y el Word exportado usan esos mismos valores.
+
+## [Servidor 2026.10.37] — 2026-10-28
+
+### Cambiado
+- El editor A4 se abre directamente en la pantalla de revisión, junto al reproductor, el dictado
+  y la forma de onda. Comparte el mismo texto, formato y autoguardado con la presentación ampliada.
+- F9 amplía o reduce el editor sin pausar la reproducción. F4, F3, F2 y F8 funcionan desde las hojas.
+- Las hojas muestran las marcas pendientes, sus explicaciones y la línea que corresponde al audio.
+  El cursor resalta su tramo del dictado; Alt+clic permite escucharlo.
+- Las autocorrecciones de Word también funcionan al escribir en las hojas A4.
+- El zoom se ajusta al cambiar el ancho del panel del informe.
+
+## [Servidor 2026.10.36] — 2026-10-28
+
+### Agregado
+- Editor de Word (F9): escritura y pegado de texto, hojas A4 de tamaño fijo, separación visual y
+  numeración de páginas. Los párrafos largos continúan en las hojas siguientes sin recortar el texto.
+- Barra de formato con fuente, tamaño de 6 a 96 puntos, negrita, cursiva, subrayado, tachado,
+  color, resaltado, alineación, deshacer y rehacer. Menú contextual con clic derecho que conserva la selección.
+- Fuente, tamaño, tachado y resaltado se conservan en el Word y en «Copiar para Word».
+- Pruebas con datos ficticios del editor en navegador y de la exportación a Word.
+
+### Corregido
+- El zoom del editor escala las hojas sin cambiar sus cortes de página.
+- Los renglones vacíos consecutivos dentro del informe se conservan al exportar a Word.
+
 ## [Servidor 2026.10.35] — 2026-10-26
 
 ### Corregido
