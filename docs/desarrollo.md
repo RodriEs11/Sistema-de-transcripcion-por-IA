@@ -80,12 +80,20 @@ Ejemplo: `fix(cliente): reemplazar TrimEnd(char) por la sobrecarga de .NET 4.8`.
 
 ## Checklist antes de publicar un cambio
 
+Las instrucciones persistentes para agentes están en [AGENTS.md](../AGENTS.md).
+Versionar es parte del cambio: si la interfaz web modifica la experiencia de la app,
+actualizar tanto la versión del servidor como la de escritorio. Los cambios exclusivamente
+de documentación, pruebas o herramientas de desarrollo no requieren subir esas versiones.
+Al publicar, trasladar las notas entregadas de «Sin publicar» a las entradas fechadas correspondientes.
+
 - [ ] `python -m py_compile *.py` sin errores.
 - [ ] Sin funciones repetidas en `web/index.html`.
 - [ ] Probado en modo simulado (y en la PC real si toca Whisper, Ollama o Windows).
 - [ ] Si cambió la app: versión subida, API revisada contra .NET 4.8, autoprueba OK ([compilacion.md](compilacion.md)).
 - [ ] `git status` sin datos de pacientes, secretos ni binarios.
 - [ ] CHANGELOG actualizado.
+- [ ] `python verificar_versiones.py` sin errores; compilación y autoprueba del ejecutable si cambió la app.
+- [ ] Distinguir archivos publicados de procesos reiniciados y PC efectivamente actualizadas.
 
 ## Lecciones aprendidas
 

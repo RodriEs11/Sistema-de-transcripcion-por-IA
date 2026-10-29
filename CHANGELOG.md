@@ -5,6 +5,10 @@ El servidor se versiona por fecha; la app del trabajo, con [versionado semántic
 
 ## Sin publicar
 
+Sin cambios pendientes.
+
+## [Servidor 2026.10.39] — 2026-10-29
+
 ### Cambiado
 - Atajos predeterminados: F5 reproducir/pausa, F6 atrás, F7 adelante, F10 está bien y F9 vista previa.
 - F3 y F4 reducen y aumentan la velocidad de reproducción en 0,25×, entre 0,25× y 2,50×.
@@ -12,6 +16,18 @@ El servidor se versiona por fecha; la app del trabajo, con [versionado semántic
   restablecimiento de valores predeterminados y ayudas actualizadas según las preferencias.
 - El menú contextual conserva la selección y permanece abierto al aplicar formato; se cierra al hacer clic fuera.
 - Acciones Copiar selección y Pegar en el menú contextual del editor.
+
+### Desarrollo
+- Instrucciones persistentes para versionar, respaldar, documentar y verificar futuras entregas.
+- Compilación de Windows con validación de versiones y autoprueba antes de reemplazar el ejecutable,
+  más un verificador de coherencia entre fuentes, documentación, ejecutable y manifiesto.
+
+## [App 1.15] — 2026-10-29
+
+### Cambiado
+- Número de versión de la app de escritorio actualizado de 1.14 a 1.15 para reflejar los cambios
+  recientes en la interfaz de revisión que carga del Servidor: editor A4, formato, menú contextual
+  y atajos configurables. Se sincronizan la versión visible y las versiones del ensamblado y del archivo.
 
 ## [Servidor 2026.10.38] — 2026-10-29
 

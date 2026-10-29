@@ -17,6 +17,27 @@ dotnet build -c Release
 La salida queda en `cliente_codigo\bin\Release\net48\`: `Transcripcion.exe`, `Transcripcion.exe.config`,
 las dos DLL de WebView2 y `runtimes\`. También se puede abrir `Transcripcion.csproj` con Visual Studio 2022.
 
+### Compilar y distribuir automáticamente en esta instalación de Windows
+
+Desde `sistema/`:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File cliente_codigo/compilar.ps1
+python verificar_versiones.py
+```
+
+El script usa el compilador de .NET Framework de Windows y las DLL que ya están en `cliente/`.
+`-ExecutionPolicy Bypass` habilita este script solo durante ese proceso, sin modificar la política
+de Windows. Usa Python de `.venv` si existe, o `python` del PATH para verificar la documentación
+antes de compilar y el manifiesto después de distribuir.
+Comprueba los tres valores de versión, compila en `respaldo/compilacion_<fecha>/`, verifica
+los metadatos y ejecuta la autoprueba con un límite de 30 segundos. Solo entonces reemplaza
+el ejecutable distribuido mediante renombrado, conservando el anterior como `.viejo-<fecha>`.
+No cierra la app que esté abierta. Si falla el reemplazo, intenta restaurar el anterior.
+Para verificar un candidato sin distribuirlo, agregar `-SoloCompilar`.
+Las advertencias del compilador deben revisarse; cualquier error o autoprueba fallida impide publicar.
+Los respaldos se conservan para recuperación y se pueden limpiar después de confirmar la actualización.
+
 ## Opción B — Linux con Mono (versiones publicadas)
 
 Es el método con el que se compilaron las versiones distribuidas, sin instalar nada en Windows.
@@ -68,11 +89,18 @@ Otras reglas:
 
 ## Publicar una versión
 
+Cada cambio en la aplicación de escritorio debe incrementar su versión, incluidos los cambios
+en la interfaz de revisión que carga del servidor. Mantener sincronizados los tres valores de `Programa.cs`.
+
 1. Subir la versión en `Programa.cs`: `AssemblyVersion`, `AssemblyFileVersion` y `Programa.VERSION`.
 2. Actualizar `cliente/LEEME.txt` y el [CHANGELOG](../CHANGELOG.md).
 3. Compilar y verificar (arriba).
 4. Copiar el `.exe` a `sistema\cliente\` del servidor. Si el anterior está en uso, renombrarlo antes a
    `Transcripcion.exe.viejo-X.Y` (el manifiesto ignora esos archivos).
 5. No hace falta reiniciar el servidor: el manifiesto se recalcula solo. Cada PC se actualiza cuando no se usa.
+
+6. Ejecutar `python verificar_versiones.py`: debe confirmar app, servidor, CHANGELOG, LEEME,
+   versión del ejecutable y manifiesto. En un checkout sin distribución, `--sin-binario` verifica
+   únicamente las fuentes; no reemplaza la validación del ejecutable.
 
 > Las versiones 1.0 y 1.1 no tienen actualizador: en esas PC hay que copiar una versión ≥ 1.2 a mano una sola vez.

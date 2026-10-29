@@ -56,7 +56,7 @@ for d in (NUEVOS, DATOS):
     d.mkdir(parents=True, exist_ok=True)
 
 SIMULAR = os.environ.get("SIMULAR_IA") == "1"   # solo para pruebas
-VERSION = "2026.10.38"
+VERSION = "2026.10.39"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",

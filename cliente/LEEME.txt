@@ -1,6 +1,10 @@
 TRANSCRIPCIÓN · aplicación para las PC del trabajo (info-01, info-02, info-03)
 =============================================================================
 
+Versión actual: 1.15 (2026-10-29).
+Incluye la revisión con editor A4 y los cambios recientes de formato, menú contextual
+y atajos configurables. La interfaz de revisión se carga desde el Servidor actualizado.
+
 QUÉ HACE
 - Cuando abrís un informe en el sistema de gestión, toma sola el audio que el sistema deja
   en la carpeta temporal y lo envía al Servidor. No bloquea el archivo: el sistema lo puede
@@ -74,9 +78,11 @@ CONFIGURACIÓN Y PANTALLAS CHICAS (versión 1.9)
   · Pantalla: tema claro/oscuro/como Windows, mostrar u ocultar la lista de informes, tamaño
     del texto del informe y del dictado (no cambia el Word), referencias de colores y atajos,
     volver los paneles al tamaño original.
-  · Audio y revisión: velocidad al abrir un informe, cuánto saltan los botones − y + (y F3),
+  · Audio y revisión: velocidad al abrir un informe, cuánto saltan los botones − y + (F6/F7 por defecto),
     cuánto retrocede al reanudar después de una pausa, que el dictado siga al audio, y la
     explicación de las marcas al pasar el mouse.
+  · Atajos de teclado: elegir las teclas de cada acción, detectar duplicados y restablecer
+    los valores predeterminados. F5 reproduce/pausa; F3/F4 reducen/aumentan la velocidad.
   · Esta PC: abrir al iniciar Windows, tomar los audios del sistema, avisar cuando un informe
     queda listo, modo compacto, carpeta de los Word descargados (se puede cambiar), registro de
     envíos (y cuántos audios esperan para enviarse) y autocorrección de Word.

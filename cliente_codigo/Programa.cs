@@ -21,14 +21,14 @@ using Microsoft.Win32;
 [assembly: System.Reflection.AssemblyDescription("Envía los audios del sistema de gestión al Servidor de transcripción")]
 [assembly: System.Reflection.AssemblyCompany("Rodrigo Espíndola")]
 [assembly: System.Reflection.AssemblyCopyright("Creada por Rodrigo Espíndola")]
-[assembly: System.Reflection.AssemblyVersion("1.14.0.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.14.0.0")]
+[assembly: System.Reflection.AssemblyVersion("1.15.0.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.15.0.0")]
 
 namespace Transcripcion
 {
     static class Programa
     {
-        public const string VERSION = "1.14";
+        public const string VERSION = "1.15";
         public static EventWaitHandle SenalMostrar;
 
         [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
