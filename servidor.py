@@ -56,11 +56,11 @@ for d in (NUEVOS, DATOS):
     d.mkdir(parents=True, exist_ok=True)
 
 SIMULAR = os.environ.get("SIMULAR_IA") == "1"   # solo para pruebas
-VERSION = "2026.10.39"
+VERSION = "2026.10.45"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
-                 "/admin/correcciones": "correcciones.html"}
+                 "/admin/correcciones": "correcciones.html", "/admin/medicos": "medicos.html"}
 FIN_LOCK = threading.Lock()
 INICIO = time.time()
 TUNEL = {"modo": False, "http": None, "error": None}     # "modo": se abrió con iniciar_servidor.bat (--tunel)
@@ -1716,6 +1716,9 @@ class H(BaseHTTPRequestHandler):
                 self._html((WEB / PAGINAS_ADMIN[u.path]).read_bytes())
             elif u.path == "/api/admin/estado":
                 self._json(dict(estado_admin(), visor=visor))
+            elif u.path == "/api/admin/medicos":
+                self._json({"medicos": [{"nombre": m, "notas": N.notas_medico(m)}
+                                          for m in N.lista_medicos()], "visor": visor})
             elif u.path == "/api/admin/estadisticas":
                 q = urllib.parse.parse_qs(u.query)
                 try:
@@ -1999,7 +2002,13 @@ class H(BaseHTTPRequestHandler):
                 R.poner_medico_pc(self.pc, med)
                 return self._json({"ok": True})
             if u.path == "/api/medico":
-                nom = N.guardar_medico(datos.get("medico", ""), datos.get("notas", ""))
+                try:
+                    nom = N.guardar_medico(datos.get("medico", ""), datos.get("notas", ""),
+                                           crear=datos.get("crear") is True)
+                except FileExistsError as ex:
+                    return self._json({"error": str(ex)}, 409)
+                except ValueError as ex:
+                    return self._json({"error": str(ex)}, 400)
                 L.ok("CONFIG", f"Notas del médico {nom} guardadas ({self.pc}).")
                 return self._json({"ok": True, "medico": nom})
             if u.path == "/api/voces/etiquetar":     # {"nombres": [...], "medico": "..."} desde «Agrupar voces»
@@ -2324,6 +2333,25 @@ def estado_admin():
 def accion_admin(accion, d, quien=None):
     """Botones del panel. Devuelve (respuesta, código). quien = PC del trabajo que usa el panel (None = esta PC)."""
     desde = f"desde el panel de administración (usado en {quien})" if quien else "desde el panel de administración"
+    if accion in ("medicos/agregar", "medicos/modificar", "medicos/eliminar"):
+        try:
+            if accion == "medicos/eliminar":
+                N.eliminar_medico(d.get("original"))
+                nombre = d.get("original")
+            else:
+                if accion == "medicos/modificar" and not isinstance(d.get("original"), str):
+                    return {"error": "Elegí el médico que querés modificar."}, 400
+                nombre = N.guardar_medico(d.get("nombre", ""), d.get("notas", ""),
+                                          crear=accion == "medicos/agregar",
+                                          original=d.get("original") if accion == "medicos/modificar" else None)
+            L.ok("CONFIG", f"Médicos: {accion.split('/')[-1]} «{nombre}» {desde}.")
+            return {"ok": True, "medico": nombre}, 200
+        except FileExistsError as ex:
+            return {"error": str(ex)}, 409
+        except FileNotFoundError as ex:
+            return {"error": str(ex)}, 404
+        except ValueError as ex:
+            return {"error": str(ex)}, 400
     if quien and accion in SOLO_EN_EL_SERVIDOR:
         L.aviso("ACCESO", f"{quien} intentó «{accion}» en el panel de administración: solo se puede en la PC del servidor.")
         return {"error": "Eso solo se puede hacer en la PC del servidor."}, 403

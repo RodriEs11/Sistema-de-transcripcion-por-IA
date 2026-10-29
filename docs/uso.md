@@ -13,7 +13,11 @@
    (▶ escuchar, ✕ descartar) y estudios sin plantilla.
 6. Recorrer las marcas con **F2**. Si algo está mal, se escribe encima y la marca desaparece; si está bien, **F10**.
 7. **Leer el informe completo**: puede haber errores sin marcar. Revisar el **médico** (junto al título): si no es o
-   está sin reconocer, elegirlo; al guardar, su voz queda registrada.
+   está sin reconocer, abrir la lista y buscar por nombre o apellido (ignora tildes y mayúsculas).
+   La lista tiene altura limitada y desplazamiento. El médico asignado queda en azul con una tilde;
+   el mouse y las flechas resaltan las otras opciones en gris sin cambiar la asignación.
+   Se puede elegir con las flechas y Enter; Escape cierra la lista sin cambiar el médico.
+   El botón pequeño **+** al costado permite agregar y asignar uno nuevo. Al guardar, su voz queda registrada.
 8. **Guardar Word y aprender**: crea `Informes\NOMBRE.docx`, registra el ejemplo, el historial y el tiempo de revisión.
    Alternativa: **Copiar para Word** (con formato) para pegar en un documento con encabezado.
 

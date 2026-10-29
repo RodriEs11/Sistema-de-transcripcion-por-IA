@@ -380,7 +380,7 @@ function reemplazarWord(texto, tipo, plantilla=null){
     const nuevos = lineas.map((t, i) => {
       const insertados = plantilla?.[i]?.r || [{t, ...f}];
       const rs = unirRuns([...(i === 0 ? antes : []), ...insertados, ...(i === lineas.length - 1 ? despues : [])]);
-      return {...primero, ...(plantilla?.[i]?.a ? {a:plantilla[i].a} : {}), t: rs.map(r => r.t).join(''), r: rs};
+      return {...primero, ...(plantilla?.[i] ? {a:plantilla[i].a || 'left', b:false} : {}), t: rs.map(r => r.t).join(''), r: rs};
     });
     modelo.splice(s.a.k, s.b.k - s.a.k + 1, ...nuevos);
     const pos = {k: s.a.k + nuevos.length - 1, o: (nuevos.length === 1 ? s.a.o : 0) + lineas[lineas.length - 1].length};
@@ -415,7 +415,105 @@ $('#vpHojas').addEventListener('compositionend', e => {
   const sel = composicionWord; composicionWord = null;
   paginar(VP); restaurarSel(sel); if(e.data) reemplazarWord(e.data, 'insertText');
 });
-$('#vpHojas').addEventListener('paste', e => { e.preventDefault(); reemplazarWord(e.clipboardData.getData('text/plain'), 'insertFromPaste'); });
+/* Word entrega HTML con estilos de párrafo en clases MsoNormal y estilos de cada tramo.
+   Se interpreta en un árbol aislado: únicamente texto y propiedades de formato llegan al modelo. */
+function interpretarPegadoWord(html, plano){
+  const normal = () => plano.replace(/\r\n?/g, '\n').split('\n').map(t => ({t,a:'left',r:[{t}]}));
+  if(!html) return normal();
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const propiedades = ['font-family','font-size','font-weight','font-style','text-decoration','text-decoration-line','text-align','color','background-color','white-space'];
+  function estiloSeguro(origen){
+    const destino = document.createElement('span').style;
+    for(const p of propiedades){
+      const valor = origen.getPropertyValue(p);
+      if(valor && !/url\s*\(|var\s*\(/i.test(valor)) destino.setProperty(p, valor, origen.getPropertyPriority(p));
+    }
+    return destino.cssText;
+  }
+  const host = document.createElement('div');
+  host.style.cssText = 'position:fixed;left:-100000px;top:0;visibility:hidden;pointer-events:none';
+  const shadow = host.attachShadow({mode:'closed'}), css = document.createElement('style');
+  // CSS de Word, sin importaciones, fuentes externas, imágenes ni reglas que afecten la aplicación.
+  const hoja = new CSSStyleSheet();
+  hoja.replaceSync([...doc.querySelectorAll('style')].map(s => s.textContent).join('\n'));
+  css.textContent = [...hoja.cssRules].filter(r => r.type === CSSRule.STYLE_RULE)
+    .map(r => `${r.selectorText}{${estiloSeguro(r.style)}}`).join('\n');
+  shadow.appendChild(css);
+  const raiz = document.createElement('div');
+  raiz.style.cssText = `font-family:${VP?.fuente || 'Tahoma'};font-size:${VP?.tamano || 12}pt;font-weight:400;font-style:normal;text-decoration:none;text-align:left;color:#000;background-color:transparent;white-space:normal`;
+  const permitidos = /^(P|DIV|SPAN|B|STRONG|I|EM|U|S|STRIKE|BR|H[1-6]|UL|OL|LI|TABLE|TBODY|TR|TD|TH|FONT|A)$/;
+  function clonar(n, padre){
+    if(n.nodeType === Node.TEXT_NODE){ padre.appendChild(document.createTextNode(n.data)); return; }
+    if(n.nodeType !== Node.ELEMENT_NODE || /^(SCRIPT|STYLE|LINK|META|IFRAME|OBJECT|EMBED|IMG|SVG|MATH|NOSCRIPT)$/.test(n.tagName)) return;
+    const el = document.createElement(permitidos.test(n.tagName) ? n.tagName.toLowerCase() : 'span');
+    el.className = n.getAttribute('class') || ''; el.style.cssText = estiloSeguro(n.style);
+    if(n.getAttribute('align') && !el.style.textAlign) el.style.textAlign = n.getAttribute('align');
+    if(n.tagName === 'FONT'){
+      if(n.getAttribute('face')) el.style.fontFamily = n.getAttribute('face');
+      if(n.getAttribute('color')) el.style.color = n.getAttribute('color');
+    }
+    padre.appendChild(el); for(const hijo of n.childNodes) clonar(hijo, el);
+  }
+  for(const n of doc.body.childNodes) clonar(n, raiz);
+  shadow.appendChild(raiz); document.body.appendChild(host);
+  try {
+    const pars = []; let rs = [], alineacion = 'left';
+    const colorHex = c => {
+      const rgb = c.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/);
+      return rgb && (rgb[4] == null || +rgb[4] !== 0) ? '#' + rgb.slice(1,4).map(v => (+v).toString(16).padStart(2,'0')).join('').toUpperCase() : '';
+    };
+    function cerrar(vacio=false){
+      if(rs.length || vacio){ const r = unirRuns(rs); pars.push({t:r.map(x=>x.t).join(''),a:alineacion,r}); rs = []; }
+    }
+    function recorrer(n){
+      if(n.nodeType === Node.TEXT_NODE){
+        if(!n.data || (/^[\t\r\n ]*$/.test(n.data) && /[\r\n]/.test(n.data))) return;
+        const s = getComputedStyle(n.parentElement), t = n.data.replace(/\r\n?/g,'\n').replace(/\n/g,' ');
+        let u=false, x=false, h='';
+        for(let el=n.parentElement; el && el!==raiz; el=el.parentElement){
+          const st=getComputedStyle(el); u ||= st.textDecorationLine.includes('underline'); x ||= st.textDecorationLine.includes('line-through');
+          h ||= colorHex(st.backgroundColor);
+        }
+        rs.push({t,b:+s.fontWeight>=600,i:s.fontStyle==='italic'||s.fontStyle==='oblique',u,x,
+          f:s.fontFamily.split(',')[0].trim().replace(/^['"]|['"]$/g,''),s:Math.round(parseFloat(s.fontSize)*75)/100,c:colorHex(s.color),h});
+        return;
+      }
+      if(n.nodeType !== Node.ELEMENT_NODE) return;
+      if(n.tagName === 'BR'){ cerrar(true); return; }
+      const bloque = /^(P|DIV|H[1-6]|LI|TD|TH)$/.test(n.tagName);
+      if(bloque){ cerrar(); alineacion = getComputedStyle(n).textAlign; }
+      const cantidad = pars.length;
+      for(const hijo of n.childNodes) recorrer(hijo);
+      if(bloque) cerrar(pars.length === cantidad);
+    }
+    for(const n of raiz.childNodes) recorrer(n);
+    cerrar();
+    return pars.length ? pars : normal();
+  } finally { host.remove(); }
+}
+function pegarWord(html, plano){
+  if(!html && !plano) return;
+  const pars = interpretarPegadoWord(html, plano);
+  reemplazarWord(pars.map(p=>p.t).join('\n'), 'insertFromPaste', pars);
+  FMT.escritura = {};
+}
+$('#vpHojas').addEventListener('paste', e => {
+  e.preventDefault(); pegarWord(e.clipboardData.getData('text/html'), e.clipboardData.getData('text/plain'));
+});
+
+function aplicarBarraFormato(){
+  const ocultar = leerLS('barraFormatoOculta') === '1';
+  $('#vp').classList.toggle('formato-oculto', ocultar);
+  const boton = $('#vpAlternarFormato');
+  boton.textContent = ocultar ? 'Mostrar herramientas' : 'Ocultar herramientas';
+  boton.setAttribute('aria-expanded', String(!ocultar));
+  cerrarPaleta();
+}
+$('#vpAlternarFormato').onclick = () => {
+  grabarLS('barraFormatoOculta', leerLS('barraFormatoOculta') === '1' ? '' : '1');
+  aplicarBarraFormato();
+};
+aplicarBarraFormato();
 $('#vpHojas').addEventListener('cut', e => {
   const s = selVp(); if(sinSeleccion(s)) return;
   e.preventDefault(); e.clipboardData.setData('text/plain', textoSeleccionWord(s)); reemplazarWord('', 'deleteByCut');
@@ -529,9 +627,16 @@ $('#vpMenuCopiar').onclick = async () => {
 $('#vpMenuPegar').onclick = async () => {
   const sel = copiaWord(FMT.seleccion), modelo = VP;
   try {
-    const texto = await navigator.clipboard.readText();
+    let html = '', texto = '';
+    if(navigator.clipboard.read){
+      const items = await navigator.clipboard.read();
+      for(const item of items){
+        if(item.types.includes('text/html')) html = await (await item.getType('text/html')).text();
+        if(item.types.includes('text/plain')) texto = await (await item.getType('text/plain')).text();
+      }
+    } else texto = await navigator.clipboard.readText();
     if(VP !== modelo || $('#vpMenu').hidden) return;
-    restaurarSel(sel); if(texto) reemplazarWord(texto, 'insertFromPaste');
+    restaurarSel(sel); pegarWord(html, texto);
   } catch(e){ toast('No se pudo acceder al portapapeles. Podés pegar con Ctrl+V.'); restaurarSel(sel); }
 };
 document.addEventListener('mousedown', e => {

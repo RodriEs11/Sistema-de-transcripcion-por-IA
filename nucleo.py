@@ -15,6 +15,7 @@ import difflib
 import html
 import json
 import re
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -901,6 +902,24 @@ def omisiones(dictado, informe, palabras=None):
 
 # ----------------------------------------------------------------- medicos
 DIR_MED = CONOC / "medicos"
+_MED_LOCK = threading.RLock()
+
+
+def clave_medico(nombre):
+    return " ".join(sin_acentos(nombre).casefold().split())
+
+
+def validar_nombre_medico(nombre):
+    if not isinstance(nombre, str):
+        raise ValueError("Escribí el nombre del médico.")
+    nombre = " ".join(nombre.split())
+    if (len(nombre) < 2 or len(nombre) > 120 or not any(c.isalpha() for c in nombre)
+            or re.search(r"[^\w .,-]", nombre) or nombre.endswith(".")
+            or nombre.split(".")[0].upper() in {"CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4",
+                                                  "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2",
+                                                  "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}):
+        raise ValueError("Usá un nombre de 2 a 120 caracteres, con letras y sin símbolos especiales ni punto final.")
+    return nombre
 
 
 def _archivo_medico(nombre):
@@ -919,13 +938,34 @@ def notas_medico(nombre):
     return f.read_text(encoding="utf-8") if f and f.exists() else ""
 
 
-def guardar_medico(nombre, notas):
-    DIR_MED.mkdir(parents=True, exist_ok=True)
-    f = _archivo_medico(nombre)
-    if not f.stem:
-        raise ValueError("Nombre de médico inválido")
-    f.write_text(notas or "", encoding="utf-8")
-    return f.stem
+def guardar_medico(nombre, notas, *, crear=False, original=None):
+    nombre = validar_nombre_medico(nombre)
+    if not isinstance(notas, str):
+        raise ValueError("Las notas deben ser texto.")
+    with _MED_LOCK:
+        existentes = lista_medicos()
+        if original is not None and original not in existentes:
+            raise FileNotFoundError("El médico ya no existe. Actualizá la lista.")
+        for otro in existentes:
+            if clave_medico(otro) == clave_medico(nombre) and (crear or otro != (original or nombre)):
+                raise FileExistsError(f"Ya existe un médico con ese nombre: {otro}.")
+        DIR_MED.mkdir(parents=True, exist_ok=True)
+        f = _archivo_medico(nombre)
+        if original and original != nombre:
+            anterior = _archivo_medico(original)
+            # El renombrado también admite cambios de mayúsculas en Windows.
+            anterior.rename(f)
+        temporal = f.with_suffix(".md.nuevo")
+        temporal.write_text(notas, encoding="utf-8")
+        temporal.replace(f)
+        return nombre
+
+
+def eliminar_medico(nombre):
+    with _MED_LOCK:
+        if nombre not in lista_medicos():
+            raise FileNotFoundError("El médico ya no existe. Actualizá la lista.")
+        _archivo_medico(nombre).unlink()
 
 
 # ------------------------------------------------- titulos y lineas fijas

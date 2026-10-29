@@ -377,6 +377,9 @@ body.compacto #bCompacto .agr{display:block}body.compacto #bCompacto .cmp{displa
 .vp-ed ::selection{background:#b4d0f7}
 /* barra de formato (como la de Word, en chico) */
 .vp-fmt{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 16px;background:var(--panel);border-bottom:1px solid var(--bd)}
+#vp.integrado:not(.ampliado).formato-oculto #vpFmt{display:none}
+#vpAlternarFormato{display:none}
+#vp.integrado:not(.ampliado) #vpAlternarFormato{display:inline-flex}
 .vp-fmt .grupo{display:flex;gap:2px;padding-right:8px;margin-right:4px;border-right:1px solid var(--bd)}
 .vp-fmt .grupo:last-of-type{border-right:0}
 .vp-fmt button{width:32px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-color:transparent;background:transparent;border-radius:6px}
@@ -421,6 +424,21 @@ body.compacto #bCompacto .agr{display:block}body.compacto #bCompacto .cmp{displa
 @container (max-width:900px){ .f1 .tit-audio{display:none} }
 @container (max-width:760px){ #tiempo{display:none} .barra select.med{min-width:96px} }
 .barra select.med{flex:0 1 190px;min-width:110px;max-width:190px}
+.med-selector{display:flex;align-items:center;gap:4px;flex:0 1 230px;min-width:130px;max-width:230px}
+#bMedCaso{flex:1;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;padding:5px 8px}
+#nombreMedCaso{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+#bMedCaso svg{display:block;width:14px;height:14px;flex:none}
+#bAgregarMedCaso{flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0}
+#bAgregarMedCaso svg{display:block;width:14px;height:14px;flex:none;pointer-events:none}
+#menuMedCaso{position:fixed;z-index:100;display:flex;flex-direction:column;padding:8px;gap:6px;background:var(--panel);border:1px solid var(--bd2);border-radius:9px;box-shadow:var(--sombra)}
+#menuMedCaso[hidden]{display:none}
+#buscarMedCaso{width:100%;padding:7px 9px;flex:none}
+#opcionesMedCaso{overflow:auto;min-height:0;overscroll-behavior:contain}
+#opcionesMedCaso button{position:relative;display:block;width:100%;text-align:left;white-space:normal;border-color:transparent;padding:6px 32px 6px 8px}
+#opcionesMedCaso button.activa,#opcionesMedCaso button:hover,#opcionesMedCaso button:focus-visible{background:var(--gris-bg);border-color:var(--bd2)}
+#opcionesMedCaso button[aria-selected=true]{font-weight:600;color:var(--ac);background:var(--ac-suave);border-color:var(--ac)}
+#opcionesMedCaso button[aria-selected=true]::after{content:'\2713';position:absolute;right:10px;top:50%;transform:translateY(-50%)}
+#opcionesMedCaso .sin-medicos{padding:8px;color:var(--mu)}
 /* médico reconocido por la voz */
 .voz-chip{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:1.2;border-radius:12px;padding:4px 9px;border:1px solid var(--bd2);background:var(--panel);color:var(--mu);cursor:pointer;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
 .voz-chip svg{width:13px;height:13px;flex:none}
@@ -634,7 +652,11 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
           <div class="tit-caso"><h1 id="titulo"></h1><span id="tituloAudio" class="tit-audio"></span>
             <button id="bPaciente" class="ico" title="Corregir el nombre del paciente (solo se muestra en la lista, no va al informe)" aria-label="Corregir el nombre del paciente">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button></div>
-          <select id="medCaso" class="med" title="Médico que dictó este audio"></select>
+          <div class="med-selector">
+            <select id="medCaso" hidden aria-hidden="true" tabindex="-1"></select>
+            <button id="bMedCaso" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="opcionesMedCaso" title="Elegir médico: buscar por nombre o apellido"><span id="nombreMedCaso">Médico: sin especificar</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+            <button id="bAgregarMedCaso" type="button" title="Agregar médico" aria-label="Agregar médico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          </div>
           <button id="vozCaso" class="voz-chip" type="button" hidden></button>
           <div class="player">
             <button id="bAtras" title="Atrás 3 segundos (F6)">−3s</button>
@@ -833,6 +855,7 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
 <div id="vp" role="dialog" aria-modal="true" aria-labelledby="vpTit">
   <div class="vp-barra">
     <h2 id="vpTit">Editor de Word</h2><span id="vpInfo"></span><span class="sep"></span>
+    <button id="vpAlternarFormato" type="button" aria-controls="vpFmt" aria-expanded="true">Ocultar herramientas</button>
     <select id="vpZoom" title="Tamaño de la vista"><option value="ajustar">Ajustar al ancho</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option></select>
     <button id="vpGuardar" class="prim">Guardar Word y aprender</button>
     <button id="vpCopiar" class="prim" title="Copia el texto con su formato para pegar en Word">Copiar para Word</button>
@@ -1561,34 +1584,21 @@ editor.addEventListener('input', () => {
   const el = marcaEnCursor(); if(el) resolver(el);
   else { actualizarPend(); programarBorrador(); }
 });
-/* Pegar: siempre como texto sin formato. Si son varios renglones, el navegador copia la clase del renglón
-   donde está el cursor (p. ej. el título: negrita y centrado) a todos los renglones nuevos; después de pegar
-   se dejan con el formato normal del informe y solo los que parecen título de estudio quedan centrados. */
+/* El editor de respaldo usa el mismo lector de formato que las hojas A4. */
 function pareceTitulo(l){
   const x = (l || '').trim();
   if(!x || x.startsWith('-') || /[.:]$/.test(x) || x.length > 110) return false;
   const w = (sinAcentos(x.toLowerCase()).match(/[a-z]+/) || [''])[0];
   return (FORMATO.palabras_titulo || []).includes(w);
 }
-function limpiarPegado(ln){
-  ln.className = 'ln';
-  ['linea','motivo','seg'].forEach(k => delete ln.dataset[k]);
-  ln.removeAttribute('title'); ln.removeAttribute('style');
-  ln.querySelectorAll('b,strong,i,em,u,span,font').forEach(m => m.replaceWith(...m.childNodes));
-  if(pareceTitulo(ln.textContent)) ln.classList.add('tit');
-}
 editor.addEventListener('paste', e => {
   e.preventDefault();
-  const t = (e.clipboardData.getData('text/plain') || '').replace(/\r\n?/g, '\n').replace(/\t/g, ' ').replace(/\u00a0/g, ' ');
-  if(!t) return;
-  if(!t.includes('\n')){ document.execCommand('insertText', false, t); return; }
-  const antes = new Map([...editor.children].map(el => [el, el.textContent]));
-  document.execCommand('insertText', false, t);
-  for(const el of [...editor.children]){
-    if(el.tagName !== 'DIV') continue;
-    if(!antes.has(el)) limpiarPegado(el);
-    else if(antes.get(el) !== el.textContent) el.classList.toggle('tit', pareceTitulo(el.textContent));
-  }
+  const html = e.clipboardData.getData('text/html'), t = e.clipboardData.getData('text/plain');
+  if(!html && !t) return;
+  const pars = interpretarPegadoWord(html, t);
+  document.execCommand('insertHTML', false, pars.map(p => {
+    const el = parrafoVp(p); el.className = 'ln'; return el.outerHTML;
+  }).join(''));
   actualizarPend(); programarBorrador();
 });
 
@@ -1947,6 +1957,7 @@ $('#bRegen').onclick = async () => {
 
 /* ------------------------------------------------ vistas */
 function mostrar(v){
+  cerrarMedicosCaso();
   $('#vacio').hidden = v!=='vacio';
   for(const [id,k] of [['#caso','caso'],['#vPlant','plant'],['#vMed','med'],['#vVoces','voces']]){ const el=$(id); el.hidden = v!==k; el.style.display = v===k ? 'flex' : 'none'; }
   if(v!=='med' && v!=='voces') pararMuestra();
@@ -1961,6 +1972,92 @@ mostrar('vacio');
 let medicos = [];
 const NUEVO_MED = '__nuevo__';
 const AUTO_MED = 'Automático (por la voz)';
+// El select oculto conserva la integración con el caso y el reconocimiento por voz.
+// El menú va en body para que el contenedor de la barra no recorte la lista.
+const menuMedCaso = document.createElement('div');
+menuMedCaso.id = 'menuMedCaso'; menuMedCaso.hidden = true;
+menuMedCaso.innerHTML = '<input id="buscarMedCaso" type="search" placeholder="Buscar por nombre o apellido…" aria-label="Buscar médico por nombre o apellido" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="opcionesMedCaso" autocomplete="off"><div id="opcionesMedCaso" role="listbox" aria-label="Médicos"></div>';
+document.body.appendChild(menuMedCaso);
+let opcionMedCaso = -1;
+function actualizarMedicoCaso(){
+  const nombre = $('#medCaso').value || 'Médico: sin especificar';
+  $('#nombreMedCaso').textContent = nombre;
+  $('#bMedCaso').title = nombre + '. Buscar por nombre o apellido';
+}
+function cerrarMedicosCaso(foco=false){
+  const menu = $('#menuMedCaso'); if(!menu) return;
+  menu.hidden = true;
+  $('#bMedCaso').setAttribute('aria-expanded', 'false');
+  $('#buscarMedCaso').setAttribute('aria-expanded', 'false');
+  $('#buscarMedCaso').removeAttribute('aria-activedescendant');
+  if(foco) $('#bMedCaso').focus();
+}
+function ubicarMedicosCaso(){
+  if(menuMedCaso.hidden) return;
+  const r = $('#bMedCaso').getBoundingClientRect(), ancho = Math.min(320, innerWidth - 16);
+  menuMedCaso.style.width = ancho + 'px';
+  menuMedCaso.style.left = Math.max(8, Math.min(r.left, innerWidth - ancho - 8)) + 'px';
+  menuMedCaso.style.top = (r.bottom + 4) + 'px';
+  menuMedCaso.style.maxHeight = Math.max(80, Math.min(320, innerHeight * 0.5, innerHeight - r.bottom - 16)) + 'px';
+}
+function activarMedicoCaso(indice){
+  const opciones = [...$('#opcionesMedCaso').querySelectorAll('button')];
+  opcionMedCaso = opciones.length ? Math.max(0, Math.min(indice, opciones.length - 1)) : -1;
+  opciones.forEach((b,i) => b.classList.toggle('activa', i === opcionMedCaso));
+  const activa = opciones[opcionMedCaso];
+  if(activa){ $('#buscarMedCaso').setAttribute('aria-activedescendant', activa.id); activa.scrollIntoView({block:'nearest'}); }
+  else $('#buscarMedCaso').removeAttribute('aria-activedescendant');
+}
+function filtrarMedicosCaso(){
+  const palabras = sinAcentos($('#buscarMedCaso').value).toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const opciones = [...$('#medCaso').options].filter(o => !palabras.length || (o.value && palabras.every(p => sinAcentos(o.text).toLowerCase().includes(p))));
+  const lista = $('#opcionesMedCaso'); lista.replaceChildren();
+  for(const [i,o] of opciones.entries()){
+    const b = document.createElement('button'); b.type = 'button'; b.tabIndex = -1;
+    b.id = 'opcionMedCaso' + i; b.setAttribute('role', 'option');
+    b.setAttribute('aria-selected', String(o.value === $('#medCaso').value)); b.textContent = o.text;
+    b.onclick = () => {
+      $('#medCaso').value = o.value; actualizarMedicoCaso(); cerrarMedicosCaso(true);
+      $('#medCaso').dispatchEvent(new Event('change', {bubbles:true}));
+    };
+    lista.appendChild(b);
+  }
+  if(!opciones.length) lista.innerHTML = '<div class="sin-medicos" role="status">No se encontraron médicos.</div>';
+  activarMedicoCaso(Math.max(0, opciones.findIndex(o => o.value === $('#medCaso').value)));
+}
+$('#bMedCaso').onclick = () => {
+  if(!menuMedCaso.hidden){ cerrarMedicosCaso(); return; }
+  $('#buscarMedCaso').value = ''; menuMedCaso.hidden = false;
+  $('#bMedCaso').setAttribute('aria-expanded', 'true'); $('#buscarMedCaso').setAttribute('aria-expanded', 'true');
+  ubicarMedicosCaso(); filtrarMedicosCaso(); $('#buscarMedCaso').focus();
+};
+$('#bMedCaso').addEventListener('keydown', e => {
+  if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); e.stopPropagation(); if(menuMedCaso.hidden) $('#bMedCaso').click(); }
+});
+$('#buscarMedCaso').oninput = filtrarMedicosCaso;
+menuMedCaso.addEventListener('keydown', e => {
+  e.stopPropagation();
+  if(e.key === 'Escape'){ e.preventDefault(); cerrarMedicosCaso(true); }
+  else if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+    e.preventDefault(); activarMedicoCaso(opcionMedCaso + (e.key === 'ArrowDown' ? 1 : -1));
+  } else if(e.key === 'Enter'){
+    e.preventDefault(); const opciones = $('#opcionesMedCaso').querySelectorAll('button');
+    if(opciones[opcionMedCaso]) opciones[opcionMedCaso].click();
+  } else if(e.key === 'Tab'){ cerrarMedicosCaso(true); }
+});
+document.addEventListener('pointerdown', e => {
+  if(!menuMedCaso.contains(e.target) && !e.target.closest('.med-selector')) cerrarMedicosCaso();
+});
+document.addEventListener('focusin', e => {
+  if(!menuMedCaso.contains(e.target) && !e.target.closest('.med-selector')) cerrarMedicosCaso();
+});
+window.addEventListener('resize', ubicarMedicosCaso);
+$('#bAgregarMedCaso').onclick = async () => {
+  cerrarMedicosCaso(); const caso = actual, n = await nuevoMedico();
+  if(!n || actual !== caso || !caso) return;
+  llenarMedicos($('#medCaso'), n, 'Médico: sin especificar');
+  $('#medCaso').dispatchEvent(new Event('change', {bubbles:true}));
+};
 const leerLS = k => { try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } };
 const grabarLS = (k,v) => { try { localStorage.setItem(k, v); } catch(e){} };
 async function cargarMedicos(){
@@ -1969,8 +2066,10 @@ async function cargarMedicos(){
   if(actual) llenarMedicos($('#medCaso'), $('#medCaso').value, 'Médico: sin especificar');
 }
 function llenarMedicos(sel, valor, vacio){
-  sel.innerHTML = `<option value="">${esc(vacio)}</option>` + medicos.map(m => `<option>${esc(m.nombre)}</option>`).join('') + `<option value="${NUEVO_MED}">+ Agregar médico…</option>`;
+  sel.innerHTML = `<option value="">${esc(vacio)}</option>` + medicos.map(m => `<option>${esc(m.nombre)}</option>`).join('')
+    + (sel.id === 'medCaso' ? '' : `<option value="${NUEVO_MED}">+ Agregar médico…</option>`);
   sel.value = medicos.some(m => m.nombre===valor) ? valor : '';
+  if(sel.id === 'medCaso'){ actualizarMedicoCaso(); if(!menuMedCaso.hidden) filtrarMedicosCaso(); }
 }
 async function nuevoMedico(){
   const igual = t => medicos.find(m => sinAcentos(m.nombre).toLowerCase().replace(/\s+/g, ' ') === sinAcentos(t).toLowerCase().replace(/\s+/g, ' '));
@@ -1987,7 +2086,7 @@ async function nuevoMedico(){
   const ya = igual(n);
   if(ya) return ya.nombre;
   try {
-    const r = await api('/api/medico', {medico: n, notas: ''});
+    const r = await api('/api/medico', {medico: n, notas: '', crear: true});
     await cargarMedicos(); toast(`Médico agregado: ${r.medico}`); return r.medico;
   } catch(e){ toast(e.sinConexion ? 'Sin conexión con el servidor: no se pudo agregar el médico. Probá de nuevo cuando vuelva.' : 'No se pudo agregar el médico: ' + e.message, [], 8000); return null; }
 }
@@ -1997,8 +2096,7 @@ $('#medSubir').onchange = async e => {
   try { await api('/api/mi_medico', {medico: e.target.value}); } catch(err){ toast(err.message); }
 };
 $('#medCaso').onchange = async e => {
-  let v = e.target.value;
-  if(v===NUEVO_MED){ v = await nuevoMedico() || ''; llenarMedicos(e.target, v, 'Médico: sin especificar'); }
+  const v = e.target.value; actualizarMedicoCaso();
   cambiarMedicoCaso(v);
 };
 let medSel = null;
@@ -2058,6 +2156,7 @@ $('#vozCaso').onclick = () => {
   const v = VOZ_CASO; if(!v) return;
   if(!$('#medCaso').value && v.estado === 'dudoso' && v.medico && medicos.some(m => m.nombre === v.medico)){
     $('#medCaso').value = v.medico; cambiarMedicoCaso(v.medico);
+    actualizarMedicoCaso();
   } else toast($('#vozCaso').title, [], 9000);
 };
 async function cambiarMedicoCaso(v){
@@ -3003,11 +3102,11 @@ $('#cfgOriginal').onclick = async () => {
   if(!await confirmar('¿Volver a la configuración original de la pantalla?',
       '<p>Tema, tamaño del texto, lista, anchos de los paneles y opciones del audio vuelven a como venían. No se toca ningún informe.</p>', 'Restablecer', 'prim')) return;
   try { Object.keys(localStorage).filter(k => k.startsWith('pref_')).forEach(k => localStorage.removeItem(k));
-        ['tema', 'listaOculta', 'velUltima'].forEach(k => localStorage.removeItem(k)); } catch(e){}
+        ['tema', 'listaOculta', 'velUltima', 'barraFormatoOculta'].forEach(k => localStorage.removeItem(k)); } catch(e){}
   delete document.documentElement.dataset.theme;
   $('#vel').value = '1'; audio.playbackRate = 1;
   $('#cfgPaneles').onclick();
-  aplicarTema(); aplicarPrefs(); aplicarLista(); pintarConfig(); mostrarGuardado();
+  aplicarTema(); aplicarPrefs(); aplicarLista(); aplicarBarraFormato(); pintarConfig(); mostrarGuardado();
 };
 // controles de la aplicación del trabajo
 document.querySelectorAll('#config [data-app]').forEach(c => c.onchange = () => { hacerApp(c.dataset.app, c.checked); mostrarGuardado(); });

@@ -152,6 +152,59 @@ const server=http.createServer((req,res)=>{
     assert(await page.evaluate(()=>VP.parrafos[2].r.some(r=>r.b)));
     assert(await page.evaluate(()=>textoFinal().includes('Texto expandido')));
     assert(await page.locator('#vp').evaluate(e=>!e.classList.contains('ampliado')));
+    // Pegar desde Word sobre un título centrado y en negrita conserva el origen,
+    // incluidos párrafos vacíos, espacios, tabulaciones y estilos mixtos.
+    const original=await page.evaluate(()=>JSON.stringify(VP.parrafos));
+    const htmlWord=`<html><head><style>p.MsoNormal {font-family:Calibri;font-size:11pt;text-align:left;font-weight:normal} p.Titulo {text-align:center;font-weight:bold}</style></head><body>
+      <p class="MsoNormal Titulo">Título externo</p>
+      <p class="MsoNormal">Texto <b>en negrita</b> y <i><u>cursiva subrayada</u></i>.</p>
+      <p class="MsoNormal"><br></p>
+      <p class="MsoNormal" style="text-align:right;color:#0070C0">Final&nbsp;  con\ttabulación.</p></body></html>`;
+    await page.evaluate(html=>{
+      restaurarSel({a:{k:0,o:0},b:{k:0,o:VP.parrafos[0].t.length}});
+      cambiarFormato(alinearParrafos('center')); cambiarFormato(estilo('bold',true));
+      window.modeloAntesPegado=JSON.stringify(VP.parrafos);
+      const datos=new DataTransfer();datos.setData('text/html',html);datos.setData('text/plain','Título externo\nTexto en negrita y cursiva subrayada.\n\nFinal\u00a0  con\ttabulación.');
+      document.querySelector('#vpHojas .vp-ed').dispatchEvent(new ClipboardEvent('paste',{bubbles:true,clipboardData:datos}));
+    },htmlWord);
+    const pegados=await page.evaluate(()=>copiaWord(VP.parrafos.slice(0,4)));
+    assert.equal(pegados[0].a,'center');assert(pegados[0].r.every(r=>r.b));
+    assert.equal(pegados[1].t,'Texto en negrita y cursiva subrayada.');assert.equal(pegados[1].a,'left');
+    assert(pegados[1].r.some(r=>r.t==='Texto '&&!r.b));assert(pegados[1].r.some(r=>r.t==='en negrita'&&r.b));
+    assert(pegados[1].r.some(r=>r.i&&r.u));assert(pegados[1].r.every(r=>r.f==='Calibri'&&r.s===11));
+    assert.equal(pegados[2].t,'');assert.equal(pegados[3].t,'Final\u00a0  con\ttabulación.');assert.equal(pegados[3].a,'right');
+    assert(pegados[3].r.every(r=>r.c==='#0070C0'));
+    await page.evaluate(()=>guardarFormato(true));
+    assert(guardados.get('caso-uno').formato.parrafos.some(p=>p.t==='Texto en negrita y cursiva subrayada.'&&p.a==='left'&&p.r.some(r=>!r.b)));
+    await page.evaluate(()=>deshacerFmt(true));assert.equal(await page.evaluate(()=>JSON.stringify(VP.parrafos)),await page.evaluate(()=>modeloAntesPegado));
+    // El menú contextual lee HTML real del portapapeles, además del texto plano.
+    await page.evaluate(html=>navigator.clipboard.write([new ClipboardItem({
+      'text/html':new Blob([html],{type:'text/html'}),
+      'text/plain':new Blob(['Título externo\nTexto en negrita y cursiva subrayada.\n\nFinal\u00a0  con\ttabulación.'],{type:'text/plain'})
+    })]),htmlWord);
+    await page.locator('#vpHojas p[data-k="0"]').first().click({button:'right'});
+    await page.locator('#vpMenuPegar').click();
+    await page.waitForFunction(()=>VP.parrafos[0].t==='Título externo');
+    assert.equal(await page.evaluate(()=>VP.parrafos[1].a),'left');
+    assert(await page.evaluate(()=>VP.parrafos[1].r.some(r=>r.b)&&VP.parrafos[1].r.some(r=>!r.b)));
+    await page.evaluate(()=>{cerrarMenuWord();deshacerFmt(true);});
+    // Texto sin HTML también evita heredar el formato del título de destino.
+    await page.evaluate(()=>pegarWord('', 'Texto plano\nSegundo párrafo'));
+    assert(await page.evaluate(()=>VP.parrafos.slice(0,2).every(p=>p.a==='left'&&p.r.every(r=>!r.b))));
+    await page.evaluate(()=>{deshacerFmt(true);deshacerFmt(true);deshacerFmt(true);});
+    assert.equal(await page.evaluate(()=>JSON.stringify(VP.parrafos)),original);
+    // El HTML externo no puede ejecutar acciones ni agregar elementos ajenos al texto.
+    assert.equal(await page.evaluate(()=>interpretarPegadoWord('<p onclick="window.pegadoInseguro=1">Seguro<script>window.pegadoInseguro=1</script><img src=x onerror="window.pegadoInseguro=1"></p>','Seguro')[0].t),'Seguro');
+    assert.equal(await page.evaluate(()=>window.pegadoInseguro),undefined);
+    // Ocultar herramientas libera altura; audio y vista ampliada siguen disponibles.
+    const altura=await page.locator('#vpHojas').evaluate(e=>e.clientHeight);
+    await page.locator('#vpAlternarFormato').click();assert(await page.locator('#vpFmt').isHidden());
+    assert.equal(await page.locator('#vpAlternarFormato').getAttribute('aria-expanded'),'false');
+    assert(await page.locator('#vpHojas').evaluate((e,a)=>e.clientHeight>a,altura));assert(await page.locator('.player').isVisible());
+    await page.keyboard.press('F9');assert(await page.locator('#vpFmt').isVisible());assert(await page.locator('#vpAlternarFormato').isHidden());
+    await page.keyboard.press('Escape');assert(await page.locator('#vpFmt').isHidden());
+    await page.evaluate(()=>abrirCaso2('caso-dos'));assert(await page.locator('#vpFmt').isHidden());
+    await page.locator('#vpAlternarFormato').click();assert(await page.locator('#vpFmt').isVisible());
     await page.screenshot({path:path.join(__dirname,'revision_word_resultado.png'),fullPage:true});
     assert.deepEqual(errores,[]);
     // Configuración, conflictos, ayudas, persistencia y restablecimiento de atajos.
