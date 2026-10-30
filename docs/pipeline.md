@@ -2,6 +2,9 @@
 
 Este documento describe cómo un audio se convierte en un informe y cómo se decide qué revisar.
 
+El candidato conserva modelos, prompts y controles. La [etapa de lotes e IA](ia-lotes.md) acota
+la espera inicial, reutiliza ASR verificado y ejemplos sin cambios, e incorpora métricas por etapa.
+
 ## 1. Transcripción (`fase1_transcribir.py`, `huecos.py`)
 
 - **Modelo**: Whisper large-v3 con [faster-whisper](https://github.com/SYSTRAN/faster-whisper), CUDA en `float16`.
@@ -104,9 +107,9 @@ activa recién con 150 informes revisados, para no generar falsas alarmas con un
 Al guardar un informe:
 
 1. Se crea un ejemplo en `ejemplos/`: `FECHA_NOMBRE.dictado.txt`, `.informe.txt` (final), `.ia.txt` (salida original) y `.medico.txt`.
-2. Se agrega una fila a `resultados/historial.csv` con el **% de palabras corregidas** (diferencia entre la salida
+2. Se actualiza una fila por día/caso en `resultados/historial.sqlite3` (importa el CSV anterior una sola vez) con el **% de palabras corregidas** (diferencia entre la salida
    de la IA y el texto final). Volver a guardar el mismo día reemplaza la fila.
-3. Se regenera `conocimiento/correcciones_aprendidas.md`: cambios de palabras repetidos en 2 o más informes
+3. Se actualiza por ejemplo el índice de correcciones y se publica el top 40 en `conocimiento/correcciones_aprendidas.md`: cambios de palabras repetidos en 2 o más informes
    (por ejemplo *«fibronodulillar» → «fibronodular»*), que la IA lee en cada informe.
 
 > Las correcciones también son ejemplos: un error de tipeo al corregir se propaga. Conviene revisar
@@ -135,3 +138,5 @@ correctos (≈ 10 s por informe) contra 29 % de Qwen 3.5 9B.
 python fase1_transcribir.py --audios <carpeta> --salida resultados\fase1   :: reporte HTML con y sin vocabulario
 python fase1_transcribir.py --verificar                                    :: prueba rápida de la GPU
 ```
+
+El aprendizaje del servidor candidato se procesa en segundo plano. Ver [migración y mantenimiento](aprendizaje-incremental.md).

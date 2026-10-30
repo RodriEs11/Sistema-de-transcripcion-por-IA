@@ -18,10 +18,19 @@
    el mouse y las flechas resaltan las otras opciones en gris sin cambiar la asignación.
    Se puede elegir con las flechas y Enter; Escape cierra la lista sin cambiar el médico.
    El botón pequeño **+** al costado permite agregar y asignar uno nuevo. Al guardar, su voz queda registrada.
-8. **Guardar Word y aprender**: crea `Informes\NOMBRE.docx`, registra el ejemplo, el historial y el tiempo de revisión.
+8. **Guardar Word y aprender**: crea `Informes\NOMBRE.docx` y registra el tiempo de revisión.
+   Con el servidor candidato 2026.10.46, ejemplos e historial se actualizan en segundo plano;
+   la confirmación indica ese estado. El Word se puede usar mientras continúa el aprendizaje.
    Alternativa: **Copiar para Word** (con formato) para pegar en un documento con encabezado.
 
 Los cambios se autoguardan como borrador. **Regenerar** vuelve a pedir el informe a la IA (se pierden los cambios).
+
+Desde App 1.22 / Servidor 2026.10.46, el estado del borrador distingue cambios pendientes,
+guardado en curso, confirmación y error. Si falla, conservá el estudio abierto y usá **Reintentar
+guardado**; los fallos transitorios también se reintentan automáticamente. Si otra sesión cambió
+el borrador, preservá tu texto antes de volver a abrir: no se sobrescribe automáticamente.
+**Cerrar estudio** no abandona cambios que no pudieron confirmarse. Para salir de la app o
+actualizarla, cerrá primero el estudio. Ver [persistencia y recuperación](persistencia.md).
 
 ## Atajos de teclado
 

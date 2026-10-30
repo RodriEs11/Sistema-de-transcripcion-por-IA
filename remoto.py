@@ -30,6 +30,7 @@ from pathlib import Path
 
 import plataforma as P
 import registro as L
+from persistencia import escribir_atomico
 
 AQUI = Path(__file__).resolve().parent
 ARCH = AQUI / "acceso_remoto.json"
@@ -431,7 +432,7 @@ def guardar_huella(datos, h, nombre):
         f = archivo_huellas(datos)
         d = json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
         d[h] = nombre
-        f.write_text(json.dumps(d, ensure_ascii=False, indent=0), encoding="utf-8")
+        escribir_atomico(f, json.dumps(d, ensure_ascii=False, indent=0))
 
 
 def quitar_huellas(datos, nombre):
@@ -446,7 +447,7 @@ def quitar_huellas(datos, nombre):
             return
         resto = {h: n for h, n in d.items() if n != nombre}
         if len(resto) != len(d):
-            f.write_text(json.dumps(resto, ensure_ascii=False, indent=0), encoding="utf-8")
+            escribir_atomico(f, json.dumps(resto, ensure_ascii=False, indent=0))
 
 
 def nombre_unico(pc, original, existe):

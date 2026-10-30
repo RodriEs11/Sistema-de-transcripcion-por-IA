@@ -15,7 +15,7 @@ namespace Transcripcion
     // escribirlo, lo lee SIN bloquearlo (el sistema puede seguir usándolo y borrarlo) y lo entrega.
     class Vigilante : IDisposable
     {
-        class Candidato { public long Tam = -1; public DateTime Visto, UltimoCambio; }
+        class Candidato { public long Tam = -1; public DateTime Visto, UltimoCambio, Reintentar; }
 
         public readonly string Carpeta = Path.GetTempPath();
         readonly ConcurrentDictionary<string, Candidato> candidatos = new ConcurrentDictionary<string, Candidato>(StringComparer.OrdinalIgnoreCase);
@@ -25,7 +25,7 @@ namespace Transcripcion
         System.Threading.Timer reloj;
         int revisando = 0;
 
-        public event Action<string, byte[], string> AudioListo;     // nombre, contenido, huella
+        public event Func<string, byte[], string, bool> AudioListo; // true solo si quedó persistido
         public const long MinimoBytes = 8 * 1024;
 
         public void Iniciar()
@@ -69,14 +69,16 @@ namespace Transcripcion
                 foreach (var par in candidatos.ToArray())
                 {
                     string ruta = par.Key; var c = par.Value; var ahora = DateTime.Now;
+                    if (ahora < c.Reintentar) continue;
                     Candidato quitar;
                     try
                     {
                         var fi = new FileInfo(ruta);
-                        if (!fi.Exists) { candidatos.TryRemove(ruta, out quitar); continue; }
-                        if (fi.Length != c.Tam) { c.Tam = fi.Length; c.UltimoCambio = ahora; continue; }
+                        // Exists también devuelve false ante algunos errores de permisos. Length los informa.
+                        long longitud = fi.Length;
+                        if (longitud != c.Tam) { c.Tam = longitud; c.UltimoCambio = ahora; continue; }
                         if ((ahora - c.UltimoCambio).TotalSeconds < 1.2) continue;          // todavía se escribe
-                        if (fi.Length < MinimoBytes) { candidatos.TryRemove(ruta, out quitar); continue; }
+                        if (longitud < MinimoBytes) { candidatos.TryRemove(ruta, out quitar); continue; }
                         byte[] cab = LeerInicio(ruta, 12);
                         bool esWav = cab.Length == 12 && Encoding.ASCII.GetString(cab, 0, 4) == "RIFF" && Encoding.ASCII.GetString(cab, 8, 4) == "WAVE";
                         if (!esWav)
@@ -85,29 +87,45 @@ namespace Transcripcion
                             continue;
                         }
                         uint riff = BitConverter.ToUInt32(cab, 4);
-                        bool completo = riff == 0 || riff == 0xFFFFFFFF || (long)riff + 8 <= fi.Length;
-                        if (!completo && (ahora - c.Visto).TotalSeconds < 20) continue;     // falta la cabecera final
+                        bool completo = riff == 0 || riff == 0xFFFFFFFF || (long)riff + 8 <= longitud;
+                        if (!completo) { c.Reintentar = ahora.AddSeconds(10); continue; } // el tiempo no vuelve completo un WAV truncado
                         byte[] datos = LeerTodo(ruta);
-                        candidatos.TryRemove(ruta, out quitar);
+                        uint largoLeido = datos.Length >= 12 ? BitConverter.ToUInt32(datos, 4) : 0;
+                        if (datos.Length != longitud || datos.Length < MinimoBytes
+                            || Encoding.ASCII.GetString(datos, 0, 4) != "RIFF" || Encoding.ASCII.GetString(datos, 8, 4) != "WAVE"
+                            || (largoLeido != 0 && largoLeido != uint.MaxValue && (long)largoLeido + 8 > datos.Length))
+                        { c.Reintentar = ahora.AddSeconds(10); continue; }
                         string huella = Huella(datos);
                         lock (vistas)
                         {
-                            if (vistas.Contains(huella)) continue;      // el mismo audio abierto otra vez
-                            vistas.Add(huella);
-                            try { File.AppendAllText(archivoVistas, huella + Environment.NewLine); } catch { }
+                            if (vistas.Contains(huella)) { candidatos.TryRemove(ruta, out quitar); continue; }
                         }
-                        Registro.Escribir("Audio tomado: " + Path.GetFileName(ruta) + " (" + (datos.Length / 1024) + " KB)");
-                        var h = AudioListo; if (h != null) h(Path.GetFileName(ruta), datos, huella);
-                    }
-                    catch (IOException ex)
-                    {   // el sistema lo tiene abierto sin permitir lectura: reintentar un minuto
-                        if ((ahora - c.Visto).TotalSeconds > 60)
+                        var h = AudioListo;
+                        bool guardado = false;
+                        try { guardado = h != null && h(Path.GetFileName(ruta), datos, huella); }
+                        catch (Exception ex) { Registro.Escribir("No se pudo conservar el audio; se reintentará: " + ex.Message); }
+                        if (!guardado) { c.Reintentar = ahora.AddSeconds(10); continue; }
+                        lock (vistas)
                         {
-                            candidatos.TryRemove(ruta, out quitar);
-                            Registro.Escribir("No pude leer " + Path.GetFileName(ruta) + ": " + ex.Message);
+                            vistas.Add(huella);
+                            try { GuardarHuellas(); }
+                            catch (Exception ex) { Registro.Escribir("Audio en cola, pero no se pudo guardar su huella: " + ex.Message); }
                         }
+                        candidatos.TryRemove(ruta, out quitar);
+                        Registro.Escribir("Audio tomado: " + Path.GetFileName(ruta) + " (" + (datos.Length / 1024) + " KB)");
                     }
-                    catch (UnauthorizedAccessException) { candidatos.TryRemove(ruta, out quitar); }
+                    catch (FileNotFoundException) { candidatos.TryRemove(ruta, out quitar); }
+                    catch (DirectoryNotFoundException) { candidatos.TryRemove(ruta, out quitar); }
+                    catch (IOException ex)
+                    {   // Puede seguir abierto por el grabador: el tiempo no demuestra que se haya perdido.
+                        c.Reintentar = ahora.AddSeconds(10);
+                        Registro.Escribir("No pude leer " + Path.GetFileName(ruta) + "; se reintentará: " + ex.Message);
+                    }
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        c.Reintentar = ahora.AddSeconds(10);
+                        Registro.Escribir("Sin permiso para leer el audio; se reintentará: " + ex.Message);
+                    }
                 }
             }
             finally { Interlocked.Exchange(ref revisando, 0); }
@@ -116,6 +134,22 @@ namespace Transcripcion
         static FileStream AbrirCompartido(string ruta)
         {
             return new FileStream(ruta, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        }
+
+        void GuardarHuellas()
+        {
+            string temporal = archivoVistas + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                using (var f = new FileStream(temporal, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    byte[] datos = Encoding.UTF8.GetBytes(string.Join(Environment.NewLine, vistas) + Environment.NewLine);
+                    f.Write(datos, 0, datos.Length); f.Flush(true);
+                }
+                if (File.Exists(archivoVistas)) File.Replace(temporal, archivoVistas, null);
+                else File.Move(temporal, archivoVistas);
+            }
+            finally { try { if (File.Exists(temporal)) File.Delete(temporal); } catch (IOException) { } }
         }
 
         static byte[] LeerInicio(string ruta, int n)
@@ -158,6 +192,7 @@ namespace Transcripcion
     {
         readonly string carpeta = Path.Combine(Config.Carpeta, "pendientes");
         readonly SemaphoreSlim despertar = new SemaphoreSlim(0);
+        readonly object publicando = new object();
         static readonly byte[] Entropia = Encoding.UTF8.GetBytes("Transcripcion-audio-v1");
 
         public event Action<string, string, bool> Enviado;      // nombre original, nombre del caso, duplicado
@@ -171,15 +206,69 @@ namespace Transcripcion
 
         public void Agregar(string nombre, byte[] datos, string huella)
         {
-            string id = DateTime.Now.ToString("yyyyMMdd-HHmmss-fff") + "_" + huella.Substring(0, 12);
-            File.WriteAllBytes(Path.Combine(carpeta, id + ".audio"),
-                ProtectedData.Protect(datos, Entropia, DataProtectionScope.CurrentUser));
-            File.WriteAllText(Path.Combine(carpeta, id + ".nombre"), nombre, Encoding.UTF8);
-            Avisar();
+          lock (publicando)
+          {
+            string id = DateTime.Now.ToString("yyyyMMdd-HHmmss-fff") + "_" + Guid.NewGuid().ToString("N");
+            string destino = Path.Combine(carpeta, id + ".audio");
+            // El lector solo ve *.audio. Publicar el audio es el último paso, con nombre ya cerrado.
+            EscribirDuradero(Path.Combine(carpeta, id + ".nombre"), Encoding.UTF8.GetBytes(nombre));
+            EscribirDuradero(destino + ".pendiente", ProtectedData.Protect(datos, Entropia, DataProtectionScope.CurrentUser));
+            File.Move(destino + ".pendiente", destino);
+          }
+            // Una notificación que falla no debe convertir un audio ya persistido en fallo de captura.
+            try { Avisar(); } catch (Exception ex) { Registro.Escribir("Audio conservado; falló el aviso: " + ex.Message); }
             Despertar();
         }
 
+        static void EscribirDuradero(string ruta, byte[] datos)
+        {
+            using (var f = new FileStream(ruta, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            { f.Write(datos, 0, datos.Length); f.Flush(true); }
+        }
+
+        void ConservarParaRecuperar(string audio, string nombre, string motivo)
+        {
+            string destino = Path.Combine(carpeta, "recuperacion");
+            Directory.CreateDirectory(destino);
+            // No borrar si el traslado falla: el bucle reintentará conservando el original.
+            File.Move(audio, Path.Combine(destino, Path.GetFileName(audio) + "." + Guid.NewGuid().ToString("N")));
+            if (File.Exists(nombre))
+                try { File.Move(nombre, Path.Combine(destino, Path.GetFileName(nombre))); } catch (IOException) { }
+            Registro.Escribir("Audio conservado en recuperación: " + motivo);
+            var h = Rechazado; if (h != null) h("Audio conservado para recuperación", motivo);
+        }
+
+        void RecuperarInterrumpidos()
+        {
+          lock (publicando)
+          {
+            foreach (string f in Directory.GetFiles(carpeta, "*.audio.pendiente"))
+            {
+                string destino = f.Substring(0, f.Length - ".pendiente".Length);
+                string nombre = Path.ChangeExtension(destino, ".nombre");
+                try
+                {
+                    ProtectedData.Unprotect(File.ReadAllBytes(f), Entropia, DataProtectionScope.CurrentUser);
+                    if (!File.Exists(nombre)) throw new CryptographicException("Falta el nombre del audio interrumpido.");
+                    File.Move(f, destino);
+                }
+                catch (CryptographicException) { ConservarParaRecuperar(f, nombre, "La escritura quedó incompleta. Se conserva para revisión."); }
+                catch (IOException ex) { Registro.Escribir("Pendiente conservado; no se pudo recuperar: " + ex.Message); }
+                catch (UnauthorizedAccessException ex) { Registro.Escribir("Pendiente conservado; no hay permiso: " + ex.Message); }
+            }
+          }
+        }
+
         public void Despertar() { if (despertar.CurrentCount == 0) despertar.Release(); }
+
+        static bool Confirmado(Respuesta r)
+        {
+            object ok, nombre, error;
+            return r != null && r.Ok && r.Datos != null
+                && r.Datos.TryGetValue("ok", out ok) && ok is bool && (bool)ok
+                && r.Datos.TryGetValue("nombre", out nombre) && nombre is string && !string.IsNullOrWhiteSpace((string)nombre)
+                && !r.Datos.TryGetValue("error", out error);
+        }
 
         void Avisar() { var h = PendientesCambio; if (h != null) h(Pendientes); }
 
@@ -187,8 +276,13 @@ namespace Transcripcion
 
         async Task Bucle()
         {
+            try { RecuperarInterrumpidos(); }
+            catch (Exception ex) { Registro.Escribir("No se pudo completar la recuperación de audios: " + ex.Message); }
             while (true)
             {
+              bool falloCiclo = false;
+              try
+              {
                 bool todoBien = true;
                 foreach (var f in Directory.GetFiles(carpeta, "*.audio").OrderBy(x => x))
                 {
@@ -197,10 +291,13 @@ namespace Transcripcion
                     string nombre = File.Exists(fNombre) ? File.ReadAllText(fNombre, Encoding.UTF8) : "audio.wav";
                     byte[] datos;
                     try { datos = ProtectedData.Unprotect(File.ReadAllBytes(f), Entropia, DataProtectionScope.CurrentUser); }
-                    catch (Exception ex) { Registro.Escribir("Pendiente ilegible, se descarta: " + ex.Message); Borrar(f, fNombre); continue; }
+                    catch (CryptographicException)
+                    { ConservarParaRecuperar(f, fNombre, "No se pudo descifrar. El audio no fue borrado."); Avisar(); continue; }
+                    catch (IOException ex) { Registro.Escribir("No se pudo leer el pendiente; se reintentará: " + ex.Message); todoBien = false; continue; }
+                    catch (UnauthorizedAccessException ex) { Registro.Escribir("Sin permiso para leer el pendiente; se reintentará: " + ex.Message); todoBien = false; continue; }
                     if (string.IsNullOrEmpty(Config.Url)) { todoBien = false; break; }
                     var r = await Servidor.SubirAudio(Config.Url, nombre, datos, Vigilante.Huella(datos));
-                    if (r.Ok)
+                    if (Confirmado(r))
                     {
                         Borrar(f, fNombre);
                         bool dup = r.Datos.ContainsKey("duplicado") && r.Datos["duplicado"] is bool && (bool)r.Datos["duplicado"];
@@ -213,15 +310,21 @@ namespace Transcripcion
                     }
                     else if (r.Codigo == 400 || r.Codigo == 413 || (r.Codigo == 422 && !(r.Error ?? "").Contains("dañado")))
                     {   // el Servidor no lo acepta: no tiene sentido reintentar
-                        Borrar(f, fNombre);
+                        ConservarParaRecuperar(f, fNombre, r.Error ?? "El servidor rechazó el audio.");
                         Registro.Escribir("Rechazado " + nombre + ": " + r.Error);
-                        var h = Rechazado; if (h != null) h(nombre, r.Error);
                     }
-                    else { todoBien = false; Registro.Escribir("No se pudo enviar " + nombre + ": " + r.Error); break; }
+                    else { todoBien = false; Registro.Escribir("No se pudo enviar " + nombre + ": " + (r.Error ?? "El servidor no confirmó la recepción del audio.")); break; }
                     Avisar();
                 }
                 Avisar();
                 await despertar.WaitAsync(todoBien ? 60000 : 15000);
+              }
+              catch (Exception ex)
+              {
+                  Registro.Escribir("La cola conserva los audios y volverá a intentar: " + ex.Message);
+                  falloCiclo = true;
+              }
+              if (falloCiclo) await Task.Delay(15000);
             }
         }
 

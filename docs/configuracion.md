@@ -8,6 +8,9 @@ Se crea en el primer arranque copiando `configuracion.ejemplo.json`. No se versi
 |---|---|---|
 | `modelo_ia` | `"gemma4:12b"` | Modelo de Ollama que arma el informe |
 | `modelo_whisper` | `"large-v3"` | Modelo de faster-whisper |
+| `lote_max_audios` | `2` | Máximo de audios por lote FIFO; rango efectivo 1–20. No espera a completar el lote |
+| `lote_max_segundos` | `180` | Presupuesto de duración de audio conocida; rango efectivo 1–3600. Un primer audio más largo se admite solo |
+| `reusar_transcripcion` | `true` | Reutiliza ASR si coincide audio, modelo, versiones, vocabulario y código. `false` fuerza transcripción nueva. Ver [lotes e IA](ia-lotes.md) |
 | `dispositivo_whisper` | `"cuda"` | Opcional. `"cpu"` para usar el procesador si no hay placa NVIDIA (mucho más lento) |
 | `fuente`, `tamano_fuente` | `"Tahoma"`, `12` | Fuente del Word, de la vista previa y de "Copiar para Word" |
 | `lineas_vacias_para_encabezado` | `0` | Renglones vacíos al principio para el encabezado del paciente; por defecto no se reservan |

@@ -5,7 +5,51 @@ El servidor se versiona por fecha; la app del trabajo, con [versionado semántic
 
 ## Sin publicar
 
-Sin cambios pendientes.
+Siguen pendientes la medición de colas grandes/duraciones variadas y la confirmación de
+instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
+ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
+
+## [Servidor 2026.10.46] — 2026-10-30
+
+Activación comprobada en el proceso real el 30 de octubre: cola vacía, sin pausas ni
+estudios abiertos. El proceso ya cargaba esta versión; no se reinició durante la publicación.
+
+### Corregido
+- Cola de procesamiento SQLite con confirmación antes de encolar, recuperación FIFO tras caídas, pausas duraderas, protección de borrados y revisión humana. Publicación atómica de resultados y comprobante por ejecución para reconocer informes completos; migración única de pendientes antiguos y respaldo consistente sin detener el servidor.
+- Persistencia revisada: validación del contenido de borradores guardados sin sobrescribir archivos corruptos; publicación atómica de formato, audio recibido e índice de huellas. Recepciones simultáneas del mismo audio se serializan y un reintento recupera el encolado pendiente tras recepción duradera.
+- Lotes FIFO acotados por cantidad/duración, sin espera fija inicial; fallos aislados por caso y limpieza de Whisper al terminar. Reutilización ASR por contenido/parámetros, banco de ejemplos cacheado con invalidación y perfiles por revisión de plantillas. Métricas locales de carga y generación para validar el resultado en GPU real.
+- Correcciones incrementales por ejemplo con conteos transaccionales y consulta indexada de las 40 reglas principales. Historial y registro de Word procesados pasan a SQLite, con importación única de los formatos anteriores, exportación CSV y respaldo consistente explícitos.
+- Guardado Word mediante archivo completo y reemplazo atómico; ejemplos, historial, muestras de voz y correcciones se procesan en una cola de aprendizaje persistida, con reintentos y agrupación del análisis global fuera del bloqueo de finalización.
+- Editor A4 con reconstrucción desde la hoja anterior al cambio, conservación del prefijo y búsqueda indexada de párrafos. Reproducción con fondo de onda reutilizable, pausa de animación en pestañas ocultas y liberación/cancelación del audio de arrastre al cambiar de caso.
+- Índice de metadatos del listado por firma de archivos, permisos/estado siempre frescos, una sola instantánea por consulta de escritorio y consultas web sin solapamiento.
+- Borrador y omisiones aceptadas se guardan juntos mediante un archivo atómico; se leen los borradores anteriores sin migración masiva.
+- Autoguardado y formato comparten una cola de escrituras; los errores se muestran y se reintentan sin anunciar éxito ni cerrar el caso.
+- Navegación y cierre conservan cambios no confirmados; se elimina el envío sin confirmación al abandonar la página.
+
+## [App 1.22] — 2026-10-30
+
+Publicada en la distribución del servidor mediante reemplazo atómico del candidato ya
+probado, conservando App 1.21 y respaldo privado reciente. Las PC estaban desconectadas:
+la publicación no confirma su instalación ni sustituye el ensayo funcional en pc-test.
+
+### Corregido
+- Se conserva un borrador vacío al reabrirlo y se exige confirmación válida de borrador/formato. La cola no elimina audios ante respuestas HTTP 200 ambiguas; la captura conserva WAV incompletos y archivos bloqueados para reintento, registra huellas por reemplazo atómico y mantiene la confirmación aunque falle el aviso visual posterior.
+- Al confirmar Word se informa que el aprendizaje continúa en segundo plano cuando el servidor devuelve ese estado.
+- Interfaz compartida con paginación A4 parcial y reproducción de audio con menos trabajo por frame.
+- La interfaz comparte una única consulta activa del listado.
+- La captura confirma la huella solo después de persistir el audio cifrado. Si falla, conserva el candidato para reintento.
+- Los audios se publican completos por renombrado; los temporales completos se recuperan al iniciar y los ilegibles/rechazados se conservan para recuperación.
+- Salir y actualizar requieren cerrar el estudio primero; una ventana oculta con un caso abierto ya no habilita una actualización que pueda perder cambios.
+- Interfaz de borradores con estado de guardado y reintento.
+
+### Documentación y herramientas — 2026-10-29
+- Preparación de activación coordinada 1.22/2026.10.46 con piloto pc-test, respaldos privados verificados, artefactos de candidato/rollback por hashes y conversión de datos antiguos ensayada únicamente en copias ficticias. La preparación no publica ni reinicia.
+- Validación manual RTX 3080 con nueve ensayos y 36 informes sintéticos: lotes 1/2/4, tiempos hasta listo, capacidad y cargas de modelos. Herramientas de ensayo aislado/reanudación y resumen validado, con ocho pruebas CPU. Se recomienda 2/180 para uso diario; no se cambió configuración ni se reiniciaron servicios.
+- CI Windows/Python 3.12 con pruebas CPU y navegador, cola cifrada, compilación/autoprueba y candidato por despacho manual; dependencias de pruebas fijadas y lock npm. Activación remota y promoción a producción pendientes.
+- Auditoría de rendimiento y fiabilidad del servidor, web y cliente Windows, con 19 hallazgos priorizados y medición sintética del listado.
+- Plan de CI/CD con pruebas aisladas, dependencias reproducibles, candidato inmutable, promoción y rollback; workflows aún pendientes de implementación.
+- Microbenchmark aislado `pruebas/medir_listado.py` y corrección de la arquitectura documentada: el trabajador procesa lotes por etapas.
+- La auditoría y el microbenchmark no modifican por sí mismos el comportamiento de producción.
 
 ## [Servidor 2026.10.45] — 2026-10-29
 

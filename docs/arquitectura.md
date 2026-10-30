@@ -92,11 +92,19 @@ sequenceDiagram
 
 ## Uso de la GPU
 
-La placa de 10 GB no admite Whisper large-v3 y Gemma 12B a la vez. El trabajador procesa **un audio por vez** y:
+La placa de 10 GB no admite Whisper large-v3 y Gemma 12B a la vez. Hay **un trabajador GPU**,
+que toma un audio y agrupa los pendientes disponibles en un lote acotado, sin espera fija:
 
-1. Antes de transcribir, pide a Ollama que descargue el modelo (`keep_alive: 0`).
-2. Después de transcribir, libera Whisper de la memoria de la placa.
-3. Llama a Gemma con `temperature 0.1`, `num_ctx 12288` y sin modo de razonamiento.
+1. Comprueba si puede reutilizar transcripciones. Solo cuando necesita cargar Whisper pide a Ollama que descargue el modelo (`keep_alive: 0`).
+2. Transcribe y revisa huecos de todos los audios del lote; luego libera Whisper de la placa.
+3. Genera los informes secuencialmente con Gemma (`temperature 0.1`, `num_ctx 12288`, sin razonamiento).
+
+Esto amortiza cargas de modelos, pero el primer informe espera la transcripción de todo el lote.
+El candidato limita por defecto a dos audios y 180 s de duración conocida, priorizando tener
+informes revisables antes de transcribir toda la cola. El diagrama anterior representa un caso
+individual; no significa alternar modelos después de cada audio cuando hay varios pendientes.
+
+Ver [gestión de lotes, cachés y métricas](ia-lotes.md), con pruebas sin GPU y límites pendientes de medición real.
 
 Si Ollama está cerrado, el audio igual se transcribe y queda esperando; la vigilancia de la IA (cada 20 s)
 reanuda la cola cuando vuelve.
@@ -109,6 +117,37 @@ reanuda la cola cuando vuelve.
 - **Duplicados**: cada audio se identifica por SHA-256 (`_huellas.json`).
 - Cada PC tiene su médico predeterminado guardado en el servidor; la lista se puede filtrar por "Esta PC / Todas".
 
+## Costos operativos y persistencia
+
+La web consulta `/api/casos` cada 2 s y reconstruye la lista. `listar_casos` recorre archivos y
+metadatos de todos los casos; el filtro de PC de la interfaz se aplica después. La app consulta
+`/api/cliente/estado` aproximadamente cada 10 s; esa ruta ejecuta actualmente dos listados completos.
+El candidato agrega un índice de metadatos por caso, invalidado por tamaño/mtime de sus archivos
+y del banco de voz. Se mantiene el recorrido de directorios para detectar cambios externos;
+estados, esperas, bloqueos y permisos se recalculan por pedido. El endpoint de escritorio obtiene
+una única instantánea y la web impide consultas de lista solapadas. No hay paginación aún.
+El manifiesto revisa cambios como máximo cada 5 s y reutiliza hashes si la
+firma de archivos no cambió.
+
+La cola de procesamiento del candidato registra cada tarea y fase en SQLite antes de
+confirmarla, conserva FIFO y pausas, y recupera ejecuciones interrumpidas al arrancar. Importa
+una sola vez el antiguo `cola_al_reiniciar.json`, sin borrarlo. Un comprobante con identificador
+de ejecución y hashes permite reconocer informes terminados antes de una caída sin regenerarlos.
+Ver [cola duradera, respaldo e integridad](cola-servidor.md). La cola de envío C# conserva audios cifrados en disco. El candidato
+1.22 publica por renombrado, confirma la captura después de persistir y conserva ilegibles en
+recuperación. Ver [garantías y límites de la primera etapa](persistencia.md).
+
+El candidato confirma el Word y una tarea duradera de aprendizaje; un consumidor independiente
+actualiza ejemplos, historial y correcciones fuera de `FIN_LOCK`. El editor A4 conserva las hojas
+anteriores al cambio y reconstruye el sufijo. Ver [guardado y aprendizaje](word-aprendizaje.md)
+y [editor/audio](editor-audio.md), con sus límites y estado de despliegue.
+
+El historial y el registro de Word procesados usan `resultados/historial.sqlite3`; las correcciones
+mantienen contribuciones por ejemplo y un índice de frecuencias. Se importan los datos anteriores
+una sola vez; el CSV previo se conserva. Ver [migración, exportación y recuperación](aprendizaje-incremental.md).
+
+Ver [auditoría y mediciones](auditoria-rendimiento-2026-10-29.md) y [flujo CI/CD propuesto](ci-cd.md).
+
 ## Archivos de un caso
 
 Para un audio `NOMBRE`, el servidor guarda en `Informes\revision\datos\`:
@@ -120,6 +159,7 @@ Para un audio `NOMBRE`, el servidor guarda en `Informes\revision\datos\`:
 | `NOMBRE.informe_ia.txt` | Salida de la IA |
 | `NOMBRE.marcas.json` | Marcas de revisión (versionadas con `"v"`) |
 | `NOMBRE.borrador.html` | Borrador editado (autoguardado) |
+| `NOMBRE.borrador.json` | Desde servidor 2026.10.46: borrador y omisiones en una escritura atómica con revisión; prevalece sobre los archivos anteriores |
 | `NOMBRE.final.txt` | Texto final guardado |
 | `NOMBRE.formato.json` | Formato manual (vista previa / autocorrecciones) |
 | `NOMBRE.paciente.json` | Nombre del paciente detectado o corregido |

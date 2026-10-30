@@ -598,6 +598,8 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
   .cfg-caja{height:100%}
   .cfg-nota{display:none}
 }
+.estado-borrador:not([hidden]){display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:4px 0;font-size:12px;color:var(--mu)}
+.estado-borrador span{min-width:0;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -688,6 +690,7 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
           <button id="bCopiar" class="con-ico" title="Copiar para Word: copia el texto con formato Tahoma 12 para pegar en tu Word"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2"/></svg><span class="et">Copiar para Word</span></button>
           <button id="bFin" class="prim con-ico" title="Guardar Word y aprender: crea el Word en la carpeta Informes y guarda tu corrección para que la IA aprenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="et">Guardar Word y aprender</span><span class="et-corta">Guardar Word</span></button>
         </div>
+        <div id="guardadoBorrador" class="estado-borrador" hidden><span id="estadoBorrador" role="status" aria-live="polite"></span><button id="reintentarBorrador" class="chico secundaria" hidden>Reintentar guardado</button></div>
         <div class="ley" id="leyenda"><span style="background:var(--rojo)">dato no dictado / completar</span><span style="background:var(--amarillo)">dudoso</span><span style="background:var(--turq-bg);box-shadow:inset 0 -2px 0 var(--turq)">no dictado junto al hallazgo</span><span style="background:var(--gris-bg);color:var(--gris)">frase de plantilla no dictada</span><span>· pasá el mouse sobre una marca (o usá <kbd data-atajo="siguiente">F2</kbd>) para ver qué se dictó · editar una marca la da por revisada</span></div>
       </div>
       <div class="cols">
@@ -942,7 +945,7 @@ async function pedir(ruta, opciones){
     j = {};
   }
   if(r.status===401 && j.entrar){ location.href = '/entrar'; throw new Error('Sesión vencida'); }
-  if(!r.ok) throw new Error(j.error || ('Error '+r.status));
+  if(!r.ok){ const e = new Error(j.error || ('Error '+r.status)); e.status = r.status; throw e; }
   return j;
 }
 function api(ruta, datos){
@@ -1035,7 +1038,13 @@ function ponerEstadoSrv(){
   box.hidden = !h;
 }
 
-async function cargarLista(){
+let consultaLista = null;
+function cargarLista(){
+  if(consultaLista) return consultaLista;
+  consultaLista = cargarListaActual().finally(()=>{consultaLista=null;});
+  return consultaLista;
+}
+async function cargarListaActual(){
   let j; try { j = await api('/api/casos'); }
   catch(e){ if(SRV.ok !== false){ SRV.ok = false; SRV.desde = Date.now();
       // se cortó justo cuando el administrador reiniciaba el servidor: no es una falla
@@ -1314,7 +1323,7 @@ async function irAInicio(){
 }
 $('#bInicio').onclick = irAInicio;
 $('#rielInicio').onclick = irAInicio;
-$('#bAdmin').onclick = async () => { if(actual) await guardarBorrador(); location.href = '/admin'; };
+$('#bAdmin').onclick = async () => { try { if(actual){ await guardarFormato(true); await guardarBorrador(); if(borradorPendiente()) throw new Error('Hay cambios nuevos sin guardar. Reintentá antes de salir.'); } location.href = '/admin'; } catch(e){ toast(e.message); } };
 $('#tabMia').onclick = () => ponerFiltro('mia'); $('#tabTodas').onclick = () => ponerFiltro('todas');
 setInterval(cargarLista, 2000); cargarLista(); cargarMiPc();
 
@@ -1328,6 +1337,11 @@ setInterval(async () => { if(!actual) return;
 /* desde el panel de administración le sacaron el caso a esta PC (por ejemplo, para abrirlo en otra) */
 function casoLiberado(){
   if(!actual) return;
+  if(borradorPendiente()){
+    audio.pause(); clearTimeout(tBorrador);
+    estadoBorrador('Caso liberado desde otra PC. Conservá esta pantalla para recuperar tus cambios.', true);
+    return; // no destruir texto local que aún no fue confirmado
+  }
   audio.pause(); clearTimeout(tBorrador);
   actual = null; activa = null; ocultarExplica(); onda = null;
   audio.removeAttribute('src'); audio.load();
@@ -1457,10 +1471,15 @@ function marcarAbriendo(n){
     if(si){ const bd = li.querySelector('.badge'); if(bd) bd.innerHTML = '<span class="spin"></span>abriendo'; } });
 }
 async function abrirCaso2(n){
+  if(actual){
+    try { await guardarFormato(true); await guardarBorrador(); if(borradorPendiente()) throw new Error('Hay cambios nuevos sin guardar. Reintentá antes de cambiar de estudio.'); }
+    catch(e){ toast(e.message); return; }
+  }
   let b; try { b = await api('/api/caso/bloquear', {nombre: n}); } catch(e){ toast(e.message); return; }
   if(!b.ok){ toast('Este caso lo está revisando ' + b.por + '.'); return; }
-  if(actual){ await guardarFormato(true); await guardarBorrador(); if(actual!==n) soltarCaso(actual); }
-  let c; try{ c = await api('/api/caso?nombre='+encodeURIComponent(n)); }catch(e){ toast('No se pudo abrir el caso: ' + e.message); return; }
+  let c; try{ c = await api('/api/caso?nombre='+encodeURIComponent(n)); }catch(e){ if(actual!==n) soltarCaso(n); toast('No se pudo abrir el caso: ' + e.message); return; }
+  if(actual && borradorPendiente()){ if(actual!==n) soltarCaso(n); toast('Hay cambios nuevos sin guardar. Conservamos el estudio actual.'); return; }
+  if(actual && actual!==n) soltarCaso(actual);
   actual = n; palabras = c.palabras; activa = null;
   $('#bBorrarCaso').hidden = !((casosCache.find(x => x.nombre===n) || {}).puede_borrar);
   document.querySelectorAll('#casos li').forEach(li => li.classList.toggle('sel', li.dataset.n===n));
@@ -1471,9 +1490,13 @@ async function abrirCaso2(n){
   if(PREF.leer('velInicial')) $('#vel').value = PREF.leer('velInicial');      // Configuración → velocidad al abrir
   audio.src = '/audio/' + encodeURIComponent(n); audio.playbackRate = +$('#vel').value;
   ocultarExplica(); reiniciarSync();
-  if(c.borrador){ editor.innerHTML = c.borrador; adaptarBorrador(); } else armarEditor(c.lineas);
+  if(c.borrador != null){ editor.innerHTML = c.borrador; adaptarBorrador(); } else armarEditor(c.lineas);
   armarDictado(c.palabras);
   omis = c.omisiones || []; omisOk = c.omisiones_ok || []; armarAvisos();
+  BORRADOR.confirmado.set(n, firmaBorrador(capturarBorrador()));
+  BORRADOR.revision.set(n, c.borrador_revision);
+  BORRADOR.fallidos.delete(n);
+  estadoBorrador('');
   actualizarPend(); editor.scrollTop = 0;
   cargarOnda(n);
   await cargarEditorRevision(n);
@@ -1708,7 +1731,7 @@ document.addEventListener('keydown', e => {
     return;
   }
   if(e.key==='Escape' && explicaDe){ ocultarExplica(); return; }
-  if(e.ctrlKey && e.key.toLowerCase()==='s'){ e.preventDefault(); guardarBorrador(); toast('Borrador guardado.'); }
+  if(e.ctrlKey && e.key.toLowerCase()==='s'){ e.preventDefault(); guardarBorrador().then(()=>toast('Borrador guardado.')).catch(e=>toast(e.message)); }
 });
 $('#bSig').onclick = () => siguiente(1);
 $('#bAcep').onclick = aceptar;
@@ -1722,18 +1745,69 @@ function textoFinal(){
   });
   return lineas.map(l => l.replace(/ /g,' ').replace(/\s+$/,'')).join('\n').replace(/^\n+|\n+$/g,'');
 }
-function programarBorrador(){ clearTimeout(tBorrador); tBorrador = setTimeout(guardarBorrador, 1500); }
-function guardarBorrador(){
-  if(!actual) return; clearTimeout(tBorrador);
-  return api('/api/borrador', {nombre: actual, html: htmlLimpio(), omisiones_ok: omisOk}).catch(()=>{});
+const BORRADOR = {cola: Promise.resolve(), pendientes: 0, confirmado: new Map(), revision: new Map(), fallidos: new Set()};
+function capturarBorrador(){ return {nombre: actual, html: htmlLimpio(), omisiones_ok: [...omisOk]}; }
+function firmaBorrador(d){ return JSON.stringify([d.html, d.omisiones_ok]); }
+function estadoBorrador(texto, error=false){
+  $('#guardadoBorrador').hidden = !texto;
+  $('#estadoBorrador').textContent = texto;
+  $('#reintentarBorrador').hidden = !error;
 }
+function borradorPendiente(){
+  return !!actual && (BORRADOR.pendientes > 0 || BORRADOR.fallidos.has(actual) || BORRADOR.confirmado.get(actual) !== firmaBorrador(capturarBorrador())
+    || (typeof FMT !== 'undefined' && !!(FMT.pendiente || FMT.guardando)));
+}
+function programarBorrador(){
+  clearTimeout(tBorrador); estadoBorrador('Cambios sin guardar');
+  tBorrador = setTimeout(()=>guardarBorrador().catch(()=>{}), 1500);
+}
+function enviarBorrador(datos){
+  // Una única fila de escrituras para autoguardado y formato. Capturar antes de esperar.
+  const copia = {...datos, omisiones_ok: [...datos.omisiones_ok]};
+  BORRADOR.pendientes++;
+  if(actual === copia.nombre) estadoBorrador('Guardando…');
+  const tarea = BORRADOR.cola.then(async () => {
+    const revision = BORRADOR.revision.get(copia.nombre);
+    const r = await api('/api/borrador', {...copia, ...(Number.isInteger(revision) ? {revision} : {})});
+    if(r.ok !== true) throw new Error('El servidor no confirmó el guardado del borrador.');
+    if((Number.isSafeInteger(revision) || r.revision !== undefined) &&
+       (!Number.isSafeInteger(r.revision) || r.revision < 1 || (Number.isSafeInteger(revision) && r.revision < revision)))
+      throw new Error('El servidor no confirmó una revisión válida del borrador.');
+    BORRADOR.revision.set(copia.nombre, r.revision);
+    BORRADOR.fallidos.delete(copia.nombre);
+    BORRADOR.confirmado.set(copia.nombre, firmaBorrador(copia));
+  }).catch(e => {
+    BORRADOR.fallidos.add(copia.nombre);
+    if(actual === copia.nombre){
+      estadoBorrador(e.status === 409 ? e.message : 'No se pudo guardar. Conservá esta pantalla y reintentá.', true);
+      clearTimeout(tBorrador);
+      if(e.status !== 409) tBorrador = setTimeout(()=>{ if(actual === copia.nombre) guardarBorrador().catch(()=>{}); }, 10000);
+    }
+    throw e;
+  }).finally(() => {
+    BORRADOR.pendientes--;
+    if(actual === copia.nombre && !borradorPendiente()) estadoBorrador('Borrador guardado');
+    else if(actual === copia.nombre && !BORRADOR.pendientes && !BORRADOR.fallidos.has(copia.nombre)) estadoBorrador('Cambios sin guardar');
+  });
+  BORRADOR.cola = tarea.catch(()=>{}); // la siguiente escritura debe poder reintentar
+  return tarea;
+}
+function guardarBorrador(){
+  if(!actual) return Promise.resolve();
+  clearTimeout(tBorrador);
+  return enviarBorrador(capturarBorrador());
+}
+$('#reintentarBorrador').onclick = async () => {
+  try { await guardarFormato(true); await guardarBorrador(); } catch(e){ toast(e.message); }
+};
 /* Cerrar el estudio: guarda el borrador, lo libera para las otras PC y vuelve a la lista */
 async function cerrarCaso(silencioso){
   if(!actual) return;
   const n = actual, tit = $('#titulo').dataset.t || n;
   audio.pause();
-  await guardarFormato(true);
-  await guardarBorrador();
+  try { await guardarFormato(true); await guardarBorrador(); }
+  catch(e){ toast('No se cerró el estudio: ' + e.message); return false; }
+  if(borradorPendiente()){ toast('Hay cambios nuevos sin guardar. Volvé a cerrar el estudio cuando termines de editar.'); return false; }
   actual = null; activa = null; ocultarExplica(); onda = null;
   { const rv = tomarRev(); try { await api('/api/caso/soltar', {nombre: n, rev: rv}); } catch(e){ revPend += rv; soltarCaso(n); } }
   audio.removeAttribute('src'); audio.load();
@@ -1815,7 +1889,7 @@ async function borrarCasos(cs){
   html += '<p>Lo que la IA aprendió de tus correcciones se conserva. <b>No se puede deshacer.</b></p>';
   if(!await confirmar(uno ? 'Borrar «' + (c.paciente || c.titulo || c.nombre) + '»' : `Borrar ${cs.length} informes revisados`,
                       html, uno ? 'Borrar' : `Borrar ${cs.length}`)) return;
-  if(cs.some(x => x.nombre === actual)) await dejarCasoAbierto();
+  if(cs.some(x => x.nombre === actual)) { try { await dejarCasoAbierto(); } catch(e){ toast(e.message); return; } }
   let r;
   try { r = await api('/api/borrar', {nombres: cs.map(x => x.nombre)}); }
   catch(e){ toast(e.message, [], 8000); cargarLista(); return; }
@@ -1855,7 +1929,9 @@ $('#bPaciente').onclick = async () => {
     toast(r.paciente ? 'Paciente: ' + r.paciente : 'No se encontró el nombre en el dictado.'); cargarLista();
   } catch(e){ toast(e.message); }
 };
-window.addEventListener('beforeunload', () => { if(actual) navigator.sendBeacon('/api/borrador', new Blob([JSON.stringify({nombre:actual, html:htmlLimpio()})], {type:'application/json'})); });
+window.addEventListener('beforeunload', e => {
+  if(borradorPendiente()){ e.preventDefault(); e.returnValue = ''; }
+}); // no enviar un beacon sin orden ni confirmación que pueda pisar una escritura más nueva
 
 let FORMATO = {palabras_titulo: [], negrita_titulos: true, prefijos: [], exactas: []};
 api('/api/formato').then(f => FORMATO = f).catch(()=>{});
@@ -1946,7 +2022,7 @@ $('#bFin').onclick = async () => {
     const botones = [];
     if(!MI.remoto) botones.push(['Abrir Word', () => api('/api/abrir', {nombre: n})]);
     if(sig) botones.push(['Revisar el siguiente', () => abrirCaso(sig.nombre)]);
-    toast(`${MI.remoto ? 'Word descargado en esta PC' : 'Word guardado'} (${tit}) · corregiste el ${r.pct}% de las palabras. La IA ya lo usa como ejemplo.`, botones, 9000);
+    toast(`${MI.remoto ? 'Word descargado en esta PC' : 'Word guardado'} (${tit}) · corregiste el ${r.pct}% de las palabras. ${r.aprendizaje === 'pendiente' ? 'El aprendizaje continúa en segundo plano.' : 'La IA ya lo usa como ejemplo.'}`, botones, 9000);
   }catch(e){ toast(e.message); }
 };
 $('#bRegen').onclick = async () => {
@@ -2109,7 +2185,7 @@ function armarListaMed(){
     ul.appendChild(li);
   }
 }
-$('#bVerMed').onclick = async () => { if(actual) guardarBorrador(); await cargarMedicos(); mostrar('med');
+$('#bVerMed').onclick = async () => { if(actual) guardarBorrador().catch(()=>{}); await cargarMedicos(); mostrar('med');
   if(!medSel && medicos[0]){ medSel = medicos[0].nombre; }
   const m = medicos.find(x=>x.nombre===medSel); $('#medNombre').value = m ? m.nombre : ''; $('#medNotas').value = m ? m.notas : ''; armarListaMed();
   armarVozMedico(m ? m.nombre : ''); contarSinEtiquetar(); };
@@ -2257,7 +2333,7 @@ function armarListaPl(){
     li.onclick = () => { volcarPl(); plSel = i; $('#plNombre').value = x.nombre; $('#plCuerpo').value = x.cuerpo; armarListaPl(); }; ul.appendChild(li); });
 }
 async function abrirPlantillas(nueva){
-  if(actual) guardarBorrador();
+  if(actual) guardarBorrador().catch(()=>{});
   secs = (await api('/api/plantillas')).secciones; plSel = secs.length ? 0 : -1;
   if(nueva){ secs.push(nueva); plSel = secs.length-1; }
   mostrar('plant');
@@ -2720,14 +2796,11 @@ function marcadoresOnda(){
   return out;
 }
 function huecosPend(){ return omis.filter(o => o.hueco && !omisOk.includes(o.dato)).map(o => ({o, a: o.ini ?? (o.seg - 0.5), b: o.fin ?? (o.seg + 1.5)})); }
-function dibujarOnda(){
-  const w = cv.clientWidth, h = cv.clientHeight; if(!w || !h) return;
-  const dpr = devicePixelRatio || 1;
-  if(cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); }
-  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
-  const D = durTotal(); if(!actual || !D) return;
+const fondoOnda = {normal: document.createElement('canvas'), pasada: document.createElement('canvas'), clave: '', sucio: true};
+new MutationObserver(()=>{ fondoOnda.sucio=true; }).observe(editor,{subtree:true,childList:true,characterData:true,attributes:true});
+function pintarFondoOnda(g,w,h,D,xa){
   const X = t => t / D * w, top = 11, bottom = h - 9, mid = (top + bottom) / 2, amp = (bottom - top) / 2;
-  const cAc = cssVar('--ac'), cOnda = cssVar('--onda'), xa = X(audio.currentTime || 0);
+  const cAc = cssVar('--ac'), cOnda = cssVar('--onda');
   g.fillStyle = cssVar('--amarillo');                          // partes que Whisper no transcribió
   for(const q of huecosPend()) g.fillRect(X(q.a), 0, Math.max(3, X(q.b) - X(q.a)), h);
   if(rangoCursor){                                             // la línea donde está el cursor
@@ -2750,8 +2823,27 @@ function dibujarOnda(){
     if(m.abajo){ g.moveTo(x - 4.5*grande, h); g.lineTo(x + 4.5*grande, h); g.lineTo(x, h - 8*grande); }
     else { g.moveTo(x - 4.5*grande, 0); g.lineTo(x + 4.5*grande, 0); g.lineTo(x, 8*grande); }
     g.fill(); }
-  g.fillStyle = cssVar('--tx'); g.fillRect(xa - 0.75, 0, 1.5, h);   // cabezal
 }
+function dibujarOnda(recalcular=true){
+  const w=cv.clientWidth,h=cv.clientHeight; if(!w || !h) return;
+  const dpr=devicePixelRatio||1, W=Math.round(w*dpr), H=Math.round(h*dpr);
+  if(cv.width!==W || cv.height!==H){cv.width=W;cv.height=H;}
+  const g=cv.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,W,H);
+  const D=durTotal();if(!actual || !D){fondoOnda.clave='';return;}
+  const clave=JSON.stringify([actual,W,H,D]);
+  if(recalcular || fondoOnda.sucio || fondoOnda.clave!==clave){
+    for(const [lienzo,xa] of [[fondoOnda.normal,-1],[fondoOnda.pasada,w+1]]){
+      lienzo.width=W;lienzo.height=H;const c=lienzo.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
+      pintarFondoOnda(c,w,h,D,xa);
+    }
+    fondoOnda.clave=clave;fondoOnda.sucio=false;
+  }
+  g.drawImage(fondoOnda.normal,0,0);
+  const x=Math.max(0,Math.min(W,(audio.currentTime||0)/D*W));
+  if(x>0)g.drawImage(fondoOnda.pasada,0,0,x,H,0,0,x,H);
+  g.fillStyle=cssVar('--tx');g.fillRect(x-dpr*.75,0,dpr*1.5,H);
+}
+
 function ondaEn(ev){
   const r = cv.getBoundingClientRect(), x = ev.clientX - r.left, D = durTotal();
   let cerca = null, dmin = 7;
@@ -2779,26 +2871,37 @@ ondaCaja.addEventListener('click', ev => {
 });
 /* ------------------------------------------------ arrastrar sobre la onda = escuchar mientras se mueve (como una cinta) */
 const scrub = {ctx:null, buf:null, rev:null, de:null, cargando:null, abajo:false, activo:false, x0:0,
-               t:0, tSon:0, prox:0, timer:0, raf:0, evitarClic:false};
+               t:0, tSon:0, prox:0, timer:0, raf:0, evitarClic:false, controlador:null, generacion:0, fuentes:new Set()};
 const TICK = 0.03;                                               // cada 30 ms suena el tramo recorrido
 function ctxScrub(){
   if(!scrub.ctx){ try { scrub.ctx = new AudioContext({sampleRate: 24000}); } catch(e){ scrub.ctx = new AudioContext(); } }
   return scrub.ctx;
 }
+function liberarScrub(){
+  scrub.generacion++;scrub.controlador?.abort();scrub.controlador=null;
+  scrub.buf=scrub.rev=scrub.cargando=scrub.de=null;
+  scrub.abajo=scrub.activo=false;clearInterval(scrub.timer);cancelAnimationFrame(scrub.raf);scrub.raf=0;
+  for(const fuente of scrub.fuentes){try{fuente.stop();}catch(e){}}scrub.fuentes.clear();
+  ondaCaja.classList.remove('arrastrando');
+}
+audio.addEventListener('emptied', liberarScrub);
 function bufferScrub(){                                          // el audio del caso decodificado (mono) y al revés
   const n = actual; if(!n) return Promise.resolve(null);
   if(scrub.de === n && (scrub.buf || scrub.cargando)) return scrub.buf ? Promise.resolve(scrub.buf) : scrub.cargando;
-  scrub.de = n; scrub.buf = scrub.rev = null; const ctx = ctxScrub();
+  liberarScrub();
+  scrub.de = n; const generacion = scrub.generacion, ctx = ctxScrub();
+  const controlador = new AbortController(); scrub.controlador = controlador;
   scrub.cargando = (async () => {
-    const r = await fetch('/audio/' + encodeURIComponent(n)); if(!r.ok) throw new Error('audio ' + r.status);
-    const b = await ctx.decodeAudioData(await r.arrayBuffer());
-    if(scrub.de !== n) return null;
-    const L = b.length, mono = ctx.createBuffer(1, L, b.sampleRate), rev = ctx.createBuffer(1, L, b.sampleRate);
-    const m = mono.getChannelData(0), v = rev.getChannelData(0), k = b.numberOfChannels;
+    const r = await fetch('/audio/' + encodeURIComponent(n), {signal:controlador.signal}); if(!r.ok) throw new Error('audio ' + r.status);
+    const datos = await r.arrayBuffer();
+    if(scrub.generacion !== generacion) return null;
+    const b = await ctx.decodeAudioData(datos);
+    if(scrub.generacion !== generacion) return null;
+    const L = b.length, mono = ctx.createBuffer(1, L, b.sampleRate);
+    const m = mono.getChannelData(0), k = b.numberOfChannels;
     for(let c=0; c<k; c++){ const d = b.getChannelData(c); for(let i=0; i<L; i++) m[i] += d[i] / k; }
-    for(let i=0; i<L; i++) v[i] = m[L-1-i];
-    scrub.buf = mono; scrub.rev = rev; scrub.cargando = null; return mono;
-  })().catch(() => { if(scrub.de === n){ scrub.de = null; scrub.cargando = null; } return null; });
+    scrub.buf = mono; scrub.cargando = null; return mono;
+  })().catch(() => { if(scrub.generacion === generacion){ scrub.de = null; scrub.cargando = null; } return null; });
   return scrub.cargando;
 }
 function granoScrub(desde, hasta){                               // suena desde→hasta en TICK segundos (al revés si va para atrás)
@@ -2808,6 +2911,11 @@ function granoScrub(desde, hasta){                               // suena desde�
   if(scrub.prox < ahora + 0.005 || scrub.prox > ahora + 0.12) scrub.prox = ahora + 0.01;   // sin acumular demora
   const t0 = scrub.prox, ov = 0.012, dur = TICK + ov;
   const src = ctx.createBufferSource(), g = ctx.createGain();
+  if(atras && !scrub.rev){
+    scrub.rev=ctx.createBuffer(1,b.length,b.sampleRate);const m=b.getChannelData(0),v=scrub.rev.getChannelData(0);
+    for(let i=0;i<m.length;i++)v[i]=m[m.length-1-i];
+  }
+  scrub.fuentes.add(src);src.onended=()=>{scrub.fuentes.delete(src);src.disconnect();g.disconnect();};
   src.buffer = atras ? scrub.rev : b; src.playbackRate.value = rate;
   g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(1, t0 + ov);
   g.gain.setValueAtTime(1, t0 + TICK); g.gain.linearRampToValueAtTime(0, t0 + dur);
@@ -2827,11 +2935,11 @@ function tickScrub(){
 function moverCabezal(){                                         // el cabezal, el dictado y la onda siguen al mouse
   scrub.raf = 0; if(Math.abs(audio.currentTime - scrub.t) > 0.01) audio.currentTime = scrub.t;
 }
-ondaCaja.addEventListener('mouseenter', () => { if(actual) bufferScrub(); });    // se prepara antes del primer arrastre
+// La descarga/decodificación comienza al interactuar, no al pasar el mouse.
 ondaCaja.addEventListener('pointerdown', ev => {
   if(ev.button !== 0 || !actual || !durTotal()) return;
-  scrub.abajo = true; scrub.activo = false; scrub.x0 = ev.clientX;
   ctxScrub().resume(); bufferScrub();
+  scrub.abajo = true; scrub.activo = false; scrub.x0 = ev.clientX;
   ondaCaja.setPointerCapture(ev.pointerId);
 });
 ondaCaja.addEventListener('pointermove', ev => {
@@ -2861,8 +2969,12 @@ ondaCaja.addEventListener('pointerup', ev => soltarScrub(ev, false));
 ondaCaja.addEventListener('pointercancel', ev => soltarScrub(ev, true));
 new ResizeObserver(() => dibujarOnda()).observe(ondaCaja);
 audio.addEventListener('play', () => { cancelAnimationFrame(rafOnda);
-  const ciclo = () => { dibujarOnda(); if(!audio.paused) rafOnda = requestAnimationFrame(ciclo); }; rafOnda = requestAnimationFrame(ciclo); });
+  const ciclo = () => { dibujarOnda(false); if(!audio.paused && !document.hidden) rafOnda = requestAnimationFrame(ciclo); }; rafOnda = requestAnimationFrame(ciclo); });
 audio.addEventListener('pause', () => { cancelAnimationFrame(rafOnda); dibujarOnda(); });
+document.addEventListener('visibilitychange',()=>{
+  cancelAnimationFrame(rafOnda);
+  if(!document.hidden && !audio.paused){const ciclo=()=>{dibujarOnda(false);if(!audio.paused && !document.hidden)rafOnda=requestAnimationFrame(ciclo);};rafOnda=requestAnimationFrame(ciclo);}
+});
 audio.addEventListener('loadedmetadata', dibujarOnda);
 audio.addEventListener('emptied', () => { $('#prog').value = 0; $('#tiempo').textContent = '0:00 / 0:00'; });
 

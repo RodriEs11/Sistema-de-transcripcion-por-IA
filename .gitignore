@@ -71,6 +71,7 @@ devtunnel.descarga
 respaldo/
 respaldo_*/
 _huellas.json
+cola_procesamiento.sqlite3*
 _ia_vuelve
 *.bak
 *.tmp
