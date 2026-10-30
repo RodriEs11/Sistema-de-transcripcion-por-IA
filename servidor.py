@@ -64,7 +64,7 @@ for d in (NUEVOS, DATOS):
     d.mkdir(parents=True, exist_ok=True)
 
 SIMULAR = os.environ.get("SIMULAR_IA") == "1"   # solo para pruebas
-VERSION = "2026.10.46"
+VERSION = "2026.10.47"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
@@ -2909,7 +2909,8 @@ def placa_de_video():
         nombre, usada, total, uso, temp = [x.strip() for x in r.stdout.strip().splitlines()[0].split(",")]
         gb = lambda m: f"{int(m) / 1024:.1f}".replace(".", ",")
         nombre = nombre.replace("NVIDIA ", "").replace("GeForce ", "")
-        tono = "aviso" if int(temp) >= 85 or int(usada) >= 0.97 * int(total) else None
+        # Algunos drivers informan la temperatura con decimales (p. ej. 51.12).
+        tono = "aviso" if float(temp) >= 85 or int(usada) >= 0.97 * int(total) else None
         return f"{nombre} · memoria {gb(usada)} de {gb(total)} GB · uso {uso}% · {temp} °C", tono
     except Exception:
         return None

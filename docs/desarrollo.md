@@ -39,6 +39,10 @@ Para probar el túnel sin Cloudflare se puede reemplazar `cloudflared.exe` por u
 
 ### Aislamiento de pruebas y rendimiento
 
+`python -m unittest discover -s pruebas -p test_placa_video.py` verifica la lectura
+de GPU con temperaturas enteras/decimales, alertas y fallos de NVIDIA. Extrae la función
+mediante AST sin importar el servidor ni cargar configuración o datos de la instalación.
+
 Ejecutar pruebas que importan `servidor.py` en un checkout de ensayo: la importación carga
 configuración y crea carpetas. Usar datos ficticios y configuración de ejemplo; no apuntar
 las pruebas HTTP o de carga al servidor en uso. Los scripts Playwright permiten
