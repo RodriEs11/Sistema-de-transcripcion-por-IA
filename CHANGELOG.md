@@ -9,6 +9,11 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [Servidor 2026.10.47] — 2026-10-30
+
+### Corregido
+- El panel y la consola muestran los datos de la GPU cuando NVIDIA devuelve temperaturas decimales. Se conserva el aviso por temperatura alta o memoria casi llena; antes se descartaba la lectura completa y se anunciaba incorrectamente que `nvidia-smi` no respondía.
+
 ## [Servidor 2026.10.46] — 2026-10-30
 
 Activación comprobada en el proceso real el 30 de octubre: cola vacía, sin pausas ni

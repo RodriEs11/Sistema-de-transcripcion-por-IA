@@ -98,6 +98,8 @@ flowchart LR
     end
 ```
 
+El panel y la consola consultan `nvidia-smi` para mostrar memoria, uso y temperatura de la GPU, incluidas temperaturas decimales.
+
 La GPU (10 GB) no admite los dos modelos a la vez: el servidor descarga Gemma antes de usar Whisper y libera
 Whisper antes de llamar a Gemma. Detalles en [docs/arquitectura.md](docs/arquitectura.md).
 

@@ -2,6 +2,7 @@ TRANSCRIPCIÓN · aplicación para las PC del trabajo (info-01, info-02, info-03
 =============================================================================
 
 Versión actual: 1.22 (2026-10-30).
+Servidor 2026.10.47 (2026-10-30): corrige los datos de GPU con temperaturas decimales; requiere reiniciar el servidor para aplicar la corrección.
 El servidor limita los lotes y reutiliza transcripciones verificadas para reducir esperas; conserva los modelos y controles de revisión.
 El servidor actualiza las correcciones por informe y usa un historial indexado; importa los datos anteriores en el primer uso de escritura del nuevo almacenamiento.
 El Word se confirma con el aprendizaje conservado para procesar en segundo plano; la pantalla distingue ese estado de un ejemplo ya aprendido.
