@@ -92,6 +92,13 @@ opción no carga modelos. `resumir_gpu_real.py` valida/agrega campañas completa
 durante la medición: la vigilancia los considera trabajo ajeno. Ver [resultados RTX 3080,
 protocolo y límites](validacion-gpu.md). El benchmark real no corre automáticamente en CI.
 
+`pruebas/comparar_cpu_gpu.py --ejecutar --corpus respaldo/gpu_real_FECHA_HORA`
+compara el camino actual de lotes GPU con Whisper GPU/Gemma CPU en paralelo,
+usando únicamente el corpus sintético verificado. Mantiene el servidor en uso,
+espera la liberación natural de sus modelos y cancela el ensayo ante actividad.
+Ver [protocolo, resultados y límites](comparacion-cpu-gpu.md). Ejecutar sus pruebas
+`test_comparar_cpu_gpu.py` antes o después de medir, nunca durante la campaña.
+
 ### Convenciones generales
 
 - **Idioma**: nombres, comentarios y mensajes en español rioplatense, como el resto del código y la interfaz.
