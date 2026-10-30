@@ -3,7 +3,7 @@
 ESTADÍSTICAS para el panel de administración (pestaña "Estadísticas").
 
 Une lo que ya se guarda:
-- resultados\\historial.csv   una fila por informe guardado (fecha, palabras, % corregido); está desde el principio;
+- resultados\\historial.sqlite3: historial indexado; usa historial.csv cuando aún no se migró;
 - registros\\actividad.csv    filas "generado" (marcas, duración del audio) y "guardado" (PC, médico, estudios,
                               tiempo de revisión); está desde el 24/10 a la noche;
 - ejemplos\\                  el informe final y el médico de cada informe aprendido (para los informes viejos
@@ -21,6 +21,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import nucleo as N
+import almacen_aprendizaje as AL
 import registro as L
 
 AQUI = Path(__file__).resolve().parent
@@ -67,7 +68,7 @@ def _firma():
             return (s.st_size, s.st_mtime_ns)
         except OSError:
             return None
-    return (st(L.CARPETA / "actividad.csv"), st(HIST), st(EJ))
+    return (st(L.CARPETA / "actividad.csv"), st(HIST), st(AL.ruta_base(HIST)), st(EJ))
 
 
 def _indice_ejemplos():
@@ -109,7 +110,7 @@ def _informes(actual):
             return _CACHE["informes"]
 
     hist = {}
-    for r in _leer_csv(HIST):
+    for r in AL.leer_historial(HIST):
         n = (r.get("informe") or "").strip()
         t = _fecha(r.get("fecha") or "")
         if n and t:

@@ -33,12 +33,13 @@ function ocultarEditorWord(){
   $('#vp').classList.remove('abierta', 'ampliado'); $('.hojawrap').classList.remove('word-activo');
   cerrarMenuWord(); cerrarPaleta();
 }
-function indexarMarcasWord(d){
-  const nodos = [...editor.children], usados = new Set(); marcasOrigenWord = [];
+function indexarMarcasWord(d, conservar=false){
+  const indice = new Map();
+  for(const n of editor.children){ const t=n.textContent.replace(/\u00a0/g,' ').trim(); if(!indice.has(t)) indice.set(t,[]); indice.get(t).push(n); }
+  if(!conservar) marcasOrigenWord = [];
   lineasOrigenWord = d.parrafos.map(p => {
     const t = p?.t.trim() || '';
-    const i = nodos.findIndex((n, i) => !usados.has(i) && n.textContent.replace(/\u00a0/g, ' ').trim() === t);
-    if(i < 0) return null; usados.add(i); return nodos[i];
+    return indice.get(t)?.shift() || null;
   });
 }
 function anotarFragmentoWord(el, k, desde){
@@ -126,14 +127,26 @@ function parrafoVp(p){
   if(!el.textContent) el.appendChild(document.createElement('br'));
   return el;
 }
-function paginar(d){
+function paginar(d, cambio=0){
   const cont = $('#vpHojas'), pg = {...d.pagina, ancho_cm: 21, alto_cm: 29.7};
   d.pagina = pg;
-  indexarMarcasWord(d);
-  cont.replaceChildren();
-  const lienzo = document.createElement('div'); lienzo.className = 'vp-lienzo'; cont.appendChild(lienzo);
-  const escala = document.createElement('div'); escala.className = 'vp-escala'; lienzo.appendChild(escala);
-  let cuerpo, ed, usadas = 0; const numeros = [];
+  let escala = cont.querySelector('.vp-escala'), inicio = 0, inicioOffset = 0, numeros = [];
+  const hojas = [...cont.querySelectorAll('.vp-pag')];
+  let desdeHoja = cambio > 0 ? hojas.findIndex(h=>[...h.querySelectorAll('p[data-k]')].some(p=>+p.dataset.k>=cambio)) : 0;
+  // Retroceder una hoja permite que un borrado atraiga texto de la siguiente.
+  desdeHoja = Math.max(0, desdeHoja - 1);
+  if(desdeHoja>0){
+    inicio = +hojas[desdeHoja].querySelector('p[data-k]').dataset.k;
+    inicioOffset = +hojas[desdeHoja].querySelector('p[data-k]').dataset.desde;
+    numeros = [...escala.querySelectorAll('.vp-num')].slice(0,desdeHoja);
+    for(const h of hojas.slice(desdeHoja)){ h.nextElementSibling?.remove(); h.remove(); }
+  } else {
+    cont.replaceChildren();
+    const lienzo = document.createElement('div'); lienzo.className = 'vp-lienzo'; cont.appendChild(lienzo);
+    escala = document.createElement('div'); escala.className = 'vp-escala'; lienzo.appendChild(escala);
+  }
+  indexarMarcasWord(d, inicio>0);
+  let cuerpo, ed, usadas = 0;
   function nueva(){
     const hoja = document.createElement('div'); hoja.className = 'vp-pag';
     hoja.setAttribute('aria-label', 'Página ' + (numeros.length + 1));
@@ -150,7 +163,7 @@ function paginar(d){
     usadas = 0;
   }
   nueva();
-  if(d.encabezado > 0){
+  if(inicio===0 && d.encabezado > 0){
     const enc = document.createElement('div'); enc.className = 'vp-enc';
     for(let i = 0; i < d.encabezado; i++) enc.appendChild(parrafoVp(null));
     cuerpo.insertBefore(enc, ed);
@@ -163,7 +176,8 @@ function paginar(d){
     ed.appendChild(el); return el;
   }
   d.parrafos.forEach((p, k) => {
-    let desde = 0, longitud = p ? p.t.length : 0;
+    if(k<inicio) return;
+    let desde = k===inicio ? inicioOffset : 0, longitud = p ? p.t.length : 0;
     do {
       let el = fragmento(p, k, desde, longitud);
       if(cabe()){ usadas++; break; }
@@ -244,12 +258,12 @@ function formatoEn(pos){
 const sinSeleccion = s => !s || (s.a.k === s.b.k && s.a.o === s.b.o);
 const hastaPar = s => s.b.k > s.a.k && s.b.o === 0 ? s.b.k - 1 : s.b.k;
 function sincronizarInforme(){
-  const nodos = [...editor.children], usados = new Set(), frag = document.createDocumentFragment();
+  const indice = new Map(), frag = document.createDocumentFragment();
+  for(const n of editor.children){ const t=n.textContent.replace(/\u00a0/g,' '); if(!indice.has(t)) indice.set(t,[]); indice.get(t).push(n); }
   for(const p of VP.parrafos){
     const t = p ? p.t : '';
-    const i = nodos.findIndex((n, i) => !usados.has(i) && n.textContent.replace(/\u00a0/g, ' ') === t);
     let el;
-    if(i >= 0){ usados.add(i); el = nodos[i]; }
+    if(indice.get(t)?.length){ el = indice.get(t).shift(); }
     else { el = document.createElement('div'); el.className = 'ln'; el.textContent = t;
       if(pareceTitulo(t)) el.classList.add('tit'); if(!t) el.appendChild(document.createElement('br')); }
     frag.appendChild(el);
@@ -260,8 +274,10 @@ function ponerModelo(modelo, sel){
   const anteriores = VP.parrafos, sc = $('#vpHojas').scrollTop;
   const textoAntes = anteriores.map(p => p ? p.t : '').join('\n');
   VP.parrafos = modelo;
+  let cambio = 0;
+  while(cambio < anteriores.length && cambio < modelo.length && JSON.stringify(anteriores[cambio])===JSON.stringify(modelo[cambio])) cambio++;
   if(textoAntes !== modelo.map(p => p ? p.t : '').join('\n')) sincronizarInforme();
-  paginar(VP); $('#vpHojas').scrollTop = sc;
+  paginar(VP, cambio); $('#vpHojas').scrollTop = sc;
   restaurarSel(sel); estadoBotonesFmt();
   FMT.pendiente = true; mostrarEstadoFmt('Guardando…'); clearTimeout(FMT.t); FMT.t = setTimeout(guardarFormato, 700);
 }
@@ -283,13 +299,12 @@ function deshacerFmt(atras){
 }
 async function guardarFormato(exigir=false){
   clearTimeout(FMT.t);
-  // Capturar el documento antes de esperar otra escritura: la persona puede cerrar
-  // el editor y abrir un caso distinto mientras el servidor responde.
+  // Recordar identidad antes de esperar; capturar texto y formato juntos después.
   const documento = VP;
-  const html = htmlLimpio(), omisiones = [...omisOk];
   if(FMT.guardando) await FMT.guardando;
   if(!FMT.pendiente || !VP || !VP.caso) return;
   if(VP !== documento || VP.caso !== actual) return;
+  const html = htmlLimpio(), omisiones = [...omisOk];
   FMT.pendiente = false;
   const caso = VP.caso, normal = VP.parrafos.every(esNormal);
   const formato = normal ? null : {v: 2, parrafos: VP.parrafos.filter(Boolean).map(p => {
@@ -299,11 +314,12 @@ async function guardarFormato(exigir=false){
   FMT.guardando = (async () => {
     try {
       // El borrador se escribe primero para que el formato corresponda al texto guardado.
-      await api('/api/borrador', {nombre: caso, html, omisiones_ok: omisiones});
-      await api('/api/formato_caso', {nombre: caso, formato});
-      mostrarEstadoFmt('Cambios guardados · se conservan en el Word');
+      await enviarBorrador({nombre: caso, html, omisiones_ok: omisiones});
+      const confirmacion = await api('/api/formato_caso', {nombre: caso, formato});
+      if(confirmacion.ok !== true) throw new Error('El servidor no confirmó el guardado del formato.');
+      mostrarEstadoFmt(FMT.pendiente ? 'Hay cambios nuevos sin guardar' : 'Cambios guardados · se conservan en el Word');
     } catch(e){ FMT.pendiente = true; mostrarEstadoFmt('No se pudo guardar: ' + e.message); }
-    finally { FMT.guardando = null; }
+    finally { FMT.guardando = null; if(actual === caso && !borradorPendiente()) estadoBorrador('Borrador guardado'); }
   })();
   await FMT.guardando;
   if(exigir && FMT.pendiente) throw new Error('No se pudieron guardar todos los cambios de formato. Volvé a intentar antes de generar el Word.');

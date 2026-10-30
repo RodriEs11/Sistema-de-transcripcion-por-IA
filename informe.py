@@ -40,6 +40,9 @@ def config():
         if ejemplo.exists():
             archivo.write_text(ejemplo.read_text(encoding="utf-8-sig"), encoding="utf-8")
     c = json.loads(archivo.read_text(encoding="utf-8-sig"))
+    c.setdefault('lote_max_audios', 2)
+    c.setdefault('lote_max_segundos', 180)
+    c.setdefault('reusar_transcripcion', True)
     for k in ("carpeta_audios_nuevos", "carpeta_informes"):
         p = P.ruta_config(c[k])
         c[k] = p if p.is_absolute() else (AQUI / p).resolve()

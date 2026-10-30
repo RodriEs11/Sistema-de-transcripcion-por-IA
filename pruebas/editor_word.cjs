@@ -101,6 +101,31 @@ const server = http.createServer((req,res) => {
     assert(await page.locator('#vp').evaluate(el=>el.classList.contains('abierta')));
     await page.setViewportSize({width:1440,height:1000});
     await page.screenshot({path:path.join(__dirname,'editor_word_resultado.png'),fullPage:true});
+    // Documento de muchos párrafos: edición al final conserva las hojas iniciales y coincide con repaginación completa.
+    const rendimiento = await page.evaluate(()=>{
+      VP.parrafos=Array.from({length:180},(_,i)=>({t:`Párrafo ficticio ${i}. `+'Texto de ensayo. '.repeat(15),b:false,a:'',a0:''}));
+      sincronizarInforme();paginar(VP);
+      const primera=document.querySelector('.vp-pag');
+      const modelo=copiaWord(VP.parrafos);modelo[178].t+=' Cambio al final.';
+      const inicio=performance.now();ponerModelo(modelo,{a:{k:178,o:0},b:{k:178,o:0}});const incremental=performance.now()-inicio;
+      const conservada=primera===document.querySelector('.vp-pag');
+      const contenido=()=>[...document.querySelectorAll('.vp-ed > p')].map(p=>[p.dataset.k,p.dataset.desde,p.dataset.hasta,p.textContent]);
+      const parcial=contenido(), t=performance.now();paginar(VP);const completa=performance.now()-t;
+      let iguales=JSON.stringify(parcial)===JSON.stringify(contenido());
+      // Inserción, borrado y formato en distintas posiciones, incluidos párrafos que cruzan hojas.
+      for(const posicion of [5,90,179]){
+        const k=Math.min(posicion,VP.parrafos.length-1);
+        const nuevo=copiaWord(VP.parrafos);nuevo[k].t+=' Texto agregado. '.repeat(20);
+        ponerModelo(nuevo,{a:{k,o:0},b:{k,o:0}});const p=contenido();paginar(VP);
+        iguales=iguales && JSON.stringify(p)===JSON.stringify(contenido());
+        const reducido=copiaWord(VP.parrafos);reducido.splice(k,1);
+        ponerModelo(reducido,{a:{k:0,o:0},b:{k:0,o:0}});const r=contenido();paginar(VP);
+        iguales=iguales && JSON.stringify(r)===JSON.stringify(contenido());
+      }
+      return {conservada,iguales,incremental,completa};
+    });
+    assert(rendimiento.conservada);assert(rendimiento.iguales);
+    console.log('Medición editor ficticio (ms):',JSON.stringify(rendimiento));
     assert.deepEqual(errores,[]);
     console.log(`OK: ${hojas} hojas A4, párrafo largo completo, formato, menú, edición, deshacer, guardado y reapertura.`);
   } finally { await browser.close(); }

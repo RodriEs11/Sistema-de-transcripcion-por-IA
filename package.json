@@ -1,0 +1,7 @@
+{
+  "name": "transcripcion-pruebas",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Herramientas de pruebas, sin dependencias para la interfaz de producción",
+  "devDependencies": {"playwright": "1.56.1"}
+}

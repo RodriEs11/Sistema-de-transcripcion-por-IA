@@ -14,6 +14,8 @@ Marcas que produce (en el texto: [[tipo|texto|motivo]]):
 import difflib
 import html
 import json
+import os
+from functools import lru_cache
 import re
 import threading
 import time
@@ -59,7 +61,7 @@ def frases_de_plantilla():
     return out
 
 
-def categorias(texto):
+def categorias(texto, claves=None):
     t = sin_acentos(texto.lower())
     c = set()
     if re.search(r"\bmamm?(a|as|o|ografia|aria)\b|birads|bi-rads|birrad|\bacr\b", t): c.add("mama")
@@ -72,7 +74,7 @@ def categorias(texto):
     if re.search(r"\bpet\b|captacion|\bfdg\b|\bsuv\b|radiofarmaco", t): c.add("pet")
     # estudios agregados en plantillas.md (ej. "ECOGRAFÍA ABDOMINAL" -> "abdominal")
     palabras = set(re.findall(r"[a-z]{5,}", t))
-    for clave in claves_de_plantillas():
+    for clave in claves_de_plantillas() if claves is None else claves:
         if clave in palabras or difflib.get_close_matches(clave, list(palabras), n=1, cutoff=0.85):
             c.add("pl:" + clave)
     return c
@@ -164,9 +166,15 @@ def estudios_sin_plantilla(informe):
     return out
 
 
+@lru_cache(maxsize=4096)
+def _perfil_ejemplo(texto, claves):
+    return frozenset(categorias(texto, claves)), frozenset(_palabras_norm(texto))
+
+
 def elegir_ejemplos(dictado, banco, k=3, excluir=None, medico=None):
     """banco: lista de dicts {nombre, dictado, informe}. Elige los k mas parecidos."""
-    cd = categorias(dictado)
+    claves = tuple(sorted(claves_de_plantillas()))
+    cd = categorias(dictado, claves)
     pd = set(_palabras_norm(dictado))
     cand = []
     for e in banco:
@@ -174,9 +182,8 @@ def elegir_ejemplos(dictado, banco, k=3, excluir=None, medico=None):
             continue
         if excluir and (e["nombre"] == excluir or e["nombre"].endswith("_" + excluir)):
             continue
-        ce = categorias(e["dictado"])
+        ce, pe = _perfil_ejemplo(e["dictado"], claves)
         jac = len(cd & ce) / len(cd | ce) if (cd | ce) else 0
-        pe = set(_palabras_norm(e["dictado"]))
         sim = len(pd & pe) / len(pd | pe) if (pd | pe) else 0
         if medico and e.get("medico") == medico:
             sim += 0.15                     # preferir informes del mismo medico
@@ -341,10 +348,10 @@ def _post(payload, timeout=600):
         return json.load(r)
 
 
-def llamar_ia(modelo, mensajes, num_ctx=12288, pensar=False):
+def llamar_ia(modelo, mensajes, num_ctx=12288, pensar=False, metricas=None):
     payload = {"model": modelo, "messages": mensajes, "stream": False, "keep_alive": "15m",
                "options": {"temperature": 0.1, "num_ctx": num_ctx}}
-    t0 = time.time()
+    t0 = time.perf_counter()
     try:
         r = _post(dict(payload, think=pensar))
     except urllib.error.HTTPError as e:  # modelos que no aceptan "think"
@@ -356,7 +363,15 @@ def llamar_ia(modelo, mensajes, num_ctx=12288, pensar=False):
     txt = re.sub(r"<think>.*?</think>", "", txt, flags=re.S).strip()
     txt = re.sub(r"^```\w*\n?|```$", "", txt).strip()
     txt = ordenar_estudios(txt)
-    return txt, time.time() - t0, r.get("prompt_eval_count"), r.get("eval_count")
+    if metricas is not None:
+        for clave in ('total_duration', 'load_duration', 'prompt_eval_duration', 'eval_duration'):
+            valor = r.get(clave)
+            if isinstance(valor, (int, float)) and not isinstance(valor, bool) and valor >= 0:
+                metricas[clave + '_s'] = valor / 1_000_000_000
+        for clave in ('prompt_eval_count', 'eval_count'):
+            if isinstance(r.get(clave), int):
+                metricas[clave] = r[clave]
+    return txt, time.perf_counter() - t0, r.get("prompt_eval_count"), r.get("eval_count")
 
 
 # ----------------------------------------------------------- marcas
@@ -846,7 +861,36 @@ mark{color:inherit;border-radius:3px;padding:0 2px}
 
 
 # ---------------------------------------------------------- banco de ejemplos
+_BANCO_LOCK = threading.Lock()
+_BANCO_CACHE = {"firma": None, "banco": []}
+
+
 def cargar_banco(dir_fase1=None, dir_audios=None, dir_extra=None):
+    carpetas = [Path(dir_fase1 or AQUI/'resultados'/'fase1'/'json'),
+                Path(dir_audios or AQUI.parent/'Dataset'/'Audios_Transcripcion'),
+                Path(dir_extra or AQUI/'ejemplos')]
+    firma = []
+    for carpeta in carpetas:
+        archivos = []
+        if carpeta.exists():
+            with os.scandir(carpeta) as entradas:
+                for e in entradas:
+                    if e.is_file() and e.name.endswith(('.json','.txt')):
+                        try:
+                            st = e.stat()
+                            archivos.append((e.name, st.st_size, st.st_mtime_ns))
+                        except FileNotFoundError:
+                            pass
+        firma.append((str(carpeta.resolve()), tuple(sorted(archivos))))
+    firma = tuple(firma)
+    with _BANCO_LOCK:
+        if _BANCO_CACHE['firma'] != firma:
+            banco = _leer_banco(*carpetas)
+            _BANCO_CACHE.update(firma=firma, banco=banco)
+        return [dict(e) for e in _BANCO_CACHE['banco']]
+
+
+def _leer_banco(dir_fase1=None, dir_audios=None, dir_extra=None):
     """Pares dictado -> informe real que la IA usa como ejemplo.
     - los 35 de la fase 1 (dictado de Whisper + tu .txt)
     - y los que agregues en la carpeta 'ejemplos' como  NOMBRE.dictado.txt + NOMBRE.informe.txt"""

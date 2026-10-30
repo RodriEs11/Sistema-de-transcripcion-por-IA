@@ -119,7 +119,7 @@ flowchart TD
     B -- sí --> C["Pide el manifiesto y baja solo los archivos<br/>con SHA-256 distinto a .actualizacion\\"]
     C --> D["Ejecuta el .exe nuevo con --autoprueba:<br/>resuelve todos los métodos/campos/tipos del IL<br/>contra el .NET de esta PC y los compila (PrepareMethod)"]
     D -- falla --> F["Avisa al servidor y no reintenta esa versión"]
-    D -- ok --> E["Espera a que nadie la use<br/>(cola vacía, ventana oculta o inactiva)"]
+    D -- ok --> E["Espera a que nadie la use<br/>(cola vacía, sin estudio abierto,<br/>ventana oculta o inactiva)"]
     E --> G["Renombra los actuales a *.viejo, mueve los nuevos<br/>y abre la versión nueva con --actualizada"]
     G --> H{"¿La nueva confirma en < 3 min?"}
     H -- sí --> I["Borra los *.viejo"]

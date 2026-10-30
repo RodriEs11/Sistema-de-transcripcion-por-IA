@@ -49,6 +49,29 @@ const server=http.createServer((req,res)=>{
     await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>typeof FMT!=='undefined');
     await page.evaluate(()=>abrirCaso2('caso-uno'));
     await page.waitForFunction(()=>audio.readyState>=2);
+    const ondaCache = await page.evaluate(async()=>{
+      const original=pintarFondoOnda;let dibujos=0;
+      pintarFondoOnda=(...args)=>{dibujos++;return original(...args);};
+      dibujarOnda(true);for(let i=0;i<60;i++)dibujarOnda(false);
+      const estable=dibujos;
+      editor.firstElementChild.dataset.pruebaOnda='cambio';await Promise.resolve();dibujarOnda(false);
+      const invalidada=dibujos;pintarFondoOnda=original;
+      // Simular una descarga tardía: al liberar, no debe repoblar buffers de un caso cerrado.
+      const fetchOriginal=window.fetch;let abortada=false;
+      window.fetch=(url,op)=>new Promise((resolve,reject)=>op.signal.addEventListener('abort',()=>{abortada=true;reject(new Error('cancelada ficticia'));}));
+      const pendiente=bufferScrub();liberarScrub();await pendiente;window.fetch=fetchOriginal;
+      return {estable,invalidada,abortada,libre:scrub.buf===null && scrub.rev===null && scrub.cargando===null};
+    });
+    assert.equal(ondaCache.estable,2);assert.equal(ondaCache.invalidada,4);
+    assert(ondaCache.abortada && ondaCache.libre);
+    const buffers = await page.evaluate(async()=>{
+      const b=await bufferScrub(), sinReversa=scrub.rev===null;
+      if(!b) return {decodificado:false};
+      granoScrub(.5,.4);
+      const reversa=scrub.rev?.length===b.length;
+      liberarScrub();return {decodificado:true,sinReversa,reversa,libre:scrub.buf===null && scrub.rev===null};
+    });
+    assert.deepEqual(buffers,{decodificado:true,sinReversa:true,reversa:true,libre:true});
     assert(await page.locator('#vp').evaluate(e=>e.classList.contains('integrado')&&!e.classList.contains('ampliado')));
     assert(await page.locator('.player').isVisible());assert(await page.locator('#dictado').isVisible());assert(await page.locator('#ondaCaja').isVisible());
     assert.equal(await page.locator('#vpHojas mark.m-dudoso').count(),1);

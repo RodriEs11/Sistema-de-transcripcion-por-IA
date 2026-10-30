@@ -143,9 +143,15 @@ namespace Transcripcion
             vigilante.AudioListo += (nombre, datos, huella) =>
             {
                 try { cola.Agregar(nombre, datos, huella); }
-                catch (Exception ex) { Registro.Escribir("No pude guardar " + nombre + ": " + ex.Message); }
-                EnPantalla(() => MostrarAviso("Audio nuevo tomado del sistema",
-                    nombre + " · " + (datos.Length / 1024.0 / 1024.0).ToString("0.0") + " MB · enviando al Servidor…"));
+                catch (Exception ex) {
+                    Registro.Escribir("No pude guardar " + nombre + ": " + ex.Message);
+                    EnPantalla(() => MostrarAviso("No se pudo conservar el audio", "No cierres el audio original. Se reintentará automáticamente."));
+                    return false;
+                }
+                try { EnPantalla(() => MostrarAviso("Audio nuevo tomado del sistema",
+                    nombre + " · " + (datos.Length / 1024.0 / 1024.0).ToString("0.0") + " MB · enviando al Servidor…")); }
+                catch (Exception ex) { Registro.Escribir("Audio conservado; no se pudo mostrar el aviso: " + ex.Message); }
+                return true;
             };
             cola.Enviado += (nombre, caso, dup) => EnPantalla(() =>
             {
@@ -153,7 +159,7 @@ namespace Transcripcion
                     nombre + (dup ? " · se abre el caso que ya existía" : " · transcribiendo… te aviso cuando esté listo"));
                 ActualizarBarra();
             });
-            cola.Rechazado += (nombre, motivo) => EnPantalla(() => MostrarAviso("El Servidor no aceptó " + nombre, motivo));
+            cola.Rechazado += (nombre, motivo) => EnPantalla(() => MostrarAviso(nombre, motivo));
             cola.LlaveInvalida += () => EnPantalla(PedirVincularDeNuevo);
             cola.PendientesCambio += n => EnPantalla(ActualizarBarra);
 
@@ -715,8 +721,26 @@ namespace Transcripcion
             ActualizarBarra();
         }
 
-        void Salir()
+        async Task<bool> PuedeCerrarWeb()
         {
+            if (!webLista || web.CoreWebView2 == null) return true;
+            try
+            {
+                var consulta = web.CoreWebView2.ExecuteScriptAsync("typeof actual==='undefined' || actual===null");
+                if (await Task.WhenAny(consulta, Task.Delay(3000)) != consulta) return false;
+                return await consulta == "true";
+            }
+            catch { return false; } // no cerrar una pantalla cuyo estado no pudimos comprobar
+        }
+
+        async void Salir()
+        {
+            if (!await PuedeCerrarWeb())
+            {
+                Mostrar();
+                MostrarAviso("Primero cerrá el estudio", "Usá Cerrar estudio para confirmar que tus cambios quedaron guardados antes de salir.");
+                return;
+            }
             if (cola.Pendientes > 0 &&
                 MessageBox.Show(this, "Hay audios que todavía no llegaron al Servidor. Si salís, se envían la próxima vez que abras la aplicación.\n\n¿Salir igual?",
                     "Transcripción", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
@@ -787,18 +811,15 @@ namespace Transcripcion
         {
             if (aplicandoActualizacion || Actualizador.ListaHuella == null) return;
             aplicandoActualizacion = true;
+            if (!await PuedeCerrarWeb())
+            {
+                aplicandoActualizacion = false;
+                if (motivo != "nadie la estaba usando")
+                    MostrarAviso("Actualización pendiente", "Primero cerrá el estudio para confirmar el guardado de tus cambios.");
+                return;
+            }
             TextoBotonActualizar();
             Registro.Escribir("Actualización: se instala la versión " + Actualizador.ListaVersion + " (" + motivo + ").");
-            if (webLista && web.CoreWebView2 != null)
-            {   // guardar el borrador del informe abierto antes de cerrar
-                try
-                {
-                    var t = web.CoreWebView2.ExecuteScriptAsync("(typeof guardarBorrador==='function') && guardarBorrador()");
-                    await Task.WhenAny(t, Task.Delay(1500));
-                    await Task.Delay(1200);
-                }
-                catch { }
-            }
             bool oculta = !Visible || WindowState == FormWindowState.Minimized;
             if (!Actualizador.AplicarYReabrir(oculta))
             {

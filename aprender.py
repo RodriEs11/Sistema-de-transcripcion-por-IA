@@ -9,18 +9,20 @@ Como funciona:
      el dictado + tu version final. La IA los usa para los informes siguientes.
   Un Word que todavia tiene resaltados se considera "sin revisar" y se ignora.
 
-Ademas lleva un historial (resultados\\historial.csv) con el % de palabras que tuviste
+Ademas lleva un historial indexado (resultados\\historial.sqlite3; importa el CSV anterior) con el % de palabras que tuviste
 que corregir en cada informe, para ver si el sistema mejora con el tiempo.
 """
-import csv
 import difflib
 import json
 import re
 import sys
 import time
+import hashlib
 from pathlib import Path
 
 import nucleo as N
+from persistencia import escribir_atomico
+import almacen_aprendizaje as AL
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -54,41 +56,32 @@ def pct_corregido(ia, final):
     return ed / max(1, len(b))
 
 
-def registrar_ejemplo(nombre, dictado, ia, final, clave=None, medico=None):
+def registrar_ejemplo(nombre, dictado, ia, final, clave=None, medico=None, *, recalcular=True, fecha=None):
     """Guarda el par dictado -> informe final como ejemplo y anota el historial.
     Devuelve (clave, porcentaje_corregido)."""
     EJ.mkdir(exist_ok=True)
     HIST.parent.mkdir(parents=True, exist_ok=True)
     clave = clave or time.strftime("%Y%m%d_%H%M%S_") + nombre
-    (EJ / f"{clave}.dictado.txt").write_text(dictado, encoding="utf-8")
-    (EJ / f"{clave}.informe.txt").write_text(final.strip() + "\n", encoding="utf-8")
-    (EJ / f"{clave}.ia.txt").write_text(N.texto_limpio(ia), encoding="utf-8")
+    escribir_atomico(EJ / f"{clave}.dictado.txt", dictado)
+    escribir_atomico(EJ / f"{clave}.informe.txt", final.strip() + "\n")
+    escribir_atomico(EJ / f"{clave}.ia.txt", N.texto_limpio(ia))
     if medico:
-        (EJ / f"{clave}.medico.txt").write_text(medico, encoding="utf-8")
+        escribir_atomico(EJ / f"{clave}.medico.txt", medico)
+    else:
+        (EJ / f"{clave}.medico.txt").unlink(missing_ok=True)
     ia_sin_espacios = "\n".join(l.rstrip() for l in N.texto_limpio(ia).splitlines())
     pc = pct_corregido(ia_sin_espacios, final)
-    # historial: una fila por informe (si lo volves a guardar, se reemplaza la fila)
-    filas = []
-    if HIST.exists():
-        filas = list(csv.reader(open(HIST, encoding="utf-8-sig"), delimiter=";"))[1:]
-    hoy = time.strftime("%Y-%m-%d")
-    filas = [f for f in filas if not (len(f) >= 2 and f[1] == nombre and f[0].startswith(hoy))]
-    filas.append([time.strftime("%Y-%m-%d %H:%M"), nombre, len(final.split()), f"{pc*100:.1f}"])
-    with open(HIST, "w", newline="", encoding="utf-8-sig") as f:
-        w = csv.writer(f, delimiter=";")
-        w.writerow(["fecha", "informe", "palabras", "porcentaje_corregido"])
-        w.writerows(filas)
-    try:
-        analizar_correcciones()
-    except Exception as ex:
+    fecha = fecha or time.strftime("%Y-%m-%d %H:%M")
+    with AL.abrir(HIST) as c:
+        c.execute('INSERT OR REPLACE INTO historial VALUES (?,?,?,?,?)',
+                  (fecha[:10], nombre, fecha, len(final.split()), f"{pc*100:.1f}"))
+        _indexar_correcciones(c, clave, N.texto_limpio(ia), final.strip() + "\n")
+    if recalcular:
         try:
+            analizar_correcciones()
+        except Exception:
             import registro as L
-            if L.log.handlers:      # dentro del servidor: al registro
-                L.aviso("INFORME", f"No se pudieron analizar las correcciones repetidas: {ex}", exc=True)
-            else:
-                print("(no se pudieron analizar las correcciones:", ex, ")")
-        except ImportError:
-            print("(no se pudieron analizar las correcciones:", ex, ")")
+            L.aviso("APRENDIZAJE", "No se pudieron actualizar las correcciones frecuentes.", exc=True)
     return clave, pc
 
 
@@ -101,36 +94,50 @@ def _norm_tok(w):
     return w.strip(".,;:").lower()
 
 
-def analizar_correcciones(minimo=2):
-    """Compara lo que escribio la IA con tu version final en todos los ejemplos aprendidos.
-    Las correcciones que repetiste en >= 'minimo' informes distintos se escriben en
-    conocimiento/correcciones_aprendidas.md, que la IA lee en cada informe."""
-    from collections import defaultdict
-    cambios = defaultdict(set)
-    for inf in EJ.glob("*.informe.txt"):
-        clave = inf.name[:-len(".informe.txt")]
-        ia_f = EJ / f"{clave}.ia.txt"
-        if not ia_f.exists():                       # ejemplos viejos: buscar la salida de la IA
-            nombre = clave.split("_", 2)[-1]
-            viejo = DATOS_INF / f"{nombre}.informe_ia.txt"
-            if not viejo.exists():
-                continue
-            ia_f.write_text(N.texto_limpio(viejo.read_text(encoding="utf-8")), encoding="utf-8")
-        a = re.findall(r"\S+", ia_f.read_text(encoding="utf-8"))
-        b = re.findall(r"\S+", inf.read_text(encoding="utf-8"))
-        sm = difflib.SequenceMatcher(a=a, b=b, autojunk=False)
-        for op, i1, i2, j1, j2 in sm.get_opcodes():
-            if op == "equal":
-                continue
-            de, a_ = " ".join(a[i1:i2]), " ".join(b[j1:j2])
-            if max(i2 - i1, j2 - j1) > 12:
-                continue
-            if re.search(r"\d", de + a_):            # los numeros salen del dictado, no se generalizan
-                continue
-            if [_norm_tok(x) for x in a[i1:i2]] == [_norm_tok(x) for x in b[j1:j2]]:
-                continue                              # solo puntuacion
-            cambios[(op, de.strip(".,;:"), a_.strip(".,;:"))].add(clave)
-    frec = sorted(((len(v), k) for k, v in cambios.items() if len(v) >= minimo), reverse=True)
+def cambios_de_textos(ia, final):
+    a = re.findall(r"\S+", ia)
+    b = re.findall(r"\S+", final)
+    cambios = set()
+    for op, i1, i2, j1, j2 in difflib.SequenceMatcher(a=a, b=b, autojunk=False).get_opcodes():
+        if op == "equal" or max(i2-i1, j2-j1) > 12:
+            continue
+        de, a_ = " ".join(a[i1:i2]), " ".join(b[j1:j2])
+        if re.search(r"\d", de + a_):
+            continue
+        if [_norm_tok(x) for x in a[i1:i2]] == [_norm_tok(x) for x in b[j1:j2]]:
+            continue
+        cambios.add((op, de.strip(".,;:"), a_.strip(".,;:")))
+    return cambios
+
+
+def _indexar_correcciones(c, clave, ia, final):
+    firma = hashlib.sha256(json.dumps([ia, final], ensure_ascii=False).encode('utf-8')).hexdigest()
+    return AL.actualizar_ejemplo(c, clave, firma, lambda: cambios_de_textos(ia, final))
+
+
+def analizar_correcciones(minimo=2, *, reconstruir=False):
+    """Publica las 40 reglas principales. Solo recorre el corpus al migrar o reconciliar explícitamente."""
+    with AL.abrir(HIST) as c:
+        inicializado = c.execute("SELECT v FROM meta WHERE k='correcciones'").fetchone()
+        if reconstruir or not inicializado:
+            claves = set()
+            for inf in EJ.glob('*.informe.txt'):
+                clave = inf.name[:-len('.informe.txt')]
+                ia_f = EJ / f'{clave}.ia.txt'
+                if not ia_f.exists():
+                    nombre = clave.split('_', 2)[-1]
+                    viejo = DATOS_INF / f'{nombre}.informe_ia.txt'
+                    if not viejo.exists():
+                        continue
+                    escribir_atomico(ia_f, N.texto_limpio(viejo.read_text(encoding='utf-8')))
+                claves.add(clave)
+                _indexar_correcciones(c, clave, ia_f.read_text(encoding='utf-8'), inf.read_text(encoding='utf-8'))
+            for (clave,) in c.execute('SELECT clave FROM ejemplos').fetchall():
+                if clave not in claves:
+                    AL.quitar_ejemplo(c, clave)
+            c.execute("INSERT OR REPLACE INTO meta VALUES ('correcciones','1')")
+        frec = [(n,(op,de,a)) for op,de,a,n in c.execute(
+            'SELECT op,de,a,n FROM frecuencias WHERE n>=? ORDER BY n DESC,op DESC,de DESC,a DESC LIMIT 40', (minimo,))]
     lineas = ["# CORRECCIONES QUE EL TRANSCRIPTOR HIZO VARIAS VECES (se actualiza solo; no editar)",
               "# Tenelas en cuenta, pero usalas solo si el dictado lo justifica.", ""]
     for n, (op, de, a_) in frec[:40]:
@@ -140,15 +147,32 @@ def analizar_correcciones(minimo=2):
             lineas.append(f"- El transcriptor tuvo que AGREGAR «{a_}» ({n} informes).")
         else:
             lineas.append(f"- El transcriptor tuvo que BORRAR «{de}» ({n} informes).")
-    ARCH_CORR.write_text("\n".join(lineas) + "\n", encoding="utf-8")
+    salida = "\n".join(lineas) + "\n"
+    if not ARCH_CORR.exists() or ARCH_CORR.read_text(encoding="utf-8") != salida:
+        escribir_atomico(ARCH_CORR, salida)
     return frec
 
 
+def _importar_procesados(c):
+    if c.execute("SELECT v FROM meta WHERE k='procesados'").fetchone():
+        return
+    reg = json.loads(REG.read_text(encoding='utf-8')) if REG.exists() else {}
+    for ruta, d in reg.items():
+        c.execute('INSERT OR REPLACE INTO procesados VALUES (?,?,?)', (ruta,d['mtime'],d['ejemplo']))
+    c.execute("INSERT INTO meta VALUES ('procesados','1')")
+
+
+def procesado(docx):
+    with AL.abrir(HIST) as c:
+        _importar_procesados(c)
+        r = c.execute('SELECT mtime,ejemplo FROM procesados WHERE ruta=?', (str(docx),)).fetchone()
+        return {'mtime':r[0], 'ejemplo':r[1]} if r else {}
+
+
 def anotar_procesado(docx, clave):
-    """Para que aprender() no vuelva a tomar un Word ya registrado."""
-    reg = json.loads(REG.read_text(encoding="utf-8")) if REG.exists() else {}
-    reg[str(docx)] = {"mtime": Path(docx).stat().st_mtime, "ejemplo": clave}
-    REG.write_text(json.dumps(reg, ensure_ascii=False, indent=1), encoding="utf-8")
+    with AL.abrir(HIST) as c:
+        _importar_procesados(c)
+        c.execute('INSERT OR REPLACE INTO procesados VALUES (?,?,?)', (str(docx),Path(docx).stat().st_mtime,clave))
 
 
 def aprender(cfg, silencioso=False):
@@ -156,7 +180,6 @@ def aprender(cfg, silencioso=False):
     datos = sal / "revision" / "datos"
     EJ.mkdir(exist_ok=True)
     HIST.parent.mkdir(parents=True, exist_ok=True)
-    reg = json.loads(REG.read_text(encoding="utf-8")) if REG.exists() else {}
     nuevos, pendientes = [], []
     for docx in sorted(sal.glob("*.docx")):
         if docx.name.startswith("~$"):
@@ -166,7 +189,8 @@ def aprender(cfg, silencioso=False):
         if not (dic_f.exists() and ia_f.exists()):
             continue
         mt = docx.stat().st_mtime
-        if reg.get(str(docx), {}).get("mtime") == mt:
+        registro = procesado(docx)
+        if registro.get("mtime") == mt:
             continue
         ia = N.texto_limpio(ia_f.read_text(encoding="utf-8"))
         titulo = next((l for l in ia.splitlines() if l.strip()), "")
@@ -178,10 +202,9 @@ def aprender(cfg, silencioso=False):
             pendientes.append(docx.name)
             continue
         clave, pc = registrar_ejemplo(nombre, dic_f.read_text(encoding="utf-8"), ia_f.read_text(encoding="utf-8"),
-                                      final, reg.get(str(docx), {}).get("ejemplo"))
-        reg[str(docx)] = {"mtime": mt, "ejemplo": clave}
+                                      final, registro.get("ejemplo"))
+        anotar_procesado(docx, clave)
         nuevos.append((nombre, pc))
-    REG.write_text(json.dumps(reg, ensure_ascii=False, indent=1), encoding="utf-8")
 
     if nuevos:
         print(f"Aprendidos {len(nuevos)} informe(s) revisado(s): " +
@@ -192,10 +215,10 @@ def aprender(cfg, silencioso=False):
 
 
 def resumen():
-    if not HIST.exists():
+    if not HIST.exists() and not AL.ruta_base(HIST).exists():
         print("Todavía no hay informes revisados en el historial.")
         return
-    filas = list(csv.DictReader(open(HIST, encoding="utf-8-sig"), delimiter=";"))
+    filas = AL.leer_historial(HIST)
     pcs = [float(f["porcentaje_corregido"]) for f in filas]
     print(f"\nHistorial: {len(pcs)} informes revisados · promedio corregido {sum(pcs)/len(pcs):.1f}%")
     if len(pcs) >= 20:

@@ -25,8 +25,8 @@ Los casos se identifican con el parámetro o campo `nombre` (validado: sin rutas
 | GET | `/api/onda?nombre=` | Picos de la forma de onda |
 | GET | `/api/word?nombre=` | Descarga del Word generado |
 | POST | `/api/subir` | Subida de un audio desde la interfaz |
-| POST | `/api/procesar` | Regenerar el informe con la IA |
-| POST | `/api/borrador` | Autoguardado del borrador |
+| POST | `/api/procesar` | Registra duraderamente la solicitud y regenera con la IA; falla con 503 si no puede confirmar la cola. Recuperación, pausas y límites en [cola del servidor](cola-servidor.md). |
+| POST | `/api/borrador` | Guarda `{nombre, html, omisiones_ok?, revision?}`; responde `{ok:true, revision}`. Revisión obsoleta: 409; escritura fallida: 503; datos inválidos: 400. GET del caso incluye `borrador_revision`. Ver [compatibilidad](persistencia.md). |
 | POST | `/api/caso/bloquear` | Toma o renueva el bloqueo del caso (y suma tiempo de revisión `rev`) |
 | POST | `/api/caso/soltar` | Libera el bloqueo |
 | POST | `/api/caso/pausar`, `/api/caso/reanudar` | Pausa o reanuda la transcripción en curso `{nombre}` (solo local; por el túnel, 403) |
@@ -66,7 +66,7 @@ Los casos se identifican con el parámetro o campo `nombre` (validado: sin rutas
 | POST | `/api/cliente/vincular` | Vincula una PC con la contraseña y devuelve su llave |
 | POST | `/api/cliente/sesion` | Código de un solo uso para abrir la interfaz |
 | GET | `/api/cliente/estado` | Estado del servidor y `app: {version, huella}` |
-| POST | `/api/cliente/audio` | Envío de un audio tomado de `%TEMP%` o de la cola |
+| POST | `/api/cliente/audio` | Envío de un audio tomado de `%TEMP%` o de la cola. Recibo confirmado: `{ok:true, nombre, duplicado}` después de publicar audio/metadatos, huella y encolado; la cola conserva el cifrado si falta esa confirmación. |
 | GET | `/api/cliente/actualizacion` | Manifiesto de la carpeta `cliente\` (SHA-256 por archivo) |
 | GET | `/api/cliente/archivo?ruta=` | Descarga de un archivo del manifiesto |
 | POST | `/api/cliente/aviso` | La app informa un problema (queda en el registro) |

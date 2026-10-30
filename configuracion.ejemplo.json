@@ -1,6 +1,9 @@
 {
   "modelo_ia": "gemma4:12b",
   "modelo_whisper": "large-v3",
+  "lote_max_audios": 2,
+  "lote_max_segundos": 180,
+  "reusar_transcripcion": true,
   "fuente": "Tahoma",
   "tamano_fuente": 12,
   "lineas_vacias_para_encabezado": 0,

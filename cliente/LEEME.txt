@@ -1,7 +1,14 @@
 TRANSCRIPCIÓN · aplicación para las PC del trabajo (info-01, info-02, info-03)
 =============================================================================
 
-Versión actual: 1.21 (2026-10-29).
+Versión actual: 1.22 (2026-10-30).
+El servidor limita los lotes y reutiliza transcripciones verificadas para reducir esperas; conserva los modelos y controles de revisión.
+El servidor actualiza las correcciones por informe y usa un historial indexado; importa los datos anteriores en el primer uso de escritura del nuevo almacenamiento.
+El Word se confirma con el aprendizaje conservado para procesar en segundo plano; la pantalla distingue ese estado de un ejemplo ya aprendido.
+El editor reutiliza las hojas anteriores al cambio; la reproducción reutiliza el fondo de la onda y libera el audio de arrastre al cambiar de estudio.
+Los borradores muestran confirmación o error; un fallo de guardado conserva el estudio abierto para reintentar.
+La cola publica audios cifrados completos y conserva archivos ilegibles o rechazados en pendientes\recuperacion.
+Para salir o instalar una actualización primero cerrá el estudio desde la pantalla de revisión.
 El pegado desde Word conserva alineación, negrita, cursiva, subrayado, fuente, tamaño y colores originales.
 En la edición con audio, «Ocultar herramientas» libera espacio y «Mostrar herramientas» recupera la barra de formato.
 Incluye búsqueda por nombre o apellido en el selector del visor y botón «+» centrado para agregar médicos.

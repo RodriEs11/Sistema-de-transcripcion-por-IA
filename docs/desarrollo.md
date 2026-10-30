@@ -37,6 +37,59 @@ Para probar el túnel sin Cloudflare se puede reemplazar `cloudflared.exe` por u
 
 ## Convenciones de código
 
+### Aislamiento de pruebas y rendimiento
+
+Ejecutar pruebas que importan `servidor.py` en un checkout de ensayo: la importación carga
+configuración y crea carpetas. Usar datos ficticios y configuración de ejemplo; no apuntar
+las pruebas HTTP o de carga al servidor en uso. Los scripts Playwright permiten
+`PLAYWRIGHT_MODULE`, `BROWSER_CHANNEL` y, para `medicos.cjs`, `PYTHON`; este último necesita
+crear previamente `respaldo/` en el checkout de ensayo.
+
+El microbenchmark `python pruebas/medir_listado.py` prepara automáticamente una copia aislada
+y mide el listado con 100 y 1.000 casos ficticios. No ejecuta HTTP ni IA y no reemplaza pruebas
+de carga simultánea, navegador o GPU. Consultar [resultados y límites](auditoria-rendimiento-2026-10-29.md)
+y [puertas CI/CD](ci-cd.md) antes de interpretar sus resultados.
+
+La primera etapa de persistencia agrega `pruebas/test_borradores.py`, `pruebas/borradores.cjs`
+y `pruebas/cola_audios.cs`. Ver [ejecución aislada, formatos y recuperación](persistencia.md).
+La revisión posterior agrega `test_recepcion_audio.py`: publicación atómica con metadatos,
+deduplicación concurrente, recuperación de encolado e índice de huellas ante fallos.
+Las regresiones de borradores y cola incluyen respuestas HTTP 200 ambiguas, borrador vacío,
+esquema inválido y WAV cuyo tamaño declarado aún no está completo.
+
+`test_cola_procesamiento.py` usa SQLite real, procesos de ensayo que terminan abruptamente
+y el trabajador simulado para verificar recuperación de tareas, pausas, borrados y resultados.
+Ver [cola persistente, migración y respaldo en vivo](cola-servidor.md). No iniciar `servidor.main`
+ni ejecutar la migración sobre la instalación en uso para probarla.
+
+`test_preparacion_activacion.py` prueba copia verificada, backup SQLite e integridad del paquete,
+además de rollback de borradores/historial únicamente en copias ficticias. `preparar_activacion.py`
+no tiene una acción de despliegue. Ver [activación coordinada y criterios de ventana](activacion-coordinada.md).
+
+Las pruebas `editor_word.cjs` y `revision_word.cjs` también verifican la paginación parcial,
+equivalencia de cortes de hojas, reutilización del fondo de onda y cancelación/liberación de audio.
+Ver [mediciones y límites del editor/audio](editor-audio.md).
+
+`test_aprendizaje_pendiente.py` verifica Word válido, publicación fallida sin truncar el anterior,
+cola recuperable, versiones concurrentes e idempotencia del historial. Ver [Word y aprendizaje](word-aprendizaje.md).
+
+`test_almacen_aprendizaje.py` comprueba migración CSV, idempotencia, rollback, reglas incrementales,
+reconciliación y estadísticas. `python pruebas/medir_aprendizaje.py` mide escrituras indexadas
+en bases ficticias de 100/1.000/10.000 informes bajo `respaldo/`, sin importar el servidor.
+
+`test_lotes_ia.py` prueba el trabajador completo con colas finitas, ASR/Ollama simulados, caché
+fría/caliente, límites FIFO, aislamiento de fallos, banco y perfiles de ejemplos. No carga GPU.
+Ver [condiciones de validación real de IA](ia-lotes.md).
+
+`pruebas/validar_gpu_real.py --ejecutar` realiza una campaña manual con voz sintética,
+daemon Ollama separado y cancelación conservadora ante trabajo de producción. Sin esa
+opción no carga modelos. `resumir_gpu_real.py` valida/agrega campañas completas y
+`test_validacion_gpu.py` prueba guardas y métricas sin GPU. No ejecutar otros Python
+durante la medición: la vigilancia los considera trabajo ajeno. Ver [resultados RTX 3080,
+protocolo y límites](validacion-gpu.md). El benchmark real no corre automáticamente en CI.
+
+### Convenciones generales
+
 - **Idioma**: nombres, comentarios y mensajes en español rioplatense, como el resto del código y la interfaz.
 - **Python**: biblioteca estándar siempre que se pueda; las únicas dependencias son las de `requirements.txt`.
   Todo lo que se muestra o registra pasa por `registro.py` (`L.ok/info/aviso/error`), nunca `print`.
@@ -54,6 +107,12 @@ Para probar el túnel sin Cloudflare se puede reemplazar `cloudflared.exe` por u
   `respaldo/respaldo_AAAAMMDD_antes_de_<cambio>/` (no versionado).
 
 ## Commits
+
+La rama principal remota es `main`. `feat/admin-medicos` se integró mediante la PR #3
+y fue eliminada del remoto. La entrega App 1.22 / Servidor 2026.10.46 se propone desde
+`feat/persistencia-rendimiento-ci` hacia `main`; el workflow valida las PR y los pushes
+a `main`. Crear ramas por tarea y abrir una PR contra la principal, conservando los
+commits existentes y los artefactos de producción fuera de Git.
 
 Se usa [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/) en español:
 
