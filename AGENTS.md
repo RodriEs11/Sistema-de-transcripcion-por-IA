@@ -9,6 +9,27 @@
 - No usar datos de pacientes en pruebas. No versionar secretos, configuración local,
   informes, audios, registros ni binarios. No sobrescribir la configuración local con la de ejemplo.
 
+## Ramas y orden de trabajo
+
+El usuario exige una rama nueva para cada nueva tarea de cambios o mejoras, antes de editar.
+
+- No desarrollar ni hacer commits directamente en `main`.
+- Para una tarea nueva, consultar el remoto y partir de `main` actualizado mediante avance
+  rápido, sin sobrescribir trabajo local. Si no hay acceso al remoto, explicitar esa limitación.
+- Usar nombres breves en minúsculas con guiones y prefijo según el propósito:
+  `feat/`, `fix/`, `refactor/`, `docs/`, `test/` o `chore/`. Ejemplo: `feat/atajos-editor`.
+- Una rama por objetivo coherente. Los ajustes y correcciones de la misma tarea continúan
+  en su rama; una tarea distinta comienza en otra. No reutilizar una rama ya integrada.
+- Revisar el estado antes de cambiar de rama; no arrastrar cambios ajenos, descartarlos,
+  usar `reset --hard` ni reescribir historial compartido. Conservar siempre el trabajo existente.
+- Mantener commits pequeños y coherentes con Conventional Commits en español; incluir
+  versiones, documentación y pruebas correspondientes a la entrega.
+- Al pedir el usuario subir cambios, publicar la rama con seguimiento remoto y preparar
+  un pull request hacia `main`. Integrar mediante PR tras las comprobaciones, sin push
+  directo a `main`, salvo instrucción explícita del usuario que autorice esa excepción.
+- No interpretar «subir a GitHub» como autorización para fusionar el PR. No eliminar ramas
+  con trabajo pendiente. Al terminar, indicar rama, commit y PR si se publicó.
+
 ## Versiones: parte obligatoria del trabajo
 
 El usuario pidió que estos pasos se hagan sin tener que recordarlos en cada cambio.
