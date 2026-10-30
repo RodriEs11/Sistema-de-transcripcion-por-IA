@@ -2,6 +2,42 @@
 
 Piloto elegido: **pc-test**. La preparación original conserva sus artefactos y respaldos.
 
+## Resultado del piloto real — 2026-10-30
+
+**pc-test ejecuta App 1.22 y completó el ensayo con un audio ficticio.** Se identificó el
+proceso local de `cliente/Transcripcion.exe` y su ventana «Transcripción — pc-test»;
+el servidor también recibió un reporte reciente de versión 1.22. No había estudios
+abiertos, audios cifrados pendientes ni recuperación antes del ensayo.
+
+Evidencias privadas: `respaldo/piloto_real_20261030_0200/`. Se respaldaron configuración,
+huellas y documentación antes del ensayo; los resultados ficticios se copiaron antes
+de editar y después de recuperar el borrador.
+
+- Captura automática real: un WAV de voz sintética marcado `PRUEBA-FICTICIA-PCTEST-20261030`
+  apareció incompleto en la carpeta temporal vigilada. Se conservó sin huella ni envío
+  prematuro; al completar el mismo archivo, la app lo recuperó sin reinicio.
+- Recepción: un único caso, contenido SHA-256 idéntico y confirmación de envío. La cola
+  persistente terminó en `listo` y la cola local quedó vacía.
+- Reproducción: avance observado de 0:03 a 0:09 de un total mostrado de 0:15, con pausa
+  confirmada en la aplicación.
+- Guardado: se agregó una marca de edición ficticia desde el editor A4. La pantalla
+  confirmó «Borrador guardado» y se comprobó el JSON duradero correspondiente.
+- Recuperación: tras cerrar normalmente ese estudio y reabrirlo, la marca apareció
+  intacta. Al terminar, el estudio ficticio quedó cerrado y el borrador en revisión 4.
+
+No se reiniciaron servicios, cerraron aplicaciones ni cambiaron configuraciones o red.
+El WAV sintético temporal se retiró después de verificar su copia y huella. El caso de
+prueba permanece claramente identificado para inspección; **no finalizarlo como ejemplo
+de aprendizaje**. No se creó Word ni se entrenó con este caso: Word/aprendizaje conservan
+la validación previa aislada. El ensayo no certifica micrófono o altavoz, ni simula un
+corte de energía en producción; verifica captura de archivo, avance del reproductor,
+recuperación de WAV incompleto y recuperación del borrador.
+
+Último estado de las otras PC: pc-rodri desconectada con reporte histórico 1.21;
+pc-rodriweb desconectada sin versión de escritorio. No se confirmó 1.22 en ellas.
+El registro «Servidor» no se cuenta como otra PC actualizada. El seguimiento periódico
+queda limitado a las versiones restantes y no repite el piloto.
+
 ## Estado de activación — 2026-10-30
 
 Con autorización del usuario se comprobó que el proceso real ya ejecutaba Servidor
