@@ -9,6 +9,12 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## Documentación y herramientas — 2026-10-30
+- Comparación aislada de Whisper GPU/Gemma CPU en paralelo contra los lotes GPU actuales,
+  con cuatro dictados ficticios, seis ensayos y guardas de actividad de producción.
+  Herramienta opt-in, pruebas CPU y protocolo en `docs/comparacion-cpu-gpu.md`;
+  sin cambios de configuración, versiones de aplicación ni distribución.
+
 ## [Servidor 2026.10.47] — 2026-10-30
 
 ### Corregido
