@@ -5,7 +5,7 @@ Los cambios se agrupan en el candidato todavía no distribuido App **1.22** / Se
 
 ## Implementado
 
-- `.github/workflows/ci.yml`: integración Windows/Python 3.12 en PR y push a main/master;
+- `.github/workflows/ci.yml`: integración Windows/Python 3.12 en PR y push a `main`;
   despacho manual para generar un artefacto con fuentes y cliente probado, identificado por commit.
 - Pruebas Python, sintaxis JS, versiones, navegador Edge, cola DPAPI, compilación .NET y autoprueba.
 - Dependencias CPU de ensayo fijadas y lock npm para Playwright. No se modifica el entorno GPU real.

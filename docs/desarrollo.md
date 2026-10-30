@@ -108,6 +108,12 @@ protocolo y límites](validacion-gpu.md). El benchmark real no corre automática
 
 ## Commits
 
+La rama principal remota es `main`. `feat/admin-medicos` se integró mediante la PR #3
+y fue eliminada del remoto. La entrega App 1.22 / Servidor 2026.10.46 se propone desde
+`feat/persistencia-rendimiento-ci` hacia `main`; el workflow valida las PR y los pushes
+a `main`. Crear ramas por tarea y abrir una PR contra la principal, conservando los
+commits existentes y los artefactos de producción fuera de Git.
+
 Se usa [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/) en español:
 
 ```

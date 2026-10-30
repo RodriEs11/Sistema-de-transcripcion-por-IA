@@ -2,7 +2,7 @@
 
 Diseño propuesto el 29/10/2026 para servidor Python + cliente .NET 4.8/WebView2.
 **Estado:** implementado `.github/workflows/ci.yml` para Windows/Python 3.12: PR y push a
-main/master ejecutan pruebas Python, navegador, cola nativa, compilación .NET y autoprueba.
+`main` ejecuta pruebas Python, navegador, cola nativa, compilación .NET y autoprueba.
 Un despacho manual agrega la entrega del candidato probado como artefacto por commit (14 días).
 Las Actions están fijadas por SHA; el job solo tiene lectura del repositorio y no accede a producción.
 La ejecución remota y los checks obligatorios requieren publicar estos archivos y configurar GitHub;
@@ -132,7 +132,7 @@ generados después del despliegue. Conservar historial de artefactos y respaldos
 
 ## Configuración de GitHub pendiente
 
-El workflow implementa PR/main/master y candidato por despacho manual; falta configurar checks
+El workflow implementa PR/push a `main` y candidato por despacho manual; falta configurar checks
 requeridos y protección de rama. Usar permisos mínimos, Actions fijadas por SHA completo y
 timeouts. No dar secretos ni acceso al servidor real a PR de forks. Evitar ejecutar código no
 confiable en un runner persistente conectado a datos reales.
