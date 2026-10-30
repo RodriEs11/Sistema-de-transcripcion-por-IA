@@ -10,6 +10,17 @@ no se activaron remotamente desde esta instalación. Las secciones siguientes ma
 ruta para ampliar plataformas, evaluación GPU y promoción final a producción.
 Ver [auditoría de rendimiento](auditoria-rendimiento-2026-10-29.md).
 
+### Corrección del primer CI remoto — 2026-10-30
+
+La ejecución inicial de la PR #4 aprobó las 101 pruebas Python y las cuatro regresiones
+de navegador, pero falló en la compilación de la cola nativa con CS1504: las rutas de
+fuentes interpoladas con `/` no llegaron correctamente al compilador antiguo de .NET
+Framework. El paso usa ahora `Join-Path` para construir rutas nativas de Windows y pasa
+cada fuente como argumento separado; la comprobación local debe incluir una carpeta
+con espacios. La compilación/distribución posterior solo se considera validada cuando
+el nuevo job remoto termina correctamente. No se modifica la aplicación ni su versión
+por esta corrección del workflow.
+
 ## Desarrollo y revisión
 
 Trabajar en checkout separado de la instalación utilizada por las personas. Rama corta por

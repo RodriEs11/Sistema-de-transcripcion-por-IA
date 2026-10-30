@@ -52,9 +52,15 @@ jobs:
         shell: pwsh
         run: |
           $csc = "$env:WINDIR/Microsoft.NET/Framework64/v4.0.30319/csc.exe"
-          & $csc /nologo /r:System.Security.dll "/out:$pwd/respaldo/cola.exe" "$pwd/cliente_codigo/Audios.cs" "$pwd/pruebas/cola_audios.cs"
+          # csc de .NET Framework interpreta '/' en fuentes como separador de opciones.
+          # Join-Path conserva las rutas nativas de Windows, también con espacios.
+          $salidaCola = Join-Path $PWD.Path 'respaldo\cola.exe'
+          $fuenteAudios = Join-Path $PWD.Path 'cliente_codigo\Audios.cs'
+          $fuentePrueba = Join-Path $PWD.Path 'pruebas\cola_audios.cs'
+          $datosCola = Join-Path $PWD.Path 'respaldo\cola-datos'
+          & $csc /nologo /r:System.Security.dll "/out:$salidaCola" $fuenteAudios $fuentePrueba
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          & "$pwd/respaldo/cola.exe" "$pwd/respaldo/cola-datos"
+          & $salidaCola $datosCola
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Compilar y verificar distribución aislada
         shell: pwsh
