@@ -16,7 +16,7 @@
 
 ```bat
 mkdir "C:\Transcripcion" && cd /d "C:\Transcripcion"
-git clone https://github.com/<usuario>/<repositorio>.git sistema
+git clone https://github.com/RodriEs11/Sistema-de-transcripcion-por-IA.git sistema
 cd sistema
 instalar.bat
 ollama pull gemma4:12b

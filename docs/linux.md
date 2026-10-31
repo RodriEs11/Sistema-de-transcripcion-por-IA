@@ -17,7 +17,7 @@ Probado en Ubuntu 22.04 con Python 3.10. Deber√≠a andar en cualquier distribuci√
 
 ```bash
 mkdir -p ~/Transcripcion && cd ~/Transcripcion
-git clone https://github.com/<usuario>/<repositorio>.git sistema
+git clone https://github.com/RodriEs11/Sistema-de-transcripcion-por-IA.git sistema
 cd sistema
 bash instalar.sh            # o ./instalar.sh --si para no responder preguntas
 ```

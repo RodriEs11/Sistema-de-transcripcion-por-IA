@@ -9,6 +9,13 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## Documentación — 2026-10-31
+- Índice `docs/README.md` completo: agrega las etapas de la entrega 1.22 que faltaban
+  (`ci-listado`, `editor-audio`, `word-aprendizaje`, `aprendizaje-incremental`, `ia-lotes`) y
+  `comparacion-cpu-gpu`, indica las versiones actuales y describe el CI como implementado.
+- README, `docs/instalacion.md` y `docs/linux.md` usan la dirección real del repositorio para clonar.
+  Sin cambios funcionales ni de versión.
+
 ## Documentación y herramientas — 2026-10-30
 - Comparación aislada de Whisper GPU/Gemma CPU en paralelo contra los lotes GPU actuales,
   con cuatro dictados ficticios, seis ensayos y guardas de actividad de producción.
