@@ -134,7 +134,7 @@ dentro de una carpeta propia con el nombre `sistema`:
 
 ```bat
 mkdir "C:\Transcripcion" && cd /d "C:\Transcripcion"
-git clone https://github.com/<usuario>/<repositorio>.git sistema
+git clone https://github.com/RodriEs11/Sistema-de-transcripcion-por-IA.git sistema
 cd sistema
 instalar.bat                 :: crea .venv, instala dependencias y descarga Whisper (~3 GB)
 ollama pull gemma4:12b       :: modelo de lenguaje
