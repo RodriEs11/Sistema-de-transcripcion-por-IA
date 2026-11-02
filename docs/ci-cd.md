@@ -2,7 +2,8 @@
 
 Diseño propuesto el 29/10/2026 para servidor Python + cliente .NET 4.8/WebView2.
 **Estado:** implementado `.github/workflows/ci.yml` para Windows/Python 3.12: PR y push a
-`main` ejecuta pruebas Python, navegador, cola nativa, compilación .NET y autoprueba.
+`main` (y push a `experimental`, ver [experimentos.md](experimentos.md)) ejecuta pruebas Python,
+navegador, cola nativa, compilación .NET y autoprueba.
 Un despacho manual agrega la entrega del candidato probado como artefacto por commit (14 días).
 Las Actions están fijadas por SHA; el job solo tiene lectura del repositorio y no accede a producción.
 La ejecución remota y los checks obligatorios requieren publicar estos archivos y configurar GitHub;

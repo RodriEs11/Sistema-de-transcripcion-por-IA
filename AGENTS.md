@@ -18,6 +18,7 @@ El usuario exige una rama nueva para cada nueva tarea de cambios o mejoras, ante
   rápido, sin sobrescribir trabajo local. Si no hay acceso al remoto, explicitar esa limitación.
 - Usar nombres breves en minúsculas con guiones y prefijo según el propósito:
   `feat/`, `fix/`, `refactor/`, `docs/`, `test/` o `chore/`. Ejemplo: `feat/atajos-editor`.
+  Los experimentos usan `exp/` y parten de `experimental` (ver «Experimentos»).
 - Una rama por objetivo coherente. Los ajustes y correcciones de la misma tarea continúan
   en su rama; una tarea distinta comienza en otra. No reutilizar una rama ya integrada.
 - Revisar el estado antes de cambiar de rama; no arrastrar cambios ajenos, descartarlos,
@@ -29,6 +30,21 @@ El usuario exige una rama nueva para cada nueva tarea de cambios o mejoras, ante
   directo a `main`, salvo instrucción explícita del usuario que autorice esa excepción.
 - No interpretar «subir a GitHub» como autorización para fusionar el PR. No eliminar ramas
   con trabajo pendiente. Al terminar, indicar rama, commit y PR si se publicó.
+
+## Experimentos
+
+Guía completa: `docs/experimentos.md`.
+
+- Los cambios de prueba, que quizá no lleguen a la versión final, van en `exp/<tema>` creada
+  desde `experimental`, con PR hacia `experimental` (nunca hacia `main`). `test/` no es para esto.
+- `experimental` es permanente y nunca se fusiona entera en `main`. Para incluir un experimento,
+  crear `feat/<tema>` desde `main`, traer los commits (`cherry-pick` o rehacerlos) y completar
+  versiones, CHANGELOG, documentación y pruebas como en cualquier entrega.
+- En `exp/` y `experimental` no subir `Programa.VERSION` ni `VERSION` del servidor: la versión
+  se asigna al promover. No distribuir a las PC del trabajo binarios compilados desde esas ramas.
+- No cambiar de rama en la instalación en uso para probar. Usar una copia creada con
+  `python crear_entorno_pruebas.py` (otra carpeta, otro puerto, sin túnel, IA simulada por defecto).
+  La IA real de esa copia comparte GPU y Ollama con producción: solo sin trabajo en curso.
 
 ## Versiones: parte obligatoria del trabajo
 
