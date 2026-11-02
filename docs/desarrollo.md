@@ -125,6 +125,10 @@ y fue eliminada del remoto. La entrega App 1.22 / Servidor 2026.10.46 se propone
 a `main`. Crear ramas por tarea y abrir una PR contra la principal, conservando los
 commits existentes y los artefactos de producción fuera de Git.
 
+Las pruebas que quizá no lleguen a la versión final van en ramas `exp/<tema>` sobre la rama
+permanente `experimental`, y se ejecutan en una copia aislada creada con `crear_entorno_pruebas.py`
+(otro puerto, sin túnel, carpetas propias). Ver [ramas experimentales y entorno de pruebas](experimentos.md).
+
 Se usa [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/) en español:
 
 ```

@@ -92,6 +92,11 @@ Thumbs.db
 desktop.ini
 .DS_Store
 
+# Entorno de pruebas (crear_entorno_pruebas.py)
+.entorno_pruebas
+/iniciar_pruebas.bat
+/iniciar_pruebas.sh
+
 # Archivos de prueba sueltos
 *.tgz
 pruebas/*.png

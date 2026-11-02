@@ -9,6 +9,14 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## Herramientas de desarrollo — 2026-11-02
+- Rama permanente `experimental` y ramas `exp/<tema>` para cambios de prueba que pueden no llegar
+  a la versión final; reglas de promoción a `main` en `AGENTS.md` y `docs/experimentos.md`.
+- `crear_entorno_pruebas.py` crea una copia aislada (repositorio propio, puerto 8865, sin túnel,
+  `Audios_nuevos`/`Informes` propios, IA simulada por defecto) sin modificar la instalación en uso.
+  Pruebas en `pruebas/test_entorno_pruebas.py`. El CI también corre en los push a `experimental`.
+  Sin cambios funcionales ni de versión.
+
 ## Documentación — 2026-10-31
 - Índice `docs/README.md` completo: agrega las etapas de la entrega 1.22 que faltaban
   (`ci-listado`, `editor-audio`, `word-aprendizaje`, `aprendizaje-incremental`, `ia-lotes`) y
