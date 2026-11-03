@@ -105,10 +105,11 @@ class BorradoresHttpTest(unittest.TestCase):
         respaldo.mkdir(exist_ok=True)
         self.tmp = tempfile.TemporaryDirectory(prefix="borradores_http_", dir=respaldo)
         self.addCleanup(self.tmp.cleanup)
-        self.carpeta = Path(self.tmp.name)
-        self.parche = patch.object(S, "DATOS", self.carpeta)
-        self.parche.start()
-        self.addCleanup(self.parche.stop)
+        from transcripcion import ajustes
+        aj = ajustes.para_pruebas(Path(self.tmp.name))
+        ajustes.preparar_carpetas(aj)
+        self.carpeta = aj.datos
+        self.addCleanup(S.configurar, S.configurar(aj))      # casos y procesamiento con estas carpetas
         self.http = S.ThreadingHTTPServer(("127.0.0.1", 0), S.H)
         self.addCleanup(self.http.server_close)
         self.puerto = patch.object(S, "PUERTO", self.http.server_port)

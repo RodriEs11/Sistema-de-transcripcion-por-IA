@@ -4,7 +4,6 @@ from concurrent.futures import ThreadPoolExecutor
 import http.client
 import json
 from pathlib import Path
-import queue
 import sqlite3
 import subprocess
 import sys
@@ -151,40 +150,41 @@ class ServidorTest(unittest.TestCase):
         self.S=S
         tmp=tempfile.TemporaryDirectory(dir=RESPALDO); self.addCleanup(tmp.cleanup)
         self.base=Path(tmp.name); self.datos=self.base/'revision'/'datos'; self.datos.mkdir(parents=True)
-        self.addCleanup(S.configurar,S.configurar(ajustes.para_pruebas(self.base)))
         self.audios=self.base/'audios'; self.audios.mkdir()
+        # Casos y procesamiento nuevos, con estas carpetas (Informes = base, datos = base/revision/datos)
+        aj=ajustes.para_pruebas(self.base,carpeta_informes=self.base,carpeta_audios_nuevos=self.audios)
+        self.addCleanup(S.configurar,S.configurar(aj))
         self.pila=ExitStack(); self.addCleanup(self.pila.close)
-        for nombre,valor in [('COLA_DURADERA',None),('DATOS',self.datos),('NUEVOS',self.audios),('INFORMES',self.base),
-                             ('COLA_AL_REINICIAR',self.base/'legacy.json'),('ESTADO',{}),('ENCOLADO',{}),('BORRADOS',set()),
-                             ('PAUSAS',{}),('PAUSADO_S',{}),('COLA',queue.Queue()),('SRV',dict(S.SRV))]:
+        for nombre,valor in [('COLA_AL_REINICIAR',self.base/'legacy.json'),('SRV',dict(S.SRV))]:
             self.pila.enter_context(patch.object(S,nombre,valor))
         self.pila.enter_context(patch.object(S.L,'estado'))
         self.pila.enter_context(patch.object(S.L,'CARPETA',self.base/'registros'))   # nunca los registros de la instalación
         self.addCleanup(self.cerrar)
 
     def cerrar(self):
-        if self.S.COLA_DURADERA is not None:self.S.COLA_DURADERA.cerrar(); self.S.COLA_DURADERA=None
+        if self.S.PROC.duradera is not None:self.S.PROC.duradera.cerrar(); self.S.PROC.duradera=None
 
     def audio(self,n):
         p=self.audios/(n+'.wav');p.write_bytes(b'WAV exclusivamente ficticio');return p
 
-    def iniciar(self):self.S.reanudar_cola();return self.S.COLA_DURADERA
+    def iniciar(self):self.S.reanudar_cola();return self.S.PROC.duradera
 
     def reiniciar(self):
-        self.cerrar();self.S.ESTADO.clear();self.S.ENCOLADO.clear();self.S.PAUSAS.clear();self.S.BORRADOS.clear()
-        self.S.COLA=queue.Queue();return self.iniciar()
+        """Como si el proceso se reiniciara: la cola duradera se cierra y el estado en memoria empieza de cero."""
+        from transcripcion.procesamiento.estado import Procesamiento
+        self.cerrar();self.S.PROC=Procesamiento(self.S.CASOS);return self.iniciar()
 
     def test_recupera_fifo_fases_pausas_y_caso_sin_audio_visible(self):
         c=self.iniciar()
-        for n in ('uno','dos','ausente'):self.audio(n);self.S.encolar(n)
+        for n in ('uno','dos','ausente'):self.audio(n);self.S.PROC.encolar(n)
         c.cambiar('uno','generando');c.cambiar('dos','transcribiendo');c.pausa('dos',True)
         self.audios.joinpath('ausente.wav').unlink()
         self.reiniciar()
-        self.assertEqual(list(self.S.COLA.queue),['uno','dos'])
-        self.assertEqual(self.S.ESTADO['dos']['estado'],'en pausa')
+        self.assertEqual(list(self.S.PROC.cola.queue),['uno','dos'])
+        self.assertEqual(self.S.PROC.estado['dos']['estado'],'en pausa')
         self.assertIn('ausente',[x['nombre'] for x in self.S.listar_casos()])
-        self.assertEqual(self.S.reanudar('dos','prueba')[1],200)
-        self.assertEqual(self.S.COLA_DURADERA.obtener('dos')['pausado'],0)
+        self.assertEqual(self.S.PROC.reanudar('dos','prueba')[1],200)
+        self.assertEqual(self.S.PROC.duradera.obtener('dos')['pausado'],0)
 
     def test_adopta_huerfano_pero_no_informe_revisado_borrador_ni_cancelado(self):
         self.audio('huerfano');self.audio('revisado');self.audio('borrador');self.audio('cancelado')
@@ -192,58 +192,58 @@ class ServidorTest(unittest.TestCase):
         (self.datos/'borrador.borrador.json').write_text('{}')
         c=C.ColaProcesamiento(self.datos.parent/'cola_procesamiento.sqlite3')
         c.preparar_borrado('cancelado');c.cancelar_borrado('cancelado');c.cerrar()
-        self.iniciar();self.assertEqual(list(self.S.COLA.queue),['huerfano'])
+        self.iniciar();self.assertEqual(list(self.S.PROC.cola.queue),['huerfano'])
 
     def test_checkpoint_valido_no_regenera_ni_borra_revision(self):
-        self.iniciar();self.audio('listo');self.S.encolar('listo')
+        self.iniciar();self.audio('listo');self.S.PROC.encolar('listo')
         for sufijo in self.S.ARCHIVOS_RESULTADO:(self.datos/('listo'+sufijo)).write_text('Resultado ficticio',encoding='utf-8')
         self.S.confirmar_resultado('listo',self.S.firma_audio(self.audios/'listo.wav'))
         borrador=self.datos/'listo.borrador.html';borrador.write_text('Edición ficticia conservada')
         self.reiniciar()
-        self.assertTrue(self.S.COLA.empty());self.assertEqual(self.S.COLA_DURADERA.obtener('listo')['estado'],'listo')
+        self.assertTrue(self.S.PROC.cola.empty());self.assertEqual(self.S.PROC.duradera.obtener('listo')['estado'],'listo')
         self.assertEqual(borrador.read_text(),'Edición ficticia conservada')
 
     def test_checkpoint_corrupto_con_revision_se_detiene_para_recuperar(self):
-        self.iniciar();self.audio('caso');self.S.encolar('caso')
+        self.iniciar();self.audio('caso');self.S.PROC.encolar('caso')
         (self.datos/'caso.procesamiento.json').write_text('{}');(self.datos/'caso.final.txt').write_text('Final ficticio')
-        self.reiniciar();self.assertTrue(self.S.COLA.empty());self.assertEqual(self.S.ESTADO['caso']['estado'],'error')
+        self.reiniciar();self.assertTrue(self.S.PROC.cola.empty());self.assertEqual(self.S.PROC.estado['caso']['estado'],'error')
 
     def test_word_o_formato_sin_checkpoint_no_se_sobrescriben_al_recuperar(self):
         self.iniciar()
-        for n in ('word','formato'):self.audio(n);self.S.encolar(n)
+        for n in ('word','formato'):self.audio(n);self.S.PROC.encolar(n)
         word=self.base/'word.docx';word.write_bytes(b'Word exclusivamente ficticio')
         formato=self.datos/'formato.formato.json';formato.write_text('{"v":2}')
-        self.reiniciar();self.assertTrue(self.S.COLA.empty())
+        self.reiniciar();self.assertTrue(self.S.PROC.cola.empty())
         self.assertEqual(word.read_bytes(),b'Word exclusivamente ficticio');self.assertEqual(formato.read_text(),'{"v":2}')
 
     def test_una_solicitud_nueva_no_reutiliza_checkpoint_anterior(self):
-        self.iniciar();self.audio('caso');self.S.encolar('caso')
+        self.iniciar();self.audio('caso');self.S.PROC.encolar('caso')
         for s in self.S.ARCHIVOS_RESULTADO:(self.datos/('caso'+s)).write_text('Resultado ficticio')
-        self.S.confirmar_resultado('caso',self.S.firma_audio(self.audios/'caso.wav'));self.S.poner_estado('caso','listo')
-        self.S.encolar('caso');self.assertFalse(self.S.resultado_confirmado('caso'))
+        self.S.confirmar_resultado('caso',self.S.firma_audio(self.audios/'caso.wav'));self.S.PROC.poner_estado('caso','listo')
+        self.S.PROC.encolar('caso');self.assertFalse(self.S.resultado_confirmado('caso'))
 
     def test_confirmacion_de_encolado_fallida_no_publica_en_memoria(self):
         c=self.iniciar();self.audio('caso');conexion=c.db;falso=Mock(wraps=conexion)
         falso.commit.side_effect=sqlite3.OperationalError('disco lleno ficticio')
         with patch.object(c,'db',falso):
-            with self.assertRaises(C.ErrorCola):self.S.encolar('caso')
-        self.assertTrue(self.S.COLA.empty());self.assertNotIn('caso',self.S.ESTADO)
+            with self.assertRaises(C.ErrorCola):self.S.PROC.encolar('caso')
+        self.assertTrue(self.S.PROC.cola.empty());self.assertNotIn('caso',self.S.PROC.estado)
 
     def test_commit_real_respuesta_perdida_se_recupera_sin_duplicar(self):
         c=self.iniciar();self.audio('caso');conexion=c.db;falso=Mock(wraps=conexion)
         def perdido():conexion.commit();raise sqlite3.OperationalError('Confirmación perdida ficticia')
         falso.commit.side_effect=perdido
         with patch.object(c,'db',falso):
-            with self.assertRaises(C.ErrorCola):self.S.encolar('caso')
-        token=c.obtener('caso')['token'];self.S.encolar('caso')
-        self.assertEqual(c.obtener('caso')['token'],token);self.assertEqual(list(self.S.COLA.queue),['caso'])
+            with self.assertRaises(C.ErrorCola):self.S.PROC.encolar('caso')
+        token=c.obtener('caso')['token'];self.S.PROC.encolar('caso')
+        self.assertEqual(c.obtener('caso')['token'],token);self.assertEqual(list(self.S.PROC.cola.queue),['caso'])
 
     def test_http_no_confirma_si_el_registro_duradero_falla(self):
         self.iniciar();self.audio('caso')
         httpd=self.S.ThreadingHTTPServer(('127.0.0.1',0),self.S.H)
         hilo=threading.Thread(target=httpd.serve_forever,daemon=True);hilo.start()
         try:
-            with patch.object(self.S,'PUERTO',httpd.server_port),patch.object(self.S.COLA_DURADERA,'solicitar',side_effect=C.ErrorCola('Fallo ficticio')):
+            with patch.object(self.S,'PUERTO',httpd.server_port),patch.object(self.S.PROC.duradera,'solicitar',side_effect=C.ErrorCola('Fallo ficticio')):
                 cliente=http.client.HTTPConnection('127.0.0.1',httpd.server_port,timeout=5)
                 try:
                     cliente.request('POST','/api/procesar',json.dumps({'nombre':'caso'}),{'Content-Type':'application/json'})
@@ -252,20 +252,20 @@ class ServidorTest(unittest.TestCase):
         finally:httpd.shutdown();httpd.server_close();hilo.join(2)
 
     def test_borrado_real_y_reversion_por_permiso_no_resucitan_tareas(self):
-        c=self.iniciar();self.audio('caso');self.S.encolar('caso')
+        c=self.iniciar();self.audio('caso');self.S.PROC.encolar('caso')
         token=c.obtener('caso')['token']
         with patch.object(self.S,'_apartar',side_effect=PermissionError('Bloqueo ficticio')):
             self.assertIn('No se pudo borrar',self.S.borrar_caso('caso'))
         self.assertEqual(c.obtener('caso')['estado'],'en cola');self.assertEqual(c.obtener('caso')['token'],token)
         self.assertIsNone(self.S.borrar_caso('caso'))
-        self.reiniciar();self.assertTrue(self.S.COLA.empty())
+        self.reiniciar();self.assertTrue(self.S.PROC.cola.empty())
 
     def test_subida_no_confirmada_se_adopta_completa_al_reabrir(self):
         self.iniciar();cuerpo=b'RIFF'+(72).to_bytes(4,'little')+b'WAVE'+b'\0'*68
         httpd=self.S.ThreadingHTTPServer(('127.0.0.1',0),self.S.H)
         hilo=threading.Thread(target=httpd.serve_forever,daemon=True);hilo.start()
         try:
-            with patch.object(self.S,'PUERTO',httpd.server_port),patch.object(self.S.COLA_DURADERA,'solicitar',side_effect=C.ErrorCola('Fallo ficticio')):
+            with patch.object(self.S,'PUERTO',httpd.server_port),patch.object(self.S.PROC.duradera,'solicitar',side_effect=C.ErrorCola('Fallo ficticio')):
                 cliente=http.client.HTTPConnection('127.0.0.1',httpd.server_port,timeout=5)
                 try:
                     cliente.request('POST','/api/subir?archivo=subido.wav',cuerpo,{'Content-Type':'audio/wav'})
@@ -273,18 +273,18 @@ class ServidorTest(unittest.TestCase):
                 finally:cliente.close()
         finally:httpd.shutdown();httpd.server_close();hilo.join(2)
         self.assertEqual((self.audios/'subido.wav').read_bytes(),cuerpo)
-        self.assertTrue((self.datos/'subido.origen.txt').exists());self.assertTrue(self.S.COLA.empty())
-        self.reiniciar();self.assertEqual(list(self.S.COLA.queue),['subido'])
+        self.assertTrue((self.datos/'subido.origen.txt').exists());self.assertTrue(self.S.PROC.cola.empty())
+        self.reiniciar();self.assertEqual(list(self.S.PROC.cola.queue),['subido'])
 
     def test_cancelar_registro_sin_audio_y_borrado_sin_commit_final(self):
-        c=self.iniciar();self.audio('caso');self.S.encolar('caso')
+        c=self.iniciar();self.audio('caso');self.S.PROC.encolar('caso')
         with patch.object(c,'cancelar_borrado',side_effect=C.ErrorCola('Fallo final ficticio')):
             with self.assertRaises(C.ErrorCola):self.S.borrar_caso('caso')
-        self.reiniciar();self.assertEqual(self.S.COLA_DURADERA.obtener('caso')['estado'],'borrando')
-        self.assertIsNone(self.S.borrar_caso('caso'));self.assertNotIn('caso',self.S.ESTADO)
-        self.S.COLA_DURADERA.solicitar('sin-audio');self.S.poner_estado('sin-audio','error','No encuentro audio')
+        self.reiniciar();self.assertEqual(self.S.PROC.duradera.obtener('caso')['estado'],'borrando')
+        self.assertIsNone(self.S.borrar_caso('caso'));self.assertNotIn('caso',self.S.PROC.estado)
+        self.S.PROC.duradera.solicitar('sin-audio');self.S.PROC.poner_estado('sin-audio','error','No encuentro audio')
         self.assertIsNone(self.S.borrar_caso('sin-audio'))
-        self.reiniciar();self.assertTrue(self.S.COLA.empty());self.assertNotIn('sin-audio',self.S.ESTADO)
+        self.reiniciar();self.assertTrue(self.S.PROC.cola.empty());self.assertNotIn('sin-audio',self.S.PROC.estado)
 
     def test_arranque_no_inicia_hilos_ni_acepta_trabajo_con_cola_inaccesible(self):
         from transcripcion import ajustes
@@ -300,14 +300,14 @@ from pathlib import Path
 import servidor as S
 from transcripcion import ajustes
 base=Path(sys.argv[1]);modo=sys.argv[2]
-S.configurar(ajustes.para_pruebas(base))
+S.configurar(ajustes.para_pruebas(base,carpeta_informes=base,carpeta_audios_nuevos=base/'audios'))
 S.CON.CONOC=base/'conocimiento';S.CON.preparar_conocimiento()   # conocimiento de ejemplo, nunca el de la instalación
 S.L.CARPETA=base/'registros'
-S.AQUI=base;S.NUEVOS=base/'audios';S.INFORMES=base;S.DATOS=base/'revision'/'datos'
+S.AQUI=base
 S.COLA_AL_REINICIAR=base/'legacy.json';S.SIMULAR=True
 os.environ['SIMULAR_DEMORA']='0'
 S.calcular_voz=lambda *a:None
-S.anotar_voz=lambda *a,**k:None
+S.CASOS.anotar_voz=lambda *a,**k:None
 S.resumen_voz=lambda *a:None
 S.PAC.calcular=lambda *a,**k:None
 S.esperar_ia=lambda *a:None
@@ -318,9 +318,9 @@ class ColaFinita(queue.Queue):
  def get(self,block=True,timeout=None):
   if self.empty():raise Fin()
   return super().get(block,timeout)
-S.COLA=ColaFinita()
+S.PROC.cola=ColaFinita()
 S.reanudar_cola()
-empezar=S.empezar;poner=S.poner_estado
+empezar=S.PROC.empezar;poner=S.PROC.poner_estado
 generaciones=0
 def inicio(n,e,msg=''):
  global generaciones
@@ -331,20 +331,20 @@ def inicio(n,e,msg=''):
 def estado(n,e,msg=''):
  if modo=='listo' and e=='listo':os._exit(74)
  return poner(n,e,msg)
-S.empezar=inicio;S.poner_estado=estado
+S.PROC.empezar=inicio;S.PROC.poner_estado=estado
 if modo=='perdida':
- cambiar=S.COLA_DURADERA.cambiar
+ cambiar=S.PROC.duradera.cambiar
  def commit_perdido(n,e):
   r=cambiar(n,e)
   if e=='listo':raise S.CP.ErrorCola('Respuesta local perdida ficticia')
   return r
- S.COLA_DURADERA.cambiar=commit_perdido
+ S.PROC.duradera.cambiar=commit_perdido
 try:S.trabajador()
 except Fin:pass
-assert S.COLA_DURADERA.obtener('ficticio')['estado']=='listo'
-assert S.ESTADO.get('ficticio',{}).get('estado') in ('listo',None)
+assert S.PROC.duradera.obtener('ficticio')['estado']=='listo'
+assert S.PROC.estado.get('ficticio',{}).get('estado') in ('listo',None)
 if modo=='perdida':assert generaciones==1
-S.COLA_DURADERA.cerrar()
+S.PROC.duradera.cerrar()
 '''
         for etapa in ('asr','ia','listo','perdida'):
             with self.subTest(etapa=etapa):

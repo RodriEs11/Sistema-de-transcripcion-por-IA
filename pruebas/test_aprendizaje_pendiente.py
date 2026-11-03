@@ -65,14 +65,16 @@ class WordTest(unittest.TestCase):
         from transcripcion import ajustes
         from docx import Document
         with tempfile.TemporaryDirectory() as tmp:
-            carpeta = Path(tmp); datos = carpeta/'datos'; datos.mkdir()
-            self.addCleanup(S.configurar, S.configurar(ajustes.para_pruebas(carpeta)))
+            carpeta = Path(tmp)
+            aj = ajustes.para_pruebas(carpeta, carpeta_informes=carpeta)   # Word en carpeta, datos en carpeta/revision/datos
+            datos = aj.datos; datos.mkdir(parents=True)
+            self.addCleanup(S.configurar, S.configurar(aj))
             conoc = patch.object(S.CON, 'CONOC', carpeta/'conocimiento'); conoc.start(); self.addCleanup(conoc.stop)
             S.CON.preparar_conocimiento()     # conocimiento de ejemplo, nunca el de la instalación
             (datos/'ficticio.informe_ia.txt').write_text('Informe ficticio.', encoding='utf-8')
             (datos/'ficticio.dictado.txt').write_text('Dictado ficticio.', encoding='utf-8')
             cola = ColaAprendizaje(datos/'_aprendizaje', lambda d: None, lambda: None)
-            with patch.object(S,'DATOS',datos), patch.object(S,'INFORMES',carpeta), patch.object(S,'APRENDIZAJE',cola), patch.object(S,'resumen_voz',return_value=None), patch.object(S,'datos_csv',return_value={}), patch.object(S.L,'actividad'), patch.object(A,'registrar_ejemplo',side_effect=AssertionError('No debe ejecutarse en el guardado')):
+            with patch.object(S,'APRENDIZAJE',cola), patch.object(S,'resumen_voz',return_value=None), patch.object(S.CASOS,'datos_csv',return_value={}), patch.object(S.L,'actividad'), patch.object(A,'registrar_ejemplo',side_effect=AssertionError('No debe ejecutarse en el guardado')):
                 r = S.finalizar('ficticio', 'Informe final ficticio.')
                 self.assertEqual(r['aprendizaje'],'pendiente')
                 self.assertIn('Informe final ficticio.', [p.text for p in Document(r['docx']).paragraphs])

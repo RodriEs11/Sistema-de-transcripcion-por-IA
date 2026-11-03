@@ -90,10 +90,11 @@ def preparar_carpetas(aj):
 
 def para_pruebas(carpeta, raiz=AQUI, **cambios):
     """Ajustes que apuntan a `carpeta` (Audios_nuevos e Informes adentro), con el resto del ejemplo.
-    `cambios` reemplaza opciones de configuración (por ejemplo lote_max_audios=1)."""
+    `cambios` reemplaza opciones de configuración (por ejemplo lote_max_audios=1, o carpeta_informes=… para usar
+    otra carpeta de informes; los datos de los casos quedan en <carpeta_informes>/revision/datos)."""
     carpeta = Path(carpeta)
     ejemplo = Path(raiz) / "configuracion.ejemplo.json"     # nunca la configuración de la instalación
     cfg = json.loads(ejemplo.read_text(encoding="utf-8-sig")) if ejemplo.exists() else {}
-    cfg = {**PREDETERMINADOS, **cfg, **cambios,
-           "carpeta_audios_nuevos": carpeta / "Audios_nuevos", "carpeta_informes": carpeta / "Informes"}
+    cfg = {**PREDETERMINADOS, **cfg,
+           "carpeta_audios_nuevos": carpeta / "Audios_nuevos", "carpeta_informes": carpeta / "Informes", **cambios}
     return Ajustes(raiz=Path(raiz), cfg=cfg, puerto=0, puerto_tunel=0, simular_ia=True)

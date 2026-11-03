@@ -9,6 +9,17 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [Servidor 2026.11.7] — 2026-11-03
+
+Etapa 5 del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles: mismas
+pantallas, mismas respuestas HTTP, misma cola y mismas pausas (contratos en verde sin regenerar).
+
+### Cambiado
+- Los archivos de cada caso (nombre, origen, médico, transcriptor, estudios, duración, tiempo de revisión, voz,
+  avisos) los maneja un objeto `Casos` (`transcripcion/casos/repositorio.py`), y el estado del procesamiento (etapa
+  de cada caso, cola, pausas, tiempos estimados) un objeto `Procesamiento` (`transcripcion/procesamiento/estado.py`).
+  Los crea el arranque; antes eran unas 20 variables globales de `servidor.py`.
+
 ## [Servidor 2026.11.6] — 2026-11-03
 
 Etapa 4 del [refactor por etapas](docs/refactor.md). Reorganización interna: mismas transcripciones, marcas y

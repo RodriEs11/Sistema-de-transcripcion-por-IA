@@ -15,17 +15,18 @@ class RecepcionTest(unittest.TestCase):
         self.S = S
         respaldo=Path(__file__).resolve().parents[1]/'respaldo'; respaldo.mkdir(exist_ok=True)
         tmp=tempfile.TemporaryDirectory(dir=respaldo); self.addCleanup(tmp.cleanup)
-        self.base=Path(tmp.name); self.nuevos=self.base/'nuevos'; self.datos=self.base/'datos'
-        self.nuevos.mkdir(); self.datos.mkdir()
+        self.base=Path(tmp.name); self.nuevos=self.base/'nuevos'; self.datos=self.base/'revision'/'datos'
+        self.nuevos.mkdir(); self.datos.mkdir(parents=True)
+        from transcripcion import ajustes
+        aj=ajustes.para_pruebas(self.base,carpeta_informes=self.base,carpeta_audios_nuevos=self.nuevos)
+        self.addCleanup(S.configurar,S.configurar(aj))      # casos y procesamiento nuevos con estas carpetas
         self.audio=b'RIFF'+(100).to_bytes(4,'little')+b'WAVE'+b'\0'*96
         self.huella=hashlib.sha256(self.audio).hexdigest()
         self.parches=ExitStack(); self.addCleanup(self.parches.close)
-        for atributo,valor in [('NUEVOS',self.nuevos),('DATOS',self.datos),('ESTADO',{})]:
-            self.parches.enter_context(patch.object(S,atributo,valor))
-        self.encolar=self.parches.enter_context(patch.object(S,'encolar'))
+        self.encolar=self.parches.enter_context(patch.object(S.PROC,'encolar'))
         self.parches.enter_context(patch.object(S,'anunciar_audio'))
         self.parches.enter_context(patch.object(S.R,'medico_pc',return_value=''))
-        self.parches.enter_context(patch.object(S,'ruta_audio',side_effect=lambda n: next(self.nuevos.glob(n+'.wav'),None)))
+        self.parches.enter_context(patch.object(S.CASOS,'ruta_audio',side_effect=lambda n: next(self.nuevos.glob(n+'.wav'),None)))
         self.h=object.__new__(S.H); self.h.pc='PC-ficticia'
 
     def recibir(self):return self.h._guardar_audio_nuevo('ficticio.wav',self.audio,self.huella)
@@ -54,7 +55,7 @@ class RecepcionTest(unittest.TestCase):
         self.assertIsNone(self.S.R.buscar_huella(self.datos,self.huella))
 
     def test_reintentos_concurrentes_un_solo_audio_y_caso(self):
-        def encolar(n): self.S.ESTADO[n]={'estado':'en cola'}
+        def encolar(n): self.S.PROC.estado[n]={'estado':'en cola'}
         self.encolar.side_effect=encolar
         with ThreadPoolExecutor(max_workers=4) as pool:r=list(pool.map(lambda _:self.recibir(),range(8)))
         self.assertEqual(len({x[0]['nombre'] for x in r}),1)

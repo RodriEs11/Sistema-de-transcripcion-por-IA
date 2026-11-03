@@ -29,8 +29,7 @@ with tempfile.TemporaryDirectory(prefix='ui_usuarios_', dir='respaldo') as c:
     (datos / f'{n}.estilo.txt').write_text('beto', encoding='utf-8')
     with patch.object(CON, 'CONOC', conoc), patch.object(MED, 'DIR_MED', conoc / 'medicos'), \\
          patch.object(U, 'ARCH', c / 'usuarios.json'), patch.object(U, 'CARPETA', conoc / 'usuarios'), \\
-         patch.object(R, 'ARCH_SESIONES', c / 'sesiones.json'), patch.object(S, 'DATOS', datos), \\
-         patch.object(S, 'NUEVOS', c / 'Audios_nuevos'), patch.object(S, 'INFORMES', c / 'Informes'):
+         patch.object(R, 'ARCH_SESIONES', c / 'sesiones.json'):
         U.crear('Ana Prueba', 'inicial1'); U.crear('Beto', 'inicial2')
         MED.guardar_medico('Dr. Ficticio', 'Notas generales.', crear=True)
         http = S.ThreadingHTTPServer(('127.0.0.1', 0), S.H)

@@ -358,8 +358,8 @@ class HttpTest(Base):
         (datos / f"{n}.dictado.txt").write_text("mamografía densidad b", encoding="utf-8")
         (datos / f"{n}.usuario.txt").write_text("beto", encoding="utf-8")
         cola = MagicMock()
-        for obj, nombre, valor in ((S, "DATOS", datos), (S, "INFORMES", self.d / "Informes"), (S, "APRENDIZAJE", cola),
-                                   (L, "CARPETA", self.d / "registros")):
+        self.assertEqual(datos, S.CASOS.datos)      # la carpeta que configuró Base (ajustes.para_pruebas)
+        for obj, nombre, valor in ((S, "APRENDIZAJE", cola), (L, "CARPETA", self.d / "registros")):
             p = patch.object(obj, nombre, valor); p.start(); self.addCleanup(p.stop)
         U.crear("Ana", "inicial1"); U.crear("Beto", "inicial1")
         _, _, galleta = self.entrar("ana", "inicial1")

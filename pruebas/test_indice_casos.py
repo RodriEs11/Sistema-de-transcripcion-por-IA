@@ -34,13 +34,15 @@ class IndiceTest(unittest.TestCase):
     def test_listado_invalida_metadatos_y_no_cachea_permisos(self):
         import servidor as S
         import json
+        from transcripcion import ajustes
         with tempfile.TemporaryDirectory() as carpeta:
-            datos = Path(carpeta) / 'datos'; datos.mkdir()
-            audios = Path(carpeta) / 'audios'; audios.mkdir()
+            aj = ajustes.para_pruebas(Path(carpeta))
+            ajustes.preparar_carpetas(aj); datos = aj.datos
+            self.addCleanup(S.configurar, S.configurar(aj))      # casos y procesamiento con estas carpetas
             (datos/'ficticio.informe_ia.txt').write_text('Informe ficticio', encoding='utf-8')
             (datos/'ficticio.paciente.json').write_text(json.dumps({'p':'Persona ficticia','manual':True}), encoding='utf-8')
             (datos/'ficticio.medico.txt').write_text('Dr. Uno', encoding='utf-8')
-            with patch.object(S,'DATOS',datos), patch.object(S,'NUEVOS',audios), patch.object(S,'INDICE_CASOS',IndiceCasos()), patch.object(S.R,'bloqueado_por',return_value=None) as permiso:
+            with patch.object(S.CASOS,'indice',IndiceCasos()), patch.object(S.R,'bloqueado_por',return_value=None) as permiso:
                 self.assertEqual(S.listar_casos()[0]['medico'],'Dr. Uno')
                 permiso.return_value='Otra PC'
                 self.assertEqual(S.listar_casos()[0]['bloqueado_por'],'Otra PC')

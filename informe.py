@@ -21,6 +21,7 @@ import time
 from pathlib import Path
 
 from transcripcion import ajustes
+from transcripcion.casos.repositorio import EXT_AUDIO
 from transcripcion.conocimiento import archivos as CON
 from transcripcion.controles import avisos as AV
 from transcripcion.controles import marcas as MAR
@@ -37,7 +38,6 @@ except Exception:
     pass
 
 AQUI = Path(__file__).resolve().parent
-EXT_AUDIO = {".wav", ".mp3", ".m4a", ".ogg", ".flac", ".wma", ".aac", ".opus"}
 
 
 def config():
