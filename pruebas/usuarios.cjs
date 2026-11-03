@@ -35,7 +35,8 @@ with tempfile.TemporaryDirectory(prefix='ui_usuarios_', dir='respaldo') as c:
         sys.stdin.readline()
         print(json.dumps({'general': N.leer('plantillas.md'), 'propias': U.leer_archivo('ana-prueba', 'plantillas.md'),
                           'notas': N.notas_medico('Dr. Ficticio'), 'notas_ana': N.notas_medico('Dr. Ficticio', 'ana-prueba'),
-                          'formato': U.formato('ana-prueba'), 'prefs': U.preferencias('ana-prueba')}))
+                          'formato': U.formato('ana-prueba'), 'prefs': U.preferencias('ana-prueba'),
+                          'reglas': U.leer_archivo('ana-prueba', 'reglas_dictado.md')}))
         sys.stdout.flush()
         http.shutdown(); http.server_close(); hilo.join()
 `;
@@ -82,6 +83,34 @@ setTimeout(()=>{console.error('La prueba de transcriptores tardó demasiado.'); 
     await page.locator('#mfTamano').selectOption('11');
     await page.getByRole('button',{name:'Guardar formato'}).click();
     await page.getByText('✓ Guardado',{exact:false}).first().waitFor();
+    // reglas propias: añadir varias en una ventana, editar y quitar
+    await page.locator('#mrLista li.vacio').waitFor();
+    await page.getByRole('button',{name:'Añadir regla'}).click();
+    await page.locator('#rdFilas input').first().fill('Regla uno de Ana');
+    await page.keyboard.press('Enter');
+    await page.locator('#rdFilas input').nth(1).fill('Regla dos de Ana');
+    await page.getByRole('button',{name:'+ Otra regla'}).click();
+    await page.locator('#rdFilas input').nth(2).fill('Regla tres de Ana');
+    await foto('2a-reglas');
+    await page.locator('#rdSi').click();
+    await page.getByText('3 reglas agregadas.',{exact:false}).waitFor();
+    assert.equal(await page.locator('#mrLista li').count(),3);
+    assert.equal(await page.locator('#reglasDlg').isVisible(),false);
+    assert.equal(await page.locator('#config').isVisible(),true);
+    await page.waitForTimeout(200); await foto('2b-mi-cuenta');
+    await page.locator('#mrLista li',{hasText:'Regla dos'}).getByRole('button',{name:'Editar'}).click();
+    await page.locator('#rdFilas input').fill('Regla dos corregida');
+    await page.keyboard.press('Enter');
+    await page.locator('#mrLista li',{hasText:'Regla dos corregida'}).waitFor();
+    await page.locator('#mrLista li',{hasText:'Regla tres'}).getByRole('button',{name:'Quitar'}).click();
+    await page.locator('#cfSi').click();
+    await page.getByText('Regla quitada.',{exact:false}).waitFor();
+    assert.equal(await page.locator('#mrLista li').count(),2);
+    // Esc cierra la ventana de reglas sin cerrar la configuración
+    await page.getByRole('button',{name:'Añadir regla'}).click();
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#reglasDlg').isVisible(),false);
+    assert.equal(await page.locator('#config').isVisible(),true);
     await page.locator('#cfgListo').click();
     assert.equal(await page.locator('#config').isVisible(),false);
     // 3) plantillas: guardar solo para mí
@@ -137,6 +166,7 @@ setTimeout(()=>{console.error('La prueba de transcriptores tardó demasiado.'); 
     assert.equal(final.notas_ana,'Notas de Ana.');
     assert.deepEqual(final.formato,{tamano_fuente:11});
     assert.equal(final.prefs.pref_salto,'5');
+    assert.equal(final.reglas.trim(),'- Regla uno de Ana\n- Regla dos corregida');
     console.log('Transcriptores: entrar, contraseña inicial, plantillas y notas propias, formato, aviso de estilo, preferencias y salir OK.');
   } finally {
     if(browser) await browser.close();
