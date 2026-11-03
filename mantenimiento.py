@@ -32,7 +32,7 @@ EXTRA = ("configuracion.json",)       # se lee solo al arrancar
 _SIN_VENTANA = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 _lock = threading.Lock()
-CARGADO = {}          # "nucleo.py", "transcripcion/base/registro.py" -> {"hash", "t"}: versión que usa el servidor
+CARGADO = {}          # "servidor.py", "transcripcion/base/registro.py" -> {"hash", "t"}: versión que usa el servidor
 _LOCALES = {}         # módulo del sistema -> archivo ("transcripcion.base.registro" -> "transcripcion/base/registro.py")
 PAQUETE = "transcripcion"   # paquete con los módulos del sistema (docs/refactor.md)
 _HASH = {}            # ruta -> ((tamaño, mtime), hash): no volver a leer archivos que no cambiaron

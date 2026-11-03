@@ -60,7 +60,7 @@ if ! "$PY" -m pip install -r requirements.txt; then
 fi
 
 # configuracion.json y conocimiento/ (se crean desde los ejemplos si faltan)
-"$PY" -c "import informe, nucleo; informe.config()" || { error "No se pudo preparar la configuración."; exit 1; }
+"$PY" -c "import informe; from transcripcion.conocimiento import archivos; informe.config(); archivos.preparar_conocimiento()" || { error "No se pudo preparar la configuración."; exit 1; }
 chmod +x ./*.sh 2>/dev/null
 
 # ---------------------------------------------------------------- placa de video

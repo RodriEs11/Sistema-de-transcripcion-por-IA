@@ -20,6 +20,8 @@ configuracion.json
 # --- Datos clínicos y derivados (NUNCA se suben) ----------------------
 # plantillas reales, notas de médicos, correcciones aprendidas
 conocimiento/
+# …salvo el CÓDIGO que maneja el conocimiento (paquete, sin datos): pruebas/test_paquete.py lo verifica
+!/transcripcion/conocimiento/
 # pares dictado → informe de pacientes reales
 ejemplos/
 # informes Word reales convertidos a texto
