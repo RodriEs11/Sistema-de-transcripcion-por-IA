@@ -75,6 +75,10 @@ todos juntas: una frase de la plantilla de cualquiera es frase de plantilla.
 - **Vincular una PC nueva:** nombre de la PC + usuario y contraseña de cualquier transcriptor. Las PC ya vinculadas
   siguen funcionando. Requiere la app con el campo «Tu usuario» (cambio en `VentanaVincular.cs`); la app 1.22 solo
   puede vincular mientras no haya transcriptores.
+- **Cerrar la ventana de la app = cerrar la sesión.** La app sigue junto al reloj tomando audios, pero al cerrar su
+  ventana llama a `window.salirDeSesion()` de la página: cierra el estudio abierto guardando los cambios (si no
+  puede, no cierra la sesión) y va a `/salir`. Lo mismo al elegir «Salir» en el ícono. Sin esto la sesión no
+  terminaría nunca, porque la app casi nunca se cierra del todo. Requiere la app nueva.
 - Cinco contraseñas mal desde la misma IP (o con el mismo usuario en la PC del servidor) bloquean 10 minutos.
 
 ### Generar
@@ -107,13 +111,17 @@ python crear_entorno_pruebas.py --rama exp/estilos-por-transcriptor --destino ..
 En el entorno de pruebas no hay `usuarios.json`: el sistema arranca como antes. Crear transcriptores desde el panel
 (`http://127.0.0.1:8875/admin`) y entrar con cada uno en navegadores distintos.
 
+Para probar también la app, en la misma PC: ver [experimentos.md](experimentos.md#probar-la-app-del-trabajo)
+(perfil de pruebas, no pisa a la app de producción).
+
 Pruebas automáticas: `pruebas/test_usuarios.py` (usuarios, sesiones, capas, ejemplos, correcciones y HTTP) y
 `pruebas/usuarios.cjs` (navegador: entrar, contraseña inicial, plantillas y notas propias, formato, aviso de estilo,
 preferencias y salir).
 
 ## Para promover a `main`
 
-- Versiones: servidor (nuevo comportamiento y APIs) **y** app (cambia `web/index.html` y `VentanaVincular.cs`).
+- Versiones: servidor (nuevo comportamiento y APIs) **y** app (cambian `web/index.html`, `VentanaVincular.cs` y
+  `VentanaPrincipal.cs`: cerrar la ventana cierra la sesión; `Programa.cs`: perfil de pruebas).
 - Compilar la app y probar la vinculación con usuario en Windows real.
 - `preparar_activacion.py` / rollback: incluir `usuarios.json` y `sesiones.json` en los respaldos.
 - Orden de activación: actualizar las PC a la app nueva **antes** de crear el primer transcriptor (la 1.22 no

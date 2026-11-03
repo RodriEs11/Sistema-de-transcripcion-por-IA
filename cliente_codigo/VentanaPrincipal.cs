@@ -97,7 +97,7 @@ namespace Transcripcion
         {
             iniciarOculta = oculta;
             relojEstado = new RelojUi(this, 10000);
-            Text = "Transcripción — " + Config.Pc;
+            Text = Config.NombreVisible + " — " + Config.Pc;
             Font = Estilo.Fuente;
             BackColor = Estilo.Fondo;
             AutoScaleMode = AutoScaleMode.Font;
@@ -191,14 +191,21 @@ namespace Transcripcion
             FormClosing += (s, e) =>
             {
                 if (!saliendo && e.CloseReason == CloseReason.UserClosing)
-                {   // cerrar = esconder; sigue tomando audios
+                {   // cerrar = esconder; sigue tomando audios. Con transcriptores, además se cierra la sesión de la
+                    // persona (así el siguiente entra con su usuario y los audios nuevos no se arman con su estilo)
                     e.Cancel = true; Hide();
-                    if (!avisoBandejaMostrado)
+                    CerrarSesionUsuario().ContinueWith(t =>
                     {
-                        avisoBandejaMostrado = true;
-                        Notificaciones.Globo(bandeja, 5000, "Transcripción sigue funcionando",
-                            "Los audios se siguen enviando. Para abrirla, hacé doble clic en el ícono junto al reloj.");
-                    }
+                        bool cerro = t.Status == TaskStatus.RanToCompletion && t.Result;
+                        EnPantalla(() =>
+                        {
+                            if (avisoBandejaMostrado && !cerro) return;
+                            avisoBandejaMostrado = true;
+                            Notificaciones.Globo(bandeja, 5000, Config.NombreVisible + " sigue funcionando",
+                                (cerro ? "Tu sesión se cerró: la próxima vez se entra con usuario y contraseña. " : "")
+                                + "Los audios se siguen enviando. Para abrirla, hacé doble clic en el ícono junto al reloj.");
+                        });
+                    });
                 }
             };
         }
@@ -690,7 +697,7 @@ namespace Transcripcion
             m.Items.Add("Salir", null, (s, e) => Salir());
             bandeja.ContextMenuStrip = m;
             bandeja.Icon = Estilo.Icono(Estilo.Ambar);
-            bandeja.Text = "Transcripción";
+            bandeja.Text = Config.NombreVisible;
             bandeja.Visible = true;
             bandeja.DoubleClick += (s, e) => Mostrar();
             bandeja.BalloonTipClicked += (s, e) => Mostrar();
@@ -745,9 +752,33 @@ namespace Transcripcion
                 MessageBox.Show(this, "Hay audios que todavía no llegaron al Servidor. Si salís, se envían la próxima vez que abras la aplicación.\n\n¿Salir igual?",
                     "Transcripción", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
             saliendo = true;
+            await CerrarSesionUsuario(true);
             bandeja.Visible = false;
             vigilante.Dispose();
             Application.Exit();
+        }
+
+        // Cierra la sesión del transcriptor en la página (window.salirDeSesion de web/index.html). La página cierra
+        // antes el estudio abierto guardando sus cambios; si no puede, no cierra la sesión. Devuelve true si había una
+        // sesión de transcriptor y se pidió cerrarla. Con un Servidor sin transcriptores (o una página anterior) no
+        // hace nada.
+        async Task<bool> CerrarSesionUsuario(bool esperar = false)
+        {
+            if (!webLista || web.CoreWebView2 == null) return false;
+            try
+            {
+                var pedido = web.CoreWebView2.ExecuteScriptAsync(
+                    "typeof window.salirDeSesion==='function' && window.salirDeSesion()===true");
+                if (await Task.WhenAny(pedido, Task.Delay(3000)) != pedido) return false;
+                bool cerro = await pedido == "true";
+                if (cerro)
+                {
+                    Registro.Escribir("Ventana cerrada: se cierra la sesión del transcriptor.");
+                    if (esperar) await Task.Delay(2500);       // que el pedido de /salir llegue antes de terminar
+                }
+                return cerro;
+            }
+            catch (Exception ex) { Registro.Escribir("No se pudo cerrar la sesión del transcriptor: " + ex.Message); return false; }
         }
 
         // ------------------------------------------------------------ actualización automática
@@ -1417,7 +1448,7 @@ namespace Transcripcion
                 {
                     if (f.ShowDialog(this) != DialogResult.OK) { saliendo = true; Application.Exit(); return; }
                 }
-                Text = "Transcripción — " + Config.Pc;
+                Text = Config.NombreVisible + " — " + Config.Pc;
                 urlCargada = null; primeraLectura = true;
                 cola.Despertar();
                 relojEstado.Start();
