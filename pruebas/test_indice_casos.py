@@ -43,10 +43,10 @@ class IndiceTest(unittest.TestCase):
             (datos/'ficticio.paciente.json').write_text(json.dumps({'p':'Persona ficticia','manual':True}), encoding='utf-8')
             (datos/'ficticio.medico.txt').write_text('Dr. Uno', encoding='utf-8')
             with patch.object(S.CASOS,'indice',IndiceCasos()), patch.object(S.R,'bloqueado_por',return_value=None) as permiso:
-                self.assertEqual(S.listar_casos()[0]['medico'],'Dr. Uno')
+                self.assertEqual(S.VISTA.listar_casos()[0]['medico'],'Dr. Uno')
                 permiso.return_value='Otra PC'
-                self.assertEqual(S.listar_casos()[0]['bloqueado_por'],'Otra PC')
+                self.assertEqual(S.VISTA.listar_casos()[0]['bloqueado_por'],'Otra PC')
                 (datos/'ficticio.medico.txt').write_text('Dra. Modificada', encoding='utf-8')
-                self.assertEqual(S.listar_casos()[0]['medico'],'Dra. Modificada')
+                self.assertEqual(S.VISTA.listar_casos()[0]['medico'],'Dra. Modificada')
                 (datos/'ficticio.informe_ia.txt').unlink()
-                self.assertEqual(S.listar_casos(),[])
+                self.assertEqual(S.VISTA.listar_casos(),[])
