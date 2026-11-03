@@ -325,6 +325,21 @@ class HttpTest(Base):
         self.pedir("/api/admin/usuarios/activo", {"usuario": "beto", "activo": False})
         self.assertEqual(self.pedir("/api/casos")[0], 200)
 
+    def test_app_conectada_a_127_0_0_1(self):
+        # la app de pruebas en la PC del servidor: los pedidos llegan como locales, con la llave de la PC
+        U.crear("Ana", "inicial1")
+        st, r, _, _ = self.pedir("/api/cliente/vincular", {"pc": "pc-test", "usuario": "ana", "contrasena": "inicial1"})
+        self.assertEqual(st, 200, r)
+        llave = {"Authorization": "Bearer " + r["llave"]}
+        self.assertEqual(self.pedir("/api/cliente/estado", extra=llave)[0], 200)
+        self.assertEqual(self.pedir("/api/cliente/estado")[0], 401)
+        self.assertEqual(self.pedir("/api/casos", extra=llave)[0], 401)       # los informes, solo con usuario
+        cod = self.pedir("/api/cliente/sesion", {}, extra=llave)[1]["codigo"]
+        st, _, loc, galleta = self.pedir("/entrar?codigo=" + cod)
+        self.assertEqual((st, loc), (303, "/"))
+        self.assertNotIn("Secure", galleta)                  # http://127.0.0.1: si no, el navegador la descarta
+        self.assertEqual(self.pedir("/", cookie=galleta.split(";")[0])[2], "/ingresar")
+
     def test_trabajo_usuario_reemplaza_contrasena_compartida(self):
         R.poner_contrasena("compartida1")
         remoto = {"Cf-Ray": "prueba"}
