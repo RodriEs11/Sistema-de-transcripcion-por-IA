@@ -333,11 +333,18 @@ def nuevo_codigo(pc, usuario=None, seg=60):
     return c
 
 
-def canjear_codigo(c, pc_local=None):
-    """pc_local: la app está en la misma PC del servidor (http://127.0.0.1): la sesión es local, con ese nombre."""
+def tomar_codigo(c):
+    """Consume un código de entrada: {"pc", "usuario"} si era válido, o None."""
     with _lock:
         v = CODIGOS.pop(c or "", None)
-    if not v or v["exp"] < time.time():
+    return v if v and v["exp"] >= time.time() else None
+
+
+def canjear_codigo(c, pc_local=None, v=None):
+    """pc_local: la app está en la misma PC del servidor (http://127.0.0.1): la sesión es local, con ese nombre.
+    v: un código ya tomado con tomar_codigo."""
+    v = v or tomar_codigo(c)
+    if not v:
         return None
     usuario = v.get("usuario") if v.get("usuario") and U.existe(v["usuario"]) else None
     return nueva_sesion(pc_local or v["pc"], usuario=usuario, local=bool(pc_local))
@@ -438,6 +445,16 @@ def cerrar_sesiones_usuario(usuario):
         if hs:
             _guardar_sesiones()
     return len(hs)
+
+
+def usuario_de_pc(pc):
+    """Transcriptor con la sesión abierta más reciente en esa PC (aunque no haya consultado hace rato), o None.
+    Lo usa la app al RECONECTARSE (servidor caído o reiniciado, túnel nuevo): la persona no cerró su sesión, así que
+    sigue la misma. Al abrir la app de cero no se usa: ahí se pide el usuario."""
+    ahora = time.time()
+    with _lock:
+        cand = [v for v in SESIONES.values() if v["pc"] == pc and v.get("usuario") and _sesion_vigente(v, ahora)]
+    return max(cand, key=lambda v: v.get("ult", 0))["usuario"] if cand else None
 
 
 def usuario_activo(pc):

@@ -378,6 +378,39 @@ class HttpTest(Base):
                                   extra=remoto)
         self.assertEqual(st, 403)
 
+    def test_servidor_reiniciado_no_pide_entrar_de_nuevo(self):
+        U.crear("Ana", "inicial1")
+        remoto = {"Cf-Ray": "prueba"}
+        st, r, _, _ = self.pedir("/api/cliente/vincular", {"pc": "info-05", "usuario": "Ana", "contrasena": "inicial1"},
+                                 extra=remoto)
+        llave = {"Authorization": "Bearer " + r["llave"], **remoto}
+        galleta = self.pedir("/entrar?codigo=" + r["codigo"], extra=remoto)[3].split(";")[0]
+        self.assertEqual(self.pedir("/api/casos", cookie=galleta, extra=remoto)[0], 200)
+        # el servidor se reinicia: las sesiones se recuperan de sesiones.json
+        R.SESIONES.clear()
+        R.cargar_sesiones()
+        self.assertEqual(self.pedir("/api/casos", cookie=galleta, extra=remoto)[0], 200)
+        # la app vuelve a abrir la pantalla con un código nuevo (app 1.23, sin «reconectar»): se conserva la sesión
+        cod = self.pedir("/api/cliente/sesion", {}, extra=llave)[1]["codigo"]
+        st, _, loc, nueva = self.pedir("/entrar?codigo=" + cod, cookie=galleta, extra=remoto)
+        self.assertEqual((loc, nueva), ("/", ""))
+        self.assertEqual(self.pedir("/api/casos", cookie=galleta, extra=remoto)[0], 200)
+        # dirección nueva del túnel (otra cookie, vacía): con «reconectar» sigue la misma persona
+        cod = self.pedir("/api/cliente/sesion", {"reconectar": True}, extra=llave)[1]["codigo"]
+        st, _, loc, otra = self.pedir("/entrar?codigo=" + cod, extra=remoto)
+        mi = self.pedir("/api/mi_pc", cookie=otra.split(";")[0], extra=remoto)[1]
+        self.assertEqual(mi["usuario"]["nombre"], "Ana")
+        # la app abierta de cero (sin «reconectar») pide el usuario
+        cod = self.pedir("/api/cliente/sesion", {}, extra=llave)[1]["codigo"]
+        st, _, loc, sin = self.pedir("/entrar?codigo=" + cod, extra=remoto)
+        self.assertEqual(self.pedir("/api/mi_pc", cookie=sin.split(";")[0], extra=remoto)[0], 401)
+        # después de «Cerrar sesión», reconectar tampoco devuelve a nadie
+        for g in (galleta, otra.split(";")[0]):
+            self.pedir("/salir", cookie=g, extra=remoto)
+        cod = self.pedir("/api/cliente/sesion", {"reconectar": True}, extra=llave)[1]["codigo"]
+        st, _, loc, sin = self.pedir("/entrar?codigo=" + cod, extra=remoto)
+        self.assertEqual(self.pedir("/api/mi_pc", cookie=sin.split(";")[0], extra=remoto)[0], 401)
+
     def test_app_conectada_a_127_0_0_1(self):
         # la app de pruebas en la PC del servidor: los pedidos llegan como locales, con la llave de la PC
         U.crear("Ana", "inicial1")

@@ -74,6 +74,7 @@ namespace Transcripcion
         int consultando = 0;   // consultas al Servidor en curso (una forzada puede ir junto a otra)
         bool avisoBandejaMostrado = false, pidiendoVincular = false;
         string urlCargada = null;
+        bool yaEntro = false;      // la pantalla ya se abrió una vez en esta ejecución: las siguientes son reconexiones
         // 1.11: la pantalla del Servidor no cargó (error de Cloudflare o sin conexión): se muestra el cartel propio
         bool webCaida = false;
         string navActual = null;                  // dirección de la página que se está abriendo
@@ -635,13 +636,13 @@ namespace Transcripcion
             Config.CodigoInicial = "";
             if (codigo == "")
             {
-                var r = await Servidor.Sesion(Config.Url);
+                var r = await Servidor.Sesion(Config.Url, yaEntro);
                 if (r.Codigo == 401) { PedirVincularDeNuevo(); return; }
                 if (!r.Ok) { Registro.Escribir("No pude abrir la sesión: " + r.Error); return; }
                 codigo = r.Texto("codigo");
             }
             string destino = Config.Url + "/entrar?codigo=" + Uri.EscapeDataString(codigo);
-            urlCargada = Config.Url;
+            urlCargada = Config.Url; yaEntro = true;
             if (webFalla) { edgePendiente = destino; return; }
             if (web.CoreWebView2 != null) web.CoreWebView2.Navigate(destino);
         }

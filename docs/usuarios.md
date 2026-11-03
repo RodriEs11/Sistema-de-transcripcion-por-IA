@@ -76,6 +76,11 @@ todos juntas: una frase de la plantilla de cualquiera es frase de plantilla.
   de Windows). El Servidor devuelve además un código de un solo uso con ese usuario, así que la página abre ya con
   esa persona: no se le vuelve a pedir el usuario. Las PC ya vinculadas siguen funcionando. Requiere la app con el campo «Tu usuario» (cambio en `VentanaVincular.cs`); la app 1.22 solo
   puede vincular mientras no haya transcriptores.
+- **Si el servidor se cae o se reinicia, no hay que volver a entrar** (Servidor 2026.11.2 · App 1.24). Las sesiones
+  se guardan en `sesiones.json` y, cuando la app vuelve a abrir la pantalla con un código nuevo, el servidor conserva
+  la sesión que la pantalla ya tenía. Si la pantalla perdió su cookie (dirección nueva del túnel), la app pide el
+  código con `reconectar` y vuelve la persona que tenía la sesión abierta en esa PC. Al abrir la app de cero, después
+  de «Cerrar sesión» o con la sesión vencida, se pide el usuario.
 - **Cerrar la ventana de la app no cierra la sesión.** La app queda junto al reloj tomando audios y, al volver a
   abrirla, sigue la misma persona (los audios que toma mientras tanto se arman con su estilo).
 - **Opciones ▾ (y el ícono junto al reloj):** **Cerrar sesión** sale la persona y la app queda abierta pidiendo usuario

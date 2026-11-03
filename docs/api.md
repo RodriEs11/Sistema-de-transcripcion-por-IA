@@ -71,11 +71,11 @@ Los casos se identifican con el parámetro o campo `nombre` (validado: sin rutas
 | Método | Ruta | Descripción |
 |---|---|---|
 | POST | `/api/cliente/vincular` | `{pc, usuario, contrasena}`: vincula una PC con el usuario y la contraseña de un transcriptor (sin transcriptores: `usuario` vacío y la contraseña del sistema) y devuelve su llave (con usuario, también `codigo`: entrada de un solo uso que abre la página ya con ese transcriptor). La llave sola solo sirve para enviar audios, consultar el estado y actualizarse |
-| POST | `/api/cliente/sesion` | Código de un solo uso para abrir la interfaz |
 | GET | `/api/cliente/estado` | Estado del servidor y `app: {version, huella}` |
 | POST | `/api/cliente/audio` | Envío de un audio tomado de `%TEMP%` o de la cola. Recibo confirmado: `{ok:true, nombre, duplicado}` después de publicar audio/metadatos, huella y encolado; la cola conserva el cifrado si falta esa confirmación. |
 | GET | `/api/cliente/actualizacion` | Manifiesto de la carpeta `cliente\` (SHA-256 por archivo) |
 | GET | `/api/cliente/archivo?ruta=` | Descarga de un archivo del manifiesto |
+| POST | `/api/cliente/sesion` | Código de entrada de un solo uso (con la llave). `{"reconectar": true}`: con la persona que tenía la sesión abierta en esa PC |
 | POST | `/api/cliente/aviso` | La app informa un problema (queda en el registro) |
 
 ## Administración

@@ -65,7 +65,7 @@ for d in (NUEVOS, DATOS):
     d.mkdir(parents=True, exist_ok=True)
 
 SIMULAR = os.environ.get("SIMULAR_IA") == "1"   # solo para pruebas
-VERSION = "2026.11.1"
+VERSION = "2026.11.2"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
@@ -2090,7 +2090,13 @@ class H(BaseHTTPRequestHandler):
             return
         if u.path == "/entrar":
             cod = q.get("codigo", [""])[0]
-            sid = R.canjear_codigo(cod, pc_local=None if self.remoto else LOCAL)
+            v = R.tomar_codigo(cod) if cod else None
+            if v and self.usuario and v.get("usuario") in (None, self.usuario):
+                # la app volvió a entrar (p. ej. después de que el servidor se cayó o se reinició) y esta pantalla ya
+                # tiene la sesión de un transcriptor: se conserva, no se la cambia por una sesión sin usuario
+                L.info("ACCESO", f"{self.quien} volvió a conectarse con su sesión (IP {self._ip()}).")
+                return self._redirigir("/")
+            sid = R.canjear_codigo(cod, pc_local=None if self.remoto else LOCAL, v=v) if v else None
             if sid:
                 v = R.sesion(sid) or {}
                 if v.get("usuario"):
@@ -2380,7 +2386,11 @@ class H(BaseHTTPRequestHandler):
                         L.aviso("ACCESO", f"Una aplicación con una llave no autorizada (¿PC anulada?) intentó "
                                           f"entrar desde la IP {self._ip()}.")
                     return self._json({"error": "Esta PC no está autorizada"}, 401)
-                return self._json({"ok": True, "codigo": R.nuevo_codigo(self.pc)})
+                d = json.loads(self._body(16 * 1024) or b"{}")
+                # «reconectar»: la app ya estaba abierta y volvió a conectarse (servidor caído o reiniciado, dirección
+                # nueva del túnel): sigue la persona que tenía la sesión abierta en esta PC, sin pedirle el usuario
+                usu = R.usuario_de_pc(self.pc) if isinstance(d, dict) and d.get("reconectar") is True else None
+                return self._json({"ok": True, "codigo": R.nuevo_codigo(self.pc, usuario=usu)})
             if u.path == "/api/cliente/aviso":
                 # la app avisa algo que conviene ver en el servidor (ej. una actualización que no abrió)
                 d = json.loads(self._body(16 * 1024) or b"{}")
