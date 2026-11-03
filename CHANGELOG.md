@@ -9,6 +9,12 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## Instalación — 2026-11-03
+- `iniciar_servidor.bat` e `interfaz.bat` ponen `.venv\Scripts` al principio del PATH después de activar el entorno.
+  Si la carpeta se mueve de unidad (D: → E:), `activate.bat` conserva la ruta vieja y `python` terminaba siendo el
+  del sistema (`No module named 'numpy'`). El arreglo ya estaba aplicado a mano en la instalación desde el 01/11.
+  Sin cambios de versión.
+
 ## [Servidor 2026.11.1] — 2026-11-02
 
 Promovido desde la rama `experimental` (PR #9, probado en el entorno de pruebas). Sin transcriptores

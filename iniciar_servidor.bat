@@ -22,6 +22,7 @@ if not exist "cloudflared.exe" (
   )
 )
 call ".venv\Scripts\activate.bat"
+set "PATH=%~dp0.venv\Scripts;%PATH%"
 python -c "import docx" 2>nul || python -m pip install -q python-docx
 python servidor.py --tunel %* --sin-navegador
 rem REINICIO-DESDE-EL-PANEL: el panel de administracion cierra el servidor con el codigo 75
