@@ -42,29 +42,28 @@ import registro as L
 import remoto as R
 import usuarios as U
 import voces as VOZ
-from informe import config, escribir_docx, parrafos_docx, pagina, aplicar_formato, texto_parrafo, EXT_AUDIO
-
-try:
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except Exception:
-    pass
+import ajustes
+from informe import escribir_docx, parrafos_docx, pagina, aplicar_formato, texto_parrafo, EXT_AUDIO
 
 AQUI = Path(__file__).resolve().parent
 WEB = AQUI / "web"
-PUERTO = int(os.environ.get("PUERTO_INTERFAZ", "8765"))
 RECIBIR_AUDIO_LOCK = threading.RLock()
+
+# Ajustes del arranque. Importar este módulo no lee la configuración ni crea carpetas: los completa
+# configurar(), que llama main() (o una prueba con ajustes.para_pruebas). Ver docs/refactor.md, etapa 1.
+AJUSTES = None
+CFG = None            # configuracion.json ya leída
+NUEVOS = None         # carpeta de audios nuevos
+INFORMES = None       # carpeta de los Word
+DATOS = None          # Informes/revision/datos: archivos de cada caso
+PUERTO = None         # interfaz web local
 # Puerto propio del túnel de Microsoft (Dev Tunnels): todo lo que entra por acá es de las PC del trabajo,
 # tenga los encabezados que tenga. Solo escucha en 127.0.0.1 y solo con ese túnel elegido.
-PUERTO_TUNEL = int(os.environ.get("PUERTO_TUNEL", str(PUERTO + 1)))
-CFG = config()
-NUEVOS = CFG["carpeta_audios_nuevos"]
-INFORMES = CFG["carpeta_informes"]
-DATOS = INFORMES / "revision" / "datos"
-for d in (NUEVOS, DATOS):
-    d.mkdir(parents=True, exist_ok=True)
-
-SIMULAR = os.environ.get("SIMULAR_IA") == "1"   # solo para pruebas
-VERSION = "2026.11.2"
+PUERTO_TUNEL = None
+SIMULAR = False       # SIMULAR_IA=1: sin Whisper ni Ollama (solo para pruebas)
+COLA_AL_REINICIAR = None
+APRENDIZAJE = None    # cola persistente de aprendizaje (se crea en configurar)
+VERSION = "2026.11.3"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
@@ -1389,7 +1388,6 @@ def abrir_tunel():
 TRABAJO = {"ocupado": False, "esperando_ia": False, "desde": None, "en_pausa": None}
 REINICIO = {}       # reinicio programado desde el panel: id, cuando, estado (programado|esperando|reiniciando)...
 MENSAJE = {}        # cartel en la pantalla de todas las PC: id, texto, tipo, desde, hasta, por, reinicio
-COLA_AL_REINICIAR = INFORMES / "revision" / "cola_al_reiniciar.json"
 _MSJ_LOCK = threading.Lock()
 _REI_LOCK = threading.Lock()
 TEXTO_REINICIO = ("Guardá lo que estés haciendo. El informe abierto se guarda solo; en un minuto el sistema "
@@ -1839,7 +1837,23 @@ def analizar_aprendizaje():
     analizar_correcciones()
 
 
-APRENDIZAJE = ColaAprendizaje(DATOS / "_aprendizaje", aplicar_aprendizaje, analizar_aprendizaje)
+def configurar(aj):
+    """Toma los ajustes (de ajustes.cargar() en main, o de ajustes.para_pruebas en una prueba).
+    No crea carpetas ni arranca hilos: eso lo hace main(). Devuelve los ajustes anteriores, para que una
+    prueba los restaure con configurar(anteriores); configurar(None) deja todo sin configurar."""
+    global AJUSTES, CFG, NUEVOS, INFORMES, DATOS, PUERTO, PUERTO_TUNEL, SIMULAR, COLA_AL_REINICIAR, APRENDIZAJE
+    anteriores = AJUSTES
+    AJUSTES = aj
+    if aj is None:
+        CFG = NUEVOS = INFORMES = DATOS = PUERTO = PUERTO_TUNEL = COLA_AL_REINICIAR = APRENDIZAJE = None
+        SIMULAR = False
+        return anteriores
+    CFG = aj.cfg
+    NUEVOS, INFORMES, DATOS = aj.audios_nuevos, aj.informes, aj.datos
+    PUERTO, PUERTO_TUNEL, SIMULAR = aj.puerto, aj.puerto_tunel, aj.simular_ia
+    COLA_AL_REINICIAR = INFORMES / "revision" / "cola_al_reiniciar.json"
+    APRENDIZAJE = ColaAprendizaje(DATOS / "_aprendizaje", aplicar_aprendizaje, analizar_aprendizaje)
+    return anteriores
 
 
 def _finalizar(nombre, texto, quien=LOCAL, usuario=None):
@@ -3299,7 +3313,14 @@ def filas_encabezado(url, tunel):
 
 
 def main():
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
     titulo = M.titulo_consola()          # antes de que el servidor cambie el título de la ventana
+    configurar(ajustes.cargar(AQUI))
+    ajustes.preparar_carpetas(AJUSTES)
+    N.preparar_conocimiento()
     L.configurar()
     srv = None
     for intento in range(6):             # al reiniciar desde el panel, Windows puede tardar un instante en soltar el puerto

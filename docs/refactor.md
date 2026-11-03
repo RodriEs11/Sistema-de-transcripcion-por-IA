@@ -74,7 +74,8 @@ Los nombres son orientativos: cada etapa puede ajustarlos y lo deja escrito acá
    - `pruebas/test_contrato_nucleo.py`: marcas, prompt, normalización, orden y párrafos del Word.
 
    Si un contrato falla, el refactor cambió algo: se corrige el refactor, no el contrato. El único archivo de los
-   contratos que puede cambiar es `pruebas/contratos/calcular_nucleo.py`, y solo en sus imports.
+   contratos que puede cambiar es `pruebas/contratos/calcular_nucleo.py`, y solo en sus imports y en `preparar()`
+   (lo que un punto de entrada hace antes de usar el núcleo).
 4. **Las pruebas existentes se migran en el mismo PR** que mueve lo que prueban (dejan de parchear globales y
    pasan a construir los objetos que necesitan).
 5. **Versión**: un refactor que cambia código que corre en el servidor sube la versión del servidor
@@ -90,7 +91,7 @@ Los nombres son orientativos: cada etapa puede ajustarlos y lo deja escrito acá
 | # | Etapa | Qué se hace | Riesgo | Versión |
 |---|---|---|---|---|
 | 0 | **Red de seguridad** | Contratos HTTP y del núcleo, ruff mínimo en el CI, este plan y el ADR 0001 | Nulo (solo pruebas y docs) | — |
-| 1 | **Ajustes y arranque sin efectos** | `transcripcion/ajustes.py`; `servidor.py` deja de leer config y crear carpetas al importarse (todo pasa a `main()`); la descarga del modelo de voz se vuelve configurable; prueba «importar no escribe nada» | Medio | Servidor |
+| 1 | **Ajustes y arranque sin efectos** | `ajustes.py` (pasa a `transcripcion/` en la etapa 2); `servidor.py` y `nucleo.py` dejan de leer config y crear carpetas al importarse (todo pasa al arranque); prueba «importar no escribe nada» | Medio | Servidor |
 | 2 | **Paquete y carpetas** | Crear `transcripcion/` y mover los módulos que ya son independientes (plataforma, persistencia, registro, borradores, paciente, índice, cola, lotes, caché, almacén de aprendizaje, usuarios). Scripts a `scripts/` y `herramientas/` dejando lanzadores en la raíz. Adaptar `mantenimiento.py` (detección de código cambiado), `crear_entorno_pruebas.py`, el CI y `verificar_paquete.py` | Medio (muchos imports) | Servidor |
 | 3 | **Núcleo** | `nucleo.py` → `ia/` (ollama, plantillas, ejemplos, prompt) y `controles/` (marcas, clínicos, omisiones, orden). Guardia: contrato del núcleo | Bajo | Servidor |
 | 4 | **Transcripción** | `fase1_transcribir.py` → `asr/whisper.py` y `texto/normalizacion.py`; los reportes de evaluación a `herramientas/` | Bajo | Servidor |
@@ -107,8 +108,24 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 
 | Etapa | Rama / PR | Estado |
 |---|---|---|
-| 0 | `test/red-de-seguridad-refactor` | En revisión |
-| 1–9 | — | Pendiente |
+| 0 | `test/red-de-seguridad-refactor` · PR #13 | Hecha (fusionada el 03/11) |
+| 1 | `refactor/1-ajustes-sin-efectos` · Servidor 2026.11.3 | En revisión |
+| 2–9 | — | Pendiente |
+
+### Etapa 1: qué quedó
+
+- `ajustes.py`: `Ajustes` (dataclass inmutable con `cfg`, carpetas, puertos y modo simulado), `cargar()`,
+  `leer_config(crear=False)` para validar sin escribir, `preparar_carpetas()` y `para_pruebas(carpeta)`.
+- `servidor.configurar(ajustes)` completa las globales que antes se calculaban al importar (`CFG`, `NUEVOS`,
+  `INFORMES`, `DATOS`, puertos, `SIMULAR`, `COLA_AL_REINICIAR`, `APRENDIZAJE`) y devuelve las anteriores.
+  `main()` hace `configurar(ajustes.cargar())`, `preparar_carpetas()` y `nucleo.preparar_conocimiento()`.
+  Las globales siguen existiendo: desaparecen en la etapa 5, cuando cada parte pase a ser un objeto.
+- `nucleo.preparar_conocimiento()` (antes `_preparar_conocimiento()` al importar) la llaman `servidor`,
+  `informe` y `aprender` al arrancar.
+- `mantenimiento.prueba_de_arranque()` valida `configuracion.json` aparte, porque importar ya no lo hace.
+- Lo que apareció: cinco pruebas usaban sin querer las carpetas reales (Word de prueba en `Informes`, registros,
+  `cliente/conexion.json`, plantillas reales). Se corrigieron y ahora la suite completa no deja nada fuera de
+  `respaldo/`. Queda para más adelante: `sys.stdout.reconfigure` al importar en algunos scripts (no escribe archivos).
 
 ## Red de seguridad (etapa 0)
 

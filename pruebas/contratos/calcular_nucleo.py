@@ -4,7 +4,8 @@ Lo ejecuta test_contrato_nucleo.py dentro de una COPIA del sistema en una carpet
 conocimiento de ejemplo y sin ejemplos aprendidos. Imprime un JSON por la salida estándar.
 
 Durante el refactor (docs/refactor.md) este es el ÚNICO archivo que cambia cuando una función se mueve de
-módulo: se actualizan los imports de acá abajo y el resultado esperado (nucleo_esperado.json) debe quedar igual.
+módulo: se actualizan los imports y la preparación de acá abajo, y el resultado esperado
+(nucleo_esperado.json) debe quedar igual.
 """
 import json
 from pathlib import Path
@@ -16,8 +17,13 @@ sys.path.insert(0, str(AQUI))
 # --- Dónde vive cada función hoy. Al mover código, cambiar solo estas líneas. ---------------------------------
 from fase1_transcribir import normalizar, palabras_a_numeros, datos_criticos   # noqa: E402
 from nucleo import (marcar, a_html, contar_marcas, omisiones, ordenar_estudios,   # noqa: E402
-                    estudios_sin_plantilla, armar_mensajes, elegir_ejemplos, categorias)
+                    estudios_sin_plantilla, armar_mensajes, elegir_ejemplos, categorias, preparar_conocimiento)
 from informe import config, parrafos_docx   # noqa: E402
+
+
+def preparar():
+    """Lo que hace un punto de entrada antes de usar el núcleo (desde la etapa 1, no al importar)."""
+    preparar_conocimiento()
 # ----------------------------------------------------------------------------------------------------------------
 
 
@@ -29,6 +35,7 @@ def _json(x):
 def main():
     casos = json.loads((AQUI / "casos_nucleo.json").read_text(encoding="utf-8"))
     cfg = config()
+    preparar()
     salida = {"normalizar": {}, "informes": {}, "prompt": {}}
 
     for frase in casos["frases"]:

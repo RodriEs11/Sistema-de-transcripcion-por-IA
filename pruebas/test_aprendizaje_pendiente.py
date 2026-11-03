@@ -62,9 +62,13 @@ class WordTest(unittest.TestCase):
     def test_finalizar_no_invoca_aprendizaje_y_word_es_valido(self):
         import servidor as S
         import aprender as A
+        import ajustes
         from docx import Document
         with tempfile.TemporaryDirectory() as tmp:
             carpeta = Path(tmp); datos = carpeta/'datos'; datos.mkdir()
+            self.addCleanup(S.configurar, S.configurar(ajustes.para_pruebas(carpeta)))
+            conoc = patch.object(S.N, 'CONOC', carpeta/'conocimiento'); conoc.start(); self.addCleanup(conoc.stop)
+            S.N.preparar_conocimiento()     # conocimiento de ejemplo, nunca el de la instalación
             (datos/'ficticio.informe_ia.txt').write_text('Informe ficticio.', encoding='utf-8')
             (datos/'ficticio.dictado.txt').write_text('Dictado ficticio.', encoding='utf-8')
             cola = ColaAprendizaje(datos/'_aprendizaje', lambda d: None, lambda: None)

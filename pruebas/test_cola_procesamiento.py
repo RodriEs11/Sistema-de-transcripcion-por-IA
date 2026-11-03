@@ -147,9 +147,11 @@ with c.transaccion() as db:
 class ServidorTest(unittest.TestCase):
     def setUp(self):
         import servidor as S
+        import ajustes
         self.S=S
         tmp=tempfile.TemporaryDirectory(dir=RESPALDO); self.addCleanup(tmp.cleanup)
         self.base=Path(tmp.name); self.datos=self.base/'revision'/'datos'; self.datos.mkdir(parents=True)
+        self.addCleanup(S.configurar,S.configurar(ajustes.para_pruebas(self.base)))
         self.audios=self.base/'audios'; self.audios.mkdir()
         self.pila=ExitStack(); self.addCleanup(self.pila.close)
         for nombre,valor in [('COLA_DURADERA',None),('DATOS',self.datos),('NUEVOS',self.audios),('INFORMES',self.base),
@@ -157,6 +159,7 @@ class ServidorTest(unittest.TestCase):
                              ('PAUSAS',{}),('PAUSADO_S',{}),('COLA',queue.Queue()),('SRV',dict(S.SRV))]:
             self.pila.enter_context(patch.object(S,nombre,valor))
         self.pila.enter_context(patch.object(S.L,'estado'))
+        self.pila.enter_context(patch.object(S.L,'CARPETA',self.base/'registros'))   # nunca los registros de la instalación
         self.addCleanup(self.cerrar)
 
     def cerrar(self):
@@ -284,7 +287,9 @@ class ServidorTest(unittest.TestCase):
         self.reiniciar();self.assertTrue(self.S.COLA.empty());self.assertNotIn('sin-audio',self.S.ESTADO)
 
     def test_arranque_no_inicia_hilos_ni_acepta_trabajo_con_cola_inaccesible(self):
+        import ajustes
         with (patch.object(self.S,'Servidor') as servidor,patch.object(self.S,'reanudar_cola',side_effect=C.ErrorCola('Fallo ficticio')),
+              patch.object(self.S.ajustes,'cargar',return_value=ajustes.para_pruebas(self.base)),patch.object(self.S.N,'preparar_conocimiento'),
               patch.object(self.S.L,'configurar'),patch.object(self.S.M,'titulo_consola'),patch.object(self.S.threading,'Thread') as hilo):
             self.assertEqual(self.S.main(),1)
             servidor.return_value.server_close.assert_called_once();hilo.assert_not_called()
@@ -293,7 +298,11 @@ class ServidorTest(unittest.TestCase):
         codigo='''import json,os,sys,queue
 from pathlib import Path
 import servidor as S
+import ajustes
 base=Path(sys.argv[1]);modo=sys.argv[2]
+S.configurar(ajustes.para_pruebas(base))
+S.N.CONOC=base/'conocimiento';S.N.preparar_conocimiento()   # conocimiento de ejemplo, nunca el de la instalación
+S.L.CARPETA=base/'registros'
 S.AQUI=base;S.NUEVOS=base/'audios';S.INFORMES=base;S.DATOS=base/'revision'/'datos'
 S.COLA_AL_REINICIAR=base/'legacy.json';S.SIMULAR=True
 os.environ['SIMULAR_DEMORA']='0'

@@ -8,9 +8,12 @@ const codigo=`
 import sys, tempfile, threading
 from pathlib import Path
 from unittest.mock import patch
-import servidor as S
+import servidor as S, ajustes
 with tempfile.TemporaryDirectory(prefix='ui_medicos_', dir='respaldo') as carpeta:
-    with patch.object(S.N, 'DIR_MED', Path(carpeta) / 'medicos'):
+    aj = ajustes.para_pruebas(Path(carpeta)); ajustes.preparar_carpetas(aj); S.configurar(aj)
+    conoc = Path(carpeta) / 'conocimiento'
+    with patch.object(S.N, 'CONOC', conoc), patch.object(S.N, 'DIR_MED', conoc / 'medicos'):
+        S.N.preparar_conocimiento()
         http = S.ThreadingHTTPServer(('127.0.0.1', 0), S.H)
         S.PUERTO = http.server_port
         hilo = threading.Thread(target=http.serve_forever, daemon=True)

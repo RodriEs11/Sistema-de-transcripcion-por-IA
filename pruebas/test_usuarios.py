@@ -12,6 +12,7 @@ import urllib.parse
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import ajustes
 import servidor as S
 import nucleo as N
 import remoto as R
@@ -47,7 +48,7 @@ class Base(unittest.TestCase):
         for obj, nombre, valor in ((N, "CONOC", conoc), (N, "DIR_MED", conoc / "medicos"),
                                    (U, "ARCH", d / "usuarios.json"), (U, "CARPETA", conoc / "usuarios"),
                                    (R, "ARCH", d / "acceso_remoto.json"), (R, "ARCH_SESIONES", d / "sesiones.json"),
-                                   (R, "SESIONES", {}), (R, "FALLOS", {}),
+                                   (R, "SESIONES", {}), (R, "FALLOS", {}), (R, "CARPETA_CLIENTE", d / "cliente"),
                                    (AP, "ARCH_CORR", conoc / "correcciones_aprendidas.md"),
                                    (AP, "EJ", d / "ejemplos"), (AP, "HIST", d / "resultados" / "historial.csv")):
             p = patch.object(obj, nombre, valor)
@@ -55,6 +56,10 @@ class Base(unittest.TestCase):
             self.addCleanup(p.stop)
         U._CACHE.update(mt=None, d=None)
         self.addCleanup(U._CACHE.update, mt=None, d=None)
+        # El servidor trabaja en la carpeta temporal (antes usaba las carpetas reales de la configuración)
+        aj = ajustes.para_pruebas(d)
+        ajustes.preparar_carpetas(aj)
+        self.addCleanup(S.configurar, S.configurar(aj))
 
 
 class UsuariosTest(Base):
@@ -343,7 +348,7 @@ class HttpTest(Base):
         from unittest.mock import MagicMock
         import registro as L
         datos = self.d / "Informes" / "revision" / "datos"
-        datos.mkdir(parents=True)
+        datos.mkdir(parents=True, exist_ok=True)
         n = "Servidor_20261102-120000_ficticio"
         (datos / f"{n}.informe_ia.txt").write_text("MAMOGRAFÍA\n\n-Mamas de densidad tipo B.\n", encoding="utf-8")
         (datos / f"{n}.dictado.txt").write_text("mamografía densidad b", encoding="utf-8")

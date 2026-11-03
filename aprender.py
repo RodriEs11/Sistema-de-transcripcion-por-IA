@@ -275,5 +275,7 @@ def resumen():
 
 if __name__ == "__main__":
     from informe import config
-    aprender(config())
+    cfg = config()
+    N.preparar_conocimiento()
+    aprender(cfg)
     resumen()

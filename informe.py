@@ -20,6 +20,7 @@ import sys
 import time
 from pathlib import Path
 
+import ajustes
 import nucleo as N
 import plataforma as P
 from fase1_transcribir import cargar_modelo, transcribir, duracion
@@ -34,19 +35,8 @@ EXT_AUDIO = {".wav", ".mp3", ".m4a", ".ogg", ".flac", ".wma", ".aac", ".opus"}
 
 
 def config():
-    archivo = AQUI / "configuracion.json"
-    if not archivo.exists():                    # primera vez (repositorio recién clonado): copia del ejemplo
-        ejemplo = AQUI / "configuracion.ejemplo.json"
-        if ejemplo.exists():
-            archivo.write_text(ejemplo.read_text(encoding="utf-8-sig"), encoding="utf-8")
-    c = json.loads(archivo.read_text(encoding="utf-8-sig"))
-    c.setdefault('lote_max_audios', 2)
-    c.setdefault('lote_max_segundos', 180)
-    c.setdefault('reusar_transcripcion', True)
-    for k in ("carpeta_audios_nuevos", "carpeta_informes"):
-        p = P.ruta_config(c[k])
-        c[k] = p if p.is_absolute() else (AQUI / p).resolve()
-    return c
+    """configuracion.json (la crea desde el ejemplo la primera vez). Ver ajustes.leer_config."""
+    return ajustes.leer_config(AQUI)
 
 
 def juntar_audios(args, cfg):
@@ -260,6 +250,7 @@ Rojo: dato no dictado o a completar · Amarillo: dudoso · Gris: frase de planti
 # ------------------------------------------------------------------- main
 def main():
     cfg = config()
+    N.preparar_conocimiento()
     audios = juntar_audios(sys.argv[1:], cfg)
     if not audios:
         print(f"No hay audios. Arrastrá audios sobre informe.bat o dejalos en:\n  {cfg['carpeta_audios_nuevos']}")

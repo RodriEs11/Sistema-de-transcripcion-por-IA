@@ -305,14 +305,16 @@ for f in sorted(glob.glob("*.py")):
         print("ERROR_SINTAXIS", f, file=sys.stderr)
         print(ex.msg, file=sys.stderr)
         sys.exit(3)
+import ajustes
+ajustes.cargar(crear_config=False)   # configuracion.json legible (importar el servidor ya no la lee)
 import servidor
 print("ok")
 """
 
 
 def prueba_de_arranque(timeout=120):
-    """Prueba el código de la carpeta en otro proceso (compila todos los .py e importa el servidor) antes de
-    reiniciar. Devuelve None si anda o el error (últimas líneas)."""
+    """Prueba el código de la carpeta en otro proceso (compila todos los .py, lee la configuración e importa el
+    servidor) antes de reiniciar. Devuelve None si anda o el error (últimas líneas)."""
     env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONDONTWRITEBYTECODE="1")
     try:
         r = subprocess.run([sys.executable, "-X", "utf8", "-c", PRUEBA], cwd=AQUI, capture_output=True,
