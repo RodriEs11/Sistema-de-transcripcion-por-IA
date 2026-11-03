@@ -289,7 +289,7 @@ class ServidorTest(unittest.TestCase):
     def test_arranque_no_inicia_hilos_ni_acepta_trabajo_con_cola_inaccesible(self):
         from transcripcion import ajustes
         with (patch.object(self.S,'Servidor') as servidor,patch.object(self.S,'reanudar_cola',side_effect=C.ErrorCola('Fallo ficticio')),
-              patch.object(self.S.ajustes,'cargar',return_value=ajustes.para_pruebas(self.base)),patch.object(self.S.N,'preparar_conocimiento'),
+              patch.object(self.S.ajustes,'cargar',return_value=ajustes.para_pruebas(self.base)),patch.object(self.S.CON,'preparar_conocimiento'),
               patch.object(self.S.L,'configurar'),patch.object(self.S.M,'titulo_consola'),patch.object(self.S.threading,'Thread') as hilo):
             self.assertEqual(self.S.main(),1)
             servidor.return_value.server_close.assert_called_once();hilo.assert_not_called()
@@ -301,7 +301,7 @@ import servidor as S
 from transcripcion import ajustes
 base=Path(sys.argv[1]);modo=sys.argv[2]
 S.configurar(ajustes.para_pruebas(base))
-S.N.CONOC=base/'conocimiento';S.N.preparar_conocimiento()   # conocimiento de ejemplo, nunca el de la instalación
+S.CON.CONOC=base/'conocimiento';S.CON.preparar_conocimiento()   # conocimiento de ejemplo, nunca el de la instalación
 S.L.CARPETA=base/'registros'
 S.AQUI=base;S.NUEVOS=base/'audios';S.INFORMES=base;S.DATOS=base/'revision'/'datos'
 S.COLA_AL_REINICIAR=base/'legacy.json';S.SIMULAR=True
@@ -311,8 +311,8 @@ S.anotar_voz=lambda *a,**k:None
 S.resumen_voz=lambda *a:None
 S.PAC.calcular=lambda *a,**k:None
 S.esperar_ia=lambda *a:None
-S.N.cargar_banco=lambda:[]
-S.N.estudios_sin_plantilla=lambda *a:[]
+S.EJEM.cargar_banco=lambda:[]
+S.AV.estudios_sin_plantilla=lambda *a:[]
 class Fin(BaseException):pass
 class ColaFinita(queue.Queue):
  def get(self,block=True,timeout=None):

@@ -21,7 +21,7 @@ def medir(cantidades, repeticiones):
     aj = ajustes.cargar()           # configuracion.json de la copia (carpetas de la copia)
     S.configurar(aj)
     ajustes.preparar_carpetas(aj)
-    S.N.preparar_conocimiento()
+    S.CON.preparar_conocimiento()
 
     creados = 0
     resultados = []

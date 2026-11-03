@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import servidor as S
-import nucleo as N
+from transcripcion.conocimiento import medicos as MED
 
 
 class MedicosTest(unittest.TestCase):
@@ -22,7 +22,7 @@ class MedicosTest(unittest.TestCase):
         if not Path(self.tmp.name).resolve().is_relative_to(respaldo.resolve()):
             raise RuntimeError("Las pruebas deben usar una carpeta dentro de respaldo/.")
         self.addCleanup(self.tmp.cleanup)
-        self.parche = patch.object(N, "DIR_MED", Path(self.tmp.name) / "medicos")
+        self.parche = patch.object(MED, "DIR_MED", Path(self.tmp.name) / "medicos")
         self.parche.start()
         self.addCleanup(self.parche.stop)
         self.http = S.ThreadingHTTPServer(("127.0.0.1", 0), S.H)
@@ -57,12 +57,12 @@ class MedicosTest(unittest.TestCase):
         self.assertEqual(self.pedir(ruta + "agregar", {"nombre": "Dra. Pérez", "notas": "Nota ficticia"})[0], 200)
         for nombre in ("Dra. Pérez", "DRA. PEREZ", "  dra.   pérez  "):
             self.assertEqual(self.pedir(ruta + "agregar", {"nombre": nombre})[0], 409)
-        self.assertEqual(N.notas_medico("Dra. Pérez"), "Nota ficticia")
+        self.assertEqual(MED.notas_medico("Dra. Pérez"), "Nota ficticia")
         self.assertEqual(self.pedir(ruta + "agregar", {"nombre": "Dr. Prueba"})[0], 200)
         self.assertEqual(self.pedir(ruta + "modificar", {"original": "Dr. Prueba", "nombre": "DRA. PEREZ"})[0], 409)
         self.assertEqual(self.pedir(ruta + "modificar", {"original": "Dra. Pérez", "nombre": "Dra. Ensayo", "notas": "Nueva nota"})[0], 200)
-        self.assertNotIn("Dra. Pérez", N.lista_medicos())
-        self.assertEqual(N.notas_medico("Dra. Ensayo"), "Nueva nota")
+        self.assertNotIn("Dra. Pérez", MED.lista_medicos())
+        self.assertEqual(MED.notas_medico("Dra. Ensayo"), "Nueva nota")
         self.assertEqual(self.pedir(ruta + "modificar", {"original": "Dra. Ensayo", "nombre": "DRA. ENSAYO"})[0], 200)
         self.assertEqual(self.pedir(ruta + "eliminar", {"original": "DRA. ENSAYO"})[0], 200)
         self.assertEqual(self.pedir(ruta + "eliminar", {"original": "DRA. ENSAYO"})[0], 404)
@@ -75,19 +75,19 @@ class MedicosTest(unittest.TestCase):
         self.assertEqual(self.pedir(ruta, {"nombre": "Dr. Prueba"}, panel=False)[0], 403)
         self.assertEqual(self.pedir(ruta, {"nombre": "Dr. Prueba"}, extra={"Origin": "https://ajeno.example"})[0], 403)
         self.assertEqual(self.pedir("/api/admin/medicos", extra={"Cf-Ray": "prueba"})[0], 401)
-        self.assertEqual(N.lista_medicos(), [])
+        self.assertEqual(MED.lista_medicos(), [])
 
     def test_alta_desde_revision_no_pisa_notas(self):
-        N.guardar_medico("Dr. Prueba", "Conservar", crear=True)
+        MED.guardar_medico("Dr. Prueba", "Conservar", crear=True)
         self.assertEqual(self.pedir("/api/medico", {"medico": "Dr. Prueba", "notas": "", "crear": True})[0], 409)
         self.assertEqual(self.pedir("/api/medico", {"medico": "DR. PRUEBA", "notas": ""})[0], 409)
-        self.assertEqual(N.notas_medico("Dr. Prueba"), "Conservar")
+        self.assertEqual(MED.notas_medico("Dr. Prueba"), "Conservar")
         self.assertEqual(self.pedir("/api/medico", {"medico": "Dr. Prueba", "notas": "Edición"})[0], 200)
 
     def test_altas_simultaneas(self):
         def crear(_):
             try:
-                N.guardar_medico("Dr. Simulado", "Nota", crear=True)
+                MED.guardar_medico("Dr. Simulado", "Nota", crear=True)
                 return "ok"
             except FileExistsError:
                 return "duplicado"
