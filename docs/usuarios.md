@@ -72,8 +72,9 @@ todos juntas: una frase de la plantilla de cualquiera es frase de plantilla.
   app intercepta `/entrar` (sin código) para volver a entrar sola con la llave, y con esa dirección haría un ciclo.
   Así también funciona con la app 1.22 sin cambios. **Salir** (arriba de la lista) deja la PC identificada para que
   entre el siguiente.
-- **Vincular una PC nueva:** nombre de la PC + usuario y contraseña de cualquier transcriptor. Las PC ya vinculadas
-  siguen funcionando. Requiere la app con el campo «Tu usuario» (cambio en `VentanaVincular.cs`); la app 1.22 solo
+- **Vincular una PC nueva:** usuario y contraseña de cualquier transcriptor (el nombre de la PC sale solo del nombre
+  de Windows). El Servidor devuelve además un código de un solo uso con ese usuario, así que la página abre ya con
+  esa persona: no se le vuelve a pedir el usuario. Las PC ya vinculadas siguen funcionando. Requiere la app con el campo «Tu usuario» (cambio en `VentanaVincular.cs`); la app 1.22 solo
   puede vincular mientras no haya transcriptores.
 - **Cerrar la ventana de la app = cerrar la sesión.** La app sigue junto al reloj tomando audios, pero al cerrar su
   ventana llama a `window.salirDeSesion()` de la página: cierra el estudio abierto guardando los cambios (si no
@@ -96,7 +97,8 @@ los ejemplos generales o la hicieron dos fuentes distintas; si la repite uno sol
 
 - **Lista:** arriba, el nombre de quien transcribe, **Mi cuenta** y **Salir**.
 - **Configuración → Mi cuenta:** cambiar contraseña (obligatorio con la inicial: no se puede cerrar hasta
-  cambiarla), formato del Word propio, reglas de dictado propias y resumen de su estilo.
+  cambiarla), formato del Word propio, reglas de dictado propias y resumen de su estilo. Las reglas se ven en lista
+  (Editar / Quitar); **Añadir regla** abre una ventana para cargar varias de una vez (Enter agrega otro renglón).
 - **Plantillas / Médicos:** etiqueta «mía» / «solo mía», al guardar pregunta *¿Solo para mí o para todos?*, y botón
   **Volver a la general**.
 - **Informe:** aviso de estilo ajeno con **Regenerar con mi estilo**.

@@ -235,11 +235,46 @@ button.ini-cifra:hover{border-color:var(--ac)}
 .etq-mia{display:inline-block;margin-left:6px;font-size:10.5px;padding:0 6px;border-radius:9px;border:1px solid var(--bd2);color:var(--mu);vertical-align:1px}
 .origen{font-size:12.5px;color:var(--mu);display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 6px}
 .origen[hidden]{display:none}
-.cfg-form{display:flex;flex-direction:column;gap:8px;max-width:340px}
-.cfg-form label{display:flex;flex-direction:column;gap:3px;font-size:13px;font-weight:600}
-.cfg-form input,.cfg-panel textarea{font:inherit;font-weight:400;color:var(--tx);background:var(--bg);border:1px solid var(--bd2);border-radius:7px;padding:6px 9px}
-.cfg-panel textarea{width:100%;box-sizing:border-box;min-height:120px;resize:vertical}
+/* Configuración → Mi cuenta */
+.cuenta-sec{padding:14px 0;border-bottom:1px solid var(--bd)}
+.cuenta-sec:last-child{border-bottom:0}
+.cuenta-cab{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+.cuenta-cab > div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cuenta-cab b{font-weight:600;font-size:13.8px}
+.cuenta-cab small{color:var(--mu);font-size:12.3px;line-height:1.4}
+.cuenta-cab > button{flex:none}
+.cuenta-sec:last-child .cuenta-cab{margin-bottom:0}
+.cuenta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;margin:0}
+.cuenta-grid.tres{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cuenta-grid label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:var(--mu);min-width:0}
+.cuenta-grid input,.cuenta-grid select{width:100%;box-sizing:border-box;padding:6px 9px;font-weight:400;font-size:13.5px;color:var(--tx);background:var(--bg)}
+.cuenta-pie{grid-column:1/-1;display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.cuenta-pie .cfg-msj{flex:1;min-width:0}
+.cuenta-alerta{margin:12px 0 2px;padding:8px 11px;border:1px solid var(--rojo);border-radius:8px;font-size:12.8px;color:var(--tx);background:var(--panel)}
+.cuenta-alerta[hidden]{display:none}
+.reglas-lista{list-style:none;margin:0;padding:0;border:1px solid var(--bd);border-radius:8px;max-height:280px;overflow:auto}
+.reglas-lista li{display:flex;align-items:flex-start;gap:8px;padding:7px 8px 7px 11px;border-bottom:1px solid var(--bd);font-size:13px}
+.reglas-lista li:last-child{border-bottom:0}
+.reglas-lista li > span{flex:1;min-width:0;overflow-wrap:anywhere;line-height:1.45;padding-top:2px}
+.reglas-lista li > span::before{content:"•";color:var(--mu);margin-right:7px}
+.reglas-lista li.vacio{color:var(--mu);justify-content:center;padding:14px}
+.reglas-lista li.vacio > span::before{content:none}
+.reglas-lista li button{flex:none}
 .cfg-msj{font-size:12.5px;min-height:1em}.cfg-msj.mal{color:var(--rojo)}
+.cuenta-sec > .cfg-msj{display:block;margin-top:6px}
+/* ventana para añadir o editar reglas */
+#reglasDlg{position:fixed;inset:0;z-index:18;background:rgba(0,0,0,.38);display:grid;place-items:center;padding:16px}
+#reglasDlg[hidden]{display:none}
+#reglasDlg .caja{background:var(--panel);border:1px solid var(--bd2);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.28);padding:20px 22px 16px;width:min(560px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column}
+#reglasDlg h2{font-size:16px;margin:0 0 6px}
+#reglasDlg p{margin:0 0 10px;color:var(--mu);font-size:13px;line-height:1.45}
+#rdFilas{display:flex;flex-direction:column;gap:7px;overflow:auto;min-height:0;padding:2px}
+.rd-fila{display:flex;gap:6px;align-items:center}
+.rd-fila input{flex:1;min-width:0;padding:7px 10px;font-size:13.5px;background:var(--bg)}
+.rd-fila button{flex:none;width:32px;padding:6px 0}
+#reglasDlg .botones{display:flex;align-items:center;gap:8px;margin-top:14px}
+#reglasDlg .botones .sep{flex:1}
+@media (max-width:760px){.cuenta-grid,.cuenta-grid.tres{grid-template-columns:1fr}}
 #nuevoEst{display:none;margin:0 0 12px;padding:10px 12px;border:1px solid var(--aviso);border-radius:8px;background:var(--panel);font-size:13px}
 #nuevoEst b{color:var(--aviso)}
 @media (max-width:1000px){.vista .fila2{grid-template-columns:1fr;gap:16px}}
@@ -756,6 +791,13 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
   </main>
 </div>
 <audio id="audio" preload="auto"></audio>
+<div id="reglasDlg" role="dialog" aria-modal="true" aria-labelledby="rdTit" hidden>
+  <div class="caja"><h2 id="rdTit">Añadir reglas</h2>
+    <p id="rdTxt">Una regla por renglón. Enter agrega otro renglón. Ejemplos: «Escribir “Bi-Rads 2.” sin dos puntos» · «“Le ponemos un 2” es Bi-Rads 2».</p>
+    <div id="rdFilas"></div>
+    <div class="botones"><button type="button" class="chico" id="rdOtra">+ Otra regla</button><span class="sep"></span>
+      <button type="button" id="rdNo">Cancelar</button><button type="button" class="prim" id="rdSi">Guardar</button></div></div>
+</div>
 <div id="confirma" role="alertdialog" aria-modal="true" aria-labelledby="cfTit" aria-describedby="cfTxt">
   <div class="caja"><h2 id="cfTit"></h2><div id="cfTxt"></div>
     <label class="cf-campo" id="cfCampo" hidden><span id="cfEtiq"></span><input id="cfInput" type="text" autocomplete="off" spellcheck="false" maxlength="80"></label>
@@ -807,29 +849,38 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
       </div>
       <div class="cfg-paneles">
         <section class="cfg-panel" id="cfg-cuenta" role="tabpanel" aria-labelledby="tab-cuenta" data-panel="cuenta" hidden>
-          <p id="cuentaCambiar" class="cfg-msj mal" hidden>Estás usando la contraseña que te dio el administrador: elegí una propia para seguir.</p>
-          <div class="cfg-fila cfg-bloque"><div class="cfg-txt"><b>Contraseña</b><small>La que usás para entrar en cualquier PC.</small></div>
-            <form class="cfg-form" id="fMiClave" autocomplete="off">
+          <p id="cuentaCambiar" class="cuenta-alerta" hidden>Estás usando la contraseña que te dio el administrador: elegí una propia para seguir.</p>
+          <div class="cuenta-sec">
+            <div class="cuenta-cab"><div><b>Contraseña</b><small>La que usás para entrar en cualquier PC.</small></div></div>
+            <form class="cuenta-grid tres" id="fMiClave" autocomplete="off">
               <input type="text" autocomplete="username" hidden>
-              <label>Contraseña actual<input type="password" id="mcActual" autocomplete="current-password"></label>
-              <label>Nueva (mínimo 6 caracteres)<input type="password" id="mcNueva" autocomplete="new-password"></label>
+              <label>Actual<input type="password" id="mcActual" autocomplete="current-password"></label>
+              <label>Nueva<input type="password" id="mcNueva" autocomplete="new-password" placeholder="mínimo 6 caracteres"></label>
               <label>Repetila<input type="password" id="mcNueva2" autocomplete="new-password"></label>
-              <span class="cfg-msj" id="mcMsj" aria-live="polite"></span>
-              <div><button type="submit" class="prim">Cambiar contraseña</button></div></form></div>
-          <div class="cfg-fila cfg-bloque"><div class="cfg-txt"><b>Formato de tu Word</b><small>Solo para los Word que guardás vos. Lo que dejes en «General» sigue al del sistema.</small></div>
-            <form class="cfg-form" id="fMiFormato">
+              <div class="cuenta-pie"><span class="cfg-msj" id="mcMsj" aria-live="polite"></span><button type="submit" class="prim">Cambiar contraseña</button></div>
+            </form>
+          </div>
+          <div class="cuenta-sec">
+            <div class="cuenta-cab"><div><b>Formato de tu Word</b><small>Solo para los Word que guardás vos. Lo que quede en «General» sigue al del sistema.</small></div></div>
+            <form class="cuenta-grid" id="fMiFormato">
               <label>Fuente<select id="mfFuente"></select></label>
               <label>Tamaño<select id="mfTamano"></select></label>
-              <label>Renglones vacíos arriba (para el encabezado)<select id="mfRenglones"></select></label>
+              <label>Renglones vacíos arriba<select id="mfRenglones"></select></label>
               <label>Títulos centrados<select id="mfCentrar"><option value="">General</option><option value="si">Sí</option><option value="no">No</option></select></label>
               <label>Títulos en negrita<select id="mfNegrita"><option value="">General</option><option value="si">Sí</option><option value="no">No</option></select></label>
-              <label>Renglón vacío entre el título y el texto<select id="mfLinea"><option value="">General</option><option value="si">Sí</option><option value="no">No</option></select></label>
-              <span class="cfg-msj" id="mfMsj" aria-live="polite"></span>
-              <div><button type="submit" class="prim">Guardar formato</button></div></form></div>
-          <div class="cfg-fila cfg-bloque"><div class="cfg-txt"><b>Tus reglas de dictado</b><small>Se suman a las generales y valen solo para tus informes. Una por renglón, como «Escribir “Bi-Rads 2.” sin dos puntos».</small></div>
-            <textarea id="mrReglas" maxlength="50000" spellcheck="true" lang="es"></textarea>
-            <div class="cfg-botones"><span class="cfg-msj" id="mrMsj" aria-live="polite"></span><button type="button" class="prim" id="bMisReglas">Guardar reglas</button></div></div>
-          <div class="cfg-fila"><div class="cfg-txt"><b>Tu estilo</b><small id="cuentaEstilo">—</small></div></div>
+              <label>Renglón vacío después del título<select id="mfLinea"><option value="">General</option><option value="si">Sí</option><option value="no">No</option></select></label>
+              <div class="cuenta-pie"><span class="cfg-msj" id="mfMsj" aria-live="polite"></span><button type="submit" class="prim">Guardar formato</button></div>
+            </form>
+          </div>
+          <div class="cuenta-sec">
+            <div class="cuenta-cab"><div><b>Tus reglas de dictado</b><small>Se suman a las generales y la IA las usa solo en tus informes.</small></div>
+              <button type="button" class="prim" id="bAnadirRegla">Añadir regla</button></div>
+            <ul class="reglas-lista" id="mrLista" aria-label="Tus reglas de dictado"></ul>
+            <span class="cfg-msj" id="mrMsj" aria-live="polite"></span>
+          </div>
+          <div class="cuenta-sec">
+            <div class="cuenta-cab"><div><b>Tu estilo</b><small id="cuentaEstilo">—</small></div></div>
+          </div>
         </section>
         <section class="cfg-panel" id="cfg-pantalla" role="tabpanel" aria-labelledby="tab-pantalla" data-panel="pantalla">
           <div class="cfg-fila"><div class="cfg-txt"><b>Tema</b><small>Claro, oscuro o el mismo que tiene Windows.</small></div>
@@ -3329,7 +3380,7 @@ $('.cfg-tabs').addEventListener('keydown', e => {
   elegirTab(tabs[j].dataset.tab); tabs[j].focus();
 });
 document.addEventListener('keydown', e => {          // con la configuración abierta no actúan los atajos del informe
-  if($('#config').hidden || $('#confirma').classList.contains('abierto')) return;
+  if($('#config').hidden || $('#confirma').classList.contains('abierto') || !$('#reglasDlg').hidden) return;
   if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); cerrarConfig(); return; }
   if(e.key === 'Tab'){
     const foc = [...$('#config').querySelectorAll('button,select,input')].filter(x => !x.disabled && x.offsetParent && x.tabIndex !== -1);
@@ -3381,7 +3432,8 @@ document.querySelectorAll('#config [data-app-accion]').forEach(b => b.onclick = 
 $('#cfgDireccion').onclick = async () => {
   const v = await pedirTexto({titulo: 'Dirección del Servidor', html: '<p>Pegá la dirección que muestra la ventana del Servidor (termina en <b>devtunnels.ms</b> o en <b>trycloudflare.com</b>).</p>',
     etiqueta: 'Dirección', valor: (CFG.app && CFG.app.servidor) || '', placeholder: 'https://…devtunnels.ms', boton: 'Conectar',
-    validar: t => /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}(:\d+)?(\/\S*)?$/i.test(t) ? '' : 'No parece una dirección. Copiala completa, por ejemplo https://algo-8766.brs.devtunnels.ms'});
+    validar: t => /^(https?:\/\/)?([\w-]+(\.[\w-]+)*\.[a-z]{2,}|localhost|\d{1,3}(\.\d{1,3}){3})(:\d{1,5})?(\/\S*)?$/i.test(t) ? ''
+      : 'No parece una dirección. Copiala completa, por ejemplo https://algo-8766.brs.devtunnels.ms o http://127.0.0.1:8865'});
   if(v) { hacerApp('direccion', v); toast('Probando la dirección nueva…'); }
 };
 $('#cfgDesvincular').onclick = async () => {
@@ -3406,7 +3458,7 @@ async function cargarCuenta(){
   opciones($('#mfTamano'), [9, 10, 11, 12, 13, 14, 16], f.tamano_fuente, g.tamano_fuente, v => v + ' pt');
   opciones($('#mfRenglones'), [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12], f.lineas_vacias_para_encabezado, g.lineas_vacias_para_encabezado, v => String(v));
   $('#mfCentrar').value = SINO(f.centrar_titulos); $('#mfNegrita').value = SINO(f.negrita_titulos); $('#mfLinea').value = SINO(f.linea_vacia_entre_titulo_y_texto);
-  $('#mrReglas').value = e.reglas || '';
+  MIS_REGLAS = reglasDeTexto(e.reglas || ''); pintarReglas();
   const p = e.plantillas_propias.length, m = e.medicos_propios.length;
   $('#cuentaEstilo').textContent = (p ? `Plantillas propias: ${e.plantillas_propias.join(', ')}. ` : 'Usás las plantillas generales. ')
     + (m ? `Notas propias de: ${e.medicos_propios.join(', ')}.` : 'Usás las notas generales de los médicos.')
@@ -3438,10 +3490,72 @@ $('#fMiFormato').onsubmit = async ev => {
   try { await api('/api/usuario/formato', {formato}); msj.className = 'cfg-msj'; msj.textContent = '✓ Guardado: se usa en los próximos Word que guardes.'; }
   catch(e){ msj.className = 'cfg-msj mal'; msj.textContent = e.message; }
 };
-$('#bMisReglas').onclick = async () => {
+/* reglas propias: se guardan como renglones «- regla» en su reglas_dictado.md */
+let MIS_REGLAS = [];
+const reglasDeTexto = t => t.split(/\r?\n/).map(l => l.replace(/^\s*[-•*]\s*/, '').trim()).filter(l => l && !l.startsWith('#'));
+function pintarReglas(){
+  const ul = $('#mrLista');
+  ul.innerHTML = MIS_REGLAS.length ? '' : '<li class="vacio"><span>Todavía no agregaste reglas propias.</span></li>';
+  MIS_REGLAS.forEach((r, i) => {
+    const li = document.createElement('li'), t = document.createElement('span');
+    t.textContent = r; li.appendChild(t);
+    const ed = document.createElement('button'); ed.type = 'button'; ed.className = 'chico'; ed.textContent = 'Editar';
+    ed.onclick = () => abrirReglas(i);
+    const qu = document.createElement('button'); qu.type = 'button'; qu.className = 'chico'; qu.textContent = 'Quitar';
+    qu.onclick = async () => {
+      if(!await confirmar('¿Quitar esta regla?', '<p>' + esc(r) + '</p>', 'Quitar')) return;
+      const antes = MIS_REGLAS.slice(); MIS_REGLAS.splice(i, 1);
+      if(!await guardarReglas('Regla quitada.')){ MIS_REGLAS = antes; } pintarReglas();
+    };
+    li.append(ed, qu); ul.appendChild(li);
+  });
+}
+async function guardarReglas(ok){
   const msj = $('#mrMsj');
-  try { await api('/api/usuario/reglas', {reglas: $('#mrReglas').value}); msj.className = 'cfg-msj'; msj.textContent = '✓ Guardadas: la IA las usa desde tu próximo informe.'; }
-  catch(e){ msj.className = 'cfg-msj mal'; msj.textContent = e.message; }
+  try { await api('/api/usuario/reglas', {reglas: MIS_REGLAS.map(r => '- ' + r).join('\n')});
+        msj.className = 'cfg-msj'; msj.textContent = '✓ ' + ok + ' La IA las usa desde tu próximo informe.'; return true; }
+  catch(e){ msj.className = 'cfg-msj mal'; msj.textContent = 'No se guardó: ' + e.message; return false; }
+}
+let reglaEditada = null, reglasPrevio = null;
+function filaRegla(valor){
+  const f = document.createElement('div'); f.className = 'rd-fila';
+  const inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = 400; inp.value = valor || '';
+  inp.placeholder = 'Ej.: Escribir «Bi-Rads 2.» sin dos puntos'; inp.setAttribute('aria-label', 'Regla'); inp.spellcheck = true; inp.lang = 'es';
+  inp.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); if(reglaEditada === null){ const n = filaRegla(''); f.after(n); n.firstChild.focus(); } else $('#rdSi').click(); } });
+  const x = document.createElement('button'); x.type = 'button'; x.className = 'chico'; x.textContent = '✕'; x.title = 'Quitar este renglón'; x.setAttribute('aria-label', 'Quitar este renglón');
+  x.onclick = () => { if($('#rdFilas').children.length > 1) f.remove(); else inp.value = ''; ($('#rdFilas').querySelector('input') || inp).focus(); };
+  f.append(inp, x); return f;
+}
+function abrirReglas(i){       // i: índice de la regla a editar; sin i, añadir varias
+  reglaEditada = i == null ? null : i; reglasPrevio = document.activeElement;
+  $('#rdTit').textContent = reglaEditada === null ? 'Añadir reglas' : 'Editar regla';
+  $('#rdOtra').hidden = reglaEditada !== null;
+  const filas = $('#rdFilas'); filas.innerHTML = '';
+  filas.appendChild(filaRegla(reglaEditada === null ? '' : MIS_REGLAS[reglaEditada]));
+  $('#reglasDlg').hidden = false; filas.querySelector('input').focus();
+}
+function cerrarReglas(){ $('#reglasDlg').hidden = true; try { reglasPrevio && reglasPrevio.focus(); } catch(e){} }
+$('#bAnadirRegla').onclick = () => abrirReglas();
+$('#rdOtra').onclick = () => { const n = filaRegla(''); $('#rdFilas').appendChild(n); n.firstChild.focus(); };
+$('#rdNo').onclick = cerrarReglas;
+$('#reglasDlg').addEventListener('mousedown', e => { if(e.target === $('#reglasDlg')) cerrarReglas(); });
+$('#reglasDlg').addEventListener('keydown', e => {
+  e.stopPropagation();
+  if(e.key === 'Escape'){ e.preventDefault(); cerrarReglas(); }
+});
+$('#rdSi').onclick = async () => {
+  const nuevas = [...$('#rdFilas').querySelectorAll('input')].map(x => x.value.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const antes = MIS_REGLAS.slice();
+  if(reglaEditada === null){
+    if(!nuevas.length){ $('#rdFilas').querySelector('input').focus(); return; }
+    MIS_REGLAS.push(...nuevas.filter(r => !MIS_REGLAS.includes(r)));
+  } else if(nuevas.length) MIS_REGLAS[reglaEditada] = nuevas[0];
+  else MIS_REGLAS.splice(reglaEditada, 1);
+  $('#rdSi').disabled = true;
+  const ok = await guardarReglas(reglaEditada === null ? (nuevas.length === 1 ? 'Regla agregada.' : nuevas.length + ' reglas agregadas.') : 'Regla guardada.');
+  $('#rdSi').disabled = false;
+  if(!ok){ MIS_REGLAS = antes; return; }
+  pintarReglas(); cerrarReglas();
 };
 
 aplicarTema();
