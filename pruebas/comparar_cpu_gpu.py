@@ -18,7 +18,6 @@ import subprocess
 import sys
 import time
 import urllib.request
-import wave
 from datetime import datetime, timedelta, timezone
 
 import validar_gpu_real as G

@@ -14,7 +14,6 @@ import mimetypes
 import os
 import queue
 import re
-import shutil
 import sys
 import threading
 import time
@@ -1234,7 +1233,7 @@ def punto_de_pausa(n, pos=None, total=None):
     L.estado(cola=en_proceso(), pausa=1)
     espera = sum(1 for x in cola_pendiente() if x != n)
     L.info("WHISPER", f"{visible(n)} en pausa" + (f" ({donde})" if donde else "") + ". Whisper queda detenido con lo "
-                      f"transcrito hasta ahora" + (f"; {L.plural(espera, 'audio')} de la cola espera" + ("" if espera == 1 else "n")
+                      "transcrito hasta ahora" + (f"; {L.plural(espera, 'audio')} de la cola espera" + ("" if espera == 1 else "n")
                                                    if espera else "") + " hasta que se reanude.")
     with PAUSA_CV:
         while n in PAUSAS and n not in BORRADOS:

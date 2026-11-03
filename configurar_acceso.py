@@ -2,7 +2,6 @@
 """Contraseña del acceso remoto y PC del trabajo autorizadas. Se abre con configurar_acceso.bat (Windows)
 o configurar_acceso.sh (Linux)."""
 import getpass
-import json
 import sys
 
 import plataforma as P

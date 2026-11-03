@@ -7,7 +7,6 @@ Acá está lo que no depende del servidor HTTP:
 - decidir si un pedido puede usar el panel (solo esta PC, nunca por el túnel).
 El estado completo lo arma servidor.py (que tiene la cola, la IA, etc.).
 """
-import os
 import re
 import threading
 import time

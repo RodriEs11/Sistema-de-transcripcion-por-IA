@@ -30,6 +30,11 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           New-Item -ItemType Directory -Force respaldo | Out-Null
           "PYTHON=$((Get-Command python).Source)" >> $env:GITHUB_ENV
+      - name: Lint (ruff)
+        shell: pwsh
+        run: |
+          python -m ruff check .
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Python y versiones de fuentes
         shell: pwsh
         run: |

@@ -3,3 +3,5 @@ numpy==2.2.6
 python-docx==1.2.0
 lxml==6.0.2
 typing_extensions==4.15.0
+# Lint (pyproject.toml → [tool.ruff]); misma versión en local y en el CI.
+ruff==0.16.9
