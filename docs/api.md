@@ -70,7 +70,7 @@ Los casos se identifican con el parámetro o campo `nombre` (validado: sin rutas
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| POST | `/api/cliente/vincular` | `{pc, usuario, contrasena}`: vincula una PC con el usuario y la contraseña de un transcriptor (sin transcriptores: `usuario` vacío y la contraseña del sistema) y devuelve su llave. La llave sola solo sirve para enviar audios, consultar el estado y actualizarse |
+| POST | `/api/cliente/vincular` | `{pc, usuario, contrasena}`: vincula una PC con el usuario y la contraseña de un transcriptor (sin transcriptores: `usuario` vacío y la contraseña del sistema) y devuelve su llave (con usuario, también `codigo`: entrada de un solo uso que abre la página ya con ese transcriptor). La llave sola solo sirve para enviar audios, consultar el estado y actualizarse |
 | POST | `/api/cliente/sesion` | Código de un solo uso para abrir la interfaz |
 | GET | `/api/cliente/estado` | Estado del servidor y `app: {version, huella}` |
 | POST | `/api/cliente/audio` | Envío de un audio tomado de `%TEMP%` o de la cola. Recibo confirmado: `{ok:true, nombre, duplicado}` después de publicar audio/metadatos, huella y encolado; la cola conserva el cifrado si falta esa confirmación. |

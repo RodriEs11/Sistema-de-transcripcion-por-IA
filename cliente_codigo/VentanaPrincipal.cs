@@ -632,10 +632,16 @@ namespace Transcripcion
         async Task Entrar()
         {
             if (string.IsNullOrEmpty(Config.Url)) return;
-            var r = await Servidor.Sesion(Config.Url);
-            if (r.Codigo == 401) { PedirVincularDeNuevo(); return; }
-            if (!r.Ok) { Registro.Escribir("No pude abrir la sesión: " + r.Error); return; }
-            string destino = Config.Url + "/entrar?codigo=" + Uri.EscapeDataString(r.Texto("codigo"));
+            string codigo = Config.CodigoInicial;
+            Config.CodigoInicial = "";
+            if (codigo == "")
+            {
+                var r = await Servidor.Sesion(Config.Url);
+                if (r.Codigo == 401) { PedirVincularDeNuevo(); return; }
+                if (!r.Ok) { Registro.Escribir("No pude abrir la sesión: " + r.Error); return; }
+                codigo = r.Texto("codigo");
+            }
+            string destino = Config.Url + "/entrar?codigo=" + Uri.EscapeDataString(codigo);
             urlCargada = Config.Url;
             if (webFalla) { edgePendiente = destino; return; }
             if (web.CoreWebView2 != null) web.CoreWebView2.Navigate(destino);

@@ -277,6 +277,7 @@ namespace Transcripcion
         static string Archivo { get { return Path.Combine(Carpeta, "config.json"); } }
 
         public static string Pc = "", Url = "", Tema = "", Aviso = "https://ntfy.sh";
+        public static string CodigoInicial = "";   // código de entrada que dio el Servidor al vincular (solo en memoria)
         public static bool Pausado = Perfil != "";                 // en pruebas arranca sin tomar los audios de %TEMP%
         public static bool AvisarListos = true;                    // notificación cuando un informe queda listo (1.9)
         public static bool NotificacionesWindows = false;          // globos/notificaciones de Windows; apagadas por defecto (1.14)

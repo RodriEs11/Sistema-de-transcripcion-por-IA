@@ -197,7 +197,12 @@ namespace Transcripcion
         public static string Normalizar(string url)
         {
             url = (url ?? "").Trim().TrimEnd(Config.Barra);
-            if (url != "" && !url.StartsWith("http", StringComparison.OrdinalIgnoreCase)) url = "https://" + url;
+            if (url != "" && !url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {   // sin «http»: el túnel va con https; esta misma PC o la red local (http://127.0.0.1:8865), con http
+                bool local = Regex.IsMatch(url, @"^(localhost|127(\.\d{1,3}){3}|10(\.\d{1,3}){3}|192\.168(\.\d{1,3}){2})(:\d+)?(/|$)",
+                                           RegexOptions.IgnoreCase);
+                url = (local ? "http://" : "https://") + url;
+            }
             Uri u;
             if (url != "" && Uri.TryCreate(url, UriKind.Absolute, out u) && (u.Scheme == "https" || u.Scheme == "http") && u.Host != "")
                 url = u.GetLeftPart(UriPartial.Authority);
