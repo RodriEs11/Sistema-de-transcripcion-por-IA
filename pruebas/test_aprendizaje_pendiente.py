@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from aprendizaje_pendiente import ColaAprendizaje
+from transcripcion.aprendizaje.pendiente import ColaAprendizaje
 
 
 class ColaTest(unittest.TestCase):
@@ -27,7 +27,7 @@ class ColaTest(unittest.TestCase):
         self.assertEqual(list(self.carpeta.iterdir()), [])
 
     def test_fallo_conserva_tarea_y_reintenta_analisis(self):
-        with patch('aprendizaje_pendiente.L.error'):
+        with patch('transcripcion.aprendizaje.pendiente.L.error'):
             c = ColaAprendizaje(self.carpeta, lambda d: (_ for _ in ()).throw(OSError("ficticio")), lambda: None)
             c.agregar({"nombre": "ficticio"})
             c.procesar()
@@ -62,7 +62,7 @@ class WordTest(unittest.TestCase):
     def test_finalizar_no_invoca_aprendizaje_y_word_es_valido(self):
         import servidor as S
         import aprender as A
-        import ajustes
+        from transcripcion import ajustes
         from docx import Document
         with tempfile.TemporaryDirectory() as tmp:
             carpeta = Path(tmp); datos = carpeta/'datos'; datos.mkdir()
@@ -79,7 +79,7 @@ class WordTest(unittest.TestCase):
                 self.assertTrue((datos/'_aprendizaje/ficticio.json').exists())
                 # Una publicación Word fallida conserva el anterior y no confirma una tarea nueva.
                 contenido = Path(r['docx']).read_bytes()
-                with patch('persistencia.os.replace',side_effect=PermissionError('Word abierto ficticio')):
+                with patch('transcripcion.base.persistencia.os.replace',side_effect=PermissionError('Word abierto ficticio')):
                     with self.assertRaises(PermissionError):
                         S.finalizar('ficticio', 'No confirmado')
                 self.assertEqual(Path(r['docx']).read_bytes(), contenido)

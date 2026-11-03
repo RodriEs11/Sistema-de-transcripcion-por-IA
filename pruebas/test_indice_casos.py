@@ -5,7 +5,7 @@ import sys
 import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from indice_casos import IndiceCasos
+from transcripcion.casos.indice import IndiceCasos
 
 
 class IndiceTest(unittest.TestCase):

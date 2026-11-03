@@ -182,8 +182,10 @@ def ejecutar(reanudar=None):
         validar_reanudacion(raiz, proyecto/'respaldo')
     else:
         raiz.mkdir();(raiz/'audios').mkdir();(raiz/'sistema').mkdir()
-    for nombre in ['fase1_transcribir.py','huecos.py','nucleo.py','registro.py','plataforma.py','persistencia.py','vocabulario.txt']:
+    for nombre in ['fase1_transcribir.py','huecos.py','nucleo.py','vocabulario.txt']:
         shutil.copy2(proyecto/nombre,raiz/'sistema'/nombre)
+    # paquete con registro, plataforma, persistencia y usuarios (nucleo los importa)
+    shutil.copytree(proyecto/'transcripcion',raiz/'sistema'/'transcripcion',dirs_exist_ok=True,ignore=shutil.ignore_patterns('__pycache__'))
     shutil.copytree(proyecto/'conocimiento.ejemplo',raiz/'sistema'/'conocimiento.ejemplo',dirs_exist_ok=True)
     (raiz/'dictados.json').write_text(json.dumps(FICTICIOS,ensure_ascii=False),encoding='utf-8')
     guion=raiz/'sintetizar.ps1'

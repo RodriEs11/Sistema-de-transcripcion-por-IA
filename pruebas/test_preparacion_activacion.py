@@ -11,9 +11,9 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import preparar_activacion as P
 import rollback_datos as R
 from verificar_paquete import verificar
-import borradores as B
-import cola_procesamiento as C
-import almacen_aprendizaje as A
+from transcripcion.casos import borradores as B
+from transcripcion.procesamiento import cola as C
+from transcripcion.aprendizaje import almacen as A
 
 
 class PreparacionTest(unittest.TestCase):

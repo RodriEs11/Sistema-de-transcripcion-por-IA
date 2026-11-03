@@ -13,7 +13,7 @@ import threading
 import unittest
 from unittest.mock import Mock, patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import cola_procesamiento as C
+from transcripcion.procesamiento import cola as C
 
 RESPALDO = Path(__file__).resolve().parents[1]/'respaldo'
 RESPALDO.mkdir(exist_ok=True)
@@ -94,7 +94,7 @@ class ColaTest(unittest.TestCase):
     def test_salida_abrupta_libera_propietario_y_conserva_commits(self):
         self.cola.cerrar()
         codigo="""import os,sys
-from cola_procesamiento import ColaProcesamiento
+from transcripcion.procesamiento.cola import ColaProcesamiento
 c=ColaProcesamiento(sys.argv[1])
 c.solicitar('primero');c.cambiar('primero',sys.argv[2]);c.pausa('primero',True)
 c.solicitar('segundo')
@@ -115,7 +115,7 @@ os._exit(73)
     def test_caida_durante_transaccion_revierte_sin_perder_tarea(self):
         self.cola.cerrar()
         codigo="""import os,sys
-from cola_procesamiento import ColaProcesamiento
+from transcripcion.procesamiento.cola import ColaProcesamiento
 c=ColaProcesamiento(sys.argv[1]);c.solicitar('ficticio')
 with c.transaccion() as db:
  db.execute("UPDATE tareas SET estado='generando'")
@@ -147,7 +147,7 @@ with c.transaccion() as db:
 class ServidorTest(unittest.TestCase):
     def setUp(self):
         import servidor as S
-        import ajustes
+        from transcripcion import ajustes
         self.S=S
         tmp=tempfile.TemporaryDirectory(dir=RESPALDO); self.addCleanup(tmp.cleanup)
         self.base=Path(tmp.name); self.datos=self.base/'revision'/'datos'; self.datos.mkdir(parents=True)
@@ -287,7 +287,7 @@ class ServidorTest(unittest.TestCase):
         self.reiniciar();self.assertTrue(self.S.COLA.empty());self.assertNotIn('sin-audio',self.S.ESTADO)
 
     def test_arranque_no_inicia_hilos_ni_acepta_trabajo_con_cola_inaccesible(self):
-        import ajustes
+        from transcripcion import ajustes
         with (patch.object(self.S,'Servidor') as servidor,patch.object(self.S,'reanudar_cola',side_effect=C.ErrorCola('Fallo ficticio')),
               patch.object(self.S.ajustes,'cargar',return_value=ajustes.para_pruebas(self.base)),patch.object(self.S.N,'preparar_conocimiento'),
               patch.object(self.S.L,'configurar'),patch.object(self.S.M,'titulo_consola'),patch.object(self.S.threading,'Thread') as hilo):
@@ -298,7 +298,7 @@ class ServidorTest(unittest.TestCase):
         codigo='''import json,os,sys,queue
 from pathlib import Path
 import servidor as S
-import ajustes
+from transcripcion import ajustes
 base=Path(sys.argv[1]);modo=sys.argv[2]
 S.configurar(ajustes.para_pruebas(base))
 S.N.CONOC=base/'conocimiento';S.N.preparar_conocimiento()   # conocimiento de ejemplo, nunca el de la instalación

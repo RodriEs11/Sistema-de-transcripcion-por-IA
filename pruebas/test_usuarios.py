@@ -12,11 +12,11 @@ import urllib.parse
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import ajustes
+from transcripcion import ajustes
 import servidor as S
 import nucleo as N
 import remoto as R
-import usuarios as U
+from transcripcion.acceso import usuarios as U
 import aprender as AP
 
 PLANTILLAS = """# PLANTILLAS FICTICIAS
@@ -346,7 +346,7 @@ class HttpTest(Base):
     def test_guardar_word_con_transcriptor(self):
         # regresión: «registro.actividad() got multiple values for keyword argument 'usuario'»
         from unittest.mock import MagicMock
-        import registro as L
+        from transcripcion.base import registro as L
         datos = self.d / "Informes" / "revision" / "datos"
         datos.mkdir(parents=True, exist_ok=True)
         n = "Servidor_20261102-120000_ficticio"

@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import borradores as B
+from transcripcion.casos import borradores as B
 
 
 class BorradoresTest(unittest.TestCase):
