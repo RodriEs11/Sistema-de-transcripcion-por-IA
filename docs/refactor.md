@@ -46,8 +46,9 @@ sistema/
 │   ├── casos/                  archivos de un caso, estado, listado, borradores, paciente, índice, borrado
 │   ├── procesamiento/          cola SQLite, trabajador, lotes, pausas, tiempos, caché de transcripción
 │   ├── asr/                    whisper (modelo, lectura de WAV, transcribir), huecos
-│   ├── texto/                  normalización de números, horas y niveles; datos críticos
-│   ├── ia/                     cliente de Ollama, plantillas, ejemplos y referencias, prompt
+│   ├── texto/                  normalización de números, horas y niveles; datos críticos; palabras
+│   ├── conocimiento/           carpeta conocimiento/, plantillas por estudio, notas de los médicos
+│   ├── ia/                     cliente de Ollama, ejemplos y referencias, prompt
 │   ├── controles/              marcas, controles clínicos, omisiones, orden de estudios, alineación
 │   ├── informe/                párrafos y Word (python-docx), formato
 │   ├── aprendizaje/            ejemplos, historial, correcciones, cola de aprendizaje
@@ -94,7 +95,7 @@ Los nombres son orientativos: cada etapa puede ajustarlos y lo deja escrito acá
 | 1 | **Ajustes y arranque sin efectos** | `ajustes.py` (pasa a `transcripcion/` en la etapa 2); `servidor.py` y `nucleo.py` dejan de leer config y crear carpetas al importarse (todo pasa al arranque); prueba «importar no escribe nada» | Medio | Servidor |
 | 2a | **Paquete con los módulos base** | Crear `transcripcion/` y mover los módulos que ya son independientes (plataforma, persistencia, registro, ajustes, borradores, paciente, índice, cola, lotes, caché, almacén y cola de aprendizaje, usuarios). Adaptar `mantenimiento.py` (detección de código cambiado y prueba previa al reinicio), las herramientas que copian el código y el CI | Medio (muchos imports) | Servidor |
 | 2b | **Scripts y herramientas** | Scripts de mantenimiento y activación a `scripts/`, herramientas de desarrollo y evaluación a `herramientas/`, dejando lanzadores en la raíz para lo que se usa desde un `.bat` o desde la documentación | Bajo | — |
-| 3 | **Núcleo** | `nucleo.py` → `ia/` (ollama, plantillas, ejemplos, prompt) y `controles/` (marcas, clínicos, omisiones, orden). Guardia: contrato del núcleo | Bajo | Servidor |
+| 3 | **Núcleo** | `nucleo.py` → `conocimiento/` (archivos, plantillas, médicos), `ia/` (ollama, ejemplos, prompt) y `controles/` (marcas, clínicos, avisos, orden). Guardia: contrato del núcleo | Bajo | Servidor |
 | 4 | **Transcripción** | `fase1_transcribir.py` → `asr/whisper.py` y `texto/normalizacion.py`; los reportes de evaluación a `herramientas/` | Bajo | Servidor |
 | 5 | **Dominio del servidor** | De `servidor.py`: `casos/` (archivos de un caso, listado, borrado) y `procesamiento/` (trabajador, pausas, tiempos) como objetos con su estado, sin globales | **Alto** | Servidor |
 | 6 | **HTTP** | Tabla de rutas y handlers por área (casos, conocimiento, cliente, usuario, admin, páginas); páginas HTML fuera de las cadenas; `servidor.py` queda como entrada de pocas líneas | **Alto** | Servidor |
@@ -111,8 +112,9 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 |---|---|---|
 | 0 | `test/red-de-seguridad-refactor` · PR #13 | Hecha (fusionada el 03/11) |
 | 1 | `refactor/1-ajustes-sin-efectos` · PR #14 · Servidor 2026.11.3 | Hecha (fusionada el 03/11) |
-| 2a | `refactor/2-paquete-base` · Servidor 2026.11.4 | En revisión |
-| 2b–9 | — | Pendiente |
+| 2a | `refactor/2-paquete-base` · PR #15 · Servidor 2026.11.4 | Hecha (fusionada el 03/11) |
+| 3 | `refactor/3-nucleo` · Servidor 2026.11.5 | En revisión |
+| 2b, 4–9 | — | Pendiente |
 
 ### Etapa 1: qué quedó
 
@@ -149,6 +151,38 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
   (`pruebas/test_mantenimiento_codigo.py`).
 - `pruebas/validar_gpu_real.py` y `pruebas/comparar_cpu_gpu.py` copian el paquete. Estaban rotas desde que
   `nucleo.py` importa `usuarios` (no lo copiaban). `medir_listado.py` y el artefacto del CI también lo incluyen.
+
+### Etapa 3: qué quedó
+
+`nucleo.py` (~1.400 líneas) ya no existe. Se partió por responsabilidad, sin ciclos entre módulos:
+
+| Módulo | Alias | Contenido |
+|---|---|---|
+| `transcripcion/conocimiento/archivos.py` | `CON` | `CONOC`, `preparar_conocimiento`, `leer` |
+| `transcripcion/conocimiento/plantillas.py` | `PL` | secciones generales y propias, categorías, títulos de estudio, texto fijo, plantillas relevantes |
+| `transcripcion/conocimiento/medicos.py` | `MED` | `DIR_MED`, notas generales y propias, alta/baja/cambio |
+| `transcripcion/ia/prompt.py` | `PR` | `SISTEMA`, `reglas_de`, `armar_mensajes` |
+| `transcripcion/ia/ejemplos.py` | `EJEM` | banco de ejemplos, `elegir_ejemplos`, referencias de estilo |
+| `transcripcion/ia/ollama.py` | `OLL` | `OLLAMA`, `ollama_modelos`, `llamar_ia`, `liberar_ia` |
+| `transcripcion/controles/marcas.py` | `MAR` | `marcar` y sus motivos, alineación, palabras raras, `a_html`, `buscar_tiempo`, `texto_limpio` |
+| `transcripcion/controles/clinicos.py` | `CLI` | Bi-Rads, ACR, términos clave |
+| `transcripcion/controles/avisos.py` | `AV` | `omisiones`, `estudios_sin_plantilla` |
+| `transcripcion/controles/orden.py` | `ORD` | `ordenar_estudios` |
+| `transcripcion/informe/formato.py` | `FMT` | negritas del Word |
+| `transcripcion/texto/palabras.py` | `PAL` | `palabras_norm` |
+
+- Se partió con un script: cada definición fue a su módulo tal cual y las referencias cruzadas se calificaron con
+  el alias del módulo dueño (usando los avisos `F821` de ruff, que dan la posición exacta). Así las variables que
+  las pruebas reemplazan (`CON.CONOC`, `MED.DIR_MED`, `OLL.OLLAMA`, `OLL._post`) se leen siempre del módulo dueño.
+- Tres auxiliares que se usan desde otros módulos dejaron de ser privados: `palabras_norm`, `clave_titulo`, `partir`.
+- No se dejó un `nucleo.py` de compatibilidad: con uno así, `patch.object(N, "CONOC", …)` habría dejado de aislar
+  las pruebas sin dar error. Todos los usos (`servidor`, `informe`, `aprender`, `estadisticas`, `correcciones`,
+  pruebas, herramientas de GPU, `instalar.sh`) pasaron a los módulos nuevos.
+- `instalar.sh` preparaba el conocimiento con `import nucleo` (efecto al importar, quitado en la etapa 1): ahora
+  llama a `preparar_conocimiento()`.
+- `.gitignore` excluye `conocimiento/` por nombre en cualquier carpeta: se agregó la excepción
+  `!/transcripcion/conocimiento/` y `test_paquete.py` verifica que ningún archivo del paquete quede ignorado.
+- `fase1_transcribir` sigue en la raíz (los módulos nuevos lo importan): pasa al paquete en la etapa 4.
 
 ## Red de seguridad (etapa 0)
 

@@ -94,7 +94,7 @@ anterior describía «un audio por vez», pero la implementación es un trabajad
 etapas**. No iniciar varios workers GPU con el esquema actual: podrían descargar el modelo que
 otro necesita o agotar VRAM. Conservar un propietario de GPU y colas diferenciadas por etapa.
 
-`nucleo.llamar_ia` usa contexto 12.288, `stream:false`, `keep_alive:15m`, y devuelve tiempo total
+`nucleo.llamar_ia` (hoy `transcripcion/ia/ollama.py`) usa contexto 12.288, `stream:false`, `keep_alive:15m`, y devuelve tiempo total
 y cantidades de tokens. Faltan métricas separadas de carga, evaluación del prompt y generación.
 Ollama expone `load_duration`, `prompt_eval_duration` y `eval_duration` en nanosegundos:
 [documentación oficial](https://docs.ollama.com/api/usage). Registrar su disponibilidad por versión.

@@ -24,7 +24,7 @@ flowchart TB
         HTTP["servidor.py<br/>ThreadingHTTPServer :8765"]
         COLA["Cola de procesamiento<br/>(1 hilo trabajador)"]
         WH["fase1_transcribir.py + huecos.py<br/>faster-whisper"]
-        NU["nucleo.py<br/>prompt · Ollama · controles"]
+        NU["transcripcion/ia + controles<br/>prompt · Ollama · marcas"]
         OL[("Ollama<br/>gemma4:12b")]
         INF["informe.py<br/>python-docx"]
         APR["aprender.py"]
@@ -59,7 +59,10 @@ en la raíz son los puntos de entrada y lo que todavía no se reorganizó.
 | `servidor.py` | Servidor HTTP (`ThreadingHTTPServer`), rutas de la API, cola y trabajador, bloqueos de casos, borrado, panel de administración |
 | `fase1_transcribir.py` | Carga de Whisper, lectura de WAV propia, normalización de texto y números, extracción de datos críticos |
 | `huecos.py` | Busca regiones con energía de voz y sin palabras, y las re-transcribe |
-| `nucleo.py` | Plantillas, detección de estudio, armado del prompt, selección de ejemplos/referencias, llamada a Ollama, orden de estudios, marcas y omisiones |
+| `transcripcion/conocimiento/` | `archivos` (carpeta `conocimiento/`, `CONOC`, `preparar_conocimiento`), `plantillas` (secciones generales y propias, categorías, títulos, texto fijo, plantillas relevantes para un dictado), `medicos` (notas generales y propias) |
+| `transcripcion/ia/` | `prompt` (instrucciones y armado de mensajes), `ejemplos` (banco, selección few-shot, referencias), `ollama` (cliente de Ollama, orden de estudios aplicado a la salida, liberar la GPU) |
+| `transcripcion/controles/` | `marcas` (marcas con su motivo, alineación con el dictado, HTML, palabras raras), `clinicos` (Bi-Rads, ACR, términos clave), `avisos` (datos omitidos, estudios sin plantilla), `orden` (orden de estudios) |
+| `transcripcion/informe/formato.py`, `transcripcion/texto/palabras.py` | Negritas del Word; palabras normalizadas para comparar textos |
 | `informe.py` | Lectura de la configuración para el modo consola (vía `ajustes`), párrafos con formato, Word (A4, Tahoma, negritas, centrado) y modo consola |
 | `aprender.py` | Ejemplos aprendidos, `historial.csv`, `correcciones_aprendidas.md` |
 | `importar_informes.py` | Convierte informes Word en referencias o en plantillas |

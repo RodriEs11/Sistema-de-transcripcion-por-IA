@@ -32,13 +32,13 @@ Antes de llegar a la IA, el texto se normaliza: números en palabras a cifras ("
 horas de reloj de mama ("hora 11" → H11), niveles vertebrales ("L5, S1" → L5-S1). También se extraen los
 **datos críticos** (números, lados, categorías) que después se usan en los controles.
 
-## 2. Armado del prompt (`nucleo.py`)
+## 2. Armado del prompt (`transcripcion/ia/prompt.py`)
 
 El mensaje de sistema se compone de:
 
 | Parte | Origen |
 |---|---|
-| Reglas generales | Código (`nucleo.py`) |
+| Reglas generales | Código (`SISTEMA` en `transcripcion/ia/prompt.py`) |
 | Convenciones de dictado | `conocimiento/reglas_dictado.md` |
 | Correcciones frecuentes | `conocimiento/correcciones_aprendidas.md` (generado) |
 | Notas del médico | `conocimiento/medicos/<médico>.md` |

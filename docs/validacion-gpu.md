@@ -60,7 +60,7 @@ predeterminado del candidato App 1.22 / Servidor 2026.10.46; no constituye su de
 - Whisper large-v3 local, CUDA/float16, idioma español, beam 5, VAD y reparación de
   huecos del código de la aplicación. Sin reutilizar caché ASR entre ensayos.
 - Gemma `gemma4:12b`, 11,9B, Q4_K_M; contexto 12.288, temperatura 0,1, tres ejemplos
-  ficticios fijos y los controles de marcado/omisiones de `nucleo.py`.
+  ficticios fijos y los controles de marcado/omisiones de `transcripcion/controles/`.
 - Cuatro dictados inventados: tiroides, mamografía, tórax y abdomen. Voz local
   Microsoft Sabina Desktop, velocidad -1, WAV mono PCM16 a 16 kHz. Duraciones:
   40,39 / 40,21 / 36,26 / 41,03 s. No se leyeron casos, audios, ejemplos aprendidos,
