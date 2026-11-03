@@ -15,7 +15,7 @@ AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
 
 # --- Dónde vive cada función hoy. Al mover código, cambiar solo estas líneas. ---------------------------------
-from fase1_transcribir import normalizar, palabras_a_numeros, datos_criticos   # noqa: E402
+from transcripcion.texto.normalizacion import normalizar, palabras_a_numeros, datos_criticos   # noqa: E402
 from transcripcion.controles.marcas import marcar, a_html, contar_marcas   # noqa: E402
 from transcripcion.controles.avisos import omisiones, estudios_sin_plantilla   # noqa: E402
 from transcripcion.controles.orden import ordenar_estudios   # noqa: E402

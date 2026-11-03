@@ -40,7 +40,7 @@ configurar la contraseña del panel remoto, abrir el registro o las carpetas (so
 ### Mantenimiento (desde la versión 2026.10.27)
 
 - **Cambios sin tomar**: el servidor anota la versión de cada archivo de Python que carga (también los que se
-  importan tarde, como `aprender.py` o `huecos.py`) y de `configuracion.json`. Si alguno cambia en la carpeta,
+  importan tarde, como `aprender.py` o `transcripcion/asr/huecos.py`) y de `configuracion.json`. Si alguno cambia en la carpeta,
   el panel lo muestra y sugiere reiniciar. Las páginas (`web/`), las plantillas y las reglas no necesitan
   reiniciar: se leen en cada pedido.
 - **Versión del código**: commit con el que arrancó el servidor, commit actual de la carpeta y archivos sin

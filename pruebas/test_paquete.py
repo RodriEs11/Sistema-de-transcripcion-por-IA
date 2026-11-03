@@ -15,7 +15,7 @@ from transcripcion.base import plataforma, registro  # noqa: E402
 
 MOVIDOS = ("plataforma", "persistencia", "registro", "ajustes", "borradores", "paciente", "indice_casos",
            "cola_procesamiento", "lotes_ia", "cache_transcripcion", "almacen_aprendizaje", "aprendizaje_pendiente",
-           "usuarios", "nucleo")
+           "usuarios", "nucleo", "huecos")
 
 
 class Paquete(unittest.TestCase):

@@ -13,237 +13,25 @@ Opciones utiles:
     --rehacer                 (vuelve a transcribir aunque ya exista)
 """
 import argparse
-import glob
 import html
 import json
 import os
-import re
 import sys
 import time
-import unicodedata
-import wave
 from pathlib import Path
+
+from transcripcion.asr.whisper import (VOCAB_DEF, cargar_modelo, leer_vocabulario,
+                                       transcribir, duracion)
+from transcripcion.texto.normalizacion import datos_criticos
 
 AQUI = Path(__file__).resolve().parent
 AUDIOS_DEF = AQUI.parent / "Dataset" / "Audios_Transcripcion"
 SALIDA_DEF = AQUI / "resultados" / "fase1"
-VOCAB_DEF = AQUI / "vocabulario.txt"
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
     pass
-
-
-# ----------------------------------------------------------------- GPU
-def preparar_cuda():
-    """Hace visibles las bibliotecas de CUDA/cuDNN instaladas con pip (paquetes nvidia-*)."""
-    bases = {sys.prefix, os.path.join(sys.prefix, "Lib", "site-packages")}
-    try:
-        import site
-        bases.update(site.getsitepackages())
-    except Exception:
-        pass
-    if os.name != "nt":
-        _preparar_cuda_linux(bases)
-        return
-    for base in bases:
-        for d in glob.glob(os.path.join(base, "nvidia", "*", "bin")):
-            try:
-                os.add_dll_directory(d)
-            except Exception:
-                pass
-            os.environ["PATH"] = d + os.pathsep + os.environ.get("PATH", "")
-
-
-def _preparar_cuda_linux(bases):
-    """Linux: los .sh ya ponen las carpetas nvidia/*/lib en LD_LIBRARY_PATH. Si el programa se abrió de otra
-    forma, se cargan acá a mano (RTLD_GLOBAL) para que CTranslate2 las encuentre. Si no hay GPU o las
-    bibliotecas son las del sistema, no hace nada."""
-    import ctypes
-    ld = os.environ.get("LD_LIBRARY_PATH", "")
-    pendientes = []
-    for base in bases:
-        for d in glob.glob(os.path.join(base, "nvidia", "*", "lib")):
-            if d in ld:
-                continue
-            for patron in ("libcublasLt.so*", "libcublas.so*", "libcudnn*.so*"):
-                pendientes += sorted(glob.glob(os.path.join(d, patron)))
-    for _ in range(3):                  # algunas dependen de otras: reintentar las que fallaron
-        fallaron = []
-        for f in pendientes:
-            try:
-                ctypes.CDLL(f, mode=ctypes.RTLD_GLOBAL)
-            except OSError:
-                fallaron.append(f)
-        if not fallaron or len(fallaron) == len(pendientes):
-            break
-        pendientes = fallaron
-
-
-def cargar_modelo(nombre, device):
-    preparar_cuda()
-    from faster_whisper import WhisperModel
-    compute = "float16" if device == "cuda" else "int8"
-    print(f"Cargando modelo '{nombre}' en {device} ({compute})...")
-    print("(la primera vez se descarga, ~3 GB; despues queda guardado)")
-    return WhisperModel(nombre, device=device, compute_type=compute)
-
-
-# ----------------------------------------------------------- normalizacion texto
-def sin_acentos(t):
-    return "".join(c for c in unicodedata.normalize("NFD", t)
-                   if unicodedata.category(c) != "Mn")
-
-
-UNIDADES = {
-    "cero": 0, "uno": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5,
-    "seis": 6, "siete": 7, "ocho": 8, "nueve": 9, "diez": 10, "once": 11,
-    "doce": 12, "trece": 13, "catorce": 14, "quince": 15, "dieciseis": 16,
-    "diecisiete": 17, "dieciocho": 18, "diecinueve": 19, "veinte": 20,
-    "veintiun": 21, "veintiuno": 21, "veintiuna": 21, "veintidos": 22,
-    "veintitres": 23, "veinticuatro": 24, "veinticinco": 25,
-    "veintiseis": 26, "veintisiete": 27, "veintiocho": 28, "veintinueve": 29,
-}
-DECENAS = {"treinta": 30, "cuarenta": 40, "cincuenta": 50, "sesenta": 60,
-           "setenta": 70, "ochenta": 80, "noventa": 90}
-CENTENAS = {"cien": 100, "ciento": 100, "doscientos": 200, "trescientos": 300,
-            "cuatrocientos": 400, "quinientos": 500, "seiscientos": 600,
-            "setecientos": 700, "ochocientos": 800, "novecientos": 900}
-
-
-def es_num(p):
-    return p in UNIDADES or p in DECENAS or p in CENTENAS or p == "mil"
-
-
-def palabras_a_numeros(texto):
-    """'veintitres por cuatro coma cinco' -> '23 por 4.5'"""
-    toks = re.findall(r"[a-z0-9]+(?:[.,][0-9]+)?|[^a-z0-9\s]", texto)
-    out, i = [], 0
-    while i < len(toks):
-        if not es_num(toks[i]):
-            out.append(toks[i]); i += 1; continue
-        total = actual = 0
-        ult = None
-        while i < len(toks):
-            p = toks[i]
-            if p in CENTENAS:
-                actual += CENTENAS[p]
-            elif p in DECENAS:
-                actual += DECENAS[p]
-            elif p in UNIDADES:
-                if ult == "unidad":
-                    break
-                actual += UNIDADES[p]; ult = "unidad"; i += 1; continue
-            elif p == "mil":
-                total += (actual or 1) * 1000; actual = 0
-            elif (p == "y" and ult == "decena" and i + 1 < len(toks)
-                  and toks[i + 1] in UNIDADES):
-                i += 1; continue
-            else:
-                break
-            ult = "decena" if p in DECENAS else "otro"
-            i += 1
-        out.append(str(total + actual))
-        # decimales: "coma" / "punto" seguido de numero
-        if (i + 1 < len(toks) and toks[i] in ("coma", "punto")
-                and toks[i + 1] in UNIDADES):
-            out[-1] += "." + str(UNIDADES[toks[i + 1]]); i += 2
-    return " ".join(out)
-
-
-def normalizar(texto):
-    t = sin_acentos(texto.lower())
-    t = palabras_a_numeros(t)
-    t = re.sub(r"(\d),(\d)", r"\1.\2", t)
-    t = re.sub(r"(\d)\s*[x×]\s*(?=\d)", r"\1 x ", t)   # "29x17" -> "29 x 17"
-    # letras dictadas: "hache 12" -> "h 12", "ele 5 ese 1" -> "l 5 s 1"
-    t = re.sub(r"\b(hache|ele|ese|ce|hora|horas|nora)\s+(?=\d)",
-               lambda m: {"hache": "h", "ele": "l", "ese": "s", "ce": "c", "hora": "h", "horas": "h",
-                          "nora": "h"}[m.group(1)] + " ", t)
-    # "h 12" -> "h12", "l5 - s1" -> "l5s1"
-    t = re.sub(r"\b([hcdlst])\s*(\d{1,2})\b", r"\1\2", t)
-    t = re.sub(r"\b([cdls]\d{1,2})\s*[-,]?\s*([cdls]\d{1,2})\b", r"\1\2", t)
-    return t
-
-
-def datos_criticos(texto, es_informe=False):
-    """Medidas, numeros y codigos (H12, L5-S1, C3...) de un texto."""
-    if es_informe:  # se ignora el parrafo tecnico fijo de la mamografia
-        texto = "\n".join(l for l in texto.splitlines()
-                          if not l.strip().lower().startswith("hemos obtenido"))
-    t = normalizar(texto)
-    codigos = set(re.findall(r"\b[hcdlst]\d{1,2}(?:[cdls]\d{1,2})?\b", t))
-    nums = set(re.findall(r"(?<![a-z0-9.])\d+(?:\.\d+)?", t))
-    return codigos | nums
-
-
-# --------------------------------------------------------------- transcripcion
-def leer_vocabulario(ruta):
-    if not ruta or not Path(ruta).exists():
-        return None
-    terms = [l.strip() for l in Path(ruta).read_text(encoding="utf-8-sig").splitlines()
-             if l.strip() and not l.strip().startswith("#")]
-    return "Informe médico de diagnóstico por imágenes: " + ", ".join(terms) + "."
-
-
-def cargar_audio(ruta, sr=16000):
-    """Lee un WAV PCM y lo pasa a 16 kHz mono float32 (sin depender de PyAV)."""
-    import numpy as np
-    try:
-        with wave.open(str(ruta)) as w:
-            n, ch, ancho, fr = w.getnframes(), w.getnchannels(), w.getsampwidth(), w.getframerate()
-            crudo = w.readframes(n)
-    except Exception:
-        from faster_whisper import decode_audio  # otros formatos (mp3, etc.)
-        return decode_audio(str(ruta), sampling_rate=sr)
-    if ancho == 1:
-        x = (np.frombuffer(crudo, np.uint8).astype(np.float32) - 128) / 128
-    elif ancho == 2:
-        x = np.frombuffer(crudo, "<i2").astype(np.float32) / 32768
-    elif ancho == 3:
-        b = np.frombuffer(crudo, np.uint8).reshape(-1, 3).astype(np.int32)
-        v = b[:, 0] | (b[:, 1] << 8) | (b[:, 2] << 16)
-        x = (np.where(v >= 1 << 23, v - (1 << 24), v)).astype(np.float32) / (1 << 23)
-    else:
-        x = np.frombuffer(crudo, "<i4").astype(np.float32) / 2147483648
-    if ch > 1:
-        x = x.reshape(-1, ch).mean(axis=1)
-    if fr != sr and len(x):
-        # remuestreo por FFT (sin aliasing)
-        m = int(round(len(x) * sr / fr))
-        X = np.fft.rfft(x)
-        Y = np.zeros(m // 2 + 1, dtype=X.dtype)
-        k = min(len(X), len(Y))
-        Y[:k] = X[:k]
-        x = np.fft.irfft(Y, n=m) * (m / len(x))
-    return np.ascontiguousarray(x, dtype=np.float32)
-
-
-def transcribir(modelo, ruta_wav, prompt, al_avanzar=None):
-    """al_avanzar(pos, total): se llama después de cada tramo (el servidor lo usa para mostrar por dónde va y
-    para la pausa: si la función no vuelve, Whisper queda detenido ahí con lo transcrito hasta ese momento)."""
-    segs, info = modelo.transcribe(
-        cargar_audio(ruta_wav), language="es", beam_size=5, vad_filter=True,
-        word_timestamps=True, condition_on_previous_text=False,
-        initial_prompt=prompt)
-    palabras, textos = [], []
-    for s in segs:
-        textos.append(s.text.strip())
-        for w in (s.words or []):
-            palabras.append({"p": w.word, "ini": round(w.start, 2),
-                             "fin": round(w.end, 2), "conf": round(w.probability, 3)})
-        if al_avanzar:
-            al_avanzar(s.end, getattr(info, "duration", None))
-    return {"texto": " ".join(textos), "palabras": palabras}
-
-
-def duracion(ruta):
-    try:
-        with wave.open(str(ruta)) as w:
-            return w.getnframes() / float(w.getframerate())
-    except Exception:
-        return 0.0
 
 
 def comparar(dictado, informe):

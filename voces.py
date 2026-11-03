@@ -245,7 +245,7 @@ def huella(audio, palabras=None, cfg=None):
 
 
 def huella_archivo(ruta, palabras=None, cfg=None):
-    from fase1_transcribir import cargar_audio
+    from transcripcion.asr.whisper import cargar_audio
     return huella(cargar_audio(ruta), palabras, cfg)
 
 

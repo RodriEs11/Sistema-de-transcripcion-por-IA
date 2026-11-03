@@ -9,6 +9,19 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [Servidor 2026.11.6] — 2026-11-03
+
+Etapa 4 del [refactor por etapas](docs/refactor.md). Reorganización interna: mismas transcripciones, marcas y
+respuestas HTTP (contratos en verde sin regenerar).
+
+### Cambiado
+- Whisper (CUDA, carga del modelo, lectura de audio, vocabulario, transcripción) pasa a
+  `transcripcion/asr/whisper.py`, la segunda pasada a `transcripcion/asr/huecos.py` y la normalización de números,
+  horas y niveles a `transcripcion/texto/normalizacion.py`. `fase1_transcribir.py` queda solo como herramienta de
+  evaluación y prueba de la GPU (`--verificar`, la usan los instaladores).
+- La caché de transcripción se firma con el código nuevo: tras actualizar, **«Regenerar» un caso que ya existía
+  vuelve a pasar una vez por Whisper** (tarda lo mismo que la primera vez). Los casos nuevos no cambian.
+
 ## [Servidor 2026.11.5] — 2026-11-03
 
 Etapa 3 del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles: mismo prompt,

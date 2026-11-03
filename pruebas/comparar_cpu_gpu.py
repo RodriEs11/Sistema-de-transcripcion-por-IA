@@ -98,8 +98,8 @@ def resumen(pruebas):
 
 def trabajador(raiz, modo, numero, modelo_whisper):
     sys.path.insert(0, str(raiz/'sistema'))
-    import fase1_transcribir as F
-    import huecos as H
+    from transcripcion.asr import whisper as F
+    from transcripcion.asr import huecos as H
     from transcripcion.controles import avisos as AV
     from transcripcion.controles import marcas as MAR
     from transcripcion.ia import ollama as OLL
@@ -227,9 +227,9 @@ def ejecutar(origen, espera):
     raiz.mkdir()
     (raiz/'sistema').mkdir()
     (raiz/'audios').mkdir()
-    for nombre in ('fase1_transcribir.py', 'huecos.py', 'vocabulario.txt'):
+    for nombre in ('vocabulario.txt',):
         shutil.copy2(proyecto/nombre, raiz/'sistema'/nombre)
-    # paquete: núcleo (ia, controles, conocimiento), registro, plataforma, persistencia y usuarios
+    # paquete: whisper y huecos (asr), ia, controles, conocimiento, registro, plataforma, persistencia y usuarios
     shutil.copytree(proyecto/'transcripcion', raiz/'sistema'/'transcripcion', ignore=shutil.ignore_patterns('__pycache__'))
     shutil.copytree(proyecto/'conocimiento.ejemplo', raiz/'sistema'/'conocimiento.ejemplo')
     for nombre in firmas:

@@ -78,7 +78,7 @@ ssh -L 8765:127.0.0.1:8765 usuario@servidor
 | Tema | Windows | Linux |
 |---|---|---|
 | Entorno de Python | `.venv\Scripts` | `.venv/bin` (o `.venv-linux`) |
-| Bibliotecas de CUDA | `os.add_dll_directory` | `LD_LIBRARY_PATH` (lo ponen los .sh) o carga directa en `fase1_transcribir.preparar_cuda` |
+| Bibliotecas de CUDA | `os.add_dll_directory` | `LD_LIBRARY_PATH` (lo ponen los .sh) o carga directa en `transcripcion/asr/whisper.preparar_cuda` |
 | Túnel | `cloudflared.exe` | `cloudflared` |
 | Reinicio desde el panel | título de la ventana + marca en el .bat | variable `TRANSCRIPCION_REINICIO=1` (la ponen los .sh y el servicio) |
 | «Abrir…» del panel, abrir el Word | Explorador / Word | `xdg-open` (solo con escritorio) |

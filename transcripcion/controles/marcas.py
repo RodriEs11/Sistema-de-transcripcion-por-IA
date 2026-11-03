@@ -16,7 +16,7 @@ Viene de nucleo.py (docs/refactor.md, etapa 3).
 import difflib
 import html
 import re
-from fase1_transcribir import normalizar, sin_acentos, datos_criticos
+from transcripcion.texto.normalizacion import normalizar, sin_acentos, datos_criticos
 from transcripcion.conocimiento import plantillas as PL
 from transcripcion.controles import clinicos as CLI
 from transcripcion.ia import ejemplos as EJEM

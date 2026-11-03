@@ -29,7 +29,7 @@ from transcripcion.ia import ollama as OLL
 from transcripcion.ia import prompt as PR
 from transcripcion.informe import formato as FMT
 from transcripcion.base import plataforma as P
-from fase1_transcribir import cargar_modelo, transcribir, duracion
+from transcripcion.asr.whisper import cargar_modelo, transcribir, duracion
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -282,8 +282,8 @@ def main():
     trans = {}
     for k, a in enumerate(audios, 1):
         print(f"[{k}/{len(audios)}] Transcribiendo {a.name} ({duracion(a):.0f}s)...", flush=True)
-        from fase1_transcribir import leer_vocabulario, cargar_audio, VOCAB_DEF
-        import huecos as H
+        from transcripcion.asr.whisper import leer_vocabulario, cargar_audio, VOCAB_DEF
+        from transcripcion.asr import huecos as H
         prompt = leer_vocabulario(VOCAB_DEF)
         t = transcribir(modelo, a, prompt)
         pal, pend = H.reparar(modelo, cargar_audio(a), t["palabras"], prompt)

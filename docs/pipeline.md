@@ -5,7 +5,7 @@ Este documento describe cómo un audio se convierte en un informe y cómo se dec
 El candidato conserva modelos, prompts y controles. La [etapa de lotes e IA](ia-lotes.md) acota
 la espera inicial, reutiliza ASR verificado y ejemplos sin cambios, e incorpora métricas por etapa.
 
-## 1. Transcripción (`fase1_transcribir.py`, `huecos.py`)
+## 1. Transcripción (`transcripcion/asr/whisper.py`, `transcripcion/asr/huecos.py`)
 
 - **Modelo**: Whisper large-v3 con [faster-whisper](https://github.com/SYSTRAN/faster-whisper), CUDA en `float16`.
 - **Parámetros**: idioma español, VAD activado, marcas de tiempo por palabra.
@@ -16,7 +16,7 @@ la espera inicial, reutiliza ASR verificado y ejemplos sin cambios, e incorpora 
 ### Segunda pasada sobre tramos perdidos
 
 Whisper a veces "se come" fragmentos (en una prueba tapó 3,3 s con la palabra "aparte" y en otra dejó 9 s sin
-transcribir). `huecos.py`:
+transcribir). `transcripcion/asr/huecos.py`:
 
 1. Calcula la energía del audio por ventanas.
 2. Busca regiones con voz (`voz_min`) donde no hay palabras durante al menos `gap_min` segundos, o donde una

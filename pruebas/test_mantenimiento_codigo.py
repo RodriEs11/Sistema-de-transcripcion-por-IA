@@ -21,8 +21,9 @@ CODIGO = textwrap.dedent("""
     import servidor
     M.empezar()
     cargados = set(M.CARGADO)
-    import huecos                                   # se importa tarde: lo anota el gancho de import
-    tarde = "huecos.py" in M.CARGADO
+    antes = "transcripcion/asr/huecos.py" in M.CARGADO
+    from transcripcion.asr import huecos            # se importa tarde: lo anota el gancho de import
+    tarde = not antes and "transcripcion/asr/huecos.py" in M.CARGADO
     p = Path("transcripcion/casos/paciente.py")
     p.write_text(p.read_text(encoding="utf-8") + "\\n# cambio ficticio\\n", encoding="utf-8")
     cambios = [c["archivo"] for c in M.cambios_sin_tomar()]

@@ -180,8 +180,7 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 
 ```
 ├── servidor.py              Servidor HTTP, cola de procesamiento y API de la interfaz
-├── fase1_transcribir.py     Whisper, lectura de audio y normalización del texto
-├── huecos.py                Detección de tramos no transcritos y segunda pasada
+├── fase1_transcribir.py     Evaluación de Whisper sobre audios de ejemplo y prueba de la GPU (--verificar)
 ├── informe.py               Generación del Word (python-docx) y modo consola
 ├── aprender.py              Ejemplos aprendidos, historial y correcciones frecuentes
 ├── importar_informes.py     Importa informes Word como referencias o plantillas
@@ -191,7 +190,8 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 ├── app_cliente.py           Manifiesto de actualización de la app del trabajo
 ├── configurar_acceso.py     Contraseña del acceso remoto y PC autorizadas
 ├── configurar_tunel.py      Elegir el túnel: Cloudflare o Microsoft Dev Tunnels
-├── transcripcion/           Paquete con los módulos reorganizados: ia/ (prompt, ejemplos, Ollama),
+├── transcripcion/           Paquete con los módulos reorganizados: asr/ (Whisper y segunda pasada),
+│                            texto/ (normalización de números), ia/ (prompt, ejemplos, Ollama),
 │                            controles/ (marcas y avisos), conocimiento/ (plantillas y médicos), ajustes,
 │                            base, casos, procesamiento, aprendizaje, acceso; ver docs/refactor.md
 ├── web/                     Interfaz de revisión, panel de administración y estadísticas
