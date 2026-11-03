@@ -30,6 +30,9 @@ namespace Transcripcion
     {
         public const string VERSION = "1.22";
         public static EventWaitHandle SenalMostrar;
+        // Con el perfil de pruebas es otra instancia: puede abrirse junto a la app de producción.
+        static string NombreSenal { get { return "Transcripcion-cliente-mostrar" + Config.Perfil; } }
+        static string ClaveInicio { get { return "Transcripcion" + Config.Perfil; } }
 
         [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] static extern IntPtr LoadLibrary(string ruta);
@@ -60,12 +63,12 @@ namespace Transcripcion
             int ia = Array.IndexOf(args, "--actualizada");
             bool recienActualizada = ia >= 0 && ia + 1 < args.Length;
             if (recienActualizada) Actualizador.EsperarQueTermine(args[ia + 1]);
-            SenalMostrar = new EventWaitHandle(false, EventResetMode.AutoReset, "Transcripcion-cliente-mostrar", out nueva);
+            SenalMostrar = new EventWaitHandle(false, EventResetMode.AutoReset, NombreSenal, out nueva);
             for (int i = 0; !nueva && recienActualizada && i < 30; i++)
             {   // la versión anterior todavía se está cerrando
                 SenalMostrar.Dispose();
                 Thread.Sleep(1000);
-                SenalMostrar = new EventWaitHandle(false, EventResetMode.AutoReset, "Transcripcion-cliente-mostrar", out nueva);
+                SenalMostrar = new EventWaitHandle(false, EventResetMode.AutoReset, NombreSenal, out nueva);
             }
             if (!nueva)
             {   // ya está abierta: pedirle que se muestre y salir
@@ -77,7 +80,7 @@ namespace Transcripcion
                 SenalMostrar.Dispose();
                 Registro.Escribir("Actualización: la versión nueva no terminó de abrir la vez anterior; se vuelve a la anterior.");
                 if (Actualizador.VolverAtras("se cerró antes de abrir su ventana", args)) return;
-                SenalMostrar = new EventWaitHandle(false, EventResetMode.AutoReset, "Transcripcion-cliente-mostrar", out nueva);
+                SenalMostrar = new EventWaitHandle(false, EventResetMode.AutoReset, NombreSenal, out nueva);
             }
             try { SetProcessDPIAware(); } catch { }
             // TLS 1.2 y 1.3 para hablar con el túnel
@@ -216,8 +219,8 @@ namespace Transcripcion
             {
                 using (var k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true))
                 {
-                    if (si) k.SetValue("Transcripcion", "\"" + Application.ExecutablePath + "\" --oculta");
-                    else k.DeleteValue("Transcripcion", false);
+                    if (si) k.SetValue(ClaveInicio, "\"" + Application.ExecutablePath + "\" --oculta");
+                    else k.DeleteValue(ClaveInicio, false);
                 }
             }
             catch (Exception ex) { Registro.Escribir("No se pudo cambiar el inicio con Windows: " + ex.Message); }
@@ -228,7 +231,7 @@ namespace Transcripcion
             try
             {
                 using (var k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", false))
-                    return k != null && k.GetValue("Transcripcion") != null;
+                    return k != null && k.GetValue(ClaveInicio) != null;
             }
             catch { return false; }
         }
@@ -264,12 +267,17 @@ namespace Transcripcion
     static class Config
     {
         public static readonly string CarpetaPrograma = Path.GetDirectoryName(Application.ExecutablePath);
+        // Perfil de pruebas: cliente\perfil_pruebas.txt junto al .exe (lo crea crear_entorno_pruebas.py; nunca se
+        // distribuye a las PC). Usa otra carpeta de datos (config, llave, cola, WebView2), otra instancia y otra
+        // clave de inicio con Windows: así no pisa a la app de producción de la misma PC.
+        public static readonly string Perfil = File.Exists(Path.Combine(CarpetaPrograma, "perfil_pruebas.txt")) ? "-pruebas" : "";
         public static readonly string Carpeta = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Transcripcion");
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Transcripcion" + Perfil);
+        public static string NombreVisible { get { return Perfil == "" ? "Transcripción" : "Transcripción (PRUEBAS)"; } }
         static string Archivo { get { return Path.Combine(Carpeta, "config.json"); } }
 
         public static string Pc = "", Url = "", Tema = "", Aviso = "https://ntfy.sh";
-        public static bool Pausado = false;
+        public static bool Pausado = Perfil != "";                 // en pruebas arranca sin tomar los audios de %TEMP%
         public static bool AvisarListos = true;                    // notificación cuando un informe queda listo (1.9)
         public static bool NotificacionesWindows = false;          // globos/notificaciones de Windows; apagadas por defecto (1.14)
         public static string CarpetaWord = "";                     // carpeta elegida para los Word ("" = Descargas) (1.9)
