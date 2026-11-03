@@ -8,7 +8,7 @@ namespace Transcripcion
 {
     class VentanaVincular : Form
     {
-        readonly TextBox txtPc = new TextBox(), txtClave = new TextBox(), txtUrl = new TextBox();
+        readonly TextBox txtPc = new TextBox(), txtUsuario = new TextBox(), txtClave = new TextBox(), txtUrl = new TextBox();
         readonly CheckBox chkInicio = new CheckBox();
         readonly Label lblPasos = new Label();
         readonly Button btnConectar = new Button(), btnCancelar = new Button();
@@ -25,7 +25,7 @@ namespace Transcripcion
             MaximizeBox = MinimizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(500, 600);
+            ClientSize = new Size(500, 680);
             Icon = Estilo.IconoApp();
 
             var t = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false,
@@ -42,9 +42,12 @@ namespace Transcripcion
             Caja(txtPc, ancho); t.Controls.Add(txtPc);
             t.Controls.Add(Ayuda("Por ejemplo info-01. Aparece en la lista para saber de qué computadora vino cada audio.", ancho));
 
-            t.Controls.Add(Etiqueta("Contraseña del sistema"));
+            t.Controls.Add(Etiqueta("Tu usuario"));
+            Caja(txtUsuario, ancho); t.Controls.Add(txtUsuario);
+            t.Controls.Add(Etiqueta("Contraseña"));
             txtClave.UseSystemPasswordChar = true; Caja(txtClave, ancho); t.Controls.Add(txtClave);
-            t.Controls.Add(Ayuda("La misma que configuraste en el Servidor.", ancho));
+            t.Controls.Add(Ayuda("Tu usuario y tu contraseña de transcriptor. Si en el Servidor todavía no hay " +
+                                 "transcriptores, dejá el usuario vacío y escribí la contraseña del sistema.", ancho));
 
             t.Controls.Add(Etiqueta("Carpeta donde el sistema deja los audios"));
             var carpeta = new TextBox { Text = System.IO.Path.GetTempPath(), ReadOnly = true, Font = Estilo.Mono, BackColor = Estilo.Fondo };
@@ -74,12 +77,12 @@ namespace Transcripcion
             AcceptButton = btnConectar; CancelButton = btnCancelar;
             btnCancelar.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
             btnConectar.Click += (s, e) => Conectar();
-            Shown += (s, e) => (txtPc.Text == "" ? txtPc : txtClave).Focus();
+            Shown += (s, e) => (txtPc.Text == "" ? txtPc : txtUsuario).Focus();
         }
 
         async void Conectar()
         {
-            string pc = txtPc.Text.Trim(), clave = txtClave.Text;
+            string pc = txtPc.Text.Trim(), usuario = txtUsuario.Text.Trim(), clave = txtClave.Text;
             if (!PcValida.IsMatch(pc)) { Paso("Escribí el nombre de esta PC: letras, números y guiones (ej. info-01).", true); txtPc.Focus(); return; }
             if (clave == "") { Paso("Escribí la contraseña.", true); txtClave.Focus(); return; }
             btnConectar.Enabled = false; UseWaitCursor = true;
@@ -98,7 +101,7 @@ namespace Transcripcion
                     }
                 }
                 Paso("✓ Servidor encontrado\nComprobando la contraseña…", false);
-                var r = await Servidor.Vincular(url, pc, clave);
+                var r = await Servidor.Vincular(url, pc, usuario, clave);
                 if (!r.Ok)
                 {
                     if (r.Codigo == 0) Registro.Escribir("No pude comunicarme con " + url + ": " + r.Error);

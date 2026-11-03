@@ -98,10 +98,11 @@ namespace Transcripcion
             return Enviar("GET", url, "/api/cliente/estado", true, null, null, null, 20);
         }
 
-        public static Task<Respuesta> Vincular(string url, string pc, string contrasena)
+        // usuario: transcriptor con el que se conecta la PC (vacío = contraseña del sistema, sin transcriptores)
+        public static Task<Respuesta> Vincular(string url, string pc, string usuario, string contrasena)
         {
             return Enviar("POST", url, "/api/cliente/vincular", false,
-                ComoJson(new Dictionary<string, object> { { "pc", pc }, { "contrasena", contrasena } }), "application/json", null, 30);
+                ComoJson(new Dictionary<string, object> { { "pc", pc }, { "usuario", usuario }, { "contrasena", contrasena } }), "application/json", null, 30);
         }
 
         public static Task<Respuesta> Sesion(string url)
