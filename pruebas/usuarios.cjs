@@ -39,6 +39,7 @@ with tempfile.TemporaryDirectory(prefix='ui_usuarios_', dir='respaldo') as c:
         sys.stdout.flush()
         http.shutdown(); http.server_close(); hilo.join()
 `;
+setTimeout(()=>{console.error('La prueba de transcriptores tardó demasiado.'); process.exit(1);},180000).unref();
 (async()=>{
   const hijo=spawn(python,['-u','-c',codigo],{cwd:raiz,env:{...process.env,SIMULAR_IA:'1'},windowsHide:true,stdio:['pipe','pipe','pipe']});
   let diagnostico='',salida=''; hijo.stderr.on('data',d=>diagnostico+=d);
@@ -120,7 +121,11 @@ with tempfile.TemporaryDirectory(prefix='ui_usuarios_', dir='respaldo') as c:
     await page.waitForURL(/\/ingresar$/);
     assert.deepEqual(errores,[]);
     hijo.stdin.write('\n');
-    const final=await new Promise(r=>{hijo.stdout.on('data',d=>{salida+=d; if(salida.includes('}\n')) r(JSON.parse(salida.trim().split('\n').pop()));});});
+    // el servidor imprime el estado final y termina (en Windows las líneas terminan en \r\n)
+    hijo.stdout.on('data',d=>salida+=d);
+    await new Promise((r,j)=>{ const t=setTimeout(()=>j(new Error('El servidor de prueba no terminó. '+diagnostico)),20000);
+      hijo.once('exit',()=>{clearTimeout(t); r();}); });
+    const final=JSON.parse(salida.trim().split(/\r?\n/).pop());
     assert.ok(!final.general.includes('Frase de Ana'));
     assert.ok(final.propias.includes('Frase de Ana'));
     assert.equal(final.notas,'Notas generales.');
