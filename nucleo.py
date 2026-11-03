@@ -31,9 +31,11 @@ CONOC = AQUI / "conocimiento"
 OLLAMA = "http://localhost:11434"
 
 
-def _preparar_conocimiento():
+def preparar_conocimiento():
     """Primera vez (repositorio recién clonado): crea conocimiento/ a partir de conocimiento.ejemplo/.
-    Solo copia los archivos que faltan; nunca pisa los que ya existen."""
+    Solo copia los archivos que faltan; nunca pisa los que ya existen.
+    La llaman los puntos de entrada (servidor, informe, aprender, importar_informes) al arrancar, no la
+    importación del módulo (docs/refactor.md, etapa 1)."""
     ejemplo = AQUI / "conocimiento.ejemplo"
     if not ejemplo.is_dir():
         return
@@ -42,9 +44,6 @@ def _preparar_conocimiento():
         if f.is_file() and f.name != "README.md" and not f.name.startswith(".") and not destino.exists():
             destino.parent.mkdir(parents=True, exist_ok=True)
             destino.write_bytes(f.read_bytes())
-
-
-_preparar_conocimiento()
 
 
 # ------------------------------------------------------------- conocimiento
