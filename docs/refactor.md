@@ -96,7 +96,7 @@ Los nombres son orientativos: cada etapa puede ajustarlos y lo deja escrito acá
 | 2a | **Paquete con los módulos base** | Crear `transcripcion/` y mover los módulos que ya son independientes (plataforma, persistencia, registro, ajustes, borradores, paciente, índice, cola, lotes, caché, almacén y cola de aprendizaje, usuarios). Adaptar `mantenimiento.py` (detección de código cambiado y prueba previa al reinicio), las herramientas que copian el código y el CI | Medio (muchos imports) | Servidor |
 | 2b | **Scripts y herramientas** | Scripts de mantenimiento y activación a `scripts/`, herramientas de desarrollo y evaluación a `herramientas/`, dejando lanzadores en la raíz para lo que se usa desde un `.bat` o desde la documentación | Bajo | — |
 | 3 | **Núcleo** | `nucleo.py` → `conocimiento/` (archivos, plantillas, médicos), `ia/` (ollama, ejemplos, prompt) y `controles/` (marcas, clínicos, avisos, orden). Guardia: contrato del núcleo | Bajo | Servidor |
-| 4 | **Transcripción** | `fase1_transcribir.py` → `asr/whisper.py` y `texto/normalizacion.py`; los reportes de evaluación a `herramientas/` | Bajo | Servidor |
+| 4 | **Transcripción** | `fase1_transcribir.py` → `asr/whisper.py` y `texto/normalizacion.py`; `huecos.py` → `asr/huecos.py`. `fase1_transcribir.py` queda como herramienta de evaluación (pasa a `herramientas/` en la 2b) | Bajo | Servidor |
 | 5 | **Dominio del servidor** | De `servidor.py`: `casos/` (archivos de un caso, listado, borrado) y `procesamiento/` (trabajador, pausas, tiempos) como objetos con su estado, sin globales | **Alto** | Servidor |
 | 6 | **HTTP** | Tabla de rutas y handlers por área (casos, conocimiento, cliente, usuario, admin, páginas); páginas HTML fuera de las cadenas; `servidor.py` queda como entrada de pocas líneas | **Alto** | Servidor |
 | 7 | **Página principal** | `web/index.html` → `css/` y módulos `js/` (api, lista, editor, audio y onda, marcas, atajos, usuario) | Medio | Servidor + App |
@@ -113,8 +113,9 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 | 0 | `test/red-de-seguridad-refactor` · PR #13 | Hecha (fusionada el 03/11) |
 | 1 | `refactor/1-ajustes-sin-efectos` · PR #14 · Servidor 2026.11.3 | Hecha (fusionada el 03/11) |
 | 2a | `refactor/2-paquete-base` · PR #15 · Servidor 2026.11.4 | Hecha (fusionada el 03/11) |
-| 3 | `refactor/3-nucleo` · Servidor 2026.11.5 | En revisión |
-| 2b, 4–9 | — | Pendiente |
+| 3 | `refactor/3-nucleo` · PR #16 · Servidor 2026.11.5 | Hecha (fusionada el 03/11) |
+| 4 | `refactor/4-transcripcion` · Servidor 2026.11.6 | En revisión |
+| 2b, 5–9 | — | Pendiente |
 
 ### Etapa 1: qué quedó
 
@@ -183,6 +184,23 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 - `.gitignore` excluye `conocimiento/` por nombre en cualquier carpeta: se agregó la excepción
   `!/transcripcion/conocimiento/` y `test_paquete.py` verifica que ningún archivo del paquete quede ignorado.
 - `fase1_transcribir` sigue en la raíz (los módulos nuevos lo importan): pasa al paquete en la etapa 4.
+
+### Etapa 4: qué quedó
+
+| Antes | Ahora |
+|---|---|
+| `fase1_transcribir.py`: `sin_acentos`, `palabras_a_numeros`, `normalizar`, `datos_criticos` | `transcripcion/texto/normalizacion.py` |
+| `fase1_transcribir.py`: CUDA, `cargar_modelo`, `cargar_audio`, `leer_vocabulario`, `transcribir`, `duracion`, `VOCAB_DEF` | `transcripcion/asr/whisper.py` |
+| `huecos.py` | `transcripcion/asr/huecos.py` |
+| `fase1_transcribir.py` (evaluación de la fase 1 y `--verificar`) | Sigue en la raíz, solo con el reporte y `main()`: lo llaman `instalar.bat` e `instalar.sh` |
+
+- Ningún módulo del sistema depende ya de `fase1_transcribir.py`: el paquete no importa nada de la raíz.
+- El servidor usa `W.transcribir`, `W.cargar_modelo`, `H.reparar`… como atributos del módulo (con import diferido,
+  igual que antes), así las pruebas los reemplazan en `transcripcion.asr.whisper` / `huecos`.
+- La caché de transcripción se firma con el hash del código que transcribe: ahora `transcripcion/asr/whisper.py`,
+  `transcripcion/asr/huecos.py` y el vocabulario (antes `fase1_transcribir.py` y `huecos.py`). Consecuencia
+  esperada: después de actualizar, «Regenerar» un caso existente vuelve a pasar una vez por Whisper. La firma ya no
+  depende de `S.AQUI`: `test_lotes_ia` dejó de copiar esos archivos a su carpeta temporal.
 
 ## Red de seguridad (etapa 0)
 

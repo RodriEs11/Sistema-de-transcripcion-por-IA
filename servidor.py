@@ -72,7 +72,7 @@ PUERTO_TUNEL = None
 SIMULAR = False       # SIMULAR_IA=1: sin Whisper ni Ollama (solo para pruebas)
 COLA_AL_REINICIAR = None
 APRENDIZAJE = None    # cola persistente de aprendizaje (se crea en configurar)
-VERSION = "2026.11.5"
+VERSION = "2026.11.6"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",

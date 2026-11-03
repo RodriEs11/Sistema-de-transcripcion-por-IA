@@ -23,7 +23,7 @@ flowchart TB
     subgraph Servidor["PC servidor"]
         HTTP["servidor.py<br/>ThreadingHTTPServer :8765"]
         COLA["Cola de procesamiento<br/>(1 hilo trabajador)"]
-        WH["fase1_transcribir.py + huecos.py<br/>faster-whisper"]
+        WH["transcripcion/asr<br/>whisper + huecos · faster-whisper"]
         NU["transcripcion/ia + controles<br/>prompt · Ollama · marcas"]
         OL[("Ollama<br/>gemma4:12b")]
         INF["informe.py<br/>python-docx"]
@@ -57,8 +57,9 @@ en la raíz son los puntos de entrada y lo que todavía no se reorganizó.
 | `transcripcion/aprendizaje/` | `almacen` (correcciones e historial en SQLite), `pendiente` (cola persistente de aprendizaje) |
 | `transcripcion/acceso/` | `usuarios` (transcriptores, contraseñas y estilo propio) |
 | `servidor.py` | Servidor HTTP (`ThreadingHTTPServer`), rutas de la API, cola y trabajador, bloqueos de casos, borrado, panel de administración |
-| `fase1_transcribir.py` | Carga de Whisper, lectura de WAV propia, normalización de texto y números, extracción de datos críticos |
-| `huecos.py` | Busca regiones con energía de voz y sin palabras, y las re-transcribe |
+| `transcripcion/asr/` | `whisper` (bibliotecas de CUDA, carga del modelo, lectura de WAV propia, vocabulario como prompt, transcripción con tiempos por palabra), `huecos` (regiones con voz y sin palabras, segunda pasada) |
+| `transcripcion/texto/normalizacion.py` | Números en palabras a cifras, horas, niveles vertebrales, sin acentos y datos críticos |
+| `fase1_transcribir.py` | Herramienta: evaluación de Whisper sobre audios de ejemplo (reporte HTML) y `--verificar` (lo usan los instaladores) |
 | `transcripcion/conocimiento/` | `archivos` (carpeta `conocimiento/`, `CONOC`, `preparar_conocimiento`), `plantillas` (secciones generales y propias, categorías, títulos, texto fijo, plantillas relevantes para un dictado), `medicos` (notas generales y propias) |
 | `transcripcion/ia/` | `prompt` (instrucciones y armado de mensajes), `ejemplos` (banco, selección few-shot, referencias), `ollama` (cliente de Ollama, orden de estudios aplicado a la salida, liberar la GPU) |
 | `transcripcion/controles/` | `marcas` (marcas con su motivo, alineación con el dictado, HTML, palabras raras), `clinicos` (Bi-Rads, ACR, términos clave), `avisos` (datos omitidos, estudios sin plantilla), `orden` (orden de estudios) |
