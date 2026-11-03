@@ -147,7 +147,16 @@ setTimeout(()=>{console.error('La prueba de transcriptores tardó demasiado.'); 
     // 7) la app cierra su ventana con el estudio abierto: se cierra el estudio y la sesión
     assert.equal(await page.evaluate(()=>window.salirDeSesion()),true);
     await page.waitForURL(/\/ingresar$/);
-    // y con «Salir» desde la lista
+    // al salir de la app: se avisa al Servidor sin cambiar de pantalla
+    await page.getByLabel('Usuario').fill('ana prueba'); await page.getByLabel('Contraseña').fill('propia123');
+    await page.getByRole('button',{name:'Entrar'}).click(); await page.waitForURL(url+'/');
+    await page.locator('#quienNom',{hasText:'Ana Prueba'}).waitFor();
+    assert.equal(await page.evaluate(()=>window.salirDeSesion({navegar:false})),true);
+    await page.waitForTimeout(500);
+    assert.equal(page.url(),url+'/');
+    assert.equal((await page.request.get(url+'/api/casos')).status(),401);
+    await page.goto(url+'/'); await page.waitForURL(/\/ingresar$/);
+    // y con «Cerrar sesión» desde la lista
     await page.getByLabel('Usuario').fill('ana prueba'); await page.getByLabel('Contraseña').fill('propia123');
     await page.getByRole('button',{name:'Entrar'}).click(); await page.waitForURL(url+'/');
     await page.locator('#quienNom',{hasText:'Ana Prueba'}).waitFor();

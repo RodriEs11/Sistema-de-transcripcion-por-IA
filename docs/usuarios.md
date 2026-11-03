@@ -78,8 +78,11 @@ todos juntas: una frase de la plantilla de cualquiera es frase de plantilla.
   puede vincular mientras no haya transcriptores.
 - **Cerrar la ventana de la app = cerrar la sesión.** La app sigue junto al reloj tomando audios, pero al cerrar su
   ventana llama a `window.salirDeSesion()` de la página: cierra el estudio abierto guardando los cambios (si no
-  puede, no cierra la sesión) y va a `/salir`. Lo mismo al elegir «Salir» en el ícono. Sin esto la sesión no
-  terminaría nunca, porque la app casi nunca se cierra del todo. Requiere la app nueva.
+  puede, no cierra la sesión) y va a `/salir`. Sin esto la sesión no terminaría nunca, porque la app casi nunca se
+  cierra del todo. Requiere la app nueva.
+- **Opciones ▾ (y el ícono junto al reloj):** **Cerrar sesión** sale la persona y la app queda abierta pidiendo usuario
+  (para cambiar de usuario); **Salir** cierra la app enseguida: la página avisa al Servidor por detrás
+  (`salirDeSesion({navegar:false})`, un `fetch` con `keepalive`) sin mostrar la pantalla de entrar.
 - Cinco contraseñas mal desde la misma IP (o con el mismo usuario en la PC del servidor) bloquean 10 minutos.
 
 ### Generar
@@ -95,7 +98,7 @@ los ejemplos generales o la hicieron dos fuentes distintas; si la repite uno sol
 
 ## Pantallas
 
-- **Lista:** arriba, el nombre de quien transcribe, **Mi cuenta** y **Salir**.
+- **Lista:** arriba, el nombre de quien transcribe, **Mi cuenta** y **Cerrar sesión**.
 - **Configuración → Mi cuenta:** cambiar contraseña (obligatorio con la inicial: no se puede cerrar hasta
   cambiarla), formato del Word propio, reglas de dictado propias y resumen de su estilo. Las reglas se ven en lista
   (Editar / Quitar); **Añadir regla** abre una ventana para cargar varias de una vez (Enter agrega otro renglón).
