@@ -120,7 +120,8 @@ class TrabajadorTest(unittest.TestCase):
             if fallo:
                 etapa,caso=fallo
                 (raiz/'resultados'/etapa/f'{caso}.json').write_text('roto',encoding='utf-8')
-            cfg=dict(S.CFG,lote_max_audios=2,lote_max_segundos=180)
+            import ajustes
+            cfg=ajustes.para_pruebas(raiz,lote_max_audios=2,lote_max_segundos=180).cfg
             for nombre,valor in [('AQUI',raiz),('DATOS',datos),('COLA',cola),('CFG',cfg),('SIMULAR',not cache),('ESTADO',{}),('BORRADOS',set()),('PAUSAS',{}),('PAUSADO_S',{}),('REINICIO',{}),('TRABAJO',{}),('ENCOLADO',{})]:
                 pila.enter_context(patch.object(S,nombre,valor))
             pila.enter_context(patch.dict('os.environ',{'SIMULAR_DEMORA':'0'}))

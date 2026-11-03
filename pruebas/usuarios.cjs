@@ -10,10 +10,11 @@ const codigo=`
 import json, sys, tempfile, threading
 from pathlib import Path
 from unittest.mock import patch
-import servidor as S, nucleo as N, usuarios as U, remoto as R
+import servidor as S, nucleo as N, usuarios as U, remoto as R, ajustes
 Path('respaldo').mkdir(exist_ok=True)
 with tempfile.TemporaryDirectory(prefix='ui_usuarios_', dir='respaldo') as c:
     c = Path(c); conoc = c / 'conocimiento'; datos = c / 'Informes' / 'revision' / 'datos'
+    S.configurar(ajustes.para_pruebas(c))
     datos.mkdir(parents=True); (c / 'Audios_nuevos').mkdir(); conoc.mkdir()
     (conoc / 'plantillas.md').write_text('# x\\n\\n## MAMOGRAFÍA\\nTITULO: MAMOGRAFÍA\\n- Mamas de densidad tipo B.\\n', encoding='utf-8')
     (conoc / 'reglas_dictado.md').write_text('- Regla ficticia.\\n', encoding='utf-8')

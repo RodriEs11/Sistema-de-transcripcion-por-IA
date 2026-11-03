@@ -16,7 +16,12 @@ import time
 
 
 def medir(cantidades, repeticiones):
+    import ajustes
     import servidor as S
+    aj = ajustes.cargar()           # configuracion.json de la copia (carpetas de la copia)
+    S.configurar(aj)
+    ajustes.preparar_carpetas(aj)
+    S.N.preparar_conocimiento()
 
     creados = 0
     resultados = []
