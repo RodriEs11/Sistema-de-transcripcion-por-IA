@@ -55,7 +55,7 @@ sistema/
 │   ├── voz/                    huellas y reconocimiento del médico
 │   ├── acceso/                 túnel, sesiones, llaves por PC, usuarios, permisos del panel
 │   ├── operacion/              reinicio, mensajes a las PC, mantenimiento, estadísticas, GPU
-│   └── http/                   servidor, tabla de rutas, handlers por área, páginas HTML
+│   └── http/                   manejador, tabla de rutas, una función por ruta agrupadas por área
 ├── web/                        index.html + css/ + js/ (módulos), admin, estadísticas…
 ├── scripts/                    configurar_acceso, configurar_tunel, mantenimiento_*, activación, rollback…
 ├── herramientas/               evaluación (fase 1/2/5), verificación de versiones y paquete, mediciones
@@ -100,7 +100,7 @@ Los nombres son orientativos: cada etapa puede ajustarlos y lo deja escrito acá
 | 5 | **Estado del servidor en objetos** | De `servidor.py`: `Casos` (`casos/repositorio.py`: archivos de cada caso, cachés, índice del listado) y `Procesamiento` (`procesamiento/estado.py`: etapas, cola, pausas, tiempos) como objetos creados en `configurar()`, sin las globales sueltas | **Alto** | Servidor |
 | 6a | **Servicios fuera de `servidor.py`** | Trabajador → `procesamiento/trabajador.py`; lista, caso abierto y borrado → `casos/`; voz → `voz/`; estado de la IA, reinicio y mensajes → `operacion/`; «Guardar Word» y Word → `informe/`. Cada uno recibe en su constructor los objetos que usa | **Alto** | Servidor |
 | 6b | **Módulos de la raíz al paquete** | `remoto`, `admin` → `acceso/`; `mantenimiento`, `estadisticas`, `app_cliente` → `operacion/`; `aprender`, `correcciones` → `aprendizaje/`; `importar_informes` → `conocimiento/importar.py`. En la raíz quedan lanzadores de consola. Así el HTTP (6c) puede vivir en el paquete | Bajo | Servidor |
-| 6c | **HTTP** | Tabla de rutas y handlers por área (casos, conocimiento, cliente, usuario, admin, páginas); páginas HTML fuera de las cadenas; `servidor.py` queda como entrada de pocas líneas | **Alto** | Servidor |
+| 6c | **HTTP** | Tabla de rutas y handlers por área (casos, conocimiento, cliente, usuario, admin, páginas); páginas HTML fuera de las cadenas; `servidor.py` queda con el arranque | **Alto** | Servidor |
 | 7 | **Página principal** | `web/index.html` → `css/` y módulos `js/` (api, lista, editor, audio y onda, marcas, atajos, usuario) | Medio | Servidor + App |
 | 8 | **App de escritorio** | `VentanaPrincipal.cs` en clases por responsabilidad (bandeja, compacto, puente con la página, actualizaciones) | Medio | App |
 | 9 | **Calidad continua** | Reglas de ruff y formato por módulo terminado, tipos y mypy en el paquete, cobertura en el CI | Nulo | — |
@@ -119,8 +119,9 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 | 4 | `refactor/4-transcripcion` · PR #17 · Servidor 2026.11.6 | Hecha (fusionada el 03/11) |
 | 5 | `refactor/5-casos-procesamiento` · PR #18 · Servidor 2026.11.7 | Hecha (fusionada el 03/11) |
 | 6a | `refactor/6a-servicios` · PR #20 · Servidor 2026.11.8 | En revisión |
-| 6b | `refactor/6b-raiz-al-paquete` (sobre la 6a) · Servidor 2026.11.9 | En revisión |
-| 2b, 6c–9 | — | Pendiente |
+| 6b | `refactor/6b-raiz-al-paquete` (sobre la 6a) · PR #21 · Servidor 2026.11.9 | En revisión |
+| 6c | `refactor/6c-http` (sobre la 6b) · Servidor 2026.11.10 | En revisión |
+| 2b, 7–9 | — | Pendiente |
 
 ### Etapa 1: qué quedó
 
@@ -189,6 +190,45 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 - `.gitignore` excluye `conocimiento/` por nombre en cualquier carpeta: se agregó la excepción
   `!/transcripcion/conocimiento/` y `test_paquete.py` verifica que ningún archivo del paquete quede ignorado.
 - `fase1_transcribir` sigue en la raíz (los módulos nuevos lo importan): pasa al paquete en la etapa 4.
+
+### Etapa 6c: qué quedó
+
+Las ~100 rutas que estaban en dos cadenas de `if` dentro de la clase `H` de `servidor.py` (~880 líneas) pasaron a
+`transcripcion/http/`. `servidor.py` bajó de ~1.700 a ~310 líneas: `configurar`, `abrir_tunel`, el encabezado de la
+consola y `main`.
+
+| Módulo | Qué tiene |
+|---|---|
+| `manejador.py` | `Manejador` (antes `H`): respuestas comunes (`_json`, `_html`, `_redirigir`, `_enviar_archivo`), autorización y despacho; `ManejadorTunel` (antes `HTunel`) |
+| `rutas.py` | `Rutas` (exactas antes que prefijos, sin repetidas), `Ruta` (función, fase, `libre`), `Pedido` (ruta, `q`, `datos`, `nombre`) |
+| `tabla.py` | Todas las rutas: `RUTAS.get("/api/casos", casos.lista)`, `RUTAS.post("/api/borrador", edicion.borrador, "caso", libre=True)`… |
+| `sistema.py` | `Sistema`: ajustes, servicios (`casos`, `proc`, `vista`…), `tunel`, `visto`, candados. Lo arma `configurar` con los mismos objetos que `S.CASOS`, `S.PROC`… |
+| `acceso`, `paginas`, `casos`, `edicion`, `audios`, `cliente`, `conocimiento`, `voces`, `usuario` | Una función `f(h, pedido)` por ruta |
+| `panel`, `panel_estado`, `panel_acciones` | Páginas y permisos del panel; `estado_admin` y la cola en vivo; `accion_admin` (los botones) |
+
+- **Despacho de un POST, igual que antes**: las rutas «crudas» leen el cuerpo a su manera (audios, Word, formulario
+  de entrar); el resto se lee como JSON; desde la fase «caso» se valida `nombre` (400 si no es válido, también para
+  una ruta desconocida, antes del 404) y las rutas `libre=True` responden 409 si otra PC tiene el caso abierto
+  (`edicion.caso_ocupado`). Los errores (cola, Word abierto, otros) se responden igual que antes.
+- **Sin globales en las rutas**: cada sistema configurado tiene su clase de manejador, `Manejador.para(sis)`; las
+  funciones leen `h.sis`. `S.H` es esa clase (la usan `main`, el túnel y las pruebas).
+- Las funciones se generaron con un script (en la sesión): el cuerpo de cada `if` pasó tal cual, cambiando solo
+  nombres (`self` → `h`, `CASOS` → `sis.casos`, `u.path` → `pedido.ruta`), y después se les aplicó `ruff format`.
+- **Páginas fuera de las cadenas**: entrar, panel desde el trabajo, panel no habilitado y «solo en el servidor»
+  están en `web/plantillas/` (marcadores `{{…}}`). Se leen como texto en cada pedido: el resultado es idéntico al de
+  antes byte a byte, también con los fines de línea de Windows. `verificar_fuentes.cjs` saltea esa carpeta.
+- `placa_de_video` → `transcripcion/operacion/gpu.py`, con una lectura compartida cada 3 s para el panel y la consola.
+- **Calidad**: `transcripcion/http/` es el primer paquete con reglas estrictas (`E`, `W`, `I`, `B`, `UP` en
+  `transcripcion/http/ruff.toml`) y `ruff format`; el CI corre `ruff format --check transcripcion/http`.
+- Pruebas: `pruebas/test_rutas.py` fija la tabla (ruta → función), las fases de los POST y el despacho (nombre
+  inválido antes del 404, JSON inválido, caso abierto en otra PC, páginas). Las pruebas que levantan el servidor en el
+  mismo proceso parchean `S.SIS.puerto` en lugar de `S.PUERTO`; `test_medicos.py` ahora configura el servidor.
+- Además de la suite y los contratos, se comparó un servidor simulado de antes y de después con 36 pedidos (panel,
+  páginas del trabajo, vincular, mensajes, reinicio, voces, rutas desconocidas, subir, bloquear, paciente, médico,
+  formato, pausa, audio, caso, borrar): mismas respuestas, salvo el número de puerto.
+- Queda para más adelante: `servidor.py` → `transcripcion/app.py` con `servidor.py` de pocas líneas. Hoy las
+  pruebas usan `S.configurar`, `S.CASOS`, `S.H`…; conviene hacerlo junto con un objeto `App` que reemplace esas
+  globales.
 
 ### Etapa 6b: qué quedó
 
@@ -316,7 +356,8 @@ Para sumar un caso: agregarlo a `casos_nucleo.json` y regenerar (el diff del PR 
   imports y variables sin usar). Corre en el CI (`python -m ruff check .`, versión fijada en `requirements-ci.txt`).
 - No se reformatea todo de una vez (serían miles de líneas cambiadas sin valor y conflictos con todo lo abierto).
   Cada módulo que se crea o termina de refactorizar en el paquete entra a reglas más estrictas
-  (`E`, `W`, `I`, `B`, `UP`) y a `ruff format`, agregándolo a una lista en `pyproject.toml`.
+  (`E`, `W`, `I`, `B`, `UP`) y a `ruff format`, con un `ruff.toml` en su carpeta que extiende `pyproject.toml`
+  y su línea `ruff format --check` en el CI. Hoy: `transcripcion/http/` (etapa 6c).
 - `B023` (funciones definidas en un bucle que usan la variable del bucle): revisados los 21 casos en la etapa 5
   (`listar_casos`, `controles/clinicos.py`, `pruebas/resumir_gpu_real.py`). En todos la función se usa en la misma
   vuelta del bucle (se pasa a `partir()` o a `IndiceCasos.obtener()`, que la llaman enseguida), así que no hay error.

@@ -21,7 +21,7 @@ flowchart TB
     CF[["Cloudflare<br/>túnel rápido"]]
 
     subgraph Servidor["PC servidor"]
-        HTTP["servidor.py<br/>ThreadingHTTPServer :8765"]
+        HTTP["servidor.py + transcripcion/http<br/>ThreadingHTTPServer :8765"]
         COLA["Cola de procesamiento<br/>(1 hilo trabajador)"]
         WH["transcripcion/asr<br/>whisper + huecos · faster-whisper"]
         NU["transcripcion/ia + controles<br/>prompt · Ollama · marcas"]
@@ -56,7 +56,8 @@ en la raíz son los puntos de entrada y lo que todavía no se reorganizó.
 | `transcripcion/procesamiento/` | `cola` (cola SQLite duradera), `lotes` (lotes FIFO de IA), `cache_transcripcion` (reutilizar Whisper) |
 | `transcripcion/aprendizaje/` | `almacen` (correcciones e historial en SQLite), `pendiente` (cola persistente de aprendizaje) |
 | `transcripcion/acceso/` | `usuarios` (transcriptores, contraseñas y estilo propio) |
-| `servidor.py` | Arranque (`configurar` crea los objetos de abajo y `main` los hilos), servidor HTTP y rutas de la API, panel de administración, túnel. El resto está en los objetos del paquete |
+| `servidor.py` | Arranque: `configurar` crea los objetos de abajo y el `Sistema` de las rutas; `main` abre el puerto, los hilos y el túnel; encabezado de la consola |
+| `transcripcion/http/` | `manejador` (lee el pedido, autoriza y despacha), `tabla` (todas las rutas: método y ruta → función), `rutas` (`Rutas`, `Pedido`, fases de un POST), `sistema` (`Sistema`: lo que usan las rutas) y una función por ruta en `acceso`, `paginas`, `casos`, `edicion`, `audios`, `cliente`, `conocimiento`, `voces`, `usuario`, `panel` (+ `panel_estado`, `panel_acciones`). Las páginas de entrar y del panel desde el trabajo están en `web/plantillas/` |
 | `transcripcion/procesamiento/trabajador.py` | `Trabajador` (`TRAB`): lotes de la cola, Whisper + segunda pasada, voz, IA, marcas; recuperación de la cola duradera al arrancar y resultados ya completos |
 | `transcripcion/casos/vista.py`, `borrado.py` | `VistaCasos` (`VISTA`): lista, caso abierto, marcas para la web, forma de onda · `Borrado` (`BORRADO`): permisos y borrado recuperable |
 | `transcripcion/operacion/ia.py`, `reinicio.py` | `EstadoIA` (`IA`): Ollama responde/tiene el modelo, vigilancia, espera del trabajador · `Operacion` (`OPER`): reinicio programado y mensajes a las PC |
