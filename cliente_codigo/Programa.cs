@@ -21,14 +21,14 @@ using Microsoft.Win32;
 [assembly: System.Reflection.AssemblyDescription("Envía los audios del sistema de gestión al Servidor de transcripción")]
 [assembly: System.Reflection.AssemblyCompany("Rodrigo Espíndola")]
 [assembly: System.Reflection.AssemblyCopyright("Creada por Rodrigo Espíndola")]
-[assembly: System.Reflection.AssemblyVersion("1.22.0.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.22.0.0")]
+[assembly: System.Reflection.AssemblyVersion("1.23.0.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.23.0.0")]
 
 namespace Transcripcion
 {
     static class Programa
     {
-        public const string VERSION = "1.22";
+        public const string VERSION = "1.23";
         public static EventWaitHandle SenalMostrar;
         // Con el perfil de pruebas es otra instancia: puede abrirse junto a la app de producción.
         static string NombreSenal { get { return "Transcripcion-cliente-mostrar" + Config.Perfil; } }

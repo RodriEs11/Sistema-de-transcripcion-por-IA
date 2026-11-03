@@ -1,7 +1,7 @@
-# Transcriptores con estilo propio (experimental)
+# Transcriptores con estilo propio
 
-> Rama `exp/estilos-por-transcriptor` → `experimental`. Todavía no está en `main` ni en las PC del trabajo.
-> Al promoverlo hay que completar versiones, CHANGELOG y la activación (ver «Para promover» al final).
+> Servidor 2026.11.1 · App 1.23. Probado en la rama `exp/estilos-por-transcriptor` (PR #9 → `experimental`) y
+> promovido a `main` con `feat/estilos-por-transcriptor`. Activación: ver «Activar en producción» al final.
 
 ## Problema
 
@@ -121,13 +121,20 @@ Pruebas automáticas: `pruebas/test_usuarios.py` (usuarios, sesiones, capas, eje
 `pruebas/usuarios.cjs` (navegador: entrar, contraseña inicial, plantillas y notas propias, formato, aviso de estilo,
 preferencias y salir).
 
-## Para promover a `main`
+## Activar en producción
 
-- Versiones: servidor (nuevo comportamiento y APIs) **y** app (cambian `web/index.html`, `VentanaVincular.cs` y
-  `VentanaPrincipal.cs`: cerrar la ventana cierra la sesión; `Programa.cs`: perfil de pruebas).
-- Compilar la app y probar la vinculación con usuario en Windows real.
-- `preparar_activacion.py` / rollback: incluir `usuarios.json` y `sesiones.json` en los respaldos.
-- Orden de activación: actualizar las PC a la app nueva **antes** de crear el primer transcriptor (la 1.22 no
-  puede vincular PC nuevas con usuario; las ya vinculadas siguen andando).
-- CHANGELOG, `cliente/LEEME.txt`, `docs/acceso-remoto.md`, `docs/uso.md`, `docs/seguridad.md`.
-- Pendiente de decidir: estadísticas por transcriptor en el panel y filtro «Míos» en la lista.
+El primer transcriptor cambia todo el sistema de una vez: desde ese momento todas las PC piden usuario. Por eso:
+
+1. **Código, sin transcriptores.** Respaldo (`respaldo\respaldo_AAAAMMDD_HHMMSS_antes_de_usuarios\`, que incluya
+   `usuarios.json` y `sesiones.json` si ya existen: `preparar_activacion.py` los copia) y una etiqueta en git del
+   commit actual. `git pull` en `sistema\`, reiniciar el servidor desde el panel y compilar la App 1.23
+   (`cliente_codigo\compilar.ps1`). Sin transcriptores todo funciona como antes, también con la App 1.22.
+2. **Esperar a que todas las PC muestren 1.23** en el panel. La 1.22 sigue andando con el Servidor 2026.11.1, pero
+   no puede vincular PC nuevas cuando ya hay transcriptores.
+3. **Día D:** avisar al equipo y crear a todos en Panel → Transcriptores con una contraseña inicial cada uno; cada
+   persona la cambia al entrar.
+4. **Vuelta atrás:** problema con los usuarios → desactivarlos a todos (el sistema vuelve al modo anterior al
+   instante; su estilo se conserva). Problema en el servidor → volver a la etiqueta y reiniciar. Problema en la
+   app → volver a poner el ejecutable anterior (`Transcripcion.exe.viejo-…`) en `cliente\`; las PC vuelven solas.
+
+Pendiente de decidir: estadísticas por transcriptor en el panel y filtro «Míos» en la lista.

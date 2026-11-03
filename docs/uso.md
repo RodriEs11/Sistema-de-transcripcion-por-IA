@@ -2,6 +2,10 @@
 
 ## Flujo de trabajo
 
+Si en el panel hay transcriptores, cada persona entra con su usuario y la IA arma los informes con su estilo
+(plantillas, notas, reglas y correcciones propias). Arriba de la lista: **Mi cuenta** y **Cerrar sesión**. Ver
+[usuarios.md](usuarios.md).
+
 1. Abrir **Ollama** y luego **`interfaz.bat`** (o `iniciar_servidor.bat` si se usa desde otras PC).
 2. El **médico** se reconoce solo por la voz ([voz.md](voz.md)): dejá «Automático (por la voz)» y confirmalo en
    cada caso al revisar. Solo hace falta elegirlo antes si todos los audios que vas a subir son del mismo médico.
