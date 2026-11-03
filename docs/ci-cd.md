@@ -108,7 +108,7 @@ Ese comando valida un candidato sin distribuirlo. El flujo futuro de promoción 
 **ese candidato probado**, sin recompilarlo; el script actual sin `-SoloCompilar` compila de nuevo
 y distribuye, por lo que necesita un paso adicional de promoción para ese flujo futuro.
 Después de instalar en staging/servidor, ejecutar `python verificar_versiones.py` sin omitir binario.
-El manifiesto siempre lo calcula `app_cliente.py`, nunca se escriben hashes manualmente.
+El manifiesto siempre lo calcula `transcripcion/operacion/app_cliente.py`, nunca se escriben hashes manualmente.
 
 Guardar metadatos de release: commit, versiones, locks, compilador, resultados de pruebas,
 SHA-256 y compatibilidad de esquema/API. Publicar paquetes con lista explícita de archivos;

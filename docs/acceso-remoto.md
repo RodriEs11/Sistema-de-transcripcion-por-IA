@@ -131,7 +131,7 @@ flowchart TD
     H -- no --> J["Restaura la versión anterior y avisa"]
 ```
 
-- El servidor (`app_cliente.py`) publica un manifiesto de `sistema\cliente` con el SHA-256 de cada archivo:
+- El servidor (`transcripcion/operacion/app_cliente.py`) publica un manifiesto de `sistema\cliente` con el SHA-256 de cada archivo:
   `Transcripcion.exe`, `Transcripcion.exe.config`, `LEEME.txt`, `conexion.json` y las `.dll` (incluida `runtimes\`).
   Se ignoran los archivos `.viejo`, `.nuevo`, `.fallida` y las carpetas que empiezan con punto.
 - La versión se lee de la `FileVersion` del `.exe`.

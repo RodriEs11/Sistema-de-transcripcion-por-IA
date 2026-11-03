@@ -140,7 +140,7 @@ no tiene una opción para aplicar la actualización. No importa el servidor sobr
 
 Usar `-B` para no agregar `__pycache__` a los artefactos congelados. Probar en una copia de
 ensayo con configuración de ejemplo, nunca iniciar esos servidores contra las carpetas reales
-para un ensayo. El manifiesto de actualización de las PC lo calcula `app_cliente.py`; el
+para un ensayo. El manifiesto de actualización de las PC lo calcula `transcripcion/operacion/app_cliente.py`; el
 manifiesto del paquete es un control independiente y no lo reemplaza.
 
 ## Ventana de activación: condiciones obligatorias
@@ -192,7 +192,7 @@ manifiesto del paquete es un control independiente y no lo reemplaza.
    ofrecer ahí 1.22 la ofrece a **todas** las PC. La App 1.21 podía actualizar una ventana oculta
    con estudio abierto; por eso este control no puede delegarse al actualizador viejo.
 7. Ejecutar el verificador completo en la instalación, comprobar el manifiesto generado por
-   `app_cliente.py`, y registrar por separado servidor reiniciado, versión publicada y versión
+   `transcripcion/operacion/app_cliente.py`, y registrar por separado servidor reiniciado, versión publicada y versión
    confirmada por cada PC. Observar errores, guardados y tiempos antes de cerrar la ventana.
 
 No se proporciona un script que publique automáticamente por tener hashes válidos: faltan
