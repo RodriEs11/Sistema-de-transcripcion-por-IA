@@ -41,6 +41,7 @@ import paciente as PAC
 import plataforma as P
 import registro as L
 import remoto as R
+import usuarios as U
 import voces as VOZ
 from informe import config, escribir_docx, parrafos_docx, pagina, aplicar_formato, texto_parrafo, EXT_AUDIO
 
@@ -64,7 +65,7 @@ for d in (NUEVOS, DATOS):
     d.mkdir(parents=True, exist_ok=True)
 
 SIMULAR = os.environ.get("SIMULAR_IA") == "1"   # solo para pruebas
-VERSION = "2026.10.47"
+VERSION = "2026.11.1"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
@@ -295,7 +296,7 @@ def visible(n):
 
 def datos_csv(n):
     return {"caso": n, "audio_original": titulo_de(n), "pc": origen_de(n), "medico": medico_de(n),
-            "estudios": estudios_de(n)}
+            "estudios": estudios_de(n), "usuario": U.nombre_de(usuario_de(n))}
 
 
 # ------------------------------------------------- tiempo de revisión
@@ -393,6 +394,30 @@ def ruta_audio(nombre):
 def medico_de(n):
     f = DATOS / f"{n}.medico.txt"
     return f.read_text(encoding="utf-8").strip() if f.exists() else ""
+
+
+# ------------------------------------------------- transcriptor del caso
+# <caso>.usuario.txt = con el estilo de quién se arma (el que estaba usando la página en esa PC al llegar el audio,
+# o el que pidió «Volver a generar»). <caso>.estilo.txt = con el estilo de quién lo armó la IA la última vez
+# (vacío = estilo general). Si el que lo abre es otro, la página avisa y ofrece regenerarlo con su estilo.
+def usuario_de(n):
+    f = DATOS / f"{n}.usuario.txt"
+    u = f.read_text(encoding="utf-8").strip() if f.exists() else ""
+    return u if u and U.existe(u) else ""
+
+
+def poner_usuario_caso(n, usuario):
+    f = DATOS / f"{n}.usuario.txt"
+    if usuario:
+        escribir_atomico(f, usuario)
+    else:
+        f.unlink(missing_ok=True)
+
+
+def estilo_de(n):
+    """None si nunca se generó con la información de estilo (casos anteriores a los usuarios)."""
+    f = DATOS / f"{n}.estilo.txt"
+    return f.read_text(encoding="utf-8").strip() if f.exists() else None
 
 
 # ------------------------------------------------- médico reconocido por la voz (voces.py)
@@ -720,6 +745,7 @@ def listar_casos(pc=LOCAL, remoto=False):
         casos.append({"nombre": n, "estado": est["estado"], "msg": est.get("msg", ""), "marcas": marcas,
                       "medico": dato("medico_de", lambda: medico_de(n)), "origen": dato("origen_de", lambda: origen_de(n)), "avisos": avisos, "bloqueado_por": R.bloqueado_por(n, pc),
                       "titulo": dato("titulo_de", lambda: titulo_de(n)), "espera": esp.get(n), "paciente": dato("paciente", lambda: PAC.de(DATOS, n)),
+                      "usuario": dato("usuario_de", lambda: usuario_de(n)), "estilo": dato("estilo_de", lambda: estilo_de(n)),
                       "voz": dato("resumen_voz", lambda: resumen_voz(n)),
                       "estudios": dato("estudios_de", lambda: estudios_de(n)) if listo else None, "dur": dato("duracion_de", lambda: duracion_de(n)),
                       "revisado_en": revisado_en(n) if revisado else None,
@@ -789,7 +815,15 @@ def cargar_caso(nombre):
             "estudios_nuevos": N.estudios_sin_plantilla(ia.read_text(encoding="utf-8")),
             "borrador": borrador["html"],
             "borrador_revision": borrador.get("revision", 0),
-            "revisado": fin.exists(), "tiene_audio": ruta_audio(nombre) is not None}
+            "revisado": fin.exists(), "tiene_audio": ruta_audio(nombre) is not None,
+            "estilo": _estilo_para_web(nombre)}
+
+
+def _estilo_para_web(n):
+    e = estilo_de(n)
+    if e is None:
+        return None
+    return {"usuario": e, "nombre": U.nombre_de(e) if e else ""}
 
 
 def forma_de_onda(nombre, n=1600):
@@ -1034,6 +1068,7 @@ def trabajador():
                     tokens = ""
                     metricas_ia = {}
                     dic = trans[n]["texto"]
+                    usu = usuario_de(n) or None
                     if SIMULAR:
                         of = DATOS / f"{n}.original.txt"
                         fuente = Path(of.read_text(encoding="utf-8").strip()).stem if of.exists() else n
@@ -1044,10 +1079,12 @@ def trabajador():
                         med = medico_de(n) or None
                         # sin médico confirmado (voz dudosa o sin reconocer): plantilla general, sin estilos de médico
                         sin_est = not med and resumen_voz(n) is not None
-                        ej = N.elegir_ejemplos(dic, banco, k=CFG["ejemplos_por_informe"], excluir=n, medico=med)
-                        salida, _, t_in, t_out = N.llamar_ia(CFG["modelo_ia"], N.armar_mensajes(dic, ej, med, sin_estilos=sin_est), metricas=metricas_ia)
+                        ej = N.elegir_ejemplos(dic, banco, k=CFG["ejemplos_por_informe"], excluir=n, medico=med,
+                                               usuario=usu)
+                        salida, _, t_in, t_out = N.llamar_ia(CFG["modelo_ia"], N.armar_mensajes(dic, ej, med, sin_estilos=sin_est, usuario=usu), metricas=metricas_ia)
                         tokens = f"{t_in or '?'} tokens de entrada, {t_out or '?'} de salida"
                     escribir_atomico(DATOS / f"{n}.informe_ia.txt", salida)
+                    escribir_atomico(DATOS / f"{n}.estilo.txt", usu or "")
                     anotar_voz(n, medico_ia=medico_de(n) or "")
                     for viejo in (f"{n}.marcas.json", f"{n}.borrador.html", f"{n}.borrador.json", f"{n}.final.txt", f"{n}.formato.json"):
                         (DATOS / viejo).unlink(missing_ok=True)
@@ -1613,7 +1650,8 @@ def estado_mantenimiento():
 # los de otro llamado «tmp9177.tmp».
 SUFIJOS_CASO = (".procesamiento.json", ".transcripcion_cache.json", ".rendimiento.json", ".json", ".dictado.txt", ".informe_ia.txt", ".marcas.json", ".borrador.html", ".borrador.json", ".final.txt",
                 ".medico.txt", ".audio.txt", ".ejemplo.txt", ".onda.json", ".origen.txt", ".original.txt",
-                ".paciente.json", ".formato.json", ".omisiones_ok.json", ".revision.json", ".voz.json")
+                ".paciente.json", ".formato.json", ".omisiones_ok.json", ".revision.json", ".voz.json",
+                ".usuario.txt", ".estilo.txt")
 
 
 def puede_borrar(n, pc, remoto):
@@ -1737,9 +1775,9 @@ def borrar_caso(n, quien=LOCAL, remoto=False):
 
 
 # ------------------------------------------------------------- finalizar
-def finalizar(nombre, texto, quien=LOCAL):
+def finalizar(nombre, texto, quien=LOCAL, usuario=None):
     with FIN_LOCK:      # solo publicación Word + final + tarea duradera; aprendizaje fuera de este lock
-        return _finalizar(nombre, texto, quien)
+        return _finalizar(nombre, texto, quien, usuario)
 
 
 def texto_a_marcado(texto):
@@ -1763,10 +1801,12 @@ def formato_de(nombre):
         return None
 
 
-def vista_previa(texto, nombre=None):
+def vista_previa(texto, nombre=None, usuario=None):
     """Párrafos exactamente como quedan en el Word (mismo código que escribir_docx) + la hoja.
-    b / a0 = negrita y alineación normales; a / r = con el formato elegido a mano (si hay)."""
+    b / a0 = negrita y alineación normales; a / r = con el formato elegido a mano (si hay).
+    usuario: con el formato del Word propio del transcriptor."""
     _, marcado = texto_a_marcado(texto)
+    CFG = U.cfg_de(globals()["CFG"], usuario)
     pars = parrafos_docx(marcado, CFG)
     if nombre:
         aplicar_formato(pars, formato_de(nombre))
@@ -1780,7 +1820,8 @@ def vista_previa(texto, nombre=None):
 def aplicar_aprendizaje(tarea):
     from aprender import registrar_ejemplo, anotar_procesado
     registrar_ejemplo(tarea["nombre"], tarea["dictado"], tarea["ia"], tarea["final"],
-                      tarea["clave"], medico=tarea["medico"], recalcular=False, fecha=tarea["fecha"])
+                      tarea["clave"], medico=tarea["medico"], recalcular=False, fecha=tarea["fecha"],
+                      usuario=tarea.get("usuario"))
     docx = Path(tarea["docx"])
     if docx.exists() and docx.stat().st_mtime_ns == tarea["mtime_ns"]:
         anotar_procesado(docx, tarea["clave"])
@@ -1802,7 +1843,7 @@ def analizar_aprendizaje():
 APRENDIZAJE = ColaAprendizaje(DATOS / "_aprendizaje", aplicar_aprendizaje, analizar_aprendizaje)
 
 
-def _finalizar(nombre, texto, quien=LOCAL):
+def _finalizar(nombre, texto, quien=LOCAL, usuario=None):
     from aprender import pct_corregido
     final, marcado = texto_a_marcado(texto)
     ia = (DATOS / f"{nombre}.informe_ia.txt").read_text(encoding="utf-8")
@@ -1813,23 +1854,25 @@ def _finalizar(nombre, texto, quien=LOCAL):
     reg = DATOS / f"{nombre}.ejemplo.txt"
     clave = reg.read_text(encoding="utf-8").strip() if reg.exists() else time.strftime("%Y%m%d_%H%M%S_") + nombre
     documento = io.BytesIO()
-    escribir_docx(marcado, documento, CFG, formato_de(nombre))
+    escribir_docx(marcado, documento, U.cfg_de(CFG, usuario), formato_de(nombre))
     docx = INFORMES / f"{nombre}.docx"
     escribir_atomico(docx, documento.getvalue())
     escribir_atomico(reg, clave)
     escribir_atomico(fin_f, final)
     APRENDIZAJE.agregar({"nombre": nombre, "dictado": dic, "ia": ia, "final": final,
-                        "clave": clave, "medico": medico_de(nombre) or None, "docx": str(docx),
+                        "clave": clave, "medico": medico_de(nombre) or None, "docx": str(docx), "usuario": usuario,
                         "mtime_ns": docx.stat().st_mtime_ns, "fecha": time.strftime("%Y-%m-%d %H:%M")})
     L.contar("guardados")
     vz = resumen_voz(nombre)
     rev = revision_de(nombre)
-    L.ok("INFORME", f"{visible(nombre)} {'guardado de nuevo' if ya_guardado else 'guardado'} por {quien} · "
+    por = f"{U.nombre_de(usuario)} ({quien})" if usuario else quien
+    L.ok("INFORME", f"{visible(nombre)} {'guardado de nuevo' if ya_guardado else 'guardado'} por {por} · "
                     f"{f'{pc * 100:.1f}'.replace('.', ',')}% corregido"
                     + (f" · revisión {mmss(rev)}" if rev else "") + f" · Word {docx.name} · aprendizaje pendiente")
-    L.actividad("guardado", **datos_csv(nombre), porcentaje_corregido=pc * 100, palabras_informe=len(final.split()),
-                revision_s=rev, detalle=("guardado de nuevo" if ya_guardado else "guardado") + f" desde {quien}",
-                **campos_voz(vz))
+    # el transcriptor que guarda (no necesariamente el del caso): por eso se pisa el «usuario» de datos_csv
+    L.actividad("guardado", **{**datos_csv(nombre), "usuario": U.nombre_de(usuario) if usuario else ""},
+                porcentaje_corregido=pc * 100, palabras_informe=len(final.split()), revision_s=rev,
+                detalle=("guardado de nuevo" if ya_guardado else "guardado") + f" desde {quien}", **campos_voz(vz))
     EST.invalidar()
     return {"docx": str(docx), "pct": round(pc * 100, 1), "aprendizaje": "pendiente"}
 
@@ -1899,27 +1942,66 @@ class H(BaseHTTPRequestHandler):
         a = self.headers.get("Authorization") or ""
         return a[7:].strip() if a.lower().startswith("bearer ") else None
 
-    LIBRES = {"/entrar", "/api/cliente/vincular", "/favicon.ico", "/salir"}
+    # /ingresar: usuario y contraseña cuando la PC ya está identificada. Es otra dirección que /entrar porque la app
+    # del trabajo intercepta /entrar (sin código) para volver a entrar sola con la llave de la PC.
+    LIBRES = {"/entrar", "/ingresar", "/api/cliente/vincular", "/favicon.ico", "/salir"}
+    # lo que la aplicación del trabajo hace sola con la llave de la PC, aunque nadie haya entrado
+    SOLO_LLAVE = {"/api/cliente/estado", "/api/cliente/actualizacion", "/api/cliente/archivo", "/api/cliente/aviso",
+                  "/api/cliente/audio", "/api/cliente/sesion"}
+
+    def _sin_usuario(self, ruta):
+        """Rutas que no necesitan un transcriptor con sesión."""
+        if ruta in self.LIBRES or (self.con_llave and ruta in self.SOLO_LLAVE):
+            return True
+        # el panel de administración tiene su propio permiso (admin.py): así se crean los primeros usuarios
+        return ruta in PAGINAS_ADMIN or ruta.startswith("/api/admin/")
 
     def _autorizar(self, ruta):
-        """Pone self.pc y self.remoto. Devuelve False (y responde) si no tiene permiso."""
+        """Pone self.pc, self.remoto y self.usuario (transcriptor con sesión, o None).
+        Devuelve False (y responde) si no tiene permiso."""
         self.remoto = self._es_remoto()
+        self.usuario = None
+        self.con_llave = False
+        ses = R.sesion(self._cookie("ts"))
         if not self.remoto:
             self.pc = LOCAL
+            # la app de pruebas conectada a http://127.0.0.1 también manda su llave: con ella puede hacer lo suyo
+            # (estado, audios, actualización) aunque nadie haya entrado en la página
+            self.con_llave = bool(R.pc_de_llave(self._llave()))
+            if ses and ses.get("local"):
+                self.usuario = ses.get("usuario")
+        else:
+            llave = R.pc_de_llave(self._llave())
+            self.con_llave = bool(llave)
+            ses_pc = ses["pc"] if ses and not ses.get("local") else None
+            self.pc = llave or ses_pc
+            if ses_pc and ses_pc == self.pc:
+                self.usuario = ses.get("usuario")
+            if self.pc:
+                VISTO[self.pc] = time.time()
+                R.anotar_visto(self.pc, A.VERSION_PC.get(self.pc))
+        if self.usuario and not U.existe(self.usuario):        # lo desactivaron mientras tenía la sesión abierta
+            R.cerrar_sesion(self._cookie("ts"))
+            self.usuario = None
+        if self.remoto and not self.pc and ruta not in self.LIBRES:
+            return self._pedir_entrar(ruta, "Pedido sin sesión")
+        if self.usuario or not U.hay_usuarios() or self._sin_usuario(ruta):
             return True
-        self.pc = R.pc_de_llave(self._llave()) or R.pc_de_sesion(self._cookie("ts"))
-        if self.pc:
-            VISTO[self.pc] = time.time()
-            R.anotar_visto(self.pc, A.VERSION_PC.get(self.pc))
-        if self.pc or ruta in self.LIBRES:
-            return True
+        return self._pedir_entrar(ruta, "Pedido sin transcriptor")
+
+    def _pedir_entrar(self, ruta, motivo):
         if ruta not in ("/", "/index.html") and L.una_vez(("sin_sesion", self._ip()), 600):
-            L.info("ACCESO", f"Pedido sin sesión desde la IP {self._ip()} ({ruta}): se le pide entrar.")
+            L.info("ACCESO", f"{motivo} desde {self.pc or 'la IP ' + self._ip()} ({ruta}): se le pide entrar.")
         if ruta.startswith("/api/") or ruta.startswith("/audio/"):
             self._json({"error": "Sesión vencida: volvé a entrar.", "entrar": True}, 401)
         else:
-            self._redirigir("/entrar")
+            self._redirigir("/ingresar" if self.pc and U.hay_usuarios() else "/entrar")
         return False
+
+    @property
+    def quien(self):
+        """Para el registro: «Ana (info-01)», o solo la PC si no hay transcriptor."""
+        return f"{U.nombre_de(self.usuario)} ({self.pc})" if getattr(self, "usuario", None) else self.pc
 
     def _redirigir(self, a, cookie=None):
         self.send_response(303)
@@ -1939,9 +2021,67 @@ class H(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b)
 
-    def _pagina_entrar(self, error=""):
-        err = f'<p class="err">{error}</p>' if error else ""
-        self._html(PAGINA_ENTRAR.replace("{{error}}", err), 401 if error else 200)
+    def _pagina_entrar(self, error="", usuario=""):
+        """Formulario para entrar. Con transcriptores creados pide usuario y contraseña (y el nombre de la PC si
+        se entra desde un navegador común del trabajo); sin ninguno, como antes: PC y contraseña del sistema."""
+        import html as _h
+        err = f'<p class="err">{_h.escape(error)}</p>' if error else ""
+        hay = U.hay_usuarios()
+        pc_conocida = not self.remoto or bool(self.pc)
+        if not hay:
+            txt = "Para usar el sistema desde esta PC escribí su nombre y la contraseña."
+        elif pc_conocida:
+            txt = (f"Esta PC: <b>{_h.escape(self.pc)}</b>. " if self.remoto else "") + \
+                  "Escribí tu usuario y tu contraseña: la IA arma los informes con tu estilo."
+        else:
+            txt = "Escribí el nombre de esta PC, tu usuario y tu contraseña."
+        campos = ""
+        if self.remoto and not pc_conocida:
+            campos += ('<label>Nombre de esta PC<input name="pc" placeholder="info-01" required '
+                       'autocomplete="organization"></label>')
+        if hay:
+            campos += (f'<label>Usuario<input name="usuario" value="{_h.escape(usuario)}" required autofocus '
+                       f'autocomplete="username"></label>')
+        campos += ('<label>Contraseña<input name="contrasena" type="password" required '
+                   'autocomplete="current-password"></label>')
+        accion = "/ingresar" if hay and pc_conocida else "/entrar"
+        self._html(PAGINA_ENTRAR.replace("{{texto}}", txt).replace("{{error}}", err).replace("{{campos}}", campos)
+                   .replace("{{accion}}", accion), 401 if error else 200)
+
+    def _entrar(self, f):
+        """POST /entrar: transcriptor (o, sin transcriptores, la contraseña del sistema desde el trabajo)."""
+        ip = self._ip()
+        pc = (self.pc or (f.get("pc", [""])[0]).strip()) if self.remoto else LOCAL
+        nombre = (f.get("usuario", [""])[0]).strip()
+        clave_fallo = ip if self.remoto else f"local:{nombre.casefold()}"
+        if R.demasiados_fallos(clave_fallo):
+            L.aviso("ACCESO", f"Intento de entrar como «{(nombre or pc)[:24]}» desde la IP {ip} rechazado: "
+                              f"está bloqueada 10 minutos por contraseñas incorrectas.")
+            return self._pagina_entrar("Demasiados intentos fallidos. Esperá 10 minutos.", nombre)
+        if self.remoto and not R.PC_VALIDA.match(pc):
+            return self._pagina_entrar("Escribí el nombre de esta PC (ej. info-01).", nombre)
+        contrasena = f.get("contrasena", [""])[0]
+        if not U.hay_usuarios():
+            if not self.remoto:
+                return self._redirigir("/")
+            if not R.contrasena_ok(contrasena):
+                R.anotar_fallo(ip)
+                self._avisar_fallo(pc, ip, "desde el navegador")
+                return self._pagina_entrar("Contraseña incorrecta.")
+            L.ok("ACCESO", f"{pc} entró desde el navegador (IP {ip}).")
+            return self._redirigir("/", R.cookie_sesion(R.nueva_sesion(pc, reemplaza=self._cookie("ts"))))
+        usuario = U.verificar(nombre, contrasena)
+        if not usuario:
+            R.anotar_fallo(clave_fallo)
+            k = len(R.FALLOS.get(clave_fallo, []))
+            L.aviso("ACCESO", f"Usuario o contraseña incorrectos para «{nombre[:24]}» en {pc} (IP {ip})."
+                              + (" Queda bloqueado 10 minutos." if k >= 5 else f" Intento {k} de 5."))
+            return self._pagina_entrar("Usuario o contraseña incorrectos.", nombre)
+        R.FALLOS.pop(clave_fallo, None)
+        U.anotar_entrada(usuario)
+        sid = R.nueva_sesion(pc, usuario=usuario, local=not self.remoto, reemplaza=self._cookie("ts"))
+        L.ok("ACCESO", f"{U.nombre_de(usuario)} entró en {pc}" + (f" (IP {ip})." if self.remoto else "."))
+        return self._redirigir("/", R.cookie_sesion(sid, local=not self.remoto))
 
     def do_GET(self):
         u = urllib.parse.urlparse(self.path)
@@ -1950,19 +2090,35 @@ class H(BaseHTTPRequestHandler):
             return
         if u.path == "/entrar":
             cod = q.get("codigo", [""])[0]
-            sid = R.canjear_codigo(cod)
+            sid = R.canjear_codigo(cod, pc_local=None if self.remoto else LOCAL)
             if sid:
-                L.info("ACCESO", f"{R.pc_de_sesion(sid)} abrió la aplicación (IP {self._ip()}).")
-                return self._redirigir("/", R.cookie_sesion(sid))
+                v = R.sesion(sid) or {}
+                if v.get("usuario"):
+                    U.anotar_entrada(v["usuario"])
+                L.info("ACCESO", f"{v.get('pc')} abrió la aplicación"
+                                 + (f" con {U.nombre_de(v['usuario'])}" if v.get("usuario") else "") + f" (IP {self._ip()}).")
+                return self._redirigir("/", R.cookie_sesion(sid, local=not self.remoto))
             if cod:
                 L.aviso("ACCESO", f"Código de entrada vencido o inválido desde la IP {self._ip()}.")
+            if self.usuario or (not self.remoto and not U.hay_usuarios()):
+                return self._redirigir("/")
+            return self._pagina_entrar()
+        if u.path == "/ingresar":
+            if self.usuario or not U.hay_usuarios():
+                return self._redirigir("/")
+            if self.remoto and not self.pc:
+                return self._redirigir("/entrar")
             return self._pagina_entrar()
         if u.path == "/salir":
-            quien = R.pc_de_sesion(self._cookie("ts"))
-            if quien:
-                L.info("ACCESO", f"{quien} cerró la sesión.")
-            R.cerrar_sesion(self._cookie("ts"))
-            return self._redirigir("/entrar", "ts=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax")
+            v = R.cerrar_sesion(self._cookie("ts"))
+            if v:
+                L.info("ACCESO", (f"{U.nombre_de(v['usuario'])} salió en {v['pc']}." if v.get("usuario")
+                                  else f"{v['pc']} cerró la sesión."))
+            if v and v.get("usuario") and not v.get("local"):
+                # en el trabajo la PC sigue identificada: el que sigue solo escribe su usuario y contraseña
+                return self._redirigir("/ingresar", R.cookie_sesion(R.nueva_sesion(v["pc"])))
+            return self._redirigir("/ingresar" if not self.remoto and U.hay_usuarios() else "/entrar",
+                                   R.COOKIE_SESION_BORRAR)
         if u.path in ("/", "/index.html"):
             self._html((WEB / "index.html").read_bytes())
         elif u.path == "/editor_word.js":
@@ -1996,8 +2152,21 @@ class H(BaseHTTPRequestHandler):
             else:
                 self.send_error(404)
         elif u.path == "/api/mi_pc":
+            du = U.datos(self.usuario) if self.usuario else None
             self._json({"pc": self.pc, "remoto": self.remoto, "medico": R.medico_pc(self.pc),
-                        "admin": (not self.remoto) or R.admin_configurado()})   # si se muestra el engranaje del panel
+                        "admin": (not self.remoto) or R.admin_configurado(),   # si se muestra el engranaje del panel
+                        "con_usuarios": U.hay_usuarios(),
+                        "usuario": {"clave": du["clave"], "nombre": du["nombre"], "cambiar": du["cambiar"]} if du else None,
+                        # None = nunca guardó preferencias: la página sube las de esta PC
+                        "preferencias": U.preferencias(self.usuario)
+                        if du and U.archivo(self.usuario, "preferencias.json").exists() else None})
+        elif u.path == "/api/usuario/estilo":
+            if not self.usuario:
+                return self._json({"error": "Entrá con tu usuario."}, 403)
+            self._json({"formato": U.formato(self.usuario), "general": {k: CFG.get(k) for k in U.FORMATO},
+                        "fuentes": list(U.FUENTES), "reglas": U.leer_archivo(self.usuario, "reglas_dictado.md"),
+                        "plantillas_propias": [n for n, _ in N.secciones_de_usuario(self.usuario)],
+                        "medicos_propios": N.medicos_con_notas_propias(self.usuario)})
         elif u.path == "/api/cliente/estado":
             instantanea = listar_casos(self.pc)
             casos = [{"nombre": c["nombre"], "titulo": c["titulo"], "estado": c["estado"], "marcas": c["marcas"],
@@ -2033,14 +2202,23 @@ class H(BaseHTTPRequestHandler):
                         "modelo": CFG["modelo_ia"], "mensaje": mensaje_para_pcs(),
                         "pausa": bool(TRABAJO.get("en_pausa"))})
         elif u.path == "/api/formato":
+            cfg = U.cfg_de(CFG, self.usuario)
             self._json({"palabras_titulo": sorted(N.PALABRAS_ESTUDIO),
-                        "negrita_titulos": CFG.get("negrita_titulos", True),
+                        "negrita_titulos": cfg.get("negrita_titulos", True),
+                        "fuente": cfg.get("fuente"), "tamano": cfg.get("tamano_fuente"),
                         "prefijos": CFG.get("negrita_si_empieza_con", N.NEGRITA_DEF),
                         "exactas": CFG.get("negrita_lineas_exactas", N.NEGRITA_EXACTAS)})
         elif u.path == "/api/medicos":
             rv = VOZ.resumen()
-            self._json({"medicos": [{"nombre": m, "notas": N.notas_medico(m), "voz": rv.get(m, {}).get("n", 0)}
-                                    for m in N.lista_medicos()]})
+            out = []
+            for m in N.lista_medicos():
+                propias = N.notas_propias(m, self.usuario)
+                x = {"nombre": m, "notas": N.notas_medico(m, self.usuario), "voz": rv.get(m, {}).get("n", 0),
+                     "propias": propias is not None}
+                if propias is not None:
+                    x["generales"] = N.notas_medico(m)
+                out.append(x)
+            self._json({"medicos": out})
         elif u.path == "/api/voces":
             rv = VOZ.resumen()
             self._json({"modelo": VOZ.estado_modelo(), "error": VOZ._DESCARGA.get("error") or "",
@@ -2061,7 +2239,7 @@ class H(BaseHTTPRequestHandler):
         elif u.path == "/api/voces/agrupar":
             self._json(grupos_de_voces())
         elif u.path == "/api/plantillas":
-            self._json({"secciones": [{"nombre": a, "cuerpo": b} for a, b in N.secciones_plantillas()[1]]})
+            self._json({"secciones": N.secciones_con_origen(self.usuario), "con_usuario": bool(self.usuario)})
         elif u.path == "/api/caso":
             n = q.get("nombre", [""])[0]
             try:
@@ -2155,6 +2333,9 @@ class H(BaseHTTPRequestHandler):
                                 lambda n: any((NUEVOS / f"{n}{e}").exists() for e in EXT_AUDIO))
         escribir_atomico(DATOS / f"{nombre}.origen.txt", self.pc)
         escribir_atomico(DATOS / f"{nombre}.original.txt", Path(original).name)
+        # «Cargar audio» desde la página: el que lo sube; la app sola: el que está usando la página en esa PC
+        poner_usuario_caso(nombre, getattr(self, "usuario", None)
+                           or (R.usuario_activo(self.pc) if U.hay_usuarios() else None))
         med = R.medico_pc(self.pc)
         if med:
             escribir_atomico(DATOS / f"{nombre}.medico.txt", med)
@@ -2171,34 +2352,28 @@ class H(BaseHTTPRequestHandler):
         if not self._autorizar(u.path):
             return
         try:
-            if u.path == "/entrar":      # entrar desde un navegador común (sin la aplicación)
-                f = urllib.parse.parse_qs(self._body(64 * 1024).decode("utf-8", "replace"))
-                ip = self._ip()
-                pc = (f.get("pc", [""])[0]).strip()
-                if R.demasiados_fallos(ip):
-                    L.aviso("ACCESO", f"Intento de entrar como «{pc[:24]}» desde la IP {ip} rechazado: "
-                                      f"está bloqueada 10 minutos por contraseñas incorrectas.")
-                    return self._pagina_entrar("Demasiados intentos fallidos. Esperá 10 minutos.")
-                if not R.PC_VALIDA.match(pc):
-                    return self._pagina_entrar("Escribí el nombre de esta PC (ej. info-01).")
-                if not R.contrasena_ok(f.get("contrasena", [""])[0]):
-                    R.anotar_fallo(ip)
-                    self._avisar_fallo(pc, ip, "desde el navegador")
-                    return self._pagina_entrar("Contraseña incorrecta.")
-                L.ok("ACCESO", f"{pc} entró desde el navegador (IP {ip}).")
-                return self._redirigir("/", R.cookie_sesion(R.nueva_sesion(pc)))
+            if u.path in ("/entrar", "/ingresar"):   # usuario y contraseña (o, sin transcriptores, la del sistema)
+                return self._entrar(urllib.parse.parse_qs(self._body(64 * 1024).decode("utf-8", "replace")))
             if u.path == "/api/cliente/vincular":
                 d = json.loads(self._body(64 * 1024) or b"{}")
                 pc_nueva = str(d.get("pc", "")).strip()
-                llave, err = R.vincular(pc_nueva, d.get("contrasena", ""), self._ip())
+                usu = str(d.get("usuario") or "").strip()
+                llave, err = R.vincular(pc_nueva, str(d.get("contrasena", "")), self._ip(), usuario=usu or None)
                 if err:
-                    if err.startswith("Contraseña"):
-                        self._avisar_fallo(pc_nueva, self._ip(), "al vincular la aplicación")
+                    if err.startswith(("Contraseña", "Usuario")):
+                        self._avisar_fallo(pc_nueva, self._ip(), "al vincular la aplicación"
+                                           + (f" (usuario «{usu[:24]}»)" if usu else ""))
                     else:
                         L.aviso("ACCESO", f"No se vinculó «{pc_nueva[:24]}» (IP {self._ip()}): {err}")
                     return self._json({"error": err}, 403)
-                L.ok("ACCESO", f"PC vinculada: {pc_nueva} (IP {self._ip()}). Ya puede enviar audios.")
-                return self._json({"ok": True, "llave": llave, "pc": d["pc"].strip(), "version": VERSION})
+                L.ok("ACCESO", f"PC vinculada: {pc_nueva} (IP {self._ip()})"
+                               + (f" con el usuario «{usu[:40]}»" if usu else "")
+                               + ". Ya puede enviar audios.")
+                r = {"ok": True, "llave": llave, "pc": d["pc"].strip(), "version": VERSION}
+                usu_ok = U.verificar(usu, str(d.get("contrasena", ""))) if usu and U.hay_usuarios() else None
+                if usu_ok:     # la página abre ya con este transcriptor: no se le pide el usuario dos veces
+                    r["codigo"] = R.nuevo_codigo(pc_nueva, usuario=usu_ok, seg=180)
+                return self._json(r)
             if u.path == "/api/cliente/sesion":
                 if not self._llave() or not R.pc_de_llave(self._llave()):
                     if L.una_vez(("llave", self._ip()), 600):
@@ -2238,6 +2413,7 @@ class H(BaseHTTPRequestHandler):
                 destino = NUEVOS / nombre_arch
                 cuerpo = self._body()
                 escribir_atomico(DATOS / f"{destino.stem}.origen.txt", LOCAL)
+                poner_usuario_caso(destino.stem, self.usuario)
                 med = q.get("medico", [""])[0].strip()
                 if med:
                     escribir_atomico(DATOS / f"{destino.stem}.medico.txt", med)
@@ -2249,7 +2425,7 @@ class H(BaseHTTPRequestHandler):
             if u.path == "/api/vista_previa":
                 nv = datos.get("nombre") or None
                 return self._json(vista_previa(str(datos.get("texto", "")),
-                                               nv if nv and self._nombre_valido(nv) else None))
+                                               nv if nv and self._nombre_valido(nv) else None, self.usuario))
             if u.path == "/api/admin/entrar":
                 return self._panel_entrar(datos)
             if u.path == "/api/admin/salir":
@@ -2267,6 +2443,10 @@ class H(BaseHTTPRequestHandler):
                     return self._json({"error": "No tenés permiso para usar el panel de administración."}, 403)
                 return self._json(*accion_admin(u.path[len("/api/admin/"):], datos,
                                                 quien=self.pc if acc == "remoto" else None))
+            if u.path.startswith("/api/usuario/"):
+                if not self.usuario:
+                    return self._json({"error": "Entrá con tu usuario."}, 403)
+                return self._json(*accion_usuario(u.path[len("/api/usuario/"):], datos, self.usuario, self.pc))
             if u.path == "/api/mi_medico":
                 med = datos.get("medico", "").strip()
                 if med != R.medico_pc(self.pc):
@@ -2274,15 +2454,30 @@ class H(BaseHTTPRequestHandler):
                 R.poner_medico_pc(self.pc, med)
                 return self._json({"ok": True})
             if u.path == "/api/medico":
+                # destino: "todos" (notas generales, como siempre), "mio" (solo para este transcriptor) o
+                # "general" (dejar de usar las propias). Sin destino = "todos" (compatibilidad).
+                destino = datos.get("destino") or "todos"
                 try:
+                    if destino in ("mio", "general") and not datos.get("crear"):
+                        if not self.usuario:
+                            return self._json({"error": "Para guardar notas solo para vos tenés que entrar con tu usuario."}, 403)
+                        nom = str(datos.get("medico", ""))
+                        N.guardar_notas_propias(nom, self.usuario, datos.get("notas", "") if destino == "mio" else None)
+                        L.ok("CONFIG", f"Notas propias de {self.quien} sobre {nom} "
+                                       + ("guardadas." if destino == "mio" else "quitadas: vuelve a usar las generales."))
+                        return self._json({"ok": True, "medico": nom, "destino": destino})
                     nom = N.guardar_medico(datos.get("medico", ""), datos.get("notas", ""),
                                            crear=datos.get("crear") is True)
+                    if self.usuario and not datos.get("crear"):
+                        N.guardar_notas_propias(nom, self.usuario, None)   # pasan a ser las de todos
                 except FileExistsError as ex:
                     return self._json({"error": str(ex)}, 409)
+                except FileNotFoundError as ex:
+                    return self._json({"error": str(ex)}, 404)
                 except ValueError as ex:
                     return self._json({"error": str(ex)}, 400)
-                L.ok("CONFIG", f"Notas del médico {nom} guardadas ({self.pc}).")
-                return self._json({"ok": True, "medico": nom})
+                L.ok("CONFIG", f"Notas del médico {nom} guardadas para todos ({self.quien}).")
+                return self._json({"ok": True, "medico": nom, "destino": "todos"})
             if u.path == "/api/voces/etiquetar":     # {"nombres": [...], "medico": "..."} desde «Agrupar voces»
                 med = str(datos.get("medico") or "").strip()
                 nombres = datos.get("nombres") or []
@@ -2318,13 +2513,31 @@ class H(BaseHTTPRequestHandler):
                      [f"No se pudieron leer: {', '.join(mal)}"] if mal else None)
                 return self._json({"ok": ok, "mal": mal})
             if u.path == "/api/plantillas":
-                secs = [(x.get("nombre", ""), x.get("cuerpo", "")) for x in datos.get("secciones", [])]
+                secs = [(x.get("nombre", ""), x.get("cuerpo", "")) for x in datos.get("secciones", [])
+                        if isinstance(x, dict)]
                 if not secs:
                     return self._json({"error": "No hay plantillas para guardar"}, 400)
-                N.guardar_secciones(secs)
-                L.ok("CONFIG", f"Plantillas guardadas por {self.pc} ({L.plural(len(secs), 'estudio')}); "
-                               f"la versión anterior quedó en conocimiento\\copias.")
-                return self._json({"ok": True})
+                destino = datos.get("destino") or ("mio" if self.usuario else "todos")
+                try:
+                    r = N.aplicar_plantillas(secs, self.usuario, destino)
+                except ValueError as ex:
+                    return self._json({"error": str(ex)}, 400)
+                if r["sin_cambios"]:
+                    return self._json({"ok": True, **r})
+                if destino == "todos":
+                    L.ok("CONFIG", f"Plantillas guardadas para todos por {self.quien} ({L.plural(r['generales'], 'cambio')}); "
+                                   f"la versión anterior quedó en conocimiento\\copias.")
+                else:
+                    L.ok("CONFIG", f"Plantillas propias de {self.quien} guardadas ({L.plural(r['propias'], 'cambio')}).")
+                return self._json({"ok": True, **r})
+            if u.path == "/api/plantillas/general":     # quitar la versión propia de una plantilla
+                if not self.usuario:
+                    return self._json({"error": "Entrá con tu usuario."}, 403)
+                nom = str(datos.get("nombre") or "")
+                ok = N.volver_a_general(self.usuario, nom)
+                if ok:
+                    L.info("CONFIG", f"{self.quien} volvió a la plantilla general de «{nom}».")
+                return self._json({"ok": ok})
             if u.path == "/api/borrar":      # uno o varios casos: {"nombres": [...]}
                 nombres = datos.get("nombres") or ([datos["nombre"]] if datos.get("nombre") else [])
                 if not isinstance(nombres, list) or not nombres or len(nombres) > 500:
@@ -2411,7 +2624,10 @@ class H(BaseHTTPRequestHandler):
             if u.path == "/api/procesar":
                 if n in PAUSAS or ESTADO.get(n, {}).get("estado") == "en pausa":
                     return self._json({"error": "Está en pausa: reanudalo desde la lista."}, 409)
-                L.info("IA", f"{self.pc} pidió volver a generar {visible(n)}.")
+                L.info("IA", f"{self.quien} pidió volver a generar {visible(n)}"
+                             + (" con su estilo." if self.usuario else "."))
+                if self.usuario:
+                    poner_usuario_caso(n, self.usuario)     # volver a generar = con el estilo de quien lo pide
                 encolar(n)
                 return self._json({"ok": True})
             if u.path == "/api/borrador":
@@ -2455,7 +2671,7 @@ class H(BaseHTTPRequestHandler):
                 return self._json({"ok": True})
             if u.path == "/api/finalizar":
                 sumar_revision(n, datos.get("rev"), self.pc)
-                return self._json(finalizar(n, datos.get("texto", ""), self.pc))
+                return self._json(finalizar(n, datos.get("texto", ""), self.pc, self.usuario))
             if u.path == "/api/abrir":
                 p = INFORMES / f"{n}.docx"
                 if p.exists() and not self.remoto:
@@ -2603,6 +2819,7 @@ def estado_admin():
         "hoy": dict(L.HOY),
         "tunel": estado_tunel(),
         "contrasena": R.configurado(),
+        "usuarios": estado_usuarios(),
         "admin_remoto": {"configurada": R.admin_configurado(), "desde": R.admin_desde(), "sesiones": R.sesiones_admin()},
         "app": {"version": oficial, "archivos": len(man.get("archivos", []))},
         "pcs": pcs,
@@ -2611,6 +2828,47 @@ def estado_admin():
         "cola": cola_en_vivo(),
         "abiertos": casos_abiertos(),
     }
+
+
+def estado_usuarios():
+    ses = R.sesiones_de_usuarios()
+    out = []
+    for u in U.lista():
+        prop = {"plantillas": len(N.secciones_de_usuario(u["clave"])),
+                "medicos": len(N.medicos_con_notas_propias(u["clave"])),
+                "reglas": bool(U.leer_archivo(u["clave"], "reglas_dictado.md").strip()),
+                "formato": bool(U.formato(u["clave"]))}
+        out.append({**u, "en": sorted(set(ses.get(u["clave"], []))), "propio": prop})
+    return out
+
+
+def accion_usuario(accion, d, usuario, pc):
+    """Lo que cada transcriptor cambia de sí mismo. Devuelve (respuesta, código)."""
+    nombre = U.nombre_de(usuario)
+    if accion == "contrasena":
+        err = U.cambiar_propia(usuario, str(d.get("actual") or ""), str(d.get("nueva") or ""))
+        if err:
+            return {"error": err}, 400
+        L.ok("ACCESO", f"{nombre} cambió su contraseña ({pc}).")
+        return {"ok": True}, 200
+    if accion == "preferencias":
+        return {"ok": True, "preferencias": U.guardar_preferencias(usuario, d.get("preferencias"))}, 200
+    if accion == "formato":
+        try:
+            f = U.guardar_formato(usuario, d.get("formato") or {})
+        except ValueError as ex:
+            return {"error": str(ex)}, 400
+        L.info("CONFIG", f"{nombre} cambió el formato de su Word ({pc}): "
+                         + (", ".join(f"{k}={v}" for k, v in f.items()) or "vuelve al general") + ".")
+        return {"ok": True, "formato": f}, 200
+    if accion == "reglas":
+        texto = d.get("reglas")
+        if not isinstance(texto, str) or len(texto) > 50_000:
+            return {"error": "Las reglas tienen que ser texto (como mucho 50.000 caracteres)."}, 400
+        U.escribir_archivo(usuario, "reglas_dictado.md", texto.strip() + "\n" if texto.strip() else "")
+        L.ok("CONFIG", f"{nombre} guardó sus reglas de dictado propias ({pc}).")
+        return {"ok": True}, 200
+    return {"error": "Acción desconocida"}, 404
 
 
 def accion_admin(accion, d, quien=None):
@@ -2635,6 +2893,38 @@ def accion_admin(accion, d, quien=None):
             return {"error": str(ex)}, 404
         except ValueError as ex:
             return {"error": str(ex)}, 400
+    if accion.startswith("usuarios/"):
+        clave = str(d.get("usuario") or "")
+        try:
+            if accion == "usuarios/crear":
+                clave = U.crear(d.get("nombre", ""), str(d.get("contrasena") or ""))
+                L.ok("ACCESO", f"Transcriptor creado: {U.nombre_de(clave)} {desde}. Entra con la contraseña inicial "
+                               f"y la cambia la primera vez.")
+                return {"ok": True, "usuario": clave, "msg": f"Listo: {U.nombre_de(clave)} ya puede entrar."}, 200
+            if accion == "usuarios/contrasena":
+                U.poner_contrasena(clave, str(d.get("contrasena") or ""), cambiar=True)
+                n = R.cerrar_sesiones_usuario(clave)
+                L.ok("ACCESO", f"Contraseña de {U.nombre_de(clave)} restablecida {desde}"
+                               + (f"; se cerraron {L.plural(n, 'sesión abierta', 'sesiones abiertas')}." if n else "."))
+                return {"ok": True, "msg": "Contraseña restablecida: la cambia la próxima vez que entre."}, 200
+            if accion == "usuarios/activo":
+                activo = d.get("activo") is True
+                U.activar(clave, activo)
+                if not activo:
+                    R.cerrar_sesiones_usuario(clave)
+                L.ok("ACCESO", f"Transcriptor {U.nombre_de(clave)} {'reactivado' if activo else 'desactivado'} {desde}.")
+                return {"ok": True}, 200
+            if accion == "usuarios/nombre":
+                U.renombrar(clave, d.get("nombre", ""))
+                L.ok("ACCESO", f"Transcriptor renombrado a {U.nombre_de(clave)} {desde}.")
+                return {"ok": True}, 200
+        except FileExistsError as ex:
+            return {"error": str(ex)}, 409
+        except FileNotFoundError as ex:
+            return {"error": str(ex)}, 404
+        except ValueError as ex:
+            return {"error": str(ex)}, 400
+        return {"error": "Acción desconocida"}, 404
     if quien and accion in SOLO_EN_EL_SERVIDOR:
         L.aviso("ACCESO", f"{quien} intentó «{accion}» en el panel de administración: solo se puede en la PC del servidor.")
         return {"error": "Eso solo se puede hacer en la PC del servidor."}, 403
@@ -2868,10 +3158,9 @@ form{background:var(--p);border:1px solid var(--bd);border-radius:12px;padding:2
 h1{font-size:20px;margin:0}p{margin:0;color:var(--mu);font-size:13.5px}label{display:flex;flex-direction:column;gap:4px;font-weight:600}
 input{font:inherit;font-weight:400;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:7px;padding:8px 10px}
 button{font:inherit;font-weight:600;background:var(--ac);color:#fff;border:0;border-radius:7px;padding:9px}.err{color:var(--err);font-weight:600}</style>
-</head><body><form method="post" action="/entrar"><h1>Transcripción</h1>
-<p>Para usar el sistema desde esta PC escribí su nombre y la contraseña.</p>{{error}}
-<label>Nombre de esta PC<input name="pc" placeholder="info-01" required autocomplete="username"></label>
-<label>Contraseña<input name="contrasena" type="password" required autocomplete="current-password"></label>
+</head><body><form method="post" action="{{accion}}"><h1>Transcripción</h1>
+<p>{{texto}}</p>{{error}}
+{{campos}}
 <button>Entrar</button></form></body></html>"""
 
 
@@ -3015,6 +3304,7 @@ def main():
                 sys.exit(1)
             time.sleep(1)
     SRV["http"] = srv
+    R.cargar_sesiones()
     try:
         reanudar_cola()
     except Exception:

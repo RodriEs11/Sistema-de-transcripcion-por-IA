@@ -7,6 +7,9 @@
 # --- Secretos y configuración local -----------------------------------
 # contraseñas (PBKDF2), llaves de las PC, canal ntfy
 acceso_remoto.json
+# transcriptores (huellas PBKDF2 de sus contraseñas) y sesiones abiertas
+usuarios.json
+sesiones.json
 # configuración local (se crea desde configuracion.ejemplo.json)
 configuracion.json
 *.env

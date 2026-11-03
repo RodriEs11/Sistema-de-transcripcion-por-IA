@@ -1,7 +1,9 @@
 TRANSCRIPCIÓN · aplicación para las PC del trabajo (info-01, info-02, info-03)
 =============================================================================
 
-Versión actual: 1.22 (2026-10-30).
+Versión actual: 1.23 (2026-11-02).
+Servidor 2026.11.1 (2026-11-02): cada transcriptor entra con su usuario y su contraseña y la IA arma los informes con su
+estilo (ver "TRANSCRIPTORES" más abajo). Mientras no se cree ningún transcriptor en el panel, todo funciona como antes.
 Servidor 2026.10.47 (2026-10-30): corrige los datos de GPU con temperaturas decimales; requiere reiniciar el servidor para aplicar la corrección.
 El servidor limita los lotes y reutiliza transcripciones verificadas para reducir esperas; conserva los modelos y controles de revisión.
 El servidor actualiza las correcciones por informe y usa un historial indexado; importa los datos anteriores en el primer uso de escritura del nuevo almacenamiento.
@@ -36,7 +38,9 @@ EN CADA PC DEL TRABAJO
 1. Copiá la carpeta a Documentos (por ejemplo Documentos\Transcripcion).
    No se instala nada ni hace falta ser administrador.
 2. Doble clic en Transcripcion.exe.
-3. Escribí el nombre de la PC (info-01, info-02 o info-03) y la contraseña → Conectar.
+3. Escribí tu usuario y tu contraseña de transcriptor → Conectar (desde la 1.23 el nombre de la
+   PC sale solo del nombre de Windows). Si en el Servidor todavía no hay transcriptores, dejá el
+   usuario vacío y escribí la contraseña del sistema.
 4. Listo. Si cerrás la ventana sigue funcionando (ícono junto al reloj).
    Con Opciones → Configuración → "Abrir al iniciar Windows" arranca sola cada día.
 
@@ -117,6 +121,22 @@ CONFIGURACIÓN Y PANTALLAS CHICAS (versión 1.9)
   con el estado de la IA, cuántos informes hay para revisar y la Configuración. Para volver a
   verla, el botón de arriba de la franja o el número de informes. Se recuerda en esta PC.
 
+TRANSCRIPTORES (versión 1.23 / Servidor 2026.11.1)
+- Cada persona entra con su usuario y su contraseña (los crea el administrador en el panel →
+  Transcriptores). La primera vez hay que cambiar la contraseña inicial en Mi cuenta.
+- La IA arma los informes con TU estilo: tus plantillas, tus notas de cada médico, tus reglas de
+  dictado y lo que aprendió de tus correcciones. Los audios que toma la app se arman con el estilo
+  de quien tiene la sesión abierta en esta PC.
+- Al guardar una plantilla o las notas de un médico pregunta "¿Solo para mí o para todos?".
+- Mi cuenta (arriba de la lista, o en Configuración): contraseña, formato de tu Word y tus reglas
+  de dictado ("Añadir regla").
+- Si un informe lo armó la IA con el estilo de otra persona, aparece un aviso con el botón
+  "Regenerar con mi estilo".
+- Cerrar la ventana NO cierra tu sesión: la app sigue junto al reloj y al volver a abrirla seguís vos.
+  Para que entre otra persona: Opciones → "Cerrar sesión" (o el botón "Cerrar sesión" de la lista).
+  Opciones → "Salir" cierra la aplicación.
+- Tus preferencias de pantalla (tema, atajos, velocidad, paneles) te siguen en cualquier PC.
+
 ACTUALIZACIONES (desde la versión 1.2 se actualiza sola)
 - La app se mantiene igual a la carpeta sistema\cliente del Servidor. Para actualizar todas
   las PC alcanza con poner el Transcripcion.exe nuevo en esa carpeta del Servidor.
@@ -137,7 +157,7 @@ SI ALGO NO ANDA
   Aparece solo si la carpeta se bajó de internet; copiada desde un pendrive no suele aparecer.
 - "Esta aplicación está bloqueada por el administrador": sistemas no permite programas propios.
   Alternativa sin programa: abrí en Edge la dirección del Servidor (la muestra su ventana),
-  entrá con el nombre de la PC y la contraseña, y usá "Cargar audio"
+  entrá con el nombre de la PC, tu usuario y tu contraseña, y usá "Cargar audio"
   (en la ventana para elegir el archivo, escribí %temp% y Enter).
 - Dice "Buscando el Servidor…" todo el tiempo: el Servidor puede estar apagado o sin internet,
   o la red del trabajo bloquea el canal de avisos. Opciones → Configuración → Conexión →

@@ -97,7 +97,7 @@ namespace Transcripcion
         {
             iniciarOculta = oculta;
             relojEstado = new RelojUi(this, 10000);
-            Text = "Transcripción — " + Config.Pc;
+            Text = Config.NombreVisible + " — " + Config.Pc;
             Font = Estilo.Fuente;
             BackColor = Estilo.Fondo;
             AutoScaleMode = AutoScaleMode.Font;
@@ -191,12 +191,13 @@ namespace Transcripcion
             FormClosing += (s, e) =>
             {
                 if (!saliendo && e.CloseReason == CloseReason.UserClosing)
-                {   // cerrar = esconder; sigue tomando audios
+                {   // cerrar = esconder; sigue tomando audios y la sesión del transcriptor sigue abierta (al volver a
+                    // abrirla no se piden de nuevo usuario y contraseña). Para cambiar de persona: «Cerrar sesión».
                     e.Cancel = true; Hide();
                     if (!avisoBandejaMostrado)
                     {
                         avisoBandejaMostrado = true;
-                        Notificaciones.Globo(bandeja, 5000, "Transcripción sigue funcionando",
+                        Notificaciones.Globo(bandeja, 5000, Config.NombreVisible + " sigue funcionando",
                             "Los audios se siguen enviando. Para abrirla, hacé doble clic en el ícono junto al reloj.");
                     }
                 }
@@ -250,6 +251,11 @@ namespace Transcripcion
                 ToolTipText = "Abrir con Windows, toma de audios, carpeta de los Word, registro de envíos, Servidor, pantalla y audio" });
             menu.Items.Add("Cargar audio…", null, (s, e) => CargarAudio());
             menu.Items.Add("Volver a cargar la pantalla", null, async (s, e) => { urlCargada = null; await Entrar(); });
+            menu.Items.Add(new ToolStripSeparator());
+            menu.Items.Add(new ToolStripMenuItem("Cerrar sesión", null, (s, e) => CambiarDeUsuario())
+                { ToolTipText = "Para que entre otra persona: la aplicación sigue abierta y pide usuario y contraseña" });
+            menu.Items.Add(new ToolStripMenuItem("Salir", null, (s, e) => Salir())
+                { ToolTipText = "Cierra la aplicación (deja de tomar audios hasta que se vuelva a abrir)" });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(new ToolStripMenuItem("Versión " + Programa.VERSION) { Enabled = false });
             menu.Items.Add(new ToolStripMenuItem("Creada por Rodrigo Espíndola") { Enabled = false });
@@ -625,10 +631,16 @@ namespace Transcripcion
         async Task Entrar()
         {
             if (string.IsNullOrEmpty(Config.Url)) return;
-            var r = await Servidor.Sesion(Config.Url);
-            if (r.Codigo == 401) { PedirVincularDeNuevo(); return; }
-            if (!r.Ok) { Registro.Escribir("No pude abrir la sesión: " + r.Error); return; }
-            string destino = Config.Url + "/entrar?codigo=" + Uri.EscapeDataString(r.Texto("codigo"));
+            string codigo = Config.CodigoInicial;
+            Config.CodigoInicial = "";
+            if (codigo == "")
+            {
+                var r = await Servidor.Sesion(Config.Url);
+                if (r.Codigo == 401) { PedirVincularDeNuevo(); return; }
+                if (!r.Ok) { Registro.Escribir("No pude abrir la sesión: " + r.Error); return; }
+                codigo = r.Texto("codigo");
+            }
+            string destino = Config.Url + "/entrar?codigo=" + Uri.EscapeDataString(codigo);
             urlCargada = Config.Url;
             if (webFalla) { edgePendiente = destino; return; }
             if (web.CoreWebView2 != null) web.CoreWebView2.Navigate(destino);
@@ -687,10 +699,11 @@ namespace Transcripcion
             m.Items.Add("Ver registro de envíos", null, (s, e) => Abrir(Registro.Archivo));
             m.Items.Add("Configuración…", null, (s, e) => AbrirConfiguracion(null));
             m.Items.Add(new ToolStripSeparator());
+            m.Items.Add("Cerrar sesión", null, (s, e) => { Mostrar(); CambiarDeUsuario(); });
             m.Items.Add("Salir", null, (s, e) => Salir());
             bandeja.ContextMenuStrip = m;
             bandeja.Icon = Estilo.Icono(Estilo.Ambar);
-            bandeja.Text = "Transcripción";
+            bandeja.Text = Config.NombreVisible;
             bandeja.Visible = true;
             bandeja.DoubleClick += (s, e) => Mostrar();
             bandeja.BalloonTipClicked += (s, e) => Mostrar();
@@ -745,9 +758,42 @@ namespace Transcripcion
                 MessageBox.Show(this, "Hay audios que todavía no llegaron al Servidor. Si salís, se envían la próxima vez que abras la aplicación.\n\n¿Salir igual?",
                     "Transcripción", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
             saliendo = true;
+            Hide();                        // se cierra enseguida: no se ve la pantalla de entrar
             bandeja.Visible = false;
+            await CerrarSesionUsuario(true);
             vigilante.Dispose();
             Application.Exit();
+        }
+
+        // «Cerrar sesión»: la persona sale y la app queda abierta pidiendo usuario y contraseña.
+        async void CambiarDeUsuario()
+        {
+            if (!await CerrarSesionUsuario())
+                MostrarAviso("No hay una sesión abierta", "Este Servidor no tiene transcriptores, o la pantalla todavía no cargó.");
+        }
+
+        // Cierra la sesión del transcriptor en la página (window.salirDeSesion de web/index.html). La página cierra
+        // antes el estudio abierto guardando sus cambios; si no puede, no cierra la sesión. Devuelve true si había una
+        // sesión de transcriptor y se pidió cerrarla. Con un Servidor sin transcriptores (o una página anterior) no
+        // hace nada. alSalir: la app se está cerrando; la página avisa al Servidor sin mostrar la pantalla de entrar.
+        async Task<bool> CerrarSesionUsuario(bool alSalir = false)
+        {
+            if (!webLista || web.CoreWebView2 == null) return false;
+            try
+            {
+                var pedido = web.CoreWebView2.ExecuteScriptAsync("typeof window.salirDeSesion==='function' && window.salirDeSesion("
+                    + (alSalir ? "{navegar:false}" : "") + ")===true");
+                if (await Task.WhenAny(pedido, Task.Delay(3000)) != pedido) return false;
+                bool cerro = await pedido == "true";
+                if (cerro)
+                {
+                    Registro.Escribir(alSalir ? "Aplicación cerrada: se cierra la sesión del transcriptor."
+                                              : "Se cierra la sesión del transcriptor.");
+                    if (alSalir) await Task.Delay(400);        // que el aviso al Servidor salga antes de terminar
+                }
+                return cerro;
+            }
+            catch (Exception ex) { Registro.Escribir("No se pudo cerrar la sesión del transcriptor: " + ex.Message); return false; }
         }
 
         // ------------------------------------------------------------ actualización automática
@@ -1417,7 +1463,7 @@ namespace Transcripcion
                 {
                     if (f.ShowDialog(this) != DialogResult.OK) { saliendo = true; Application.Exit(); return; }
                 }
-                Text = "Transcripción — " + Config.Pc;
+                Text = Config.NombreVisible + " — " + Config.Pc;
                 urlCargada = null; primeraLectura = true;
                 cola.Despertar();
                 relojEstado.Start();

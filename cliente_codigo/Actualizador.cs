@@ -441,8 +441,7 @@ namespace Transcripcion
         {
             try
             {
-                string marca = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                                            "Transcripcion", "actualizacion_en_curso.txt");
+                string marca = Path.Combine(Config.Carpeta, "actualizacion_en_curso.txt");
                 if (!File.Exists(marca)) return false;
                 var l = File.ReadAllText(marca, Encoding.UTF8).Split(Renglon);
                 for (int i = 4; i < l.Length; i++)

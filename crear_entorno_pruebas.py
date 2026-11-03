@@ -18,6 +18,13 @@ Qué hace:
   resultados, informes, audios, la cola ni los binarios de la app.
 - Genera `iniciar_pruebas.bat` / `iniciar_pruebas.sh`: otro puerto (8865 por defecto), sin túnel,
   modo simulado salvo que se pida `real`, y el Python de la instalación en uso (solo lo ejecuta).
+- Prepara la app del trabajo para compilarla y probarla en esta PC: copia las bibliotecas de WebView2 de
+  `cliente/` (nunca el .exe ni `conexion.json`) y crea `cliente/perfil_pruebas.txt`. Con ese archivo la app usa
+  otra carpeta de datos, otra instancia y otra clave de inicio con Windows: no pisa a la app de producción.
+
+En un entorno ya creado, para preparar solo la app (desde la carpeta del entorno de pruebas):
+
+    python crear_entorno_pruebas.py --preparar-app
 """
 import argparse
 import json
@@ -32,6 +39,8 @@ MARCA = ".entorno_pruebas"
 PUERTO_PRODUCCION = 8765
 COPIAR = ("conocimiento", "modelos")          # se copian si existen; el resto se crea vacío o desde ejemplos
 CARPETAS_PROPIAS = ("Audios_nuevos", "Informes")
+BIBLIOTECAS_APP = ("Microsoft.Web.WebView2.Core.dll", "Microsoft.Web.WebView2.WinForms.dll")
+PERFIL_APP = "perfil_pruebas.txt"
 
 
 class ErrorEntorno(Exception):
@@ -118,6 +127,40 @@ exec "$PY" servidor.py --sin-navegador
     p.chmod(0o755)
 
 
+def preparar_app(origen, destino):
+    """Deja la app compilable (cliente_codigo/compilar.ps1) y aislada en la copia. Devuelve lo copiado."""
+    src, dst = Path(origen) / "cliente", Path(destino) / "cliente"
+    dst.mkdir(exist_ok=True)
+    copiado = []
+    for nombre in BIBLIOTECAS_APP:
+        if (src / nombre).is_file():
+            shutil.copy2(src / nombre, dst / nombre)
+            copiado.append(nombre)
+    if (src / "runtimes").is_dir():
+        shutil.copytree(src / "runtimes", dst / "runtimes", dirs_exist_ok=True)
+        copiado.append("runtimes")
+    (dst / PERFIL_APP).write_text(
+        "Perfil de pruebas de la app (crear_entorno_pruebas.py). Con este archivo junto a Transcripcion.exe la app\n"
+        "usa %LOCALAPPDATA%\\Transcripcion-pruebas, otra instancia y otra clave de inicio con Windows.\n"
+        "No se distribuye a las PC del trabajo.\n", encoding="utf-8")
+    return copiado
+
+
+def origen_del_entorno(destino):
+    """La instalación en uso desde la que se creó el entorno (anotada en .entorno_pruebas)."""
+    marca = Path(destino) / MARCA
+    if not marca.exists():
+        raise ErrorEntorno(f"{destino} no es un entorno de pruebas (falta {MARCA}).")
+    texto = marca.read_text(encoding="utf-8").strip()
+    prefijo = "Entorno de pruebas creado desde "
+    if not texto.startswith(prefijo):
+        raise ErrorEntorno(f"No se entiende {marca}.")
+    origen = Path(texto[len(prefijo):].splitlines()[0].strip())
+    if not (origen / "cliente").is_dir():
+        raise ErrorEntorno(f"No encuentro la carpeta cliente de la instalación en uso ({origen}).")
+    return origen
+
+
 def crear(origen, destino, rama="experimental", puerto=8865, copiar=True, avisar=print):
     origen, destino = Path(origen).resolve(), Path(destino).resolve()
     if (origen / MARCA).exists():
@@ -149,7 +192,8 @@ def crear(origen, destino, rama="experimental", puerto=8865, copiar=True, avisar
 
     (destino / MARCA).write_text(f"Entorno de pruebas creado desde {origen}\n", encoding="utf-8")
     with open(destino / ".git" / "info" / "exclude", "a", encoding="utf-8") as f:   # sirve en cualquier rama
-        f.write(f"\n# entorno de pruebas (crear_entorno_pruebas.py)\n/{MARCA}\n/iniciar_pruebas.bat\n/iniciar_pruebas.sh\n")
+        f.write(f"\n# entorno de pruebas (crear_entorno_pruebas.py)\n/{MARCA}\n/iniciar_pruebas.bat\n/iniciar_pruebas.sh\n"
+                f"/cliente/{PERFIL_APP}\n")
     preparar_config(origen, destino)
     copiados = []
     if copiar:
@@ -159,7 +203,8 @@ def crear(origen, destino, rama="experimental", puerto=8865, copiar=True, avisar
                 copiados.append(nombre)
     python = _python_produccion(origen)
     escribir_lanzadores(destino, python, puerto)
-    return {"destino": destino, "rama": rama, "puerto": puerto, "copiados": copiados, "python": python}
+    app = preparar_app(origen, destino)
+    return {"destino": destino, "rama": rama, "puerto": puerto, "copiados": copiados, "python": python, "app": app}
 
 
 def main(argv=None):
@@ -169,7 +214,24 @@ def main(argv=None):
                     help="carpeta nueva para la copia (por defecto: ..\\sistema_pruebas)")
     ap.add_argument("--puerto", type=int, default=8865, help="puerto de la interfaz de pruebas (por defecto 8865)")
     ap.add_argument("--sin-copiar", action="store_true", help="no copiar conocimiento/ ni modelos/")
+    ap.add_argument("--preparar-app", action="store_true",
+                    help="en un entorno ya creado: solo prepara la app para compilarla y probarla (perfil de pruebas)")
     a = ap.parse_args(argv)
+    if a.preparar_app:
+        try:
+            if (AQUI / MARCA).exists():
+                destino, origen = AQUI, origen_del_entorno(AQUI)
+            else:
+                destino, origen = Path(a.destino).resolve(), AQUI
+                origen_del_entorno(destino)
+            copiado = preparar_app(origen, destino)
+        except (ErrorEntorno, OSError) as ex:
+            print(f"[ERROR] {ex}", file=sys.stderr)
+            return 1
+        print(f"App preparada en {destino / 'cliente'} (perfil de pruebas). Copiado de {origen / 'cliente'}: "
+              f"{', '.join(copiado) or 'nada (faltan las bibliotecas de WebView2 en producción)'}.")
+        print("Compilar: powershell -NoProfile -ExecutionPolicy Bypass -File cliente_codigo\\compilar.ps1")
+        return 0
     try:
         r = crear(AQUI, a.destino, a.rama, a.puerto, copiar=not a.sin_copiar)
     except ErrorEntorno as ex:
@@ -179,6 +241,8 @@ def main(argv=None):
     print(f"\nListo. Entorno de pruebas en {r['destino']} (rama {r['rama']}).")
     print(f"Copiado: {', '.join(r['copiados']) or 'nada'} · Python: {r['python']}")
     print(f"Para abrirlo: {lanzador}  →  http://127.0.0.1:{r['puerto']}")
+    print(f"App de prueba: {', '.join(r['app']) or 'sin bibliotecas de WebView2'} + cliente\\{PERFIL_APP} "
+          "(compilala con cliente_codigo\\compilar.ps1)")
     print("Trabajá y commiteá dentro de esa carpeta; la instalación en uso no cambia.")
     return 0
 

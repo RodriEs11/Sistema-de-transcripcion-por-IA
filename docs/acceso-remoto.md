@@ -56,13 +56,18 @@ Con Dev Tunnels:
 
 | Origen del pedido | Requisito |
 |---|---|
-| `127.0.0.1` sin encabezados de Cloudflare | Ninguno (uso local) |
-| Por el túnel | Llave *Bearer* de una PC vinculada **o** cookie de sesión de 12 h |
+| `127.0.0.1` sin encabezados de Cloudflare | Ninguno (uso local). Con transcriptores: su usuario y contraseña |
+| Por el túnel | Llave *Bearer* de una PC vinculada **o** cookie de sesión. Con transcriptores, la llave sola solo sirve para enviar audios, el estado y las actualizaciones; ver informes exige la sesión de un transcriptor |
 | Panel de administración por el túnel | Lo anterior **y** la contraseña del panel (sesión de 8 h, 30 min de inactividad) |
 
-- **Vinculación**: en el primer uso, la app envía el nombre de la PC y la contraseña de acceso remoto; el servidor
-  entrega una llave propia de esa PC (guardada cifrada con DPAPI en la PC).
+- **Vinculación**: en el primer uso, la app envía el nombre de la PC (desde la 1.23, el de Windows) y la contraseña
+  de acceso remoto o, si hay transcriptores, el usuario y la contraseña de uno de ellos; el servidor entrega una
+  llave propia de esa PC (guardada cifrada con DPAPI en la PC). Con usuario, devuelve además un código de entrada
+  que abre la pantalla ya con esa persona.
 - **Entrada a la pantalla**: la app obtiene un código de un solo uso válido por 60 s y abre la interfaz con él.
+  Con transcriptores, la pantalla pide usuario y contraseña en `/ingresar` (no `/entrar`, que la app intercepta para
+  volver a entrar sola con la llave). La sesión dura mientras la app esté abierta, también escondida junto al reloj;
+  termina con «Cerrar sesión», «Salir» o tras 12 h sin consultas. Ver [usuarios.md](usuarios.md).
 - **Contraseñas**: PBKDF2 con sal. Cinco intentos fallidos bloquean esa IP (o esa PC, en el panel) durante 10 minutos.
 - **Cookies**: `HttpOnly`, `Secure`, `SameSite=Strict`. La cookie del panel está atada a la PC: si aparece en otra, se anula.
 - Todas las respuestas llevan `Cache-Control: no-store`.

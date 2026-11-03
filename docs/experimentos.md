@@ -68,6 +68,24 @@ de producción.
 
 El modo simulado necesita datos ficticios con la estructura descrita en [desarrollo.md](desarrollo.md#modo-simulado-sin-gpu-ni-ollama).
 
+### Probar la app del trabajo
+
+El entorno de pruebas no tiene túnel, así que las PC del trabajo no lo ven: la app de prueba se usa en la misma PC
+del servidor, contra `http://127.0.0.1:<puerto>`.
+
+1. `crear_entorno_pruebas.py` deja en `sistema_pruebas\cliente\` las bibliotecas de WebView2 de producción (nunca el
+   `.exe` ni `conexion.json`) y el archivo **`perfil_pruebas.txt`**. En un entorno creado antes de esto:
+   `python crear_entorno_pruebas.py --preparar-app` desde `sistema_pruebas`.
+2. Compilar ahí: `powershell -NoProfile -ExecutionPolicy Bypass -File cliente_codigo\compilar.ps1`. Queda
+   `sistema_pruebas\cliente\Transcripcion.exe`; la carpeta `cliente` de producción no se toca.
+3. Abrirlo, elegir «Escribí la dirección del Servidor» y poner `http://127.0.0.1:<puerto>`.
+
+Con `perfil_pruebas.txt` la app se llama **Transcripción (PRUEBAS)** y usa otra carpeta de datos
+(`%LOCALAPPDATA%\Transcripcion-pruebas`: configuración, llave, cola, WebView2), otra instancia y otra clave de inicio
+con Windows, así que puede abrirse junto a la app de producción sin pisarla. Arranca **sin tomar los audios de
+`%TEMP%`** (Opciones → Configuración → Esta PC para activarlo). El archivo no está en el manifiesto de
+actualización, así que nunca llega a las PC.
+
 Para borrar el entorno: cerrar su ventana y eliminar la carpeta `sistema_pruebas` (antes, publicar con
 `git push` lo que se quiera conservar). La instalación en uso no se entera.
 

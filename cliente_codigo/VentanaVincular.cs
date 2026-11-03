@@ -8,7 +8,8 @@ namespace Transcripcion
 {
     class VentanaVincular : Form
     {
-        readonly TextBox txtPc = new TextBox(), txtClave = new TextBox(), txtUrl = new TextBox();
+        readonly TextBox txtUsuario = new TextBox(), txtClave = new TextBox(), txtUrl = new TextBox();
+        readonly string pc = NombrePc();
         readonly CheckBox chkInicio = new CheckBox();
         readonly Label lblPasos = new Label();
         readonly Button btnConectar = new Button(), btnCancelar = new Button();
@@ -18,14 +19,14 @@ namespace Transcripcion
 
         public VentanaVincular()
         {
-            Text = "Transcripción · conectar esta PC";
+            Text = Config.NombreVisible + " · conectar esta PC";
             Font = Estilo.Fuente;
             BackColor = Estilo.Panel;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = MinimizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(500, 600);
+            ClientSize = new Size(500, 680);
             Icon = Estilo.IconoApp();
 
             var t = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false,
@@ -36,15 +37,15 @@ namespace Transcripcion
             t.Controls.Add(new Label { Text = "Conectar esta PC", Font = Estilo.Titulo, AutoSize = true, Margin = new Padding(0, 0, 0, 4) });
             t.Controls.Add(Ayuda("Se hace una sola vez en cada computadora del trabajo. Después la aplicación se conecta sola.", ancho));
 
-            t.Controls.Add(Etiqueta("Nombre de esta PC"));
-            string maquina = Environment.MachineName.ToLowerInvariant();
-            txtPc.Text = Regex.IsMatch(maquina, @"^info-\d+$") ? maquina : "";
-            Caja(txtPc, ancho); t.Controls.Add(txtPc);
-            t.Controls.Add(Ayuda("Por ejemplo info-01. Aparece en la lista para saber de qué computadora vino cada audio.", ancho));
+            // el nombre de la PC sale solo del nombre de Windows (aparece en la lista para saber de dónde vino cada audio)
+            t.Controls.Add(Ayuda("Esta PC aparece en el sistema como «" + pc + "».", ancho));
 
-            t.Controls.Add(Etiqueta("Contraseña del sistema"));
+            t.Controls.Add(Etiqueta("Tu usuario"));
+            Caja(txtUsuario, ancho); t.Controls.Add(txtUsuario);
+            t.Controls.Add(Etiqueta("Contraseña"));
             txtClave.UseSystemPasswordChar = true; Caja(txtClave, ancho); t.Controls.Add(txtClave);
-            t.Controls.Add(Ayuda("La misma que configuraste en el Servidor.", ancho));
+            t.Controls.Add(Ayuda("Tu usuario y tu contraseña de transcriptor. Si en el Servidor todavía no hay " +
+                                 "transcriptores, dejá el usuario vacío y escribí la contraseña del sistema.", ancho));
 
             t.Controls.Add(Etiqueta("Carpeta donde el sistema deja los audios"));
             var carpeta = new TextBox { Text = System.IO.Path.GetTempPath(), ReadOnly = true, Font = Estilo.Mono, BackColor = Estilo.Fondo };
@@ -74,13 +75,20 @@ namespace Transcripcion
             AcceptButton = btnConectar; CancelButton = btnCancelar;
             btnCancelar.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
             btnConectar.Click += (s, e) => Conectar();
-            Shown += (s, e) => (txtPc.Text == "" ? txtPc : txtClave).Focus();
+            Shown += (s, e) => txtUsuario.Focus();
+        }
+
+        // Nombre de Windows en el formato que acepta el Servidor: letras, números, - y _ (hasta 24).
+        static string NombrePc()
+        {
+            string n = Regex.Replace((Environment.MachineName ?? "").ToLowerInvariant(), "[^a-z0-9_-]", "-").Trim('-', '_');
+            if (n.Length > 24) n = n.Substring(0, 24).TrimEnd('-', '_');
+            return PcValida.IsMatch(n) ? n : "pc";
         }
 
         async void Conectar()
         {
-            string pc = txtPc.Text.Trim(), clave = txtClave.Text;
-            if (!PcValida.IsMatch(pc)) { Paso("Escribí el nombre de esta PC: letras, números y guiones (ej. info-01).", true); txtPc.Focus(); return; }
+            string usuario = txtUsuario.Text.Trim(), clave = txtClave.Text;
             if (clave == "") { Paso("Escribí la contraseña.", true); txtClave.Focus(); return; }
             btnConectar.Enabled = false; UseWaitCursor = true;
             try
@@ -98,7 +106,7 @@ namespace Transcripcion
                     }
                 }
                 Paso("✓ Servidor encontrado\nComprobando la contraseña…", false);
-                var r = await Servidor.Vincular(url, pc, clave);
+                var r = await Servidor.Vincular(url, pc, usuario, clave);
                 if (!r.Ok)
                 {
                     if (r.Codigo == 0) Registro.Escribir("No pude comunicarme con " + url + ": " + r.Error);
@@ -106,6 +114,7 @@ namespace Transcripcion
                     return;
                 }
                 Config.Pc = pc; Config.Url = url; Config.Llave = r.Texto("llave"); Config.Guardar();
+                Config.CodigoInicial = r.Texto("codigo");   // la página abre ya con este usuario (no se lo pide otra vez)
                 Paso("✓ Servidor encontrado\n✓ Contraseña correcta: esta PC quedó autorizada\nProbando la conexión…", false);
                 var e2 = await Servidor.Estado(url);
                 if (!e2.Ok) { Paso("La PC quedó autorizada pero la prueba falló: " + e2.Error, true); return; }
