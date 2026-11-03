@@ -1,7 +1,9 @@
 TRANSCRIPCIÓN · aplicación para las PC del trabajo (info-01, info-02, info-03)
 =============================================================================
 
-Versión actual: 1.23 (2026-11-02).
+Versión actual: 1.24 (2026-11-03).
+1.24 / Servidor 2026.11.2: si el Servidor se cae o se reinicia (o cambia la dirección del túnel), al volver la
+pantalla sigue con la misma persona: no se piden de nuevo usuario y contraseña.
 Servidor 2026.11.1 (2026-11-02): cada transcriptor entra con su usuario y su contraseña y la IA arma los informes con su
 estilo (ver "TRANSCRIPTORES" más abajo). Mientras no se cree ningún transcriptor en el panel, todo funciona como antes.
 Servidor 2026.10.47 (2026-10-30): corrige los datos de GPU con temperaturas decimales; requiere reiniciar el servidor para aplicar la corrección.

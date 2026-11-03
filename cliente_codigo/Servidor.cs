@@ -105,9 +105,13 @@ namespace Transcripcion
                 ComoJson(new Dictionary<string, object> { { "pc", pc }, { "usuario", usuario }, { "contrasena", contrasena } }), "application/json", null, 30);
         }
 
-        public static Task<Respuesta> Sesion(string url)
+        // reconectar: la app ya estaba abierta (se cayó o se reinició el Servidor, cambió la dirección): el Servidor
+        // devuelve un código con la persona que tenía la sesión abierta en esta PC, así no se le pide el usuario otra vez.
+        public static Task<Respuesta> Sesion(string url, bool reconectar = false)
         {
-            return Enviar("POST", url, "/api/cliente/sesion", true, new byte[0], "application/json", null, 20);
+            return Enviar("POST", url, "/api/cliente/sesion", true,
+                reconectar ? ComoJson(new Dictionary<string, object> { { "reconectar", true } }) : new byte[0],
+                "application/json", null, 20);
         }
 
         // ---- actualización de la app

@@ -9,6 +9,17 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [Servidor 2026.11.2] — 2026-11-03
+
+### Corregido
+- Con transcriptores, cuando el servidor se caía o se reiniciaba, la app volvía a abrir la pantalla con un código de entrada nuevo y esa sesión sin usuario reemplazaba a la de la persona: había que volver a entrar. Ahora, si la pantalla ya tiene la sesión de un transcriptor, se conserva (también con la App 1.23).
+- `/api/cliente/sesion` acepta `{"reconectar": true}`: el código abre la pantalla con la persona que tenía la sesión abierta en esa PC (para cuando cambia la dirección del túnel y la pantalla pierde su cookie). Después de «Cerrar sesión» o de vencer la sesión no devuelve a nadie.
+
+## [App 1.24] — 2026-11-03
+
+### Corregido
+- Al reconectarse (servidor caído o reiniciado, dirección nueva) pide la entrada con `reconectar`: la pantalla vuelve con la misma persona sin pedir usuario y contraseña. Al abrir la app de cero se sigue pidiendo.
+
 ## Instalación — 2026-11-03
 - `iniciar_servidor.bat` e `interfaz.bat` ponen `.venv\Scripts` al principio del PATH después de activar el entorno.
   Si la carpeta se mueve de unidad (D: → E:), `activate.bat` conserva la ruta vieja y `python` terminaba siendo el
