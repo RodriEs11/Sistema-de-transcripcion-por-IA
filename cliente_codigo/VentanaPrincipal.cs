@@ -191,21 +191,15 @@ namespace Transcripcion
             FormClosing += (s, e) =>
             {
                 if (!saliendo && e.CloseReason == CloseReason.UserClosing)
-                {   // cerrar = esconder; sigue tomando audios. Con transcriptores, además se cierra la sesión de la
-                    // persona (así el siguiente entra con su usuario y los audios nuevos no se arman con su estilo)
+                {   // cerrar = esconder; sigue tomando audios y la sesión del transcriptor sigue abierta (al volver a
+                    // abrirla no se piden de nuevo usuario y contraseña). Para cambiar de persona: «Cerrar sesión».
                     e.Cancel = true; Hide();
-                    CerrarSesionUsuario().ContinueWith(t =>
+                    if (!avisoBandejaMostrado)
                     {
-                        bool cerro = t.Status == TaskStatus.RanToCompletion && t.Result;
-                        EnPantalla(() =>
-                        {
-                            if (avisoBandejaMostrado && !cerro) return;
-                            avisoBandejaMostrado = true;
-                            Notificaciones.Globo(bandeja, 5000, Config.NombreVisible + " sigue funcionando",
-                                (cerro ? "Tu sesión se cerró: la próxima vez se entra con usuario y contraseña. " : "")
-                                + "Los audios se siguen enviando. Para abrirla, hacé doble clic en el ícono junto al reloj.");
-                        });
-                    });
+                        avisoBandejaMostrado = true;
+                        Notificaciones.Globo(bandeja, 5000, Config.NombreVisible + " sigue funcionando",
+                            "Los audios se siguen enviando. Para abrirla, hacé doble clic en el ícono junto al reloj.");
+                    }
                 }
             };
         }

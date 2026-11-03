@@ -123,6 +123,19 @@ class SesionesTest(Base):
         self.assertEqual(R.cerrar_sesiones_usuario("ana"), 1)
         self.assertIsNone(R.sesion(c))
 
+    def test_sesion_en_uso_no_vence(self):
+        # la app puede quedar abierta (escondida junto al reloj) varios días: mientras la página consulta, sigue
+        sid = R.nueva_sesion("info-01", usuario="ana")
+        v = next(iter(R.SESIONES.values()))
+        v["exp"] = time.time() + 30                      # a punto de vencer
+        self.assertEqual(R.sesion(sid)["usuario"], "ana")
+        self.assertGreater(v["exp"], time.time() + R.SESION_SEG - 60)
+        guardado = json.loads(R.ARCH_SESIONES.read_text(encoding="utf-8"))
+        self.assertGreater(next(iter(guardado.values()))["exp"], time.time() + R.SESION_SEG - 60)
+        # sin ninguna consulta en 12 h (PC apagada) sí se cierra
+        v["ult"] = time.time() - R.SESION_INACTIVA_SEG - 1
+        self.assertIsNone(R.sesion(sid))
+
     def test_cookie_sin_vencimiento(self):
         self.assertNotIn("Max-Age", R.cookie_sesion("x"))
         self.assertIn("Secure", R.cookie_sesion("x"))
