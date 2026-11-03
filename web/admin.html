@@ -316,6 +316,23 @@ details.mas-git ul{margin:4px 0 0;padding-left:18px;font:12px ui-monospace,Conso
     </div>
   </section>
 
+  <section class="card" aria-labelledby="tUsu" id="secUsu" hidden>
+    <div class="cab"><h2 id="tUsu">Transcriptores</h2><span class="cuenta" id="usuCuenta"></span><span class="sep"></span>
+      <button class="chico prim" id="bNuevoUsu" type="button">Agregar transcriptor</button></div>
+    <div class="cuerpo">
+      <p class="nota" style="margin-top:0">Cada transcriptor entra con su usuario y su contraseña, y la IA arma los informes con <b>su</b> estilo:
+        sus plantillas, sus notas de cada médico, sus reglas, su formato del Word y lo que aprendió de sus correcciones.
+        Mientras no haya ninguno, el sistema funciona como antes, sin pedir usuario.</p>
+      <form class="clave" id="fUsu" autocomplete="off" novalidate hidden>
+        <label>Nombre<input id="uNombre" maxlength="60" autocomplete="off" placeholder="Ej.: Ana Gómez"></label>
+        <label>Contraseña inicial<input type="password" id="uClave" minlength="6" autocomplete="new-password" placeholder="mínimo 6 caracteres; la cambia al entrar"></label>
+        <div class="err-txt" id="uErr" aria-live="polite"></div>
+        <div class="fila"><button class="prim" id="bUsuOk" type="submit">Crear</button><button type="button" id="bUsuNo">Cancelar</button></div>
+      </form>
+    </div>
+    <div id="usuarios"></div>
+  </section>
+
   <section class="card" aria-labelledby="tPcs" id="secPcs" hidden>
     <div class="cab"><h2 id="tPcs">PC del trabajo</h2><span class="cuenta" id="pcsCuenta"></span><span class="sep"></span>
       <span class="cuenta" id="appOficial"></span>
@@ -481,9 +498,11 @@ function armarTunel(e){
 
 /* ---------- contraseña */
 function armarClave(e){
-  poner('#claveEstado', e.contrasena
+  const conUsu = (e.usuarios || []).some(u => u.activo);
+  poner('#claveEstado', (e.contrasena
     ? '<div class="estado-grande"><span class="punto ok"></span>Configurada</div>'
-    : '<div class="estado-grande"><span class="punto av"></span>Todavía no configurada</div>');
+    : '<div class="estado-grande"><span class="punto av"></span>Todavía no configurada</div>')
+    + (conUsu ? '<p class="nota" style="margin-top:4px">Como hay transcriptores, ya no sirve para entrar ni para conectar PC: cada uno usa su usuario. Se sigue usando para preparar el túnel.</p>' : ''));
   $('#bClave').textContent = e.contrasena ? 'Cambiar contraseña' : 'Guardar contraseña';
 }
 $('#fClave').onsubmit = async ev => {
@@ -533,12 +552,66 @@ $('#bQuitarAdm').onclick = ev => {
     accion('contrasena_admin/quitar', {}, ev.currentTarget);
 };
 
+/* ---------- transcriptores */
+const PROPIO = {plantillas: ['plantilla propia', 'plantillas propias'], medicos: ['médico con notas propias', 'médicos con notas propias']};
+function armarUsuarios(e){
+  const us = e.usuarios || [];
+  $('#usuCuenta').textContent = us.length ? plural(us.filter(u => u.activo).length, 'activo', 'activos') : '';
+  if(!us.length){
+    poner('#usuarios', '<div class="vacio"><b>Todavía no hay transcriptores.</b>Agregá uno por persona. Desde que exista el primero, la página pide usuario y contraseña en todas las PC (también en esta) y la contraseña compartida deja de servir para entrar.</div>');
+    return;
+  }
+  let h = '<div class="tabla-env"><table><thead><tr><th scope="col">Transcriptor</th><th scope="col">Ahora</th><th scope="col">Su estilo</th><th scope="col">Última entrada</th><th scope="col"><span class="sr" style="position:absolute;left:-9999px">Acciones</span></th></tr></thead><tbody>';
+  for(const u of us){
+    const pr = u.propio || {}, est = [];
+    for(const k of ['plantillas', 'medicos']) if(pr[k]) est.push(pr[k] + ' ' + (pr[k] === 1 ? PROPIO[k][0] : PROPIO[k][1]));
+    if(pr.reglas) est.push('reglas propias');
+    if(pr.formato) est.push('formato del Word propio');
+    const ahora = !u.activo ? '<span class="etq">desactivado</span>'
+      : u.en.length ? `<span class="conex"><span class="punto ok vivo"></span>${u.en.map(esc).join(', ')}</span>` : '<span style="color:var(--mu)">—</span>';
+    h += `<tr><td><b>${esc(u.nombre)}</b>${u.cambiar && u.activo ? ' <span class="etq av" title="Entra con la contraseña que le pusiste y la cambia">contraseña inicial</span>' : ''}</td>`
+       + `<td>${ahora}</td><td>${est.length ? esc(est.join(' · ')) : '<span style="color:var(--mu)">el general</span>'}</td>`
+       + `<td>${u.ultima ? esc(fechaCorta(u.ultima)) : '<span style="color:var(--mu)">nunca</span>'}</td>`
+       + `<td style="text-align:right;white-space:nowrap"><button class="chico" data-uclave="${esc(u.clave)}" title="Le ponés una contraseña nueva; la cambia la próxima vez que entre">Restablecer contraseña</button> `
+       + `<button class="chico" data-unombre="${esc(u.clave)}">Cambiar nombre</button> `
+       + `<button class="chico ${u.activo ? 'peligro' : ''}" data-uactivo="${esc(u.clave)}" data-v="${u.activo ? '' : '1'}" title="${u.activo ? 'No puede entrar más; su estilo y lo que aprendió se conservan' : 'Vuelve a poder entrar'}">${u.activo ? 'Desactivar' : 'Reactivar'}</button></td></tr>`;
+  }
+  h += '</tbody></table></div>';
+  poner('#usuarios', h);
+  const nom = c => (us.find(u => u.clave === c) || {}).nombre || c;
+  document.querySelectorAll('[data-uclave]').forEach(b => b.onclick = () => {
+    const c = prompt(`Contraseña nueva para ${nom(b.dataset.uclave)} (mínimo 6 caracteres). Se cierra su sesión y la cambia al entrar:`);
+    if(c) accion('usuarios/contrasena', {usuario: b.dataset.uclave, contrasena: c}, b);
+  });
+  document.querySelectorAll('[data-unombre]').forEach(b => b.onclick = () => {
+    const n = prompt('Nombre nuevo (con este nombre entra; su estilo se conserva):', nom(b.dataset.unombre));
+    if(n && n.trim() !== nom(b.dataset.unombre)) accion('usuarios/nombre', {usuario: b.dataset.unombre, nombre: n}, b);
+  });
+  document.querySelectorAll('[data-uactivo]').forEach(b => b.onclick = () => {
+    const activo = !!b.dataset.v;
+    if(!activo && !confirm(`¿Desactivar a ${nom(b.dataset.uactivo)}?\n\nNo puede entrar más y se cierra su sesión. Su estilo y lo que aprendió se conservan: lo podés reactivar cuando quieras.`)) return;
+    accion('usuarios/activo', {usuario: b.dataset.uactivo, activo}, b);
+  });
+}
+$('#bNuevoUsu').onclick = () => { $('#fUsu').hidden = false; $('#uErr').textContent = ''; $('#uNombre').focus(); };
+$('#bUsuNo').onclick = () => { $('#fUsu').hidden = true; $('#uNombre').value = ''; $('#uClave').value = ''; };
+$('#fUsu').onsubmit = async ev => {
+  ev.preventDefault();
+  const n = $('#uNombre').value.trim(), c = $('#uClave').value, err = $('#uErr');
+  err.textContent = '';
+  if(n.length < 2){ err.textContent = 'Escribí el nombre.'; $('#uNombre').focus(); return; }
+  if(c.length < 6){ err.textContent = 'La contraseña inicial tiene que tener al menos 6 caracteres.'; $('#uClave').focus(); return; }
+  if(!(E.usuarios || []).some(u => u.activo) && !confirm('Es el primer transcriptor: desde ahora la página pide usuario y contraseña en todas las PC, también en esta. ¿Seguir?')) return;
+  const r = await accion('usuarios/crear', {nombre: n, contrasena: c}, $('#bUsuOk'), j => { err.textContent = j.error || ''; });
+  if(r) $('#bUsuNo').onclick();
+};
+
 /* ---------- PC */
 function armarPcs(e){
   $('#pcsCuenta').textContent = e.pcs.length ? plural(e.pcs.length, 'PC') : '';
   $('#appOficial').textContent = e.app.version ? `App en sistema\\cliente: versión ${e.app.version}` : (e.app.archivos ? 'App en sistema\\cliente: sin número de versión' : 'No hay app en sistema\\cliente');
   if(!e.pcs.length){
-    poner('#pcs', `<div class="vacio"><b>Todavía no se vinculó ninguna PC.</b>En cada PC del trabajo abrí <span class="cod">Transcripcion.exe</span>, escribí el nombre de la PC (ej. info-01) y la contraseña. Aparecen acá solas.</div>`);
+    poner('#pcs', `<div class="vacio"><b>Todavía no se vinculó ninguna PC.</b>En cada PC del trabajo abrí <span class="cod">Transcripcion.exe</span>, escribí el nombre de la PC (ej. info-01) y el usuario y la contraseña de un transcriptor (o, si todavía no hay transcriptores, la contraseña del sistema). Aparecen acá solas.</div>`);
     return;
   }
   let h = '<div class="tabla-env"><table><thead><tr><th scope="col">PC</th><th scope="col">Conexión</th><th scope="col">App</th><th scope="col">Médico de sus audios</th><th scope="col">Vinculada</th><th scope="col"><span class="sr" style="position:absolute;left:-9999px">Acciones</span></th></tr></thead><tbody>';
@@ -812,7 +885,7 @@ async function cargar(){
   if(e.servidor && e.servidor.sistema) ES_LINUX = e.servidor.sistema === 'linux';
   document.documentElement.classList.toggle('sin-abrir', !!(e.servidor && e.servidor.puede_abrir === false));
   $('#cargando').hidden = true;
-  ['#resumen', '#filaMant', '#filaCola', '#fila1', '#secPanel', '#secPcs', '#secReg'].forEach(s => $(s).hidden = false);
+  ['#resumen', '#filaMant', '#filaCola', '#fila1', '#secPanel', '#secUsu', '#secPcs', '#secReg'].forEach(s => $(s).hidden = false);
   modoRemoto(e.visor, 'Solo en esta PC · se actualiza sola');
   armarResumen(e);
   if(e.mantenimiento){ armarMant(e); armarMensaje(e); armarCola(e); armarAbiertos(e); }
@@ -821,7 +894,7 @@ async function cargar(){
     poner('#mantEstado', `<div class="explica av" style="margin-top:0"><b>El servidor está usando una versión anterior.</b> Para ver esta parte (cambios sin tomar, reinicio, mensajes a las PC, cola y casos abiertos), cerrá la ventana del servidor y abrila de nuevo con <span class="cod">${e.tunel && e.tunel.modo ? 'iniciar_servidor.bat' : 'interfaz.bat'}</span>. Desde ahí en adelante se puede reiniciar desde acá.</div>`);
     poner('#mantRei', '');
   }
-  armarTunel(e); armarClave(e); armarPanel(e); armarPcs(e); armarRegistro(e);
+  armarTunel(e); armarClave(e); armarPanel(e); armarUsuarios(e); armarPcs(e); armarRegistro(e);
 }
 addEventListener('pagehide', () => { if(E) grabarLS('adminVisto', String(Math.round(E.ahora))); });
 cargar(); setInterval(cargar, 3000);

@@ -56,8 +56,10 @@ def pct_corregido(ia, final):
     return ed / max(1, len(b))
 
 
-def registrar_ejemplo(nombre, dictado, ia, final, clave=None, medico=None, *, recalcular=True, fecha=None):
+def registrar_ejemplo(nombre, dictado, ia, final, clave=None, medico=None, *, recalcular=True, fecha=None,
+                      usuario=None):
     """Guarda el par dictado -> informe final como ejemplo y anota el historial.
+    usuario: transcriptor que lo revisó (el ejemplo es de su estilo); None = general.
     Devuelve (clave, porcentaje_corregido)."""
     EJ.mkdir(exist_ok=True)
     HIST.parent.mkdir(parents=True, exist_ok=True)
@@ -69,6 +71,10 @@ def registrar_ejemplo(nombre, dictado, ia, final, clave=None, medico=None, *, re
         escribir_atomico(EJ / f"{clave}.medico.txt", medico)
     else:
         (EJ / f"{clave}.medico.txt").unlink(missing_ok=True)
+    if usuario:
+        escribir_atomico(EJ / f"{clave}.usuario.txt", usuario)
+    else:
+        (EJ / f"{clave}.usuario.txt").unlink(missing_ok=True)
     ia_sin_espacios = "\n".join(l.rstrip() for l in N.texto_limpio(ia).splitlines())
     pc = pct_corregido(ia_sin_espacios, final)
     fecha = fecha or time.strftime("%Y-%m-%d %H:%M")
@@ -76,6 +82,7 @@ def registrar_ejemplo(nombre, dictado, ia, final, clave=None, medico=None, *, re
         c.execute('INSERT OR REPLACE INTO historial VALUES (?,?,?,?,?)',
                   (fecha[:10], nombre, fecha, len(final.split()), f"{pc*100:.1f}"))
         _indexar_correcciones(c, clave, N.texto_limpio(ia), final.strip() + "\n")
+        AL.poner_usuario(c, clave, usuario)
     if recalcular:
         try:
             analizar_correcciones()
@@ -115,8 +122,42 @@ def _indexar_correcciones(c, clave, ia, final):
     return AL.actualizar_ejemplo(c, clave, firma, lambda: cambios_de_textos(ia, final))
 
 
+def _lineas_correcciones(frec, titulo):
+    lineas = [titulo, "# Tenelas en cuenta, pero usalas solo si el dictado lo justifica.", ""]
+    for n, (op, de, a_) in frec[:40]:
+        if op == "replace":
+            lineas.append(f"- La IA escribió «{de}» y el transcriptor lo cambió por «{a_}» ({n} informes).")
+        elif op == "insert":
+            lineas.append(f"- El transcriptor tuvo que AGREGAR «{a_}» ({n} informes).")
+        else:
+            lineas.append(f"- El transcriptor tuvo que BORRAR «{de}» ({n} informes).")
+    return "\n".join(lineas) + "\n"
+
+
+def repartir_correcciones(fuentes, minimo=2):
+    """Una corrección repetida es GENERAL si se repite entre los ejemplos generales (los de antes de los usuarios)
+    o si la hicieron al menos dos fuentes distintas (dos transcriptores, o uno y los generales). Si la repite un
+    solo transcriptor, queda solo para él. Devuelve (generales, {usuario: [...]}) con elementos (n, (op, de, a))."""
+    generales, propias = [], {}
+    for k, cnt in fuentes.items():
+        n = sum(cnt.values())
+        if n < minimo:
+            continue
+        if cnt.get("", 0) >= minimo or len(cnt) >= 2:
+            generales.append((n, k))
+        else:
+            (u, m), = cnt.items()
+            propias.setdefault(u, []).append((m, k))
+    orden = lambda x: (x[0], x[1][0], x[1][1], x[1][2])
+    generales.sort(key=orden, reverse=True)
+    for v in propias.values():
+        v.sort(key=orden, reverse=True)
+    return generales[:40], {u: v[:40] for u, v in propias.items()}
+
+
 def analizar_correcciones(minimo=2, *, reconstruir=False):
-    """Publica las 40 reglas principales. Solo recorre el corpus al migrar o reconciliar explícitamente."""
+    """Publica las 40 reglas principales (generales y de cada transcriptor).
+    Solo recorre el corpus al migrar o reconciliar explícitamente."""
     with AL.abrir(HIST) as c:
         inicializado = c.execute("SELECT v FROM meta WHERE k='correcciones'").fetchone()
         if reconstruir or not inicializado:
@@ -132,24 +173,28 @@ def analizar_correcciones(minimo=2, *, reconstruir=False):
                     escribir_atomico(ia_f, N.texto_limpio(viejo.read_text(encoding='utf-8')))
                 claves.add(clave)
                 _indexar_correcciones(c, clave, ia_f.read_text(encoding='utf-8'), inf.read_text(encoding='utf-8'))
+                usu = EJ / f'{clave}.usuario.txt'
+                AL.poner_usuario(c, clave, usu.read_text(encoding='utf-8').strip() if usu.exists() else None)
             for (clave,) in c.execute('SELECT clave FROM ejemplos').fetchall():
                 if clave not in claves:
                     AL.quitar_ejemplo(c, clave)
             c.execute("INSERT OR REPLACE INTO meta VALUES ('correcciones','1')")
-        frec = [(n,(op,de,a)) for op,de,a,n in c.execute(
-            'SELECT op,de,a,n FROM frecuencias WHERE n>=? ORDER BY n DESC,op DESC,de DESC,a DESC LIMIT 40', (minimo,))]
-    lineas = ["# CORRECCIONES QUE EL TRANSCRIPTOR HIZO VARIAS VECES (se actualiza solo; no editar)",
-              "# Tenelas en cuenta, pero usalas solo si el dictado lo justifica.", ""]
-    for n, (op, de, a_) in frec[:40]:
-        if op == "replace":
-            lineas.append(f"- La IA escribió «{de}» y el transcriptor lo cambió por «{a_}» ({n} informes).")
-        elif op == "insert":
-            lineas.append(f"- El transcriptor tuvo que AGREGAR «{a_}» ({n} informes).")
-        else:
-            lineas.append(f"- El transcriptor tuvo que BORRAR «{de}» ({n} informes).")
-    salida = "\n".join(lineas) + "\n"
+        frec, propias = repartir_correcciones(AL.correcciones_por_fuente(c), minimo)
+    salida = _lineas_correcciones(frec, "# CORRECCIONES QUE EL TRANSCRIPTOR HIZO VARIAS VECES (se actualiza solo; no editar)")
     if not ARCH_CORR.exists() or ARCH_CORR.read_text(encoding="utf-8") != salida:
         escribir_atomico(ARCH_CORR, salida)
+    import usuarios as U
+    for clave in set(U.claves_con_carpeta()) | set(propias):
+        try:
+            if propias.get(clave):
+                texto = _lineas_correcciones(propias[clave], "# CORRECCIONES QUE HICISTE VARIAS VECES "
+                                                             "(solo para tu estilo; se actualiza solo; no editar)")
+                if U.leer_archivo(clave, "correcciones_aprendidas.md") != texto:
+                    U.escribir_archivo(clave, "correcciones_aprendidas.md", texto)
+            else:
+                U.archivo(clave, "correcciones_aprendidas.md").unlink(missing_ok=True)
+        except ValueError:
+            continue
     return frec
 
 

@@ -19,6 +19,7 @@ incrementales, lotes de IA); su activación y piloto están en [activacion-coord
 | [api.md](api.md) | Desarrollo | Rutas HTTP del servidor |
 | [seguridad.md](seguridad.md) | Todos | Datos, amenazas y protecciones |
 | [desarrollo.md](desarrollo.md) | Desarrollo | Modo simulado, convenciones y lecciones aprendidas |
+| [usuarios.md](usuarios.md) | Usuarios / Administración / Desarrollo | **Experimental** (`exp/estilos-por-transcriptor`): cada transcriptor con usuario, contraseña y estilo propio |
 | [experimentos.md](experimentos.md) | Desarrollo | Rama `experimental`, ramas `exp/`, promoción a `main` y entorno de pruebas aislado |
 | [auditoria-rendimiento-2026-10-29.md](auditoria-rendimiento-2026-10-29.md) | Desarrollo / Operación | Mediciones sintéticas, 19 hallazgos, prioridades y criterios de rendimiento |
 | [ci-cd.md](ci-cd.md) | Desarrollo / Operación | Workflow de CI implementado (`.github/workflows/ci.yml`) y hoja de ruta de staging, promoción y recuperación |

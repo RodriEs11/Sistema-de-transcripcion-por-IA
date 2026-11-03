@@ -44,7 +44,7 @@ jobs:
       - name: Regresión de navegador
         shell: pwsh
         run: |
-          foreach ($prueba in @('borradores','editor_word','revision_word','medicos')) {
+          foreach ($prueba in @('borradores','editor_word','revision_word','medicos','usuarios')) {
             node "pruebas/$prueba.cjs"
             if ($LASTEXITCODE) { exit $LASTEXITCODE }
           }

@@ -224,6 +224,57 @@ button.ini-cifra:hover{border-color:var(--ac)}
 .edit2 input{border:1px solid var(--bd2);border-radius:7px;padding:7px 9px;background:var(--hoja);font-weight:600}
 .edit2 textarea{flex:1;min-height:340px;border:1px solid var(--bd2);border-radius:7px;padding:10px 12px;background:var(--hoja);color:var(--tx);font:13.5px/1.5 ui-monospace,Consolas,monospace;resize:vertical}
 .nota{font-size:12.5px;color:var(--mu);background:var(--panel);border:1px solid var(--bd);border-radius:8px;padding:8px 12px}
+#estiloAviso{margin:0 0 12px;padding:9px 12px;border:1px solid var(--bd2);border-left:3px solid var(--azul,#1f5fbf);border-radius:8px;background:var(--panel);font-size:13px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#estiloAviso[hidden]{display:none}
+.quien{display:flex;align-items:center;gap:6px;padding:0 12px 8px;font-size:12.5px;color:var(--mu);min-width:0}
+.quien svg{width:15px;height:15px;flex:none}
+.quien a.chico{text-decoration:none;color:inherit;border:1px solid var(--bd2);border-radius:7px;padding:3px 9px;background:var(--panel)}
+.quien[hidden]{display:none}
+.quien b{color:var(--tx);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.quien .sep{flex:1}
+.etq-mia{display:inline-block;margin-left:6px;font-size:10.5px;padding:0 6px;border-radius:9px;border:1px solid var(--bd2);color:var(--mu);vertical-align:1px}
+.origen{font-size:12.5px;color:var(--mu);display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 6px}
+.origen[hidden]{display:none}
+/* Configuración → Mi cuenta */
+.cuenta-sec{padding:14px 0;border-bottom:1px solid var(--bd)}
+.cuenta-sec:last-child{border-bottom:0}
+.cuenta-cab{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+.cuenta-cab > div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cuenta-cab b{font-weight:600;font-size:13.8px}
+.cuenta-cab small{color:var(--mu);font-size:12.3px;line-height:1.4}
+.cuenta-cab > button{flex:none}
+.cuenta-sec:last-child .cuenta-cab{margin-bottom:0}
+.cuenta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;margin:0}
+.cuenta-grid.tres{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cuenta-grid label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:var(--mu);min-width:0}
+.cuenta-grid input,.cuenta-grid select{width:100%;box-sizing:border-box;padding:6px 9px;font-weight:400;font-size:13.5px;color:var(--tx);background:var(--bg)}
+.cuenta-pie{grid-column:1/-1;display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.cuenta-pie .cfg-msj{flex:1;min-width:0}
+.cuenta-alerta{margin:12px 0 2px;padding:8px 11px;border:1px solid var(--rojo);border-radius:8px;font-size:12.8px;color:var(--tx);background:var(--panel)}
+.cuenta-alerta[hidden]{display:none}
+.reglas-lista{list-style:none;margin:0;padding:0;border:1px solid var(--bd);border-radius:8px;max-height:280px;overflow:auto}
+.reglas-lista li{display:flex;align-items:flex-start;gap:8px;padding:7px 8px 7px 11px;border-bottom:1px solid var(--bd);font-size:13px}
+.reglas-lista li:last-child{border-bottom:0}
+.reglas-lista li > span{flex:1;min-width:0;overflow-wrap:anywhere;line-height:1.45;padding-top:2px}
+.reglas-lista li > span::before{content:"•";color:var(--mu);margin-right:7px}
+.reglas-lista li.vacio{color:var(--mu);justify-content:center;padding:14px}
+.reglas-lista li.vacio > span::before{content:none}
+.reglas-lista li button{flex:none}
+.cfg-msj{font-size:12.5px;min-height:1em}.cfg-msj.mal{color:var(--rojo)}
+.cuenta-sec > .cfg-msj{display:block;margin-top:6px}
+/* ventana para añadir o editar reglas */
+#reglasDlg{position:fixed;inset:0;z-index:18;background:rgba(0,0,0,.38);display:grid;place-items:center;padding:16px}
+#reglasDlg[hidden]{display:none}
+#reglasDlg .caja{background:var(--panel);border:1px solid var(--bd2);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.28);padding:20px 22px 16px;width:min(560px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column}
+#reglasDlg h2{font-size:16px;margin:0 0 6px}
+#reglasDlg p{margin:0 0 10px;color:var(--mu);font-size:13px;line-height:1.45}
+#rdFilas{display:flex;flex-direction:column;gap:7px;overflow:auto;min-height:0;padding:2px}
+.rd-fila{display:flex;gap:6px;align-items:center}
+.rd-fila input{flex:1;min-width:0;padding:7px 10px;font-size:13.5px;background:var(--bg)}
+.rd-fila button{flex:none;width:32px;padding:6px 0}
+#reglasDlg .botones{display:flex;align-items:center;gap:8px;margin-top:14px}
+#reglasDlg .botones .sep{flex:1}
+@media (max-width:760px){.cuenta-grid,.cuenta-grid.tres{grid-template-columns:1fr}}
 #nuevoEst{display:none;margin:0 0 12px;padding:10px 12px;border:1px solid var(--aviso);border-radius:8px;background:var(--panel);font-size:13px}
 #nuevoEst b{color:var(--aviso)}
 @media (max-width:1000px){.vista .fila2{grid-template-columns:1fr;gap:16px}}
@@ -291,6 +342,7 @@ button.peligro:hover{filter:brightness(1.08);border-color:var(--err)}
 #confirma .caja{animation:cfEntra .14s ease-out}
 @keyframes cfEntra{from{opacity:0;transform:translateY(6px) scale(.98)}}
 #confirma label.cf-campo{display:block;margin:4px 0 0}
+#confirma label.cf-campo[hidden],#cfOtro[hidden]{display:none}
 #confirma label.cf-campo span{display:block;font-size:12.5px;color:var(--mu);margin-bottom:4px}
 #cfInput{width:100%;padding:8px 10px;border-radius:8px;background:var(--hoja);font-size:14px}
 #cfInput:focus{outline:2px solid var(--ac);outline-offset:-1px;border-color:var(--ac)}
@@ -617,6 +669,7 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
       <button id="bOcultarLista" class="ico" title="Ocultar la lista de informes (más lugar para el informe)" aria-label="Ocultar la lista de informes" aria-controls="lista" aria-expanded="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M16 10l-2 2 2 2"/></svg>
       </button></div>
+    <div class="quien" id="quien" hidden title="Transcribís con tu estilo: tus plantillas, tus notas, tus reglas y lo que aprendió de tus correcciones"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><b id="quienNom"></b><span class="sep"></span><button type="button" class="chico" id="bMiCuenta" title="Tu contraseña, el formato de tu Word y tus reglas">Mi cuenta</button><a class="chico" id="bSalir" href="/salir" title="Cerrar tu sesión en esta PC (para que entre otra persona)">Cerrar sesión</a></div>
     <div class="tabs" id="tabs"><button data-f="mia" id="tabMia">Esta PC</button><button data-f="todas" id="tabTodas">Todas</button></div>
     <div id="estadoSrv" class="estado-srv" role="status" hidden></div>
     <div id="esperaEnvio" class="espera-envio" role="status" hidden></div>
@@ -694,7 +747,7 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
         <div class="ley" id="leyenda"><span style="background:var(--rojo)">dato no dictado / completar</span><span style="background:var(--amarillo)">dudoso</span><span style="background:var(--turq-bg);box-shadow:inset 0 -2px 0 var(--turq)">no dictado junto al hallazgo</span><span style="background:var(--gris-bg);color:var(--gris)">frase de plantilla no dictada</span><span>· pasá el mouse sobre una marca (o usá <kbd data-atajo="siguiente">F2</kbd>) para ver qué se dictó · editar una marca la da por revisada</span></div>
       </div>
       <div class="cols">
-        <div class="hojawrap"><div id="nuevoEst"></div><div id="avisos"></div><div class="hoja"><div id="editor" contenteditable="true" spellcheck="true" lang="es"></div></div></div>
+        <div class="hojawrap"><div id="estiloAviso" role="status" hidden><span id="estiloTxt"></span><button type="button" class="chico prim" id="bRegenMio">Regenerar con mi estilo</button></div><div id="nuevoEst"></div><div id="avisos"></div><div class="hoja"><div id="editor" contenteditable="true" spellcheck="true" lang="es"></div></div></div>
         <div class="divisor" id="divCols" role="separator" aria-orientation="vertical" aria-label="Ancho del informe y del dictado" tabindex="0" title="Arrastrá para repartir el ancho entre el informe y el dictado · doble clic: tamaño original"><span class="agarre"></span></div>
         <div class="dict">
           <h2>Dictado <span id="lineaInfo"></span><label><input type="checkbox" id="seguir" checked> seguir el audio</label></h2>
@@ -712,9 +765,11 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
       <div class="nota">La IA lee estas plantillas en cada informe. Formato: <b>TITULO:</b> cómo va el título ·
         <b>TEXTO FIJO:</b> párrafo que va siempre · <b>PROTOCOLO NORMAL:</b> las viñetas que se escriben cuando el médico dice
         "protocolo normal" (una por línea, empezando con -) · <b>FRASES HABITUALES:</b> viñetas frecuentes · <b>NOTAS:</b> cómo se dicta,
-        en qué orden van las medidas, etc. Antes de guardar se hace una copia de la versión anterior.</div>
+        en qué orden van las medidas, etc. Antes de guardar se hace una copia de la versión anterior.
+        <span class="solo-usuario" hidden>Al guardar elegís si el cambio es <b>solo para vos</b> (la IA lo usa en tus informes) o <b>para todos</b>.</span></div>
       <div class="fila2"><ul class="lista2" id="listaPl"></ul><div class="divisor div-lista2" role="separator" aria-orientation="vertical" aria-label="Ancho de la lista" tabindex="0" title="Arrastrá para cambiar el ancho · doble clic: tamaño original"><span class="agarre"></span></div>
         <div class="edit2"><input id="plNombre" placeholder="Nombre del estudio (ej. ECOGRAFÍA ABDOMINAL)">
+          <div class="origen" id="plOrigen" hidden><span id="plOrigenTxt"></span><button type="button" class="chico" id="bPlGeneral">Volver a la general</button></div>
           <textarea id="plCuerpo" spellcheck="false"></textarea>
           <div class="fila"><span class="sep"></span><button id="bBorrarPl" class="chico">Eliminar este estudio</button></div></div></div>
     </section>
@@ -724,7 +779,7 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
         informes anteriores del mismo médico. Ej: "Dice 'eco' por ecografía. Dicta las medidas del útero como tres números
         seguidos. Al final dice 'BI-RADS' y el número. Suele decir 'perdón' y repetir la frase corregida."</div>
       <div class="fila2"><ul class="lista2" id="listaMed"></ul><div class="divisor div-lista2" role="separator" aria-orientation="vertical" aria-label="Ancho de la lista" tabindex="0" title="Arrastrá para cambiar el ancho · doble clic: tamaño original"><span class="agarre"></span></div>
-        <div class="edit2"><input id="medNombre" readonly><textarea id="medNotas" placeholder="Cómo dicta este médico…"></textarea><div id="medVoz" aria-live="polite"></div></div></div>
+        <div class="edit2"><input id="medNombre" readonly><div class="origen" id="medOrigen" hidden><span id="medOrigenTxt"></span><button type="button" class="chico" id="bMedGeneral">Volver a las generales</button></div><textarea id="medNotas" placeholder="Cómo dicta este médico…"></textarea><div id="medVoz" aria-live="polite"></div></div></div>
     </section>
     <section class="vista" id="vVoces">
       <div class="fila"><h2>Agrupar voces</h2><span class="sep"></span><button id="bVolverMed">Volver a Médicos</button><button id="bActVoces">Actualizar</button></div>
@@ -736,11 +791,18 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
   </main>
 </div>
 <audio id="audio" preload="auto"></audio>
+<div id="reglasDlg" role="dialog" aria-modal="true" aria-labelledby="rdTit" hidden>
+  <div class="caja"><h2 id="rdTit">Añadir reglas</h2>
+    <p id="rdTxt">Una regla por renglón. Enter agrega otro renglón. Ejemplos: «Escribir “Bi-Rads 2.” sin dos puntos» · «“Le ponemos un 2” es Bi-Rads 2».</p>
+    <div id="rdFilas"></div>
+    <div class="botones"><button type="button" class="chico" id="rdOtra">+ Otra regla</button><span class="sep"></span>
+      <button type="button" id="rdNo">Cancelar</button><button type="button" class="prim" id="rdSi">Guardar</button></div></div>
+</div>
 <div id="confirma" role="alertdialog" aria-modal="true" aria-labelledby="cfTit" aria-describedby="cfTxt">
   <div class="caja"><h2 id="cfTit"></h2><div id="cfTxt"></div>
     <label class="cf-campo" id="cfCampo" hidden><span id="cfEtiq"></span><input id="cfInput" type="text" autocomplete="off" spellcheck="false" maxlength="80"></label>
     <p id="cfAviso" hidden></p>
-    <div class="botones"><button id="cfNo" type="button">Cancelar</button><button id="cfSi" type="button" class="peligro">Borrar</button></div></div>
+    <div class="botones"><button id="cfNo" type="button">Cancelar</button><button id="cfOtro" type="button" hidden></button><button id="cfSi" type="button" class="peligro">Borrar</button></div></div>
 </div>
 <div id="msjAdmin" class="msj-admin" role="status" aria-live="polite" hidden></div>
 <div id="toast"><span id="toastTxt"></span><span id="toastBtns"></span></div>
@@ -777,6 +839,7 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
       <button id="cfgX" class="ico" type="button" title="Cerrar (Esc)" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
     <div class="cfg-cuerpo">
       <div class="cfg-tabs" role="tablist" aria-label="Secciones" aria-orientation="vertical">
+        <button role="tab" type="button" data-tab="cuenta" id="tab-cuenta" aria-controls="cfg-cuenta" hidden>Mi cuenta</button>
         <button role="tab" type="button" data-tab="pantalla" id="tab-pantalla" aria-controls="cfg-pantalla">Pantalla</button>
         <button role="tab" type="button" data-tab="audio" id="tab-audio" aria-controls="cfg-audio">Audio y revisión</button>
         <button role="tab" type="button" data-tab="teclado" id="tab-teclado" aria-controls="cfg-teclado">Atajos de teclado</button>
@@ -785,6 +848,40 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
         <button role="tab" type="button" data-tab="acerca" id="tab-acerca" aria-controls="cfg-acerca">Acerca de</button>
       </div>
       <div class="cfg-paneles">
+        <section class="cfg-panel" id="cfg-cuenta" role="tabpanel" aria-labelledby="tab-cuenta" data-panel="cuenta" hidden>
+          <p id="cuentaCambiar" class="cuenta-alerta" hidden>Estás usando la contraseña que te dio el administrador: elegí una propia para seguir.</p>
+          <div class="cuenta-sec">
+            <div class="cuenta-cab"><div><b>Contraseña</b><small>La que usás para entrar en cualquier PC.</small></div></div>
+            <form class="cuenta-grid tres" id="fMiClave" autocomplete="off">
+              <input type="text" autocomplete="username" hidden>
+              <label>Actual<input type="password" id="mcActual" autocomplete="current-password"></label>
+              <label>Nueva<input type="password" id="mcNueva" autocomplete="new-password" placeholder="mínimo 6 caracteres"></label>
+              <label>Repetila<input type="password" id="mcNueva2" autocomplete="new-password"></label>
+              <div class="cuenta-pie"><span class="cfg-msj" id="mcMsj" aria-live="polite"></span><button type="submit" class="prim">Cambiar contraseña</button></div>
+            </form>
+          </div>
+          <div class="cuenta-sec">
+            <div class="cuenta-cab"><div><b>Formato de tu Word</b><small>Solo para los Word que guardás vos. Lo que quede en «General» sigue al del sistema.</small></div></div>
+            <form class="cuenta-grid" id="fMiFormato">
+              <label>Fuente<select id="mfFuente"></select></label>
+              <label>Tamaño<select id="mfTamano"></select></label>
+              <label>Renglones vacíos arriba<select id="mfRenglones"></select></label>
+              <label>Títulos centrados<select id="mfCentrar"><option value="">General</option><option value="si">Sí</option><option value="no">No</option></select></label>
+              <label>Títulos en negrita<select id="mfNegrita"><option value="">General</option><option value="si">Sí</option><option value="no">No</option></select></label>
+              <label>Renglón vacío después del título<select id="mfLinea"><option value="">General</option><option value="si">Sí</option><option value="no">No</option></select></label>
+              <div class="cuenta-pie"><span class="cfg-msj" id="mfMsj" aria-live="polite"></span><button type="submit" class="prim">Guardar formato</button></div>
+            </form>
+          </div>
+          <div class="cuenta-sec">
+            <div class="cuenta-cab"><div><b>Tus reglas de dictado</b><small>Se suman a las generales y la IA las usa solo en tus informes.</small></div>
+              <button type="button" class="prim" id="bAnadirRegla">Añadir regla</button></div>
+            <ul class="reglas-lista" id="mrLista" aria-label="Tus reglas de dictado"></ul>
+            <span class="cfg-msj" id="mrMsj" aria-live="polite"></span>
+          </div>
+          <div class="cuenta-sec">
+            <div class="cuenta-cab"><div><b>Tu estilo</b><small id="cuentaEstilo">—</small></div></div>
+          </div>
+        </section>
         <section class="cfg-panel" id="cfg-pantalla" role="tabpanel" aria-labelledby="tab-pantalla" data-panel="pantalla">
           <div class="cfg-fila"><div class="cfg-txt"><b>Tema</b><small>Claro, oscuro o el mismo que tiene Windows.</small></div>
             <div class="segm" data-pref="tema" role="radiogroup" aria-label="Tema"><button type="button" role="radio" data-v="light">Claro</button><button type="button" role="radio" data-v="dark">Oscuro</button><button type="button" role="radio" data-v="">Como Windows</button></div></div>
@@ -852,7 +949,7 @@ button.peligro-suave{color:var(--err)} button.peligro-suave:hover{border-color:v
         </section>
       </div>
     </div>
-    <div class="cfg-pie"><span class="cfg-nota">Los cambios se guardan solos en esta PC.</span><span class="cfg-guardado" id="cfgGuardado" aria-live="polite">✓ Guardado</span><span class="sep"></span><button type="button" class="prim" id="cfgListo">Listo</button></div>
+    <div class="cfg-pie"><span class="cfg-nota" id="cfgNota">Los cambios se guardan solos en esta PC.</span><span class="cfg-guardado" id="cfgGuardado" aria-live="polite">✓ Guardado</span><span class="sep"></span><button type="button" class="prim" id="cfgListo">Listo</button></div>
   </div>
 </div>
 <div id="vp" role="dialog" aria-modal="true" aria-labelledby="vpTit">
@@ -981,7 +1078,7 @@ async function pausarCaso(n, pausar, boton){
   cargarLista();
 }
 /* PC desde la que se usa la página: "Servidor" en esta PC, info-01... por el túnel */
-let MI = {pc:'Servidor', remoto:false, medico:''};
+let MI = {pc:'Servidor', remoto:false, medico:'', usuario:null, con_usuarios:false};
 let filtro = (()=>{ try { return localStorage.getItem('filtroCasos') || ''; } catch(e){ return ''; } })();
 function ponerFiltro(f){ filtro = f; try { localStorage.setItem('filtroCasos', f); } catch(e){}
   $('#tabMia').classList.toggle('on', f==='mia'); $('#tabTodas').classList.toggle('on', f!=='mia'); cargarLista(); }
@@ -992,7 +1089,63 @@ async function cargarMiPc(){
   ponerFiltro(filtro || (MI.remoto ? 'mia' : 'todas'));
   $('#bAdmin').hidden = !!MI.remoto && !MI.admin;   // en el trabajo, solo si el panel está habilitado (pide su contraseña)
   if(typeof cargarMedicos === 'function') cargarMedicos();
+  if(MI.con_usuarios && !MI.usuario){ location.href = '/entrar'; return; }
+  $('#quien').hidden = !MI.usuario; $('#quienNom').textContent = MI.usuario ? MI.usuario.nombre : '';
+  document.querySelectorAll('.solo-usuario').forEach(x => x.hidden = !MI.usuario);
+  document.querySelectorAll('#config .cfg-tabs [data-tab=cuenta]').forEach(x => x.hidden = !MI.usuario);
+  if(MI.usuario){
+    document.title = 'Informes · ' + MI.usuario.nombre + (MI.remoto ? ' · ' + MI.pc : '');
+    if(prefsDelServidor(MI.preferencias)) return;            // recarga con las preferencias de este usuario
+    if(MI.usuario.cambiar) setTimeout(() => abrirConfig('cuenta'), 300);
+  }
 }
+/* ------------------------------------------------ preferencias que siguen al transcriptor (no a la PC) */
+const PREF_SYNC = /^(pref_[A-Za-z0-9_]{1,40}|tema|listaOculta|velUltima|barraFormatoOculta|zoomVp|anchoLista|anchoLista2|propInforme|filtroCasos)$/;
+function prefsLocales(){
+  const o = {};
+  try { for(const k of Object.keys(localStorage)) if(PREF_SYNC.test(k)) o[k] = localStorage.getItem(k); } catch(e){}
+  return o;
+}
+const firmaPrefs = o => JSON.stringify(Object.keys(o).sort().map(k => [k, o[k]]));
+let prefsEnviadas = null;
+function prefsDelServidor(srv){
+  if(srv == null){ prefsEnviadas = ''; return false; }    // nunca guardó: se suben las de esta PC
+  const loc = prefsLocales();
+  prefsEnviadas = firmaPrefs(srv);
+  if(firmaPrefs(loc) === prefsEnviadas) return false;
+  const marca = 'prefsDe:' + MI.usuario.clave + ':' + prefsEnviadas.length;
+  try { if(sessionStorage.getItem('prefsAplicadas') === marca) return false; sessionStorage.setItem('prefsAplicadas', marca); } catch(e){ return false; }
+  try { Object.keys(loc).forEach(k => localStorage.removeItem(k)); Object.entries(srv).forEach(([k, v]) => localStorage.setItem(k, v)); } catch(e){ return false; }
+  location.reload();
+  return true;
+}
+async function subirPrefs(beacon){
+  if(!MI.usuario || prefsEnviadas === null) return;
+  const o = prefsLocales(), f = firmaPrefs(o);
+  if(f === prefsEnviadas) return;
+  const cuerpo = JSON.stringify({preferencias: o});
+  if(beacon){ try { navigator.sendBeacon('/api/usuario/preferencias', new Blob([cuerpo], {type: 'application/json'})); prefsEnviadas = f; } catch(e){} return; }
+  try { await api('/api/usuario/preferencias', {preferencias: o}); prefsEnviadas = f; } catch(e){}
+}
+setInterval(() => subirPrefs(false), 5000);
+addEventListener('pagehide', () => subirPrefs(true));
+/* La app del trabajo la llama al cerrar su ventana (VentanaPrincipal.CerrarSesionUsuario): cierra el estudio abierto
+   guardando sus cambios y después la sesión del transcriptor, para que el siguiente entre con su usuario.
+   Devuelve true (en el momento) si había una sesión de transcriptor que cerrar. */
+window.salirDeSesion = function(opciones){
+  if(!MI.usuario) return false;
+  if(opciones && opciones.navegar === false){      // la app se cierra: avisar al Servidor sin cambiar de pantalla
+    subirPrefs(true);
+    try { fetch('/salir', {keepalive: true, credentials: 'same-origin', redirect: 'manual', cache: 'no-store'}); } catch(e){}
+    return true;
+  }
+  (async () => {
+    if(actual){ const ok = await cerrarCaso(true); if(ok === false || actual) return; }
+    await subirPrefs(false);
+    location.href = '/salir';
+  })();
+  return true;
+};
 /* ------------------------------------------------ estado del servidor y de la IA */
 let SRV = {ok: null, desde: Date.now(), ultimoOk: 0, ia: 'ok', modelo: ''}, abriendo = null;
 const EN_PROC = ['en cola','transcribiendo','en pausa','generando'];
@@ -1486,6 +1639,7 @@ async function abrirCaso2(n){
   mostrar('caso'); requestAnimationFrame(ajustarBarra); llenarMedicos($('#medCaso'), c.medico, 'Médico: sin especificar');
   ponerVoz(c.voz, c.medico);
   armarNuevoEstudio(c.estudios_nuevos || []);
+  armarAvisoEstilo(c);
   ponerTitulo(c.paciente, c.titulo || (casosCache.find(x => x.nombre===n) || {}).titulo || n, c.revisado, {estudios: c.estudios, dur: c.dur});
   if(PREF.leer('velInicial')) $('#vel').value = PREF.leer('velInicial');      // Configuración → velocidad al abrir
   audio.src = '/audio/' + encodeURIComponent(n); audio.playbackRate = +$('#vel').value;
@@ -1825,8 +1979,9 @@ $('#bCerrar').onclick = cerrarCaso;
    validar(texto) devuelve '' si está bien o el mensaje a mostrar debajo del campo. */
 function modal(o){
   return new Promise(res => {
-    const d = $('#confirma'), si = $('#cfSi'), no = $('#cfNo'), inp = $('#cfInput'), aviso = $('#cfAviso'), previo = document.activeElement;
+    const d = $('#confirma'), si = $('#cfSi'), no = $('#cfNo'), otro = $('#cfOtro'), inp = $('#cfInput'), aviso = $('#cfAviso'), previo = document.activeElement;
     const conCampo = !!o.campo;
+    otro.hidden = !o.otro; otro.textContent = o.otro || ''; otro.onclick = () => fin('otro');
     $('#cfTit').textContent = o.titulo; $('#cfTxt').innerHTML = o.html || '';
     si.textContent = o.boton || 'Aceptar'; si.className = o.clase || 'peligro';
     d.setAttribute('role', conCampo ? 'dialog' : 'alertdialog');
@@ -1850,7 +2005,7 @@ function modal(o){
       else if(e.key==='Enter' && document.activeElement===inp){ e.preventDefault(); aceptar(); }
       else if(e.key==='Tab'){
         e.preventDefault();
-        const orden = conCampo ? [inp, no, si] : [no, si], i = orden.indexOf(document.activeElement);
+        const orden = (conCampo ? [inp, no, otro, si] : [no, otro, si]).filter(x => !x.hidden), i = orden.indexOf(document.activeElement);
         orden[(i + (e.shiftKey ? orden.length - 1 : 1)) % orden.length].focus();
       }
     };
@@ -1867,6 +2022,13 @@ function modal(o){
   });
 }
 function confirmar(titulo, html, boton, clase){ return modal({titulo, html, boton: boton || 'Borrar', clase: clase || 'peligro'}); }
+/* ¿El cambio es solo para mí o para todos? → 'mio' · 'todos' · null (cancelar). Sin usuario: 'todos' sin preguntar. */
+async function elegirDestino(que){
+  if(!MI.usuario) return 'todos';
+  const r = await modal({titulo: `¿Guardar ${que} solo para vos o para todos?`, clase: 'prim', boton: 'Solo para mí', otro: 'Para todos',
+    html: `<p><b>Solo para mí:</b> la IA lo usa únicamente en tus informes; los demás siguen con lo general.</p><p><b>Para todos:</b> cambia lo general, que usan todos los que no tienen su propia versión.</p>`});
+  return r === true ? 'mio' : r === 'otro' ? 'todos' : null;
+}
 function pedirTexto(o){ return modal({...o, campo: true, clase: 'prim'}); }
 async function dejarCasoAbierto(){                 // cierra el caso abierto sin aviso (para poder borrarlo)
   const n = actual; if(!n) return;
@@ -2025,6 +2187,19 @@ $('#bFin').onclick = async () => {
     toast(`${MI.remoto ? 'Word descargado en esta PC' : 'Word guardado'} (${tit}) · corregiste el ${r.pct}% de las palabras. ${r.aprendizaje === 'pendiente' ? 'El aprendizaje continúa en segundo plano.' : 'La IA ya lo usa como ejemplo.'}`, botones, 9000);
   }catch(e){ toast(e.message); }
 };
+/* El informe lo armó la IA con el estilo de otro transcriptor (o el general): se avisa y se ofrece regenerarlo */
+function armarAvisoEstilo(c){
+  const e = c.estilo, yo = MI.usuario && MI.usuario.clave;
+  const otro = yo && e && !c.revisado && e.usuario !== yo;
+  $('#estiloAviso').hidden = !otro;
+  if(otro) $('#estiloTxt').textContent = e.usuario ? `La IA armó este informe con el estilo de ${e.nombre}.` : 'La IA armó este informe con el estilo general (no con el tuyo).';
+}
+$('#bRegenMio').onclick = async () => {
+  if(!await confirmar('¿Regenerar el informe con tu estilo?', '<p>La IA lo vuelve a armar con tus plantillas, tus notas y lo que aprendió de tus correcciones. Se pierden los cambios que hiciste en este informe.</p>', 'Regenerar', 'prim')) return;
+  await api('/api/procesar', {nombre: actual});
+  audio.pause(); mostrar('vacio'); soltarCaso(actual); actual = null; cargarLista();
+  toast('Se está volviendo a armar con tu estilo. Aparece en la lista cuando esté listo.');
+};
 $('#bRegen').onclick = async () => {
   if(!await confirmar('¿Volver a generar el informe con la IA?', '<p>Se pierden los cambios que hiciste en este informe.</p>', 'Regenerar')) return;
   await api('/api/procesar', {nombre: actual});
@@ -2179,12 +2354,19 @@ let medSel = null;
 function armarListaMed(){
   const ul = $('#listaMed'); ul.innerHTML = medicos.length ? '' : '<li style="cursor:default;color:var(--mu)">Todavía no hay médicos.</li>';
   for(const m of medicos){
-    const li = document.createElement('li'); li.innerHTML = esc(m.nombre) + (m.voz ? `<span class="mvz" title="Muestras de voz registradas">${m.voz} ${m.voz===1 ? 'muestra' : 'muestras'}</span>` : '');
+    const li = document.createElement('li'); li.innerHTML = esc(m.nombre) + (m.propias ? '<span class="etq-mia" title="Usás tus propias notas de este médico">mías</span>' : '') + (m.voz ? `<span class="mvz" title="Muestras de voz registradas">${m.voz} ${m.voz===1 ? 'muestra' : 'muestras'}</span>` : '');
     if(m.nombre===medSel) li.classList.add('sel');
     li.onclick = () => { medSel = m.nombre; $('#medNombre').value = m.nombre; $('#medNotas').value = m.notas; armarListaMed(); armarVozMedico(m.nombre); };
     ul.appendChild(li);
   }
+  const m = medicos.find(x => x.nombre === medSel);
+  $('#medOrigen').hidden = !(m && MI.usuario && m.propias);
+  $('#medOrigenTxt').textContent = 'Tus notas: la IA las usa en tus informes de este médico. Los demás usan las generales.';
 }
+$('#bMedGeneral').onclick = async () => {
+  if(!medSel || !await confirmar(`¿Volver a las notas generales de ${medSel}?`, '<p>Se borran tus notas propias de este médico.</p>', 'Volver a las generales')) return;
+  try { await api('/api/medico', {medico: medSel, destino: 'general'}); await cargarMedicos(); $('#bVerMed').click(); toast('Listo: usás las notas generales.'); } catch(e){ toast(e.message); }
+};
 $('#bVerMed').onclick = async () => { if(actual) guardarBorrador().catch(()=>{}); await cargarMedicos(); mostrar('med');
   if(!medSel && medicos[0]){ medSel = medicos[0].nombre; }
   const m = medicos.find(x=>x.nombre===medSel); $('#medNombre').value = m ? m.nombre : ''; $('#medNotas').value = m ? m.notas : ''; armarListaMed();
@@ -2192,7 +2374,10 @@ $('#bVerMed').onclick = async () => { if(actual) guardarBorrador().catch(()=>{})
 $('#bNuevoMed').onclick = async () => { const n = await nuevoMedico(); if(n){ medSel = n; $('#bVerMed').click(); } };
 $('#bGuardarMed').onclick = async () => {
   if(!medSel){ toast('Elegí o agregá un médico.'); return; }
-  await api('/api/medico', {medico: medSel, notas: $('#medNotas').value}); await cargarMedicos(); armarListaMed(); toast('Notas guardadas.');
+  const destino = await elegirDestino('las notas de ' + medSel); if(!destino) return;
+  try { await api('/api/medico', {medico: medSel, notas: $('#medNotas').value, destino}); }
+  catch(e){ toast(e.message); return; }
+  await cargarMedicos(); armarListaMed(); toast(destino === 'mio' ? 'Notas guardadas solo para vos.' : 'Notas guardadas para todos.');
 };
 cargarMedicos();
 
@@ -2327,11 +2512,23 @@ $('#bVolverMed').onclick = () => $('#bVerMed').click();
 /* ------------------------------------------------ plantillas */
 let secs = [], plSel = -1;
 function volcarPl(){ if(plSel>=0 && secs[plSel]){ secs[plSel].nombre = $('#plNombre').value; secs[plSel].cuerpo = $('#plCuerpo').value; } }
+const ORIGEN_PL = {propia: ['mía', 'Tu versión: la IA la usa en tus informes. Los demás usan la general.'],
+                   nueva: ['solo mía', 'Plantilla que agregaste solo para vos.']};
 function armarListaPl(){
   const ul = $('#listaPl'); ul.innerHTML = '';
-  secs.forEach((x,i) => { const li = document.createElement('li'); li.textContent = x.nombre || '(sin nombre)'; if(i===plSel) li.classList.add('sel');
+  secs.forEach((x,i) => { const li = document.createElement('li'); li.textContent = x.nombre || '(sin nombre)';
+    if(ORIGEN_PL[x.origen]){ const t = document.createElement('span'); t.className = 'etq-mia'; t.textContent = ORIGEN_PL[x.origen][0]; li.appendChild(t); }
+    if(i===plSel) li.classList.add('sel');
     li.onclick = () => { volcarPl(); plSel = i; $('#plNombre').value = x.nombre; $('#plCuerpo').value = x.cuerpo; armarListaPl(); }; ul.appendChild(li); });
+  const x = secs[plSel], o = x && MI.usuario && ORIGEN_PL[x.origen];
+  $('#plOrigen').hidden = !o;
+  if(o){ $('#plOrigenTxt').textContent = o[1]; $('#bPlGeneral').hidden = x.origen !== 'propia'; }
 }
+$('#bPlGeneral').onclick = async () => {
+  const x = secs[plSel]; if(!x) return;
+  if(!await confirmar(`¿Volver a la plantilla general de «${x.nombre}»?`, '<p>Se deja de usar tu versión (queda una copia en tu carpeta). Los cambios sin guardar de las demás plantillas se pierden.</p>', 'Volver a la general', 'prim')) return;
+  try { await api('/api/plantillas/general', {nombre: x.nombre}); toast('Listo: usás la plantilla general.'); abrirPlantillas(); } catch(e){ toast(e.message); }
+};
 async function abrirPlantillas(nueva){
   if(actual) guardarBorrador().catch(()=>{});
   secs = (await api('/api/plantillas')).secciones; plSel = secs.length ? 0 : -1;
@@ -2364,7 +2561,14 @@ $('#bBorrarPl').onclick = async () => { if(plSel<0 || !await confirmar(`¿Elimin
   secs.splice(plSel,1); plSel = Math.min(plSel, secs.length-1);
   $('#plNombre').value = plSel>=0 ? secs[plSel].nombre : ''; $('#plCuerpo').value = plSel>=0 ? secs[plSel].cuerpo : ''; armarListaPl(); };
 $('#bGuardarPl').onclick = async () => { volcarPl();
-  try{ await api('/api/plantillas', {secciones: secs}); toast('Plantillas guardadas. Se usan desde el próximo informe.'); }catch(e){ toast(e.message); } };
+  const destino = await elegirDestino('los cambios de las plantillas'); if(!destino) return;
+  try{ const r = await api('/api/plantillas', {secciones: secs.map(x => ({nombre: x.nombre, cuerpo: x.cuerpo})), destino});
+    if(r.sin_cambios){ toast('No había cambios para guardar.'); return; }
+    toast((destino === 'mio' ? 'Guardadas solo para vos.' : 'Plantillas guardadas para todos.') + ' Se usan desde el próximo informe.'
+          + (r.no_borradas && r.no_borradas.length ? ` «${r.no_borradas.join('», «')}» es general: para eliminarla elegí «Para todos».` : ''), [], 8000);
+    const sel = secs[plSel] && secs[plSel].nombre; await abrirPlantillas();
+    const i = secs.findIndex(x => x.nombre === sel); if(i >= 0){ plSel = i; $('#plNombre').value = secs[i].nombre; $('#plCuerpo').value = secs[i].cuerpo; armarListaPl(); }
+  }catch(e){ toast(e.message); } };
 
 /* ------------------------------------------------ estudio sin plantilla */
 function armarNuevoEstudio(titulos){
@@ -3113,7 +3317,9 @@ function elegirTab(t){
 function pintarConfig(){
   const A = CFG.app;
   document.querySelectorAll('#config .solo-app').forEach(x => x.hidden = !A);
-  $('#cfgSub').textContent = A ? '· ' + A.pc : MI.remoto ? '· ' + MI.pc : '· PC del servidor';
+  $('#cfgSub').textContent = (MI.usuario ? '· ' + MI.usuario.nombre + ' ' : '') + (A ? '· ' + A.pc : MI.remoto ? '· ' + MI.pc : '· PC del servidor');
+  $('#cfgNota').textContent = MI.usuario ? 'Los cambios se guardan solos en tu usuario: los tenés en cualquier PC.' : 'Los cambios se guardan solos en esta PC.';
+  $('#cuentaCambiar').hidden = !(MI.usuario && MI.usuario.cambiar);
   // pantalla y audio
   const tema = leerLS('tema');
   document.querySelectorAll('#config .segm').forEach(g => {
@@ -3156,6 +3362,7 @@ function abrirConfig(tab, pedirEstado = true){
 }
 function cerrarConfig(){
   const d = $('#config'); if(d.hidden) return;
+  if(MI.usuario && MI.usuario.cambiar){ elegirTab('cuenta'); $('#mcActual').focus(); toast('Primero elegí tu contraseña.'); return; }
   d.hidden = true;
   try { CFG.previo && CFG.previo.focus && CFG.previo.focus({preventScroll: true}); } catch(e){}
 }
@@ -3178,7 +3385,7 @@ $('.cfg-tabs').addEventListener('keydown', e => {
   elegirTab(tabs[j].dataset.tab); tabs[j].focus();
 });
 document.addEventListener('keydown', e => {          // con la configuración abierta no actúan los atajos del informe
-  if($('#config').hidden || $('#confirma').classList.contains('abierto')) return;
+  if($('#config').hidden || $('#confirma').classList.contains('abierto') || !$('#reglasDlg').hidden) return;
   if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); cerrarConfig(); return; }
   if(e.key === 'Tab'){
     const foc = [...$('#config').querySelectorAll('button,select,input')].filter(x => !x.disabled && x.offsetParent && x.tabIndex !== -1);
@@ -3230,7 +3437,8 @@ document.querySelectorAll('#config [data-app-accion]').forEach(b => b.onclick = 
 $('#cfgDireccion').onclick = async () => {
   const v = await pedirTexto({titulo: 'Dirección del Servidor', html: '<p>Pegá la dirección que muestra la ventana del Servidor (termina en <b>devtunnels.ms</b> o en <b>trycloudflare.com</b>).</p>',
     etiqueta: 'Dirección', valor: (CFG.app && CFG.app.servidor) || '', placeholder: 'https://…devtunnels.ms', boton: 'Conectar',
-    validar: t => /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}(:\d+)?(\/\S*)?$/i.test(t) ? '' : 'No parece una dirección. Copiala completa, por ejemplo https://algo-8766.brs.devtunnels.ms'});
+    validar: t => /^(https?:\/\/)?([\w-]+(\.[\w-]+)*\.[a-z]{2,}|localhost|\d{1,3}(\.\d{1,3}){3})(:\d{1,5})?(\/\S*)?$/i.test(t) ? ''
+      : 'No parece una dirección. Copiala completa, por ejemplo https://algo-8766.brs.devtunnels.ms o http://127.0.0.1:8865'});
   if(v) { hacerApp('direccion', v); toast('Probando la dirección nueva…'); }
 };
 $('#cfgDesvincular').onclick = async () => {
@@ -3239,6 +3447,121 @@ $('#cfgDesvincular').onclick = async () => {
   cerrarConfig(); hacerApp('desvincular', true);
 };
 aplicarPrefs(); aplicarLista();
+
+/* ------------------------------------------------ Mi cuenta (contraseña, formato del Word, reglas propias) */
+const SINO = v => v === true ? 'si' : v === false ? 'no' : '';
+const DE_SINO = v => v === 'si' ? true : v === 'no' ? false : null;
+async function cargarCuenta(){
+  if(!MI.usuario) return;
+  let e; try { e = await api('/api/usuario/estilo'); } catch(err){ return; }
+  const g = e.general || {}, f = e.formato || {};
+  const opciones = (sel, valores, actual, gen, fmt) => {
+    sel.innerHTML = `<option value="">General (${esc(fmt(gen))})</option>` + valores.map(v => `<option value="${esc(String(v))}">${esc(fmt(v))}</option>`).join('');
+    sel.value = actual == null ? '' : String(actual);
+  };
+  opciones($('#mfFuente'), e.fuentes, f.fuente, g.fuente, v => v);
+  opciones($('#mfTamano'), [9, 10, 11, 12, 13, 14, 16], f.tamano_fuente, g.tamano_fuente, v => v + ' pt');
+  opciones($('#mfRenglones'), [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12], f.lineas_vacias_para_encabezado, g.lineas_vacias_para_encabezado, v => String(v));
+  $('#mfCentrar').value = SINO(f.centrar_titulos); $('#mfNegrita').value = SINO(f.negrita_titulos); $('#mfLinea').value = SINO(f.linea_vacia_entre_titulo_y_texto);
+  MIS_REGLAS = reglasDeTexto(e.reglas || ''); pintarReglas();
+  const p = e.plantillas_propias.length, m = e.medicos_propios.length;
+  $('#cuentaEstilo').textContent = (p ? `Plantillas propias: ${e.plantillas_propias.join(', ')}. ` : 'Usás las plantillas generales. ')
+    + (m ? `Notas propias de: ${e.medicos_propios.join(', ')}.` : 'Usás las notas generales de los médicos.')
+    + ' Lo que corregís se aprende para tus próximos informes.';
+}
+const abrirConfigOriginal = abrirConfig;
+abrirConfig = function(tab, pedirEstado = true){ abrirConfigOriginal(tab, pedirEstado); if(MI.usuario) cargarCuenta(); };
+$('#bMiCuenta').onclick = () => abrirConfig('cuenta');
+$('#fMiClave').onsubmit = async ev => {
+  ev.preventDefault();
+  const a = $('#mcActual').value, n = $('#mcNueva').value, n2 = $('#mcNueva2').value, msj = $('#mcMsj');
+  msj.className = 'cfg-msj mal';
+  if(n.length < 6){ msj.textContent = 'La nueva tiene que tener al menos 6 caracteres.'; $('#mcNueva').focus(); return; }
+  if(n !== n2){ msj.textContent = 'Las dos no coinciden.'; $('#mcNueva2').focus(); return; }
+  try { await api('/api/usuario/contrasena', {actual: a, nueva: n}); }
+  catch(e){ msj.textContent = e.message; return; }
+  msj.className = 'cfg-msj'; msj.textContent = '✓ Contraseña cambiada.';
+  ['#mcActual', '#mcNueva', '#mcNueva2'].forEach(x => $(x).value = '');
+  if(MI.usuario) MI.usuario.cambiar = false;
+  pintarConfig();
+};
+$('#fMiFormato').onsubmit = async ev => {
+  ev.preventDefault();
+  const num = v => v === '' ? null : +v;
+  const formato = {fuente: $('#mfFuente').value || null, tamano_fuente: num($('#mfTamano').value),
+    lineas_vacias_para_encabezado: num($('#mfRenglones').value), centrar_titulos: DE_SINO($('#mfCentrar').value),
+    negrita_titulos: DE_SINO($('#mfNegrita').value), linea_vacia_entre_titulo_y_texto: DE_SINO($('#mfLinea').value)};
+  const msj = $('#mfMsj');
+  try { await api('/api/usuario/formato', {formato}); msj.className = 'cfg-msj'; msj.textContent = '✓ Guardado: se usa en los próximos Word que guardes.'; }
+  catch(e){ msj.className = 'cfg-msj mal'; msj.textContent = e.message; }
+};
+/* reglas propias: se guardan como renglones «- regla» en su reglas_dictado.md */
+let MIS_REGLAS = [];
+const reglasDeTexto = t => t.split(/\r?\n/).map(l => l.replace(/^\s*[-•*]\s*/, '').trim()).filter(l => l && !l.startsWith('#'));
+function pintarReglas(){
+  const ul = $('#mrLista');
+  ul.innerHTML = MIS_REGLAS.length ? '' : '<li class="vacio"><span>Todavía no agregaste reglas propias.</span></li>';
+  MIS_REGLAS.forEach((r, i) => {
+    const li = document.createElement('li'), t = document.createElement('span');
+    t.textContent = r; li.appendChild(t);
+    const ed = document.createElement('button'); ed.type = 'button'; ed.className = 'chico'; ed.textContent = 'Editar';
+    ed.onclick = () => abrirReglas(i);
+    const qu = document.createElement('button'); qu.type = 'button'; qu.className = 'chico'; qu.textContent = 'Quitar';
+    qu.onclick = async () => {
+      if(!await confirmar('¿Quitar esta regla?', '<p>' + esc(r) + '</p>', 'Quitar')) return;
+      const antes = MIS_REGLAS.slice(); MIS_REGLAS.splice(i, 1);
+      if(!await guardarReglas('Regla quitada.')){ MIS_REGLAS = antes; } pintarReglas();
+    };
+    li.append(ed, qu); ul.appendChild(li);
+  });
+}
+async function guardarReglas(ok){
+  const msj = $('#mrMsj');
+  try { await api('/api/usuario/reglas', {reglas: MIS_REGLAS.map(r => '- ' + r).join('\n')});
+        msj.className = 'cfg-msj'; msj.textContent = '✓ ' + ok + ' La IA las usa desde tu próximo informe.'; return true; }
+  catch(e){ msj.className = 'cfg-msj mal'; msj.textContent = 'No se guardó: ' + e.message; return false; }
+}
+let reglaEditada = null, reglasPrevio = null;
+function filaRegla(valor){
+  const f = document.createElement('div'); f.className = 'rd-fila';
+  const inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = 400; inp.value = valor || '';
+  inp.placeholder = 'Ej.: Escribir «Bi-Rads 2.» sin dos puntos'; inp.setAttribute('aria-label', 'Regla'); inp.spellcheck = true; inp.lang = 'es';
+  inp.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); if(reglaEditada === null){ const n = filaRegla(''); f.after(n); n.firstChild.focus(); } else $('#rdSi').click(); } });
+  const x = document.createElement('button'); x.type = 'button'; x.className = 'chico'; x.textContent = '✕'; x.title = 'Quitar este renglón'; x.setAttribute('aria-label', 'Quitar este renglón');
+  x.onclick = () => { if($('#rdFilas').children.length > 1) f.remove(); else inp.value = ''; ($('#rdFilas').querySelector('input') || inp).focus(); };
+  f.append(inp, x); return f;
+}
+function abrirReglas(i){       // i: índice de la regla a editar; sin i, añadir varias
+  reglaEditada = i == null ? null : i; reglasPrevio = document.activeElement;
+  $('#rdTit').textContent = reglaEditada === null ? 'Añadir reglas' : 'Editar regla';
+  $('#rdOtra').hidden = reglaEditada !== null;
+  const filas = $('#rdFilas'); filas.innerHTML = '';
+  filas.appendChild(filaRegla(reglaEditada === null ? '' : MIS_REGLAS[reglaEditada]));
+  $('#reglasDlg').hidden = false; filas.querySelector('input').focus();
+}
+function cerrarReglas(){ $('#reglasDlg').hidden = true; try { reglasPrevio && reglasPrevio.focus(); } catch(e){} }
+$('#bAnadirRegla').onclick = () => abrirReglas();
+$('#rdOtra').onclick = () => { const n = filaRegla(''); $('#rdFilas').appendChild(n); n.firstChild.focus(); };
+$('#rdNo').onclick = cerrarReglas;
+$('#reglasDlg').addEventListener('mousedown', e => { if(e.target === $('#reglasDlg')) cerrarReglas(); });
+$('#reglasDlg').addEventListener('keydown', e => {
+  e.stopPropagation();
+  if(e.key === 'Escape'){ e.preventDefault(); cerrarReglas(); }
+});
+$('#rdSi').onclick = async () => {
+  const nuevas = [...$('#rdFilas').querySelectorAll('input')].map(x => x.value.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const antes = MIS_REGLAS.slice();
+  if(reglaEditada === null){
+    if(!nuevas.length){ $('#rdFilas').querySelector('input').focus(); return; }
+    MIS_REGLAS.push(...nuevas.filter(r => !MIS_REGLAS.includes(r)));
+  } else if(nuevas.length) MIS_REGLAS[reglaEditada] = nuevas[0];
+  else MIS_REGLAS.splice(reglaEditada, 1);
+  $('#rdSi').disabled = true;
+  const ok = await guardarReglas(reglaEditada === null ? (nuevas.length === 1 ? 'Regla agregada.' : nuevas.length + ' reglas agregadas.') : 'Regla guardada.');
+  $('#rdSi').disabled = false;
+  if(!ok){ MIS_REGLAS = antes; return; }
+  pintarReglas(); cerrarReglas();
+};
 
 aplicarTema();
 </script>
