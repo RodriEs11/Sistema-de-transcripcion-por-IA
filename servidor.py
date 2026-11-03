@@ -1964,6 +1964,9 @@ class H(BaseHTTPRequestHandler):
         ses = R.sesion(self._cookie("ts"))
         if not self.remoto:
             self.pc = LOCAL
+            # la app de pruebas conectada a http://127.0.0.1 también manda su llave: con ella puede hacer lo suyo
+            # (estado, audios, actualización) aunque nadie haya entrado en la página
+            self.con_llave = bool(R.pc_de_llave(self._llave()))
             if ses and ses.get("local"):
                 self.usuario = ses.get("usuario")
         else:
@@ -2089,7 +2092,7 @@ class H(BaseHTTPRequestHandler):
             sid = R.canjear_codigo(cod)
             if sid:
                 L.info("ACCESO", f"{R.pc_de_sesion(sid)} abrió la aplicación (IP {self._ip()}).")
-                return self._redirigir("/", R.cookie_sesion(sid))
+                return self._redirigir("/", R.cookie_sesion(sid, local=not self.remoto))
             if cod:
                 L.aviso("ACCESO", f"Código de entrada vencido o inválido desde la IP {self._ip()}.")
             if self.usuario or (not self.remoto and not U.hay_usuarios()):
