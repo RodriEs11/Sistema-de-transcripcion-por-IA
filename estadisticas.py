@@ -21,8 +21,8 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import nucleo as N
-import almacen_aprendizaje as AL
-import registro as L
+from transcripcion.aprendizaje import almacen as AL
+from transcripcion.base import registro as L
 
 AQUI = Path(__file__).resolve().parent
 HIST = AQUI / "resultados" / "historial.csv"

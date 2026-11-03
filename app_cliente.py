@@ -18,7 +18,7 @@ import threading
 import time
 from pathlib import Path
 
-import registro as L
+from transcripcion.base import registro as L
 
 AQUI = Path(__file__).resolve().parent
 CARPETA = AQUI / "cliente"

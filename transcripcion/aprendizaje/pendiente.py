@@ -3,8 +3,8 @@ import json
 import threading
 import uuid
 from pathlib import Path
-from persistencia import escribir_atomico
-import registro as L
+from transcripcion.base.persistencia import escribir_atomico
+from transcripcion.base import registro as L
 
 
 class ColaAprendizaje:

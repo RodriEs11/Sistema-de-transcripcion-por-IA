@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import io
 import sqlite3
 from pathlib import Path
-from persistencia import escribir_atomico
+from transcripcion.base.persistencia import escribir_atomico
 
 
 def ruta_base(historial):

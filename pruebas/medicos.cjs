@@ -8,7 +8,8 @@ const codigo=`
 import sys, tempfile, threading
 from pathlib import Path
 from unittest.mock import patch
-import servidor as S, ajustes
+import servidor as S
+from transcripcion import ajustes
 with tempfile.TemporaryDirectory(prefix='ui_medicos_', dir='respaldo') as carpeta:
     aj = ajustes.para_pruebas(Path(carpeta)); ajustes.preparar_carpetas(aj); S.configurar(aj)
     conoc = Path(carpeta) / 'conocimiento'

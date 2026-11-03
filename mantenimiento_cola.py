@@ -1,7 +1,7 @@
 """Respaldo consistente de la cola sin iniciar el servidor ni tomar su lock de propietario."""
 import argparse
 from pathlib import Path
-from cola_procesamiento import respaldar
+from transcripcion.procesamiento.cola import respaldar
 
 
 if __name__ == '__main__':

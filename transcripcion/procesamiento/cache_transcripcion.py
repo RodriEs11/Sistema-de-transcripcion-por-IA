@@ -2,7 +2,7 @@
 import hashlib
 import json
 from pathlib import Path
-from persistencia import escribir_atomico
+from transcripcion.base.persistencia import escribir_atomico
 
 
 def firma(ruta, parametros, fuentes=()):

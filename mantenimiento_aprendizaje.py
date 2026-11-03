@@ -3,8 +3,8 @@ import argparse
 import sqlite3
 from pathlib import Path
 import aprender as A
-import almacen_aprendizaje as AL
-import registro as L
+from transcripcion.aprendizaje import almacen as AL
+from transcripcion.base import registro as L
 
 
 def main():

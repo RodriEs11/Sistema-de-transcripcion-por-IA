@@ -22,11 +22,11 @@ import secrets
 import threading
 import time
 import unicodedata
-from pathlib import Path
 
-from persistencia import escribir_atomico
+from transcripcion.base.persistencia import escribir_atomico
+from transcripcion import RAIZ
 
-AQUI = Path(__file__).resolve().parent
+AQUI = RAIZ          # carpeta del sistema (no la del paquete)
 ARCH = AQUI / "usuarios.json"
 CARPETA = AQUI / "conocimiento" / "usuarios"
 MIN_CONTRASENA = 6

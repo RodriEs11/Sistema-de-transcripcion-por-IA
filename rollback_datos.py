@@ -7,7 +7,7 @@ from pathlib import Path
 import shutil
 import sqlite3
 from contextlib import closing
-import borradores as B
+from transcripcion.casos import borradores as B
 
 
 def preparar(origen, salida):

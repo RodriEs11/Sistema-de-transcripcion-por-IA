@@ -29,10 +29,10 @@ import time
 import urllib.request
 from pathlib import Path
 
-import plataforma as P
-import registro as L
-import usuarios as U
-from persistencia import escribir_atomico
+from transcripcion.base import plataforma as P
+from transcripcion.base import registro as L
+from transcripcion.acceso import usuarios as U
+from transcripcion.base.persistencia import escribir_atomico
 
 AQUI = Path(__file__).resolve().parent
 ARCH = AQUI / "acceso_remoto.json"

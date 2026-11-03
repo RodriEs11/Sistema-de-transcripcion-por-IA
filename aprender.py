@@ -21,8 +21,8 @@ import hashlib
 from pathlib import Path
 
 import nucleo as N
-from persistencia import escribir_atomico
-import almacen_aprendizaje as AL
+from transcripcion.base.persistencia import escribir_atomico
+from transcripcion.aprendizaje import almacen as AL
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -87,7 +87,7 @@ def registrar_ejemplo(nombre, dictado, ia, final, clave=None, medico=None, *, re
         try:
             analizar_correcciones()
         except Exception:
-            import registro as L
+            from transcripcion.base import registro as L
             L.aviso("APRENDIZAJE", "No se pudieron actualizar las correcciones frecuentes.", exc=True)
     return clave, pc
 
@@ -183,7 +183,7 @@ def analizar_correcciones(minimo=2, *, reconstruir=False):
     salida = _lineas_correcciones(frec, "# CORRECCIONES QUE EL TRANSCRIPTOR HIZO VARIAS VECES (se actualiza solo; no editar)")
     if not ARCH_CORR.exists() or ARCH_CORR.read_text(encoding="utf-8") != salida:
         escribir_atomico(ARCH_CORR, salida)
-    import usuarios as U
+    from transcripcion.acceso import usuarios as U
     for clave in set(U.claves_con_carpeta()) | set(propias):
         try:
             if propias.get(clave):

@@ -27,22 +27,22 @@ import admin as ADM
 import correcciones as CORR
 import estadisticas as EST
 import app_cliente as A
-import lotes_ia as LOTES
-import cache_transcripcion as CACHE_ASR
-import borradores as BOR
-import cola_procesamiento as CP
-from indice_casos import IndiceCasos
-from persistencia import escribir_atomico
-from aprendizaje_pendiente import ColaAprendizaje
+from transcripcion.procesamiento import lotes as LOTES
+from transcripcion.procesamiento import cache_transcripcion as CACHE_ASR
+from transcripcion.casos import borradores as BOR
+from transcripcion.procesamiento import cola as CP
+from transcripcion.casos.indice import IndiceCasos
+from transcripcion.base.persistencia import escribir_atomico
+from transcripcion.aprendizaje.pendiente import ColaAprendizaje
 import mantenimiento as M
 import nucleo as N
-import paciente as PAC
-import plataforma as P
-import registro as L
+from transcripcion.casos import paciente as PAC
+from transcripcion.base import plataforma as P
+from transcripcion.base import registro as L
 import remoto as R
-import usuarios as U
+from transcripcion.acceso import usuarios as U
 import voces as VOZ
-import ajustes
+from transcripcion import ajustes
 from informe import escribir_docx, parrafos_docx, pagina, aplicar_formato, texto_parrafo, EXT_AUDIO
 
 AQUI = Path(__file__).resolve().parent
@@ -63,7 +63,7 @@ PUERTO_TUNEL = None
 SIMULAR = False       # SIMULAR_IA=1: sin Whisper ni Ollama (solo para pruebas)
 COLA_AL_REINICIAR = None
 APRENDIZAJE = None    # cola persistente de aprendizaje (se crea en configurar)
-VERSION = "2026.11.3"
+VERSION = "2026.11.4"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
