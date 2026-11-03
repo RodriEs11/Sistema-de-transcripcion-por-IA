@@ -13,8 +13,9 @@ Los casos se identifican con el parámetro o campo `nombre` (validado: sin rutas
 | GET | `/admin` | Panel de administración (solo local o con contraseña del panel) |
 | GET | `/admin/estadisticas` | Estadísticas |
 | GET | `/admin/correcciones` | Lo más corregido |
-| GET/POST | `/entrar` | Entrada desde la app (código de un solo uso) o desde un navegador (PC + contraseña) |
-| GET | `/salir` | Cierra la sesión del navegador |
+| GET/POST | `/entrar` | Entrada desde la app (código de un solo uso) o desde un navegador. Con transcriptores: usuario + contraseña (y la PC si no se conoce); sin ninguno: PC + contraseña del sistema. Ver [usuarios.md](usuarios.md) |
+| GET/POST | `/ingresar` | Usuario y contraseña cuando la PC ya está identificada (después del código de la app o de «Salir»). No es `/entrar` porque la app intercepta esa dirección |
+| GET | `/salir` | Cierra la sesión. En el trabajo la PC queda identificada y la página pide solo usuario y contraseña |
 
 ## Casos
 
@@ -49,12 +50,18 @@ Los casos se identifican con el parámetro o campo `nombre` (validado: sin rutas
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET/POST | `/api/plantillas` | Lee / guarda `plantillas.md` (con copia previa) |
+| GET/POST | `/api/plantillas` | GET: secciones como las ve el transcriptor con `origen` (`general`, `propia`, `nueva`). POST `{secciones, destino: "mio" \| "todos"}`: lo cambiado va a sus plantillas propias o a `plantillas.md` (con copia previa) |
+| POST | `/api/plantillas/general` | `{nombre}`: deja de usar la versión propia de una plantilla |
 | POST | `/api/plantilla_word` | Convierte un `.docx` en una sección de plantilla |
 | POST | `/api/importar` | Importa informes Word como referencias |
-| GET | `/api/medicos` | Médicos y sus notas |
-| POST | `/api/medico` | Crea o actualiza las notas de un médico |
-| GET | `/api/mi_pc` | Identidad de quien consulta (local/remoto, PC, permisos de panel) |
+| GET | `/api/medicos` | Médicos y sus notas (las propias del transcriptor si tiene: `propias`, `generales`) |
+| POST | `/api/medico` | Crea o actualiza las notas de un médico. `destino`: `todos` (por defecto), `mio` (solo para el transcriptor) o `general` (quita las propias) |
+| GET | `/api/mi_pc` | Identidad de quien consulta (local/remoto, PC, permisos de panel, `con_usuarios`, `usuario`, `preferencias`) |
+| GET | `/api/usuario/estilo` | Formato del Word propio y el general, fuentes permitidas, reglas propias, plantillas y médicos propios |
+| POST | `/api/usuario/contrasena` | `{actual, nueva}` |
+| POST | `/api/usuario/preferencias` | `{preferencias: {clave: valor}}` (las mismas claves que la página guarda en `localStorage`) |
+| POST | `/api/usuario/formato` | `{formato: {opción: valor \| null}}` (`null` = usar el general) |
+| POST | `/api/usuario/reglas` | `{reglas}`: reglas de dictado propias (se suman a las generales) |
 | POST | `/api/mi_medico` | Médico predeterminado de la PC (vacío = automático por la voz) |
 | GET | `/api/voces`, `/api/voces/muestras`, `/api/voces/agrupar` | Reconocimiento por la voz (ver [voz.md](voz.md)) |
 | POST | `/api/voces/etiquetar`, `/api/voces/quitar` | Etiquetar audios con su médico / quitar una muestra |
@@ -63,7 +70,7 @@ Los casos se identifican con el parámetro o campo `nombre` (validado: sin rutas
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| POST | `/api/cliente/vincular` | Vincula una PC con la contraseña y devuelve su llave |
+| POST | `/api/cliente/vincular` | `{pc, usuario, contrasena}`: vincula una PC con el usuario y la contraseña de un transcriptor (sin transcriptores: `usuario` vacío y la contraseña del sistema) y devuelve su llave. La llave sola solo sirve para enviar audios, consultar el estado y actualizarse |
 | POST | `/api/cliente/sesion` | Código de un solo uso para abrir la interfaz |
 | GET | `/api/cliente/estado` | Estado del servidor y `app: {version, huella}` |
 | POST | `/api/cliente/audio` | Envío de un audio tomado de `%TEMP%` o de la cola. Recibo confirmado: `{ok:true, nombre, duplicado}` después de publicar audio/metadatos, huella y encolado; la cola conserva el cifrado si falta esa confirmación. |
@@ -84,6 +91,10 @@ Solo locales (`127.0.0.1` con `Host` local) o con sesión del panel remoto. Los 
 | POST | `/api/admin/tunel/reiniciar` | Reinicia `cloudflared` (dirección nueva) |
 | POST | `/api/admin/tunel/publicar` | Vuelve a publicar la dirección en ntfy |
 | POST | `/api/admin/pc/anular` | Anula una PC vinculada |
+| POST | `/api/admin/usuarios/crear` | `{nombre, contrasena}`: alta de un transcriptor (la contraseña inicial se cambia al entrar) |
+| POST | `/api/admin/usuarios/contrasena` | `{usuario, contrasena}`: restablece la contraseña y cierra sus sesiones |
+| POST | `/api/admin/usuarios/activo` | `{usuario, activo}`: desactiva (cierra sus sesiones) o reactiva |
+| POST | `/api/admin/usuarios/nombre` | `{usuario, nombre}`: cambia el nombre visible (la carpeta de su estilo no cambia) |
 | POST | `/api/admin/contrasena` | Cambia la contraseña de acceso remoto |
 | POST | `/api/admin/contrasena_admin`, `/api/admin/contrasena_admin/quitar` | Contraseña del panel remoto (solo local) |
 | POST | `/api/admin/sesiones_admin/cerrar` | Cierra las sesiones del panel remoto (solo local) |
