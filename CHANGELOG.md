@@ -9,6 +9,26 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [Servidor 2026.11.3] — 2026-11-03
+
+Etapa 1 del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles: mismas
+pantallas, mismas respuestas HTTP (contratos en verde sin regenerar) y misma configuración.
+
+### Cambiado
+- Importar `servidor.py` ya no lee `configuracion.json` ni crea `Audios_nuevos` e `Informes/revision/datos`, e
+  importar `nucleo.py` ya no crea `conocimiento/`. Ahora lo hace el arranque: `ajustes.cargar()` (configuración
+  + `PUERTO_INTERFAZ`, `PUERTO_TUNEL`, `SIMULAR_IA`), `ajustes.preparar_carpetas()` y
+  `nucleo.preparar_conocimiento()`; `servidor.configurar(ajustes)` reemplaza la lectura al importar.
+- La prueba del código antes de reiniciar desde el panel también lee la configuración: un `configuracion.json`
+  roto no deja reiniciar (antes lo detectaba al importar el servidor).
+
+### Corregido
+- Varias pruebas automáticas (`test_usuarios`, `test_cola_procesamiento`, `test_aprendizaje_pendiente`,
+  `medicos.cjs`, `usuarios.cjs`) usaban, sin querer, las carpetas reales de la instalación: corridas dentro de
+  `sistema\` podían escribir un Word de prueba en `Informes`, registros en `registros/`, `cliente/conexion.json`, y
+  leían las plantillas reales. Ahora trabajan en carpetas temporales; una prueba nueva verifica que ningún módulo
+  escriba nada al importarse.
+
 ## Pruebas y herramientas — 2026-11-03
 - Red de seguridad para el refactor por etapas ([plan](docs/refactor.md), [ADR 0001](docs/adr/0001-modularizar-por-etapas.md)):
   contrato HTTP de caja negra (servidor real en subproceso y modo simulado, flujo completo de un caso) y contrato del

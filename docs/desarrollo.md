@@ -58,9 +58,21 @@ Lint: `python -m ruff check .` (configuración en `pyproject.toml`, versión en 
 de GPU con temperaturas enteras/decimales, alertas y fallos de NVIDIA. Extrae la función
 mediante AST sin importar el servidor ni cargar configuración o datos de la instalación.
 
-Ejecutar pruebas que importan `servidor.py` en un checkout de ensayo: la importación carga
-configuración y crea carpetas. Usar datos ficticios y configuración de ejemplo; no apuntar
-las pruebas HTTP o de carga al servidor en uso. Los scripts Playwright permiten
+Importar un módulo del sistema no lee la configuración ni crea carpetas
+(`pruebas/test_importar_sin_efectos.py`). Una prueba que usa el servidor lo configura con una carpeta
+temporal y lo restaura al terminar:
+
+```python
+import ajustes, servidor as S
+aj = ajustes.para_pruebas(carpeta_temporal)        # Audios_nuevos e Informes adentro; configuración de ejemplo
+ajustes.preparar_carpetas(aj)
+self.addCleanup(S.configurar, S.configurar(aj))    # configurar devuelve los ajustes anteriores
+```
+
+Lo que lee `nucleo` (plantillas, reglas, médicos) también debe apuntar a la carpeta temporal
+(`patch.object(N, "CONOC", carpeta / "conocimiento")` y `N.preparar_conocimiento()`), igual que los registros
+(`registro.CARPETA`) y la carpeta del cliente (`remoto.CARPETA_CLIENTE`): nunca los de la instalación.
+Usar datos ficticios; no apuntar las pruebas HTTP o de carga al servidor en uso. Los scripts Playwright permiten
 `PLAYWRIGHT_MODULE`, `BROWSER_CHANNEL` y, para `medicos.cjs`, `PYTHON`; este último necesita
 crear previamente `respaldo/` en el checkout de ensayo.
 

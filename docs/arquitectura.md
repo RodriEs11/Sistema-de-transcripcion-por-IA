@@ -46,12 +46,13 @@ flowchart TB
 
 | Módulo | Responsabilidad |
 |---|---|
+| `ajustes.py` | Ajustes del arranque (`configuracion.json` + variables de entorno) como objeto; crea las carpetas de trabajo solo cuando se lo piden. Ningún módulo lee la configuración al importarse |
 | `servidor.py` | Servidor HTTP (`ThreadingHTTPServer`), rutas de la API, cola y trabajador, bloqueos de casos, borrado, panel de administración |
 | `fase1_transcribir.py` | Carga de Whisper, lectura de WAV propia, normalización de texto y números, extracción de datos críticos |
 | `huecos.py` | Busca regiones con energía de voz y sin palabras, y las re-transcribe |
 | `nucleo.py` | Plantillas, detección de estudio, armado del prompt, selección de ejemplos/referencias, llamada a Ollama, orden de estudios, marcas y omisiones |
 | `paciente.py` | Extrae el nombre del paciente del inicio del dictado (solo para la lista) |
-| `informe.py` | Configuración, párrafos con formato, Word (A4, Tahoma, negritas, centrado) y modo consola |
+| `informe.py` | Lectura de la configuración para el modo consola (vía `ajustes`), párrafos con formato, Word (A4, Tahoma, negritas, centrado) y modo consola |
 | `aprender.py` | Ejemplos aprendidos, `historial.csv`, `correcciones_aprendidas.md` |
 | `importar_informes.py` | Convierte informes Word en referencias o en plantillas |
 | `remoto.py` | Túnel (`cloudflared`), publicación en ntfy, contraseñas PBKDF2, llaves por PC, sesiones y cookies |

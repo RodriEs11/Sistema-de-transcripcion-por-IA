@@ -1,6 +1,6 @@
 # Documentación
 
-Versiones actuales: **Servidor 2026.11.2 · App 1.24**. La entrega App 1.22 / Servidor 2026.10.46
+Versiones actuales: **Servidor 2026.11.3 · App 1.24**. La entrega App 1.22 / Servidor 2026.10.46
 se documenta por etapas (persistencia, CI y listado, editor y audio, Word y aprendizaje, correcciones
 incrementales, lotes de IA); su activación y piloto están en [activacion-coordinada.md](activacion-coordinada.md).
 
