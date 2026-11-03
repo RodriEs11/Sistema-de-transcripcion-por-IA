@@ -102,12 +102,12 @@ def validar_reanudacion(raiz, base):
 
 def trabajador(raiz, modelo_whisper):
     sys.path.insert(0,str(raiz/'sistema'))
-    import fase1_transcribir as F
+    from transcripcion.asr import whisper as F
     from transcripcion.controles import avisos as AV
     from transcripcion.controles import marcas as MAR
     from transcripcion.ia import ollama as OLL
     from transcripcion.ia import prompt as PR
-    import huecos as H
+    from transcripcion.asr import huecos as H
     OLL.OLLAMA='http://127.0.0.1:11435'
     audios=sorted((raiz/'audios').glob('*.wav'))
     duraciones=[]
@@ -185,9 +185,9 @@ def ejecutar(reanudar=None):
         validar_reanudacion(raiz, proyecto/'respaldo')
     else:
         raiz.mkdir();(raiz/'audios').mkdir();(raiz/'sistema').mkdir()
-    for nombre in ['fase1_transcribir.py','huecos.py','vocabulario.txt']:
+    for nombre in ['vocabulario.txt']:
         shutil.copy2(proyecto/nombre,raiz/'sistema'/nombre)
-    # paquete: núcleo (ia, controles, conocimiento), registro, plataforma, persistencia y usuarios
+    # paquete: whisper y huecos (asr), ia, controles, conocimiento, registro, plataforma, persistencia y usuarios
     shutil.copytree(proyecto/'transcripcion',raiz/'sistema'/'transcripcion',dirs_exist_ok=True,ignore=shutil.ignore_patterns('__pycache__'))
     shutil.copytree(proyecto/'conocimiento.ejemplo',raiz/'sistema'/'conocimiento.ejemplo',dirs_exist_ok=True)
     (raiz/'dictados.json').write_text(json.dumps(FICTICIOS,ensure_ascii=False),encoding='utf-8')

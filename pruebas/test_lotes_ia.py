@@ -145,11 +145,8 @@ class TrabajadorTest(unittest.TestCase):
                     pila.enter_context(patch.object(S.CACHE_ASR,'firma',return_value={'ficticia':True}))
                     pila.enter_context(patch.object(S.CACHE_ASR,'leer',return_value=trans))
                 else:
-                    import shutil
-                    import fase1_transcribir as F
-                    import huecos as H
-                    for f in ['fase1_transcribir.py','huecos.py']:
-                        shutil.copyfile(Path(S.__file__).parent/f,raiz/f)
+                    from transcripcion.asr import whisper as F
+                    from transcripcion.asr import huecos as H
                     cargar=pila.enter_context(patch.object(F,'cargar_modelo',return_value=object()))
                     asr=pila.enter_context(patch.object(F,'transcribir',return_value=trans))
                     pila.enter_context(patch.object(F,'cargar_audio',return_value=[]))
