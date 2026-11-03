@@ -7,7 +7,7 @@ ejemplos\\*.informe.txt) y junta los cambios que más se repiten: palabras o fra
 borradas. Se puede ver en general o por médico, y convertir un cambio en una regla de reglas_dictado.md
 (la IA lee ese archivo en cada informe).
 
-Igual que correcciones_aprendidas.md (aprender.py), no cuenta los cambios con números (salen del dictado,
+Igual que correcciones_aprendidas.md (aprendizaje/aprender.py), no cuenta los cambios con números (salen del dictado,
 no se generalizan) ni los muy largos (reescrituras de un párrafo). Los cambios solo de puntuación o
 mayúsculas se muestran si se pide.
 """
@@ -16,12 +16,12 @@ import re
 import threading
 import time
 from datetime import date, datetime
-from pathlib import Path
 
+from transcripcion import RAIZ
 from transcripcion.conocimiento import archivos as CON
 from transcripcion.controles import marcas as MAR
 
-AQUI = Path(__file__).resolve().parent
+AQUI = RAIZ          # carpeta del sistema (no la del paquete)
 EJ = AQUI / "ejemplos"
 REGLAS = CON.CONOC / "reglas_dictado.md"
 APRENDIDAS = CON.CONOC / "correcciones_aprendidas.md"

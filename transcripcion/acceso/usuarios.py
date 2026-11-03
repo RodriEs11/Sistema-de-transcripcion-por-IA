@@ -8,7 +8,7 @@ TRANSCRIPTORES: cada persona entra con su usuario y su contraseña, y tiene su p
     plantillas.md           solo las secciones que cambió (mismo formato «## NOMBRE»); reemplazan a la general
     medicos/<Médico>.md     sus notas de cómo dicta ese médico (reemplazan a las generales)
     reglas_dictado.md       reglas propias: se SUMAN a las generales
-    correcciones_aprendidas.md   se genera solo (aprender.py)
+    correcciones_aprendidas.md   se genera solo (aprendizaje/aprender.py)
     formato.json            fuente, tamaño, renglones de encabezado... del Word (sobre configuracion.json)
     preferencias.json       preferencias de la pantalla (tema, atajos, velocidad...): siguen al usuario, no a la PC
 

@@ -2,7 +2,7 @@
 import argparse
 import sqlite3
 from pathlib import Path
-import aprender as A
+from transcripcion.aprendizaje import aprender as A
 from transcripcion.aprendizaje import almacen as AL
 from transcripcion.base import registro as L
 

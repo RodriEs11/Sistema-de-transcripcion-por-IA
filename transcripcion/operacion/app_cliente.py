@@ -18,9 +18,10 @@ import threading
 import time
 from pathlib import Path
 
+from transcripcion import RAIZ
 from transcripcion.base import registro as L
 
-AQUI = Path(__file__).resolve().parent
+AQUI = RAIZ          # carpeta del sistema (no la del paquete)
 CARPETA = AQUI / "cliente"
 FIJOS = {"transcripcion.exe", "transcripcion.exe.config", "leeme.txt", "conexion.json"}
 _lock = threading.Lock()

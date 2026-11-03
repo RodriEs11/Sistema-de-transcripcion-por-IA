@@ -40,7 +40,7 @@ def comprobar(raiz=RAIZ, sin_binario=False):
                              leeme, re.MULTILINE):
         errores.append(f"LEEME.txt no anuncia la versión actual {app} con su fecha.")
     if not sin_binario:
-        import app_cliente
+        from transcripcion.operacion import app_cliente
         # Usar la misma lectura que realiza el servidor, sin consultar ni modificar su caché.
         exe = raiz / "cliente/Transcripcion.exe"
         distribuida = app_cliente.version_exe(exe)

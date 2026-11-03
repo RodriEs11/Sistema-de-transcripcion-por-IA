@@ -20,7 +20,7 @@ import time
 import hashlib
 from pathlib import Path
 
-from transcripcion.conocimiento import archivos as CON
+from transcripcion import RAIZ
 from transcripcion.controles import marcas as MAR
 from transcripcion.base.persistencia import escribir_atomico
 from transcripcion.aprendizaje import almacen as AL
@@ -30,7 +30,7 @@ try:
 except Exception:
     pass
 
-AQUI = Path(__file__).resolve().parent
+AQUI = RAIZ          # carpeta del sistema (no la del paquete)
 EJ = AQUI / "ejemplos"
 HIST = AQUI / "resultados" / "historial.csv"
 REG = EJ / "_procesados.json"
@@ -272,11 +272,3 @@ def resumen():
         print(f"  primeros {len(a)}: {sum(a)/len(a):.1f}%   ·   últimos 10: {sum(b)/len(b):.1f}%")
     n_ej = len(list(EJ.glob("*.informe.txt")))
     print(f"Ejemplos aprendidos disponibles para la IA: {n_ej} (+ los 33 del dataset)")
-
-
-if __name__ == "__main__":
-    from informe import config
-    cfg = config()
-    CON.preparar_conocimiento()
-    aprender(cfg)
-    resumen()

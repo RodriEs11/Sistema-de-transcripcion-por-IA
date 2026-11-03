@@ -11,7 +11,9 @@ import re
 import sys
 from pathlib import Path
 
-AQUI = Path(__file__).resolve().parent
+from transcripcion import RAIZ
+
+AQUI = RAIZ          # carpeta del sistema (no la del paquete)
 ORIGEN = AQUI.parent / "Dataset" / "Informes word"
 DESTINO = AQUI / "referencias"
 
@@ -48,8 +50,10 @@ def importar(origen=ORIGEN):
     return ok, mal
 
 
-if __name__ == "__main__":
-    ok, mal = importar(sys.argv[1] if len(sys.argv) > 1 else ORIGEN)
+def main(argv=None):
+    """`python importar_informes.py [carpeta]`: importa los Word de la carpeta (o de ORIGEN) como referencias."""
+    argv = sys.argv[1:] if argv is None else argv
+    ok, mal = importar(argv[0] if argv else ORIGEN)
     print(f"Importados {len(ok)} informes a {DESTINO}")
     if mal:
         print("No se pudieron leer (vacíos o dañados):", ", ".join(mal))

@@ -100,7 +100,7 @@ def main():
     (sal / "revision" / "datos").mkdir(exist_ok=True)
 
     try:  # primero aprender de los Word ya revisados
-        from aprender import aprender
+        from transcripcion.aprendizaje.aprender import aprender
         aprender(cfg, silencioso=True)
     except Exception as ex:
         print("(no se pudo aprender de los informes revisados:", ex, ")")

@@ -29,12 +29,13 @@ import time
 import urllib.request
 from pathlib import Path
 
+from transcripcion import RAIZ
 from transcripcion.base import plataforma as P
 from transcripcion.base import registro as L
 from transcripcion.acceso import usuarios as U
 from transcripcion.base.persistencia import escribir_atomico
 
-AQUI = Path(__file__).resolve().parent
+AQUI = RAIZ          # carpeta del sistema (no la del paquete)
 ARCH = AQUI / "acceso_remoto.json"
 ARCH_SESIONES = AQUI / "sesiones.json"
 CARPETA_CLIENTE = AQUI / "cliente"
