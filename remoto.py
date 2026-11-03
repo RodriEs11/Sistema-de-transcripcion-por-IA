@@ -320,19 +320,23 @@ def sesiones_de(pc):
 
 
 # -------------------------------------------------------------- sesiones
-def nuevo_codigo(pc):
+def nuevo_codigo(pc, usuario=None, seg=60):
+    """Código de un solo uso para que la app abra la página sin pedir nada. Con usuario (recién vinculada la PC con
+    su usuario y contraseña) la página abre ya con ese transcriptor: no se le vuelve a pedir."""
     c = secrets.token_urlsafe(24)
     with _lock:
-        CODIGOS[c] = {"pc": pc, "exp": time.time() + 60}
+        CODIGOS[c] = {"pc": pc, "usuario": usuario, "exp": time.time() + seg}
     return c
 
 
-def canjear_codigo(c):
+def canjear_codigo(c, pc_local=None):
+    """pc_local: la app está en la misma PC del servidor (http://127.0.0.1): la sesión es local, con ese nombre."""
     with _lock:
         v = CODIGOS.pop(c or "", None)
     if not v or v["exp"] < time.time():
         return None
-    return nueva_sesion(v["pc"])
+    usuario = v.get("usuario") if v.get("usuario") and U.existe(v["usuario"]) else None
+    return nueva_sesion(pc_local or v["pc"], usuario=usuario, local=bool(pc_local))
 
 
 def _h(sid):
