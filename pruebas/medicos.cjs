@@ -10,16 +10,17 @@ from pathlib import Path
 from unittest.mock import patch
 import servidor as S
 from transcripcion import ajustes
+from transcripcion.conocimiento import medicos as MED
 with tempfile.TemporaryDirectory(prefix='ui_medicos_', dir='respaldo') as carpeta:
     aj = ajustes.para_pruebas(Path(carpeta)); ajustes.preparar_carpetas(aj); S.configurar(aj)
     conoc = Path(carpeta) / 'conocimiento'
-    with patch.object(S.CON, 'CONOC', conoc), patch.object(S.MED, 'DIR_MED', conoc / 'medicos'):
+    with patch.object(S.CON, 'CONOC', conoc), patch.object(MED, 'DIR_MED', conoc / 'medicos'):
         S.CON.preparar_conocimiento()
         http = S.ThreadingHTTPServer(('127.0.0.1', 0), S.H)
-        S.PUERTO = http.server_port
+        S.SIS.puerto = http.server_port
         hilo = threading.Thread(target=http.serve_forever, daemon=True)
         hilo.start()
-        sys.stdout.write(str(S.PUERTO) + '\\n'); sys.stdout.flush()
+        sys.stdout.write(str(S.SIS.puerto) + '\\n'); sys.stdout.flush()
         sys.stdin.readline()
         http.shutdown(); http.server_close(); hilo.join()
 `;

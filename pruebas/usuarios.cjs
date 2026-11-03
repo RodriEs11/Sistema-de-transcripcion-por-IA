@@ -34,9 +34,9 @@ with tempfile.TemporaryDirectory(prefix='ui_usuarios_', dir='respaldo') as c:
         U.crear('Ana Prueba', 'inicial1'); U.crear('Beto', 'inicial2')
         MED.guardar_medico('Dr. Ficticio', 'Notas generales.', crear=True)
         http = S.ThreadingHTTPServer(('127.0.0.1', 0), S.H)
-        S.PUERTO = http.server_port
+        S.SIS.puerto = http.server_port
         hilo = threading.Thread(target=http.serve_forever, daemon=True); hilo.start()
-        sys.stdout.write(str(S.PUERTO) + '\\n'); sys.stdout.flush()
+        sys.stdout.write(str(S.SIS.puerto) + '\\n'); sys.stdout.flush()
         sys.stdin.readline()
         print(json.dumps({'general': CON.leer('plantillas.md'), 'propias': U.leer_archivo('ana-prueba', 'plantillas.md'),
                           'notas': MED.notas_medico('Dr. Ficticio'), 'notas_ana': MED.notas_medico('Dr. Ficticio', 'ana-prueba'),

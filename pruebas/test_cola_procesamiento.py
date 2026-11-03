@@ -242,7 +242,7 @@ class ServidorTest(unittest.TestCase):
         httpd=self.S.ThreadingHTTPServer(('127.0.0.1',0),self.S.H)
         hilo=threading.Thread(target=httpd.serve_forever,daemon=True);hilo.start()
         try:
-            with patch.object(self.S,'PUERTO',httpd.server_port),patch.object(self.S.PROC.duradera,'solicitar',side_effect=C.ErrorCola('Fallo ficticio')):
+            with patch.object(self.S.SIS,'puerto',httpd.server_port),patch.object(self.S.PROC.duradera,'solicitar',side_effect=C.ErrorCola('Fallo ficticio')):
                 cliente=http.client.HTTPConnection('127.0.0.1',httpd.server_port,timeout=5)
                 try:
                     cliente.request('POST','/api/procesar',json.dumps({'nombre':'caso'}),{'Content-Type':'application/json'})
@@ -264,7 +264,7 @@ class ServidorTest(unittest.TestCase):
         httpd=self.S.ThreadingHTTPServer(('127.0.0.1',0),self.S.H)
         hilo=threading.Thread(target=httpd.serve_forever,daemon=True);hilo.start()
         try:
-            with patch.object(self.S,'PUERTO',httpd.server_port),patch.object(self.S.PROC.duradera,'solicitar',side_effect=C.ErrorCola('Fallo ficticio')):
+            with patch.object(self.S.SIS,'puerto',httpd.server_port),patch.object(self.S.PROC.duradera,'solicitar',side_effect=C.ErrorCola('Fallo ficticio')):
                 cliente=http.client.HTTPConnection('127.0.0.1',httpd.server_port,timeout=5)
                 try:
                     cliente.request('POST','/api/subir?archivo=subido.wav',cuerpo,{'Content-Type':'audio/wav'})
@@ -300,6 +300,7 @@ class ServidorTest(unittest.TestCase):
 from pathlib import Path
 import servidor as S
 from transcripcion import ajustes
+from transcripcion.procesamiento import cola as CP
 base=Path(sys.argv[1]);modo=sys.argv[2]
 S.configurar(ajustes.para_pruebas(base,carpeta_informes=base,carpeta_audios_nuevos=base/'audios'))
 S.CON.CONOC=base/'conocimiento';S.CON.preparar_conocimiento()   # conocimiento de ejemplo, nunca el de la instalación
@@ -339,7 +340,7 @@ if modo=='perdida':
  cambiar=S.PROC.duradera.cambiar
  def commit_perdido(n,e):
   r=cambiar(n,e)
-  if e=='listo':raise S.CP.ErrorCola('Respuesta local perdida ficticia')
+  if e=='listo':raise CP.ErrorCola('Respuesta local perdida ficticia')
   return r
  S.PROC.duradera.cambiar=commit_perdido
 try:S.TRAB.trabajador()

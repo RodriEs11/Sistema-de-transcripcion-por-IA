@@ -1,19 +1,17 @@
 """Regresión de telemetría NVIDIA, sin importar ni iniciar el servidor."""
-import ast
 from pathlib import Path
 import subprocess
+import sys
 import unittest
 from unittest.mock import Mock, patch
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from transcripcion.operacion import gpu  # noqa: E402
+
 
 def cargar_lector():
-    ruta = Path(__file__).resolve().parents[1] / "servidor.py"
-    arbol = ast.parse(ruta.read_text(encoding="utf-8-sig"))
-    funcion = next(n for n in arbol.body if isinstance(n, ast.FunctionDef)
-                   and n.name == "placa_de_video")
-    espacio = {}
-    exec(compile(ast.Module(body=[funcion], type_ignores=[]), str(ruta), "exec"), espacio)
-    return espacio["placa_de_video"]
+    return gpu.placa_de_video
 
 
 class PlacaVideoTest(unittest.TestCase):
