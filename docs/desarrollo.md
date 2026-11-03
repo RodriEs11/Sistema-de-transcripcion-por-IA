@@ -70,6 +70,11 @@ ajustes.preparar_carpetas(aj)
 self.addCleanup(S.configurar, S.configurar(aj))    # configurar devuelve los ajustes anteriores
 ```
 
+`configurar` crea también `S.CASOS` (archivos de los casos) y `S.PROC` (estado del procesamiento) nuevos. Para otras
+carpetas: `ajustes.para_pruebas(base, carpeta_informes=…, carpeta_audios_nuevos=…)`. Para cambiar un comportamiento,
+parchear el método del objeto (`patch.object(S.CASOS, "ruta_audio", …)`), no reemplazar variables globales. Lo que
+no necesita el servidor se prueba armando los objetos directamente: `Procesamiento(Casos(datos, nuevos))`.
+
 Lo que se lee del conocimiento (plantillas, reglas, médicos) también debe apuntar a la carpeta temporal
 (`patch.object(CON, "CONOC", carpeta / "conocimiento")`, `patch.object(MED, "DIR_MED", …)` y
 `CON.preparar_conocimiento()`, con `from transcripcion.conocimiento import archivos as CON, medicos as MED`).

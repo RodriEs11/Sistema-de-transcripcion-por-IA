@@ -97,8 +97,9 @@ Los nombres son orientativos: cada etapa puede ajustarlos y lo deja escrito acá
 | 2b | **Scripts y herramientas** | Scripts de mantenimiento y activación a `scripts/`, herramientas de desarrollo y evaluación a `herramientas/`, dejando lanzadores en la raíz para lo que se usa desde un `.bat` o desde la documentación | Bajo | — |
 | 3 | **Núcleo** | `nucleo.py` → `conocimiento/` (archivos, plantillas, médicos), `ia/` (ollama, ejemplos, prompt) y `controles/` (marcas, clínicos, avisos, orden). Guardia: contrato del núcleo | Bajo | Servidor |
 | 4 | **Transcripción** | `fase1_transcribir.py` → `asr/whisper.py` y `texto/normalizacion.py`; `huecos.py` → `asr/huecos.py`. `fase1_transcribir.py` queda como herramienta de evaluación (pasa a `herramientas/` en la 2b) | Bajo | Servidor |
-| 5 | **Dominio del servidor** | De `servidor.py`: `casos/` (archivos de un caso, listado, borrado) y `procesamiento/` (trabajador, pausas, tiempos) como objetos con su estado, sin globales | **Alto** | Servidor |
-| 6 | **HTTP** | Tabla de rutas y handlers por área (casos, conocimiento, cliente, usuario, admin, páginas); páginas HTML fuera de las cadenas; `servidor.py` queda como entrada de pocas líneas | **Alto** | Servidor |
+| 5 | **Estado del servidor en objetos** | De `servidor.py`: `Casos` (`casos/repositorio.py`: archivos de cada caso, cachés, índice del listado) y `Procesamiento` (`procesamiento/estado.py`: etapas, cola, pausas, tiempos) como objetos creados en `configurar()`, sin las globales sueltas | **Alto** | Servidor |
+| 6a | **Servicios fuera de `servidor.py`** | Trabajador → `procesamiento/trabajador.py`; listado y borrado → `casos/`; voz → `voz/`; reinicio, mensajes y estado del túnel/IA → `operacion/`. Cada uno recibe los objetos que usa | **Alto** | Servidor |
+| 6b | **HTTP** | Tabla de rutas y handlers por área (casos, conocimiento, cliente, usuario, admin, páginas); páginas HTML fuera de las cadenas; `servidor.py` queda como entrada de pocas líneas | **Alto** | Servidor |
 | 7 | **Página principal** | `web/index.html` → `css/` y módulos `js/` (api, lista, editor, audio y onda, marcas, atajos, usuario) | Medio | Servidor + App |
 | 8 | **App de escritorio** | `VentanaPrincipal.cs` en clases por responsabilidad (bandeja, compacto, puente con la página, actualizaciones) | Medio | App |
 | 9 | **Calidad continua** | Reglas de ruff y formato por módulo terminado, tipos y mypy en el paquete, cobertura en el CI | Nulo | — |
@@ -114,8 +115,9 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 | 1 | `refactor/1-ajustes-sin-efectos` · PR #14 · Servidor 2026.11.3 | Hecha (fusionada el 03/11) |
 | 2a | `refactor/2-paquete-base` · PR #15 · Servidor 2026.11.4 | Hecha (fusionada el 03/11) |
 | 3 | `refactor/3-nucleo` · PR #16 · Servidor 2026.11.5 | Hecha (fusionada el 03/11) |
-| 4 | `refactor/4-transcripcion` · Servidor 2026.11.6 | En revisión |
-| 2b, 5–9 | — | Pendiente |
+| 4 | `refactor/4-transcripcion` · PR #17 · Servidor 2026.11.6 | Hecha (fusionada el 03/11) |
+| 5 | `refactor/5-casos-procesamiento` · Servidor 2026.11.7 | En revisión |
+| 2b, 6–9 | — | Pendiente |
 
 ### Etapa 1: qué quedó
 
@@ -185,6 +187,28 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
   `!/transcripcion/conocimiento/` y `test_paquete.py` verifica que ningún archivo del paquete quede ignorado.
 - `fase1_transcribir` sigue en la raíz (los módulos nuevos lo importan): pasa al paquete en la etapa 4.
 
+### Etapa 5: qué quedó
+
+| Antes (globales de `servidor.py`) | Ahora |
+|---|---|
+| `titulo_de`, `origen_de`, `medico_de`, `usuario_de`, `estilo_de`, `estudios_de`, `ruta_audio`, `duracion_de`, `visible`, `datos_csv`, `sumar_revision`, `revision_de`, `revisado_en`, `fecha_caso`, `formato_de`, `voz_de`, `guardar_voz`, `anotar_voz`, `resumen_avisos`, `poner_usuario_caso` y las cachés `_ESTUDIOS`, `DURACION`, `VOZ_CACHE`, `INDICE_CASOS` con sus candados | `CASOS`: instancia de `transcripcion.casos.repositorio.Casos(datos, nuevos)` |
+| `ESTADO`, `LOCK`, `COLA`, `COLA_DURADERA`, `ENCOLADO`, `BORRADOS`, `PAUSAS`, `PAUSA_CV`, `PAUSADO_S`, `TIEMPOS`, `TRABAJO`, `ENCOLAR_LOCK` y `poner_estado`, `empezar`, `en_proceso`, `cola_pendiente`, `esperas`, `encolar`, `pausar`, `reanudar`, `punto_de_pausa`, `avance`, `sincronizar_terminal`, `cargar_tiempos`, `anotar_tiempo`, `_en` | `PROC`: instancia de `transcripcion.procesamiento.estado.Procesamiento(casos)` (`PROC.estado`, `PROC.cola`, `PROC.duradera`…; `_en` → `en_estado`) |
+| `mmss`, `pct_voz`, `duracion_wav` | `transcripcion/base/formatos.py` |
+| `LOCAL`, `EXT_AUDIO` | `transcripcion/casos/repositorio.py` (también los usa `informe.py`) |
+
+- `configurar(ajustes)` crea `CASOS` y `PROC` nuevos; `configurar(None)` los quita. Una prueba que necesita otra
+  carpeta lo dice en los ajustes (`ajustes.para_pruebas(base, carpeta_informes=…, carpeta_audios_nuevos=…)`) en
+  lugar de reemplazar `DATOS`, `ESTADO`, `COLA`… uno por uno; para cambiar un comportamiento parchea el método del
+  objeto (`patch.object(S.CASOS, "ruta_audio", …)`, `patch.object(S.PROC, "encolar")`).
+  `pruebas/test_casos_procesamiento.py` prueba los dos objetos sin importar el servidor.
+- Se extrajo con `extraer_clase.py` (en la sesión, no en el repo): cada función pasó tal cual a método y los
+  usos de sus globales a `self.…`; en `servidor.py` los usos que quedaron (posiciones de ruff F821) pasaron a
+  `CASOS.…` / `PROC.…`.
+- Quedan en `servidor.py`, ya usando los objetos: el trabajador, `listar_casos`, `borrar_caso`, `reanudar_cola`, la
+  voz, el reinicio y los mensajes, el túnel y el estado de la IA, y todo el HTTP. Salen en la etapa 6
+  (6a servicios, 6b HTTP): el trabajador depende de la voz, las marcas y la espera de la IA, que todavía están
+  en `servidor.py`, y moverlo antes obligaba a pasarle el módulo entero.
+
 ### Etapa 4: qué quedó
 
 | Antes | Ahora |
@@ -233,5 +257,7 @@ Para sumar un caso: agregarlo a `casos_nucleo.json` y regenerar (el diff del PR 
 - No se reformatea todo de una vez (serían miles de líneas cambiadas sin valor y conflictos con todo lo abierto).
   Cada módulo que se crea o termina de refactorizar en el paquete entra a reglas más estrictas
   (`E`, `W`, `I`, `B`, `UP`) y a `ruff format`, agregándolo a una lista en `pyproject.toml`.
-- A revisar en la etapa 5: ruff marca 21 casos de `B023` (funciones definidas en un bucle que usan la variable del
-  bucle). La mayoría se llaman en la misma vuelta y son correctas, pero conviene confirmarlo una por una.
+- `B023` (funciones definidas en un bucle que usan la variable del bucle): revisados los 21 casos en la etapa 5
+  (`listar_casos`, `controles/clinicos.py`, `pruebas/resumir_gpu_real.py`). En todos la función se usa en la misma
+  vuelta del bucle (se pasa a `partir()` o a `IndiceCasos.obtener()`, que la llaman enseguida), así que no hay error.
+  La regla queda desactivada; si se activa, marcar esos casos con `# noqa: B023` y el motivo.

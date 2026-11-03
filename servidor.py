@@ -73,7 +73,7 @@ COLA_AL_REINICIAR = None
 APRENDIZAJE = None    # cola persistente de aprendizaje (se crea en configurar)
 CASOS = None          # archivos de los casos (transcripcion.casos.repositorio.Casos, se crea en configurar)
 PROC = None           # estado del procesamiento: etapas, cola, pausas (transcripcion.procesamiento.estado)
-VERSION = "2026.11.6"
+VERSION = "2026.11.7"
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
                  "/admin/correcciones": "correcciones.html", "/admin/medicos": "medicos.html"}
