@@ -9,6 +9,34 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [Servidor 2026.11.1] — 2026-11-02
+
+Promovido desde la rama `experimental` (PR #9, probado en el entorno de pruebas). Sin transcriptores
+creados el comportamiento es el de antes: se activa recién al crear el primero en el panel.
+
+### Agregado
+- Transcriptores: cada persona entra con su usuario y su contraseña (PBKDF2, `usuarios.json`), también en la PC del servidor. Altas, restablecer contraseña, cambiar nombre y desactivar desde Panel → Transcriptores; la contraseña inicial se cambia en la primera entrada. Con transcriptores, la contraseña compartida ya no sirve para entrar ni para vincular PC; la llave de cada PC queda solo para enviar audios, consultar el estado y actualizarse.
+- Estilo propio en `conocimiento/usuarios/<clave>/`: plantillas y notas de cada médico que reemplazan a las generales, reglas de dictado que se suman, formato del Word y preferencias de pantalla. Al guardar plantillas o notas se pregunta «¿Solo para mí o para todos?»; botón «Volver a la general».
+- La IA usa primero los ejemplos del mismo transcriptor y marca los de otro como ajenos. Una corrección repetida por una sola persona queda en su `correcciones_aprendidas.md`; pasa a general cuando la hacen dos.
+- Cada caso se arma con el estilo de quien usa la página en esa PC; si lo abre otra persona, aviso y «Regenerar con mi estilo».
+- Página: Mi cuenta (contraseña, formato del Word, reglas propias en lista con «Añadir regla»), «Cerrar sesión» y nombre de quien transcribe arriba de la lista. `/ingresar` pide el usuario cuando la PC ya está identificada.
+- Sesiones guardadas por huella en `sesiones.json` (un reinicio no obliga a volver a entrar); se renuevan con el uso y se cierran tras 12 h sin consultas.
+- Columna `usuario` en `registros/actividad.csv` y tabla `ejemplo_usuario` en el historial (se crean solas).
+
+### Corregido
+- Las confirmaciones de la página mostraban un campo de texto vacío.
+- «Cambiar dirección» rechazaba direcciones como `http://127.0.0.1:8865`.
+
+## [App 1.23] — 2026-11-02
+
+### Agregado
+- Al conectar la PC pide solo usuario y contraseña: el nombre de la PC sale del nombre de Windows, y la pantalla abre ya con esa persona (no pide el usuario dos veces).
+- Opciones ▾ y el ícono junto al reloj: «Cerrar sesión» (para cambiar de persona sin cerrar la app) y «Salir» (cierra la app enseguida, cerrando la sesión por detrás). Cerrar la ventana no cierra la sesión.
+- Perfil de pruebas (`cliente/perfil_pruebas.txt`, lo crea `crear_entorno_pruebas.py`): otra carpeta de datos, otra instancia y otra clave de inicio con Windows, para probar junto a la app de producción. No se distribuye a las PC.
+- Una dirección sin `http` de esta PC o de la red local se usa con http.
+
+Compatible con Servidor 2026.10.47 (sin transcriptores) y con 2026.11.1. La App 1.22 sigue funcionando con el Servidor 2026.11.1, pero no puede vincular PC nuevas una vez creados los transcriptores: actualizar las PC antes de crear el primero.
+
 ## Herramientas de desarrollo — 2026-11-02
 - Rama permanente `experimental` y ramas `exp/<tema>` para cambios de prueba que pueden no llegar
   a la versión final; reglas de promoción a `main` en `AGENTS.md` y `docs/experimentos.md`.

@@ -9,7 +9,9 @@
 | Nombre del paciente | `<caso>.paciente.json` | Solo para mostrar en la lista; **nunca va a la IA ni al informe** |
 | Ejemplos aprendidos | `ejemplos/` | No |
 | Plantillas y notas de médicos | `conocimiento/` | No |
-| Contraseñas y llaves | `acceso_remoto.json` (hashes PBKDF2), DPAPI en cada PC | No |
+| Contraseñas y llaves | `acceso_remoto.json` y `usuarios.json` (hashes PBKDF2), DPAPI en cada PC | No |
+| Sesiones abiertas | `sesiones.json` (solo la huella SHA-256 de cada sesión: no sirve para entrar) | No |
+| Estilo de cada transcriptor | `conocimiento/usuarios/<clave>/` | No |
 | Registros | `registros/` | No |
 | Huellas de voz de los médicos | `voces/huellas.json`, `<caso>.voz.json` | No (no permiten reconstruir la voz ni lo dictado) |
 
@@ -20,7 +22,8 @@ ningún dato clínico se envía a servicios de IA externos.
 
 El [`.gitignore`](../.gitignore) excluye: datos de pacientes y derivados (`Informes/`, `Audios_nuevos/`, `Dataset/`,
 `ejemplos/`, `referencias/`, `resultados/`, `registros/`, audios y documentos de Office), la base de conocimiento
-real (`conocimiento/`, con nombres de profesionales), secretos (`acceso_remoto.json`, `cliente/conexion.json`),
+real (`conocimiento/`, con nombres de profesionales), secretos (`acceso_remoto.json`, `usuarios.json`, `sesiones.json`,
+`cliente/conexion.json`),
 configuración local (`configuracion.json`), binarios (`*.exe`, `*.dll`, `cloudflared.exe`), respaldos y entornos virtuales.
 
 Antes de cada *commit* conviene revisar `git status` y, ante la duda, buscar nombres propios o direcciones:
@@ -33,7 +36,9 @@ git grep -nE "trycloudflare\.com/|ntfy\.sh/[a-z0-9]{8,}|Dra?\. [A-Z]"
 
 Solo la interfaz web, a través del túnel de Cloudflare. Protecciones:
 
-- **Autenticación por PC**: llave *Bearer* por PC vinculada, o cookie de sesión de 12 h; contraseña con PBKDF2 y sal.
+- **Autenticación por PC**: llave *Bearer* por PC vinculada, o cookie de sesión; contraseña con PBKDF2 y sal.
+- **Transcriptores** (si existen): usuario y contraseña propios, también en la PC del servidor; la llave de una PC
+  sola ya no da acceso a los informes. Desactivar a alguien o restablecer su contraseña cierra sus sesiones.
 - **Fuerza bruta**: 5 intentos fallidos bloquean 10 minutos; cada intento queda registrado.
 - **Códigos de un solo uso** (60 s) para abrir la interfaz desde la app.
 - **Cookies** `HttpOnly`, `Secure`, `SameSite=Strict`; la del panel está atada a la PC que la obtuvo.

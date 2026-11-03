@@ -185,6 +185,19 @@ def cliente_publico(origen,destino,exe):
     copiar_verificado(exe,destino/'Transcripcion.exe')
 
 
+def version_codigo(raiz):
+    import re
+    m=re.search(r'public const string VERSION = "([0-9.]+)";',(Path(raiz)/'cliente_codigo'/'Programa.cs').read_text(encoding='utf-8-sig'))
+    if not m:raise ValueError('No se encontró Programa.VERSION')
+    return m.group(1)
+
+
+def version_servidor(texto):
+    import re
+    m=re.search(r'^VERSION = "([0-9.]+)"',texto,re.MULTILINE)
+    return m.group(1) if m else '?'
+
+
 def preparar(raiz,salida,candidato,cliente_local,piloto):
     raiz,salida=Path(raiz).resolve(),Path(salida).resolve()
     if not salida.is_relative_to(raiz/'respaldo') or not salida.is_dir() or any(salida.iterdir()):
@@ -200,7 +213,8 @@ def preparar(raiz,salida,candidato,cliente_local,piloto):
     for nombre,origen in grupos.items():
         inventario[nombre]={'origen':str(origen),'archivos':respaldar_arbol(origen,privado/nombre)}
         print(f'Respaldo {nombre}: {len(inventario[nombre]["archivos"])} archivos verificados',flush=True)
-    for nombre in ('configuracion.json','acceso_remoto.json'):
+    # usuarios.json: transcriptores y sus contraseñas (PBKDF2); sesiones.json: sesiones abiertas (por huella)
+    for nombre in ('configuracion.json','acceso_remoto.json','usuarios.json','sesiones.json'):
         if (raiz/nombre).exists():inventario[nombre]={'archivos':{nombre:copiar_verificado(raiz/nombre,privado/nombre)}}
     guardar(privado/'inventario.json',inventario)
     # Fuentes declaradas por Git, incluidos cambios no publicados; no copiar el workspace completo.
@@ -212,7 +226,8 @@ def preparar(raiz,salida,candidato,cliente_local,piloto):
         if p.parts[0] in ('respaldo','conocimiento','ejemplos','referencias','resultados','registros','voces','.venv'):raise ValueError('Datos privados en lista de fuentes')
         if (raiz/p).is_file():copiar_verificado(raiz/p,actual/p)
     cliente_publico(raiz/'cliente',actual/'cliente',candidato)
-    if version_exe(actual/'cliente'/'Transcripcion.exe')!='1.22':raise ValueError('Candidato distinto de App 1.22')
+    app=version_codigo(raiz)
+    if version_exe(actual/'cliente'/'Transcripcion.exe')!=app:raise ValueError(f'Candidato distinto de App {app}')
     previo=salida/'entrega'/'rollback'/'sistema';previo.mkdir(parents=True)
     import io,tarfile
     archivado=subprocess.run(['git','archive','HEAD'],cwd=raiz,capture_output=True,check=True,creationflags=SIN_VENTANA)
@@ -227,9 +242,12 @@ def preparar(raiz,salida,candidato,cliente_local,piloto):
     # LEEME de rollback debe corresponder al código anterior, no al candidato en el workspace.
     anterior=subprocess.run(['git','show','HEAD:cliente/LEEME.txt'],cwd=raiz,capture_output=True,check=True,creationflags=SIN_VENTANA)
     (previo/'cliente'/'LEEME.txt').write_bytes(anterior.stdout)
-    if version_exe(previo/'cliente'/'Transcripcion.exe')!='1.21':raise ValueError('El rollback no contiene App 1.21')
+    anterior_app=version_exe(previo/'cliente'/'Transcripcion.exe')
+    if not anterior_app or anterior_app==app:raise ValueError(f'El rollback no contiene una App anterior a la {app}')
+    anterior_srv=subprocess.run(['git','show','HEAD:servidor.py'],cwd=raiz,capture_output=True,text=True,check=True,creationflags=SIN_VENTANA).stdout
     cabecera=subprocess.run(['git','rev-parse','HEAD'],cwd=raiz,capture_output=True,text=True,check=True,creationflags=SIN_VENTANA).stdout.strip()
-    guardar(salida/'entrega'/'procedencia.json',{'commit_base':cabecera,'fuentes_con_cambios_sin_commit':True,'candidato':'1.22 / 2026.10.46','rollback':'1.21 / 2026.10.45','piloto':piloto})
+    guardar(salida/'entrega'/'procedencia.json',{'commit_base':cabecera,'fuentes_con_cambios_sin_commit':True,'candidato':f'{app} / {version_servidor((raiz/"servidor.py").read_text(encoding="utf-8"))}',
+            'rollback':f'{anterior_app} / {version_servidor(anterior_srv)}','piloto':piloto})
     manifiesto={f.relative_to(salida/'entrega').as_posix():sha(f) for f in (salida/'entrega').rglob('*') if f.is_file()}
     guardar(salida/'manifiesto_entrega.json',manifiesto)
     guardar(salida/'estado_final.json',auditar(raiz,cliente_local,piloto)[0])

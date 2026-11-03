@@ -1,6 +1,6 @@
 # Documentación
 
-Versiones actuales: **Servidor 2026.10.47 · App 1.22**. La entrega App 1.22 / Servidor 2026.10.46
+Versiones actuales: **Servidor 2026.11.1 · App 1.23**. La entrega App 1.22 / Servidor 2026.10.46
 se documenta por etapas (persistencia, CI y listado, editor y audio, Word y aprendizaje, correcciones
 incrementales, lotes de IA); su activación y piloto están en [activacion-coordinada.md](activacion-coordinada.md).
 
@@ -19,7 +19,7 @@ incrementales, lotes de IA); su activación y piloto están en [activacion-coord
 | [api.md](api.md) | Desarrollo | Rutas HTTP del servidor |
 | [seguridad.md](seguridad.md) | Todos | Datos, amenazas y protecciones |
 | [desarrollo.md](desarrollo.md) | Desarrollo | Modo simulado, convenciones y lecciones aprendidas |
-| [usuarios.md](usuarios.md) | Usuarios / Administración / Desarrollo | **Experimental** (`exp/estilos-por-transcriptor`): cada transcriptor con usuario, contraseña y estilo propio |
+| [usuarios.md](usuarios.md) | Usuarios / Administración / Desarrollo | Transcriptores: usuario, contraseña y estilo propio de cada uno (Servidor 2026.11.1 · App 1.23) |
 | [experimentos.md](experimentos.md) | Desarrollo | Rama `experimental`, ramas `exp/`, promoción a `main` y entorno de pruebas aislado |
 | [auditoria-rendimiento-2026-10-29.md](auditoria-rendimiento-2026-10-29.md) | Desarrollo / Operación | Mediciones sintéticas, 19 hallazgos, prioridades y criterios de rendimiento |
 | [ci-cd.md](ci-cd.md) | Desarrollo / Operación | Workflow de CI implementado (`.github/workflows/ci.yml`) y hoja de ruta de staging, promoción y recuperación |

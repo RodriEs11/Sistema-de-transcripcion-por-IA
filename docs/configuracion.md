@@ -84,6 +84,13 @@ Notas de cómo dicta cada médico (estilo, frases preferidas, plantillas propias
 
 Generado por `aprender.py` en cada guardado. **No editar a mano.**
 
+### `usuarios/<clave>/` (estilo de cada transcriptor)
+
+`plantillas.md` (solo las secciones propias; reemplazan a la general del mismo nombre), `medicos/<Nombre>.md`
+(reemplazan a las generales), `reglas_dictado.md` (se suman), `correcciones_aprendidas.md` (generado),
+`formato.json` (fuente, tamaño, renglones de encabezado, títulos) y `preferencias.json`. Se editan desde la página
+(Mi cuenta, Plantillas, Médicos). Ver [usuarios.md](usuarios.md).
+
 ## `vocabulario.txt`
 
 Términos que se sugieren a Whisper, uno por línea (las líneas con `#` se ignoran). Conviene agregar los términos
