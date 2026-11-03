@@ -1078,6 +1078,18 @@ async function subirPrefs(beacon){
 }
 setInterval(() => subirPrefs(false), 5000);
 addEventListener('pagehide', () => subirPrefs(true));
+/* La app del trabajo la llama al cerrar su ventana (VentanaPrincipal.CerrarSesionUsuario): cierra el estudio abierto
+   guardando sus cambios y después la sesión del transcriptor, para que el siguiente entre con su usuario.
+   Devuelve true (en el momento) si había una sesión de transcriptor que cerrar. */
+window.salirDeSesion = function(){
+  if(!MI.usuario) return false;
+  (async () => {
+    if(actual){ const ok = await cerrarCaso(true); if(ok === false || actual) return; }
+    await subirPrefs(false);
+    location.href = '/salir';
+  })();
+  return true;
+};
 /* ------------------------------------------------ estado del servidor y de la IA */
 let SRV = {ok: null, desde: Date.now(), ultimoOk: 0, ia: 'ok', modelo: ''}, abriendo = null;
 const EN_PROC = ['en cola','transcribiendo','en pausa','generando'];

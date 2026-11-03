@@ -115,8 +115,13 @@ setTimeout(()=>{console.error('La prueba de transcriptores tardó demasiado.'); 
     // 6) preferencias: siguen al usuario
     await page.evaluate(()=>localStorage.setItem('pref_salto','5'));
     await page.waitForTimeout(5600);
-    // 7) salir: vuelve a pedir usuario
-    await page.locator('#bCerrar').click().catch(()=>{});
+    // 7) la app cierra su ventana con el estudio abierto: se cierra el estudio y la sesión
+    assert.equal(await page.evaluate(()=>window.salirDeSesion()),true);
+    await page.waitForURL(/\/ingresar$/);
+    // y con «Salir» desde la lista
+    await page.getByLabel('Usuario').fill('ana prueba'); await page.getByLabel('Contraseña').fill('propia123');
+    await page.getByRole('button',{name:'Entrar'}).click(); await page.waitForURL(url+'/');
+    await page.locator('#quienNom',{hasText:'Ana Prueba'}).waitFor();
     await page.locator('#bSalir').click();
     await page.waitForURL(/\/ingresar$/);
     assert.deepEqual(errores,[]);
