@@ -17,7 +17,7 @@ le aplicaba a todos.
 | Quién transcribe | Usuario y contraseña propios. **Reemplaza** a la contraseña compartida del sistema. |
 | Altas | Solo desde el panel de administración (contraseña inicial; se cambia al entrar). |
 | PC del servidor | También pide usuario. |
-| Sesión | Dura hasta cerrar la app o el navegador (cookie de sesión); además se cae sola tras 30 min sin que la página consulte y a las 12 h como mucho. |
+| Sesión | Dura mientras la app esté abierta, **también escondida junto al reloj** (al volver a abrir la ventana no se piden las credenciales). Termina con «Cerrar sesión», «Salir», al cerrarse la app o el navegador (cookie de sesión) o tras 12 h sin que la página consulte (PC apagada o suspendida). Mientras se usa, se renueva sola. |
 | Datos anteriores | Los ejemplos y correcciones que ya existían quedan **generales**. |
 | Editar plantillas / notas | Se pregunta «¿Solo para mí o para todos?», con «Solo para mí» por defecto. |
 | Ejemplos para la IA | Primero los propios; si no alcanzan, generales y de otros (marcados como «de otro transcriptor»). |
@@ -76,10 +76,8 @@ todos juntas: una frase de la plantilla de cualquiera es frase de plantilla.
   de Windows). El Servidor devuelve además un código de un solo uso con ese usuario, así que la página abre ya con
   esa persona: no se le vuelve a pedir el usuario. Las PC ya vinculadas siguen funcionando. Requiere la app con el campo «Tu usuario» (cambio en `VentanaVincular.cs`); la app 1.22 solo
   puede vincular mientras no haya transcriptores.
-- **Cerrar la ventana de la app = cerrar la sesión.** La app sigue junto al reloj tomando audios, pero al cerrar su
-  ventana llama a `window.salirDeSesion()` de la página: cierra el estudio abierto guardando los cambios (si no
-  puede, no cierra la sesión) y va a `/salir`. Sin esto la sesión no terminaría nunca, porque la app casi nunca se
-  cierra del todo. Requiere la app nueva.
+- **Cerrar la ventana de la app no cierra la sesión.** La app queda junto al reloj tomando audios y, al volver a
+  abrirla, sigue la misma persona (los audios que toma mientras tanto se arman con su estilo).
 - **Opciones ▾ (y el ícono junto al reloj):** **Cerrar sesión** sale la persona y la app queda abierta pidiendo usuario
   (para cambiar de usuario); **Salir** cierra la app enseguida: la página avisa al Servidor por detrás
   (`salirDeSesion({navegar:false})`, un `fetch` con `keepalive`) sin mostrar la pantalla de entrar.

@@ -40,7 +40,11 @@ ARCH_SESIONES = AQUI / "sesiones.json"
 CARPETA_CLIENTE = AQUI / "cliente"
 NTFY = "https://ntfy.sh"
 SESION_SEG = 12 * 3600
-SESION_INACTIVA_SEG = 30 * 60     # sesión con transcriptor sin ninguna consulta de la página en ese tiempo: se cierra
+# Sesión con transcriptor: dura mientras la app esté abierta, aunque esté escondida junto al reloj (la página sigue
+# consultando). Se renueva sola con el uso; se cierra con «Cerrar sesión», «Salir», al cerrarse la app (la cookie
+# muere con ella) o tras 12 h sin ninguna consulta (PC apagada o suspendida).
+SESION_INACTIVA_SEG = 12 * 3600
+RENOVAR_SEG = 10 * 60             # cada cuánto se corre el vencimiento de una sesión en uso (y se guarda)
 ACTIVO_SEG = 5 * 60               # «usuario activo» de una PC: su página consultó en los últimos 5 minutos
 BLOQUEO_SEG = 45
 _lock = threading.RLock()
@@ -352,8 +356,8 @@ def _limpiar_sesiones(ahora):
 def _sesion_vigente(v, ahora):
     if v["exp"] < ahora:
         return False
-    # con transcriptor: la página consulta cada pocos segundos; si deja de hacerlo (se cerró la app o el
-    # navegador) la sesión se cierra sola aunque la cookie siguiera viva
+    # con transcriptor: la página consulta cada pocos segundos; si deja de hacerlo por mucho tiempo (PC apagada o
+    # suspendida) la sesión se cierra sola aunque la cookie siguiera viva
     return not v.get("usuario") or ahora - v.get("ult", ahora) < SESION_INACTIVA_SEG
 
 
@@ -406,6 +410,9 @@ def sesion(sid):
                 SESIONES.pop(_h(sid), None)
             return None
         v["ult"] = ahora
+        if v.get("usuario") and ahora + SESION_SEG - v["exp"] > RENOVAR_SEG:
+            v["exp"] = ahora + SESION_SEG      # en uso: no vence (la app puede quedar abierta días)
+            _guardar_sesiones()
         return dict(v)
 
 
