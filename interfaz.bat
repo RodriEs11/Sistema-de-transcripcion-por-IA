@@ -9,6 +9,7 @@ if not exist ".venv\Scripts\python.exe" (
   exit /b 1
 )
 call ".venv\Scripts\activate.bat"
+set "PATH=%~dp0.venv\Scripts;%PATH%"
 python -c "import docx" 2>nul || python -m pip install -q python-docx
 python servidor.py
 rem REINICIO-DESDE-EL-PANEL: el panel de administracion cierra el servidor con el codigo 75
