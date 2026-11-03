@@ -1869,9 +1869,10 @@ def _finalizar(nombre, texto, quien=LOCAL, usuario=None):
     L.ok("INFORME", f"{visible(nombre)} {'guardado de nuevo' if ya_guardado else 'guardado'} por {por} · "
                     f"{f'{pc * 100:.1f}'.replace('.', ',')}% corregido"
                     + (f" · revisión {mmss(rev)}" if rev else "") + f" · Word {docx.name} · aprendizaje pendiente")
-    L.actividad("guardado", **datos_csv(nombre), porcentaje_corregido=pc * 100, palabras_informe=len(final.split()),
-                revision_s=rev, detalle=("guardado de nuevo" if ya_guardado else "guardado") + f" desde {quien}",
-                **{**campos_voz(vz), "usuario": U.nombre_de(usuario) if usuario else ""})
+    # el transcriptor que guarda (no necesariamente el del caso): por eso se pisa el «usuario» de datos_csv
+    L.actividad("guardado", **{**datos_csv(nombre), "usuario": U.nombre_de(usuario) if usuario else ""},
+                porcentaje_corregido=pc * 100, palabras_informe=len(final.split()), revision_s=rev,
+                detalle=("guardado de nuevo" if ya_guardado else "guardado") + f" desde {quien}", **campos_voz(vz))
     EST.invalidar()
     return {"docx": str(docx), "pct": round(pc * 100, 1), "aprendizaje": "pendiente"}
 
@@ -2089,9 +2090,13 @@ class H(BaseHTTPRequestHandler):
             return
         if u.path == "/entrar":
             cod = q.get("codigo", [""])[0]
-            sid = R.canjear_codigo(cod)
+            sid = R.canjear_codigo(cod, pc_local=None if self.remoto else LOCAL)
             if sid:
-                L.info("ACCESO", f"{R.pc_de_sesion(sid)} abrió la aplicación (IP {self._ip()}).")
+                v = R.sesion(sid) or {}
+                if v.get("usuario"):
+                    U.anotar_entrada(v["usuario"])
+                L.info("ACCESO", f"{v.get('pc')} abrió la aplicación"
+                                 + (f" con {U.nombre_de(v['usuario'])}" if v.get("usuario") else "") + f" (IP {self._ip()}).")
                 return self._redirigir("/", R.cookie_sesion(sid, local=not self.remoto))
             if cod:
                 L.aviso("ACCESO", f"Código de entrada vencido o inválido desde la IP {self._ip()}.")
@@ -2364,7 +2369,11 @@ class H(BaseHTTPRequestHandler):
                 L.ok("ACCESO", f"PC vinculada: {pc_nueva} (IP {self._ip()})"
                                + (f" con el usuario «{usu[:40]}»" if usu else "")
                                + ". Ya puede enviar audios.")
-                return self._json({"ok": True, "llave": llave, "pc": d["pc"].strip(), "version": VERSION})
+                r = {"ok": True, "llave": llave, "pc": d["pc"].strip(), "version": VERSION}
+                usu_ok = U.verificar(usu, str(d.get("contrasena", ""))) if usu and U.hay_usuarios() else None
+                if usu_ok:     # la página abre ya con este transcriptor: no se le pide el usuario dos veces
+                    r["codigo"] = R.nuevo_codigo(pc_nueva, usuario=usu_ok, seg=180)
+                return self._json(r)
             if u.path == "/api/cliente/sesion":
                 if not self._llave() or not R.pc_de_llave(self._llave()):
                     if L.una_vez(("llave", self._ip()), 600):

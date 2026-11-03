@@ -325,6 +325,46 @@ class HttpTest(Base):
         self.pedir("/api/admin/usuarios/activo", {"usuario": "beto", "activo": False})
         self.assertEqual(self.pedir("/api/casos")[0], 200)
 
+    def test_guardar_word_con_transcriptor(self):
+        # regresión: «registro.actividad() got multiple values for keyword argument 'usuario'»
+        from unittest.mock import MagicMock
+        import registro as L
+        datos = self.d / "Informes" / "revision" / "datos"
+        datos.mkdir(parents=True)
+        n = "Servidor_20261102-120000_ficticio"
+        (datos / f"{n}.informe_ia.txt").write_text("MAMOGRAFÍA\n\n-Mamas de densidad tipo B.\n", encoding="utf-8")
+        (datos / f"{n}.dictado.txt").write_text("mamografía densidad b", encoding="utf-8")
+        (datos / f"{n}.usuario.txt").write_text("beto", encoding="utf-8")
+        cola = MagicMock()
+        for obj, nombre, valor in ((S, "DATOS", datos), (S, "INFORMES", self.d / "Informes"), (S, "APRENDIZAJE", cola),
+                                   (L, "CARPETA", self.d / "registros")):
+            p = patch.object(obj, nombre, valor); p.start(); self.addCleanup(p.stop)
+        U.crear("Ana", "inicial1"); U.crear("Beto", "inicial1")
+        _, _, galleta = self.entrar("ana", "inicial1")
+        st, r, _, _ = self.pedir("/api/finalizar", {"nombre": n, "texto": "MAMOGRAFÍA\n\n-Mamas de densidad tipo C.\n"},
+                                 galleta)
+        self.assertEqual(st, 200, r)
+        self.assertTrue((self.d / "Informes" / f"{n}.docx").exists())
+        self.assertEqual(cola.agregar.call_args[0][0]["usuario"], "ana")   # el ejemplo es de quien lo revisó
+        csv = (self.d / "registros" / "actividad.csv").read_text(encoding="utf-8-sig")
+        self.assertIn("Ana", csv.splitlines()[-1])
+
+    def test_vincular_abre_la_pagina_con_ese_usuario(self):
+        U.crear("Ana", "inicial1")
+        remoto = {"Cf-Ray": "prueba"}
+        st, r, _, _ = self.pedir("/api/cliente/vincular", {"pc": "info-03", "usuario": "Ana", "contrasena": "inicial1"},
+                                 extra=remoto)
+        self.assertEqual(st, 200, r)
+        st, _, loc, galleta = self.pedir("/entrar?codigo=" + r["codigo"], extra=remoto)
+        self.assertEqual(loc, "/")
+        mi = self.pedir("/api/mi_pc", cookie=galleta.split(";")[0], extra=remoto)[1]
+        self.assertEqual((mi["pc"], mi["usuario"]["nombre"]), ("info-03", "Ana"))     # no pide el usuario otra vez
+        self.assertEqual(self.pedir("/entrar?codigo=" + r["codigo"], extra=remoto)[0], 200)   # un solo uso: formulario
+        # sin transcriptores no hay código con usuario
+        st, r2, _, _ = self.pedir("/api/cliente/vincular", {"pc": "info-04", "usuario": "Nadie", "contrasena": "x"},
+                                  extra=remoto)
+        self.assertEqual(st, 403)
+
     def test_app_conectada_a_127_0_0_1(self):
         # la app de pruebas en la PC del servidor: los pedidos llegan como locales, con la llave de la PC
         U.crear("Ana", "inicial1")
