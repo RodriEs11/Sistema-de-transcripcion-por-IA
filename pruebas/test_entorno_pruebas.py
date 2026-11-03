@@ -90,6 +90,29 @@ class EntornoPruebas(unittest.TestCase):
         self.assertEqual(git("rev-parse", "--abbrev-ref", "HEAD", cwd=self.prod), self.rama_prod)
         self.assertEqual(git("status", "--porcelain", "--ignored=no", "--untracked-files=no", cwd=self.prod), "")
 
+    def test_app_de_prueba_aislada(self):
+        cli = self.prod / "cliente"
+        (cli / "runtimes" / "win-x64" / "native").mkdir(parents=True)
+        for nombre in E.BIBLIOTECAS_APP + ("Transcripcion.exe", "conexion.json", "runtimes/win-x64/native/WebView2Loader.dll"):
+            (cli / nombre).write_text("binario ficticio", encoding="utf-8")
+        antes = foto(self.prod)
+        r = self.crear()
+        d = self.destino / "cliente"
+        self.assertEqual(r["app"], list(E.BIBLIOTECAS_APP) + ["runtimes"])
+        self.assertTrue((d / E.PERFIL_APP).exists())
+        self.assertTrue((d / "runtimes" / "win-x64" / "native" / "WebView2Loader.dll").exists())
+        # nunca el ejecutable de producción ni el canal secreto que lleva a producción
+        self.assertFalse((d / "Transcripcion.exe").exists())
+        self.assertFalse((d / "conexion.json").exists())
+        self.assertEqual(foto(self.prod), antes)
+        # en un entorno ya creado: se encuentra la instalación en uso y se vuelve a preparar
+        (d / E.PERFIL_APP).unlink()
+        self.assertEqual(E.origen_del_entorno(self.destino).resolve(), self.prod.resolve())
+        E.preparar_app(E.origen_del_entorno(self.destino), self.destino)
+        self.assertTrue((d / E.PERFIL_APP).exists())
+        with self.assertRaises(E.ErrorEntorno):
+            E.origen_del_entorno(self.prod)
+
     def test_rama_nueva_sale_de_main(self):
         self.crear(rama="exp/idea", copiar=False)
         self.assertEqual(git("rev-parse", "--abbrev-ref", "HEAD", cwd=self.destino), "exp/idea")

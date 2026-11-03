@@ -18,7 +18,7 @@ namespace Transcripcion
 
         public VentanaVincular()
         {
-            Text = "Transcripción · conectar esta PC";
+            Text = Config.NombreVisible + " · conectar esta PC";
             Font = Estilo.Fuente;
             BackColor = Estilo.Panel;
             FormBorderStyle = FormBorderStyle.FixedDialog;
