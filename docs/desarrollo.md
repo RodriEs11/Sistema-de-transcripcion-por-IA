@@ -37,6 +37,21 @@ Para probar el túnel sin Cloudflare se puede reemplazar `cloudflared.exe` por u
 
 ## Convenciones de código
 
+### Contratos y lint
+
+Dos pruebas fijan el comportamiento del sistema y son la red de seguridad del
+[refactor por etapas](refactor.md):
+
+- `pruebas/test_contrato_http.py`: arranca `servidor.py` en un subproceso, en modo simulado, sobre una copia del
+  código en una carpeta temporal, y recorre el flujo completo por HTTP (subir, procesar, borrador, Word, borrar…).
+- `pruebas/test_contrato_nucleo.py`: compara las salidas del núcleo (marcas, prompt, normalización, orden,
+  párrafos del Word) para los casos ficticios de `pruebas/contratos/casos_nucleo.json` con `nucleo_esperado.json`.
+
+Un refactor no los cambia. Si un cambio funcional deliberado cambia el núcleo, regenerar y revisar el diff:
+`ACTUALIZAR_CONTRATOS=1 python -m unittest pruebas.test_contrato_nucleo`.
+
+Lint: `python -m ruff check .` (configuración en `pyproject.toml`, versión en `requirements-ci.txt`). Corre en el CI.
+
 ### Aislamiento de pruebas y rendimiento
 
 `python -m unittest discover -s pruebas -p test_placa_video.py` verifica la lectura
@@ -160,7 +175,8 @@ actualizar tanto la versión del servidor como la de escritorio. Los cambios exc
 de documentación, pruebas o herramientas de desarrollo no requieren subir esas versiones.
 Al publicar, trasladar las notas entregadas de «Sin publicar» a las entradas fechadas correspondientes.
 
-- [ ] `python -m py_compile *.py` sin errores.
+- [ ] `python -m py_compile *.py` y `python -m ruff check .` sin errores.
+- [ ] Contratos (`test_contrato_http`, `test_contrato_nucleo`) en verde sin regenerar, salvo cambio funcional deliberado.
 - [ ] Sin funciones repetidas en `web/index.html`.
 - [ ] Probado en modo simulado (y en la PC real si toca Whisper, Ollama o Windows).
 - [ ] Si cambió la app: versión subida, API revisada contra .NET 4.8, autoprueba OK ([compilacion.md](compilacion.md)).

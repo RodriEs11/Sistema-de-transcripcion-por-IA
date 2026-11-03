@@ -9,6 +9,14 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## Pruebas y herramientas — 2026-11-03
+- Red de seguridad para el refactor por etapas ([plan](docs/refactor.md), [ADR 0001](docs/adr/0001-modularizar-por-etapas.md)):
+  contrato HTTP de caja negra (servidor real en subproceso y modo simulado, flujo completo de un caso) y contrato del
+  núcleo (marcas, prompt, normalización, orden de estudios y párrafos del Word sobre casos ficticios).
+- Lint con ruff en el CI (`pyproject.toml`): por ahora solo errores reales. Se quitaron 2 imports y 3 variables sin
+  usar y 2 `f` de cadenas sin variables; sin cambios funcionales ni de versión.
+- Registro de decisiones de arquitectura en `docs/adr/`.
+
 ## [Servidor 2026.11.2] — 2026-11-03
 
 ### Corregido
