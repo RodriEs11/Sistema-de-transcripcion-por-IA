@@ -20,7 +20,7 @@ import time
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-import nucleo as N
+from transcripcion.conocimiento import plantillas as PL
 from transcripcion.aprendizaje import almacen as AL
 from transcripcion.base import registro as L
 
@@ -142,7 +142,7 @@ def _informes(actual):
             medico = actual["medico"](n) or ""
         estudios = (g.get("estudios") or "").strip()
         if not estudios and clave:
-            estudios = N.estudios_del_informe(_leer_txt(EJ / f"{clave}.informe.txt")) or ""
+            estudios = PL.estudios_del_informe(_leer_txt(EJ / f"{clave}.informe.txt")) or ""
         if not estudios:
             estudios = actual["estudios"](n) or ""
         m = _PC_EN_NOMBRE.match(n)

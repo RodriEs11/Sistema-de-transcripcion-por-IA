@@ -18,12 +18,13 @@ import time
 from datetime import date, datetime
 from pathlib import Path
 
-import nucleo as N
+from transcripcion.conocimiento import archivos as CON
+from transcripcion.controles import marcas as MAR
 
 AQUI = Path(__file__).resolve().parent
 EJ = AQUI / "ejemplos"
-REGLAS = N.CONOC / "reglas_dictado.md"
-APRENDIDAS = N.CONOC / "correcciones_aprendidas.md"
+REGLAS = CON.CONOC / "reglas_dictado.md"
+APRENDIDAS = CON.CONOC / "correcciones_aprendidas.md"
 SIN_MEDICO = "Sin especificar"
 TITULO_SECCION = "# REGLAS AGREGADAS DESDE EL PANEL (lo más corregido)"
 MAX_TOKENS = 12
@@ -140,7 +141,7 @@ def _pares():
         ia, fin = _leer(EJ / f"{clave}.ia.txt"), _leer(EJ / f"{clave}.informe.txt")
         if ia is None or fin is None:
             continue
-        ia = "\n".join(l.rstrip() for l in N.texto_limpio(ia).splitlines())
+        ia = "\n".join(l.rstrip() for l in MAR.texto_limpio(ia).splitlines())
         pares.append({"clave": clave, "t": t, "caso": nombre, "medico": med, "cambios": _cambios_de(ia, fin),
                       "palabras": len(fin.split())})
     with _lock:
@@ -265,7 +266,7 @@ def agregar_regla(texto):
         actual = ""
     if any(ln.strip() == t for ln in actual.splitlines()):
         return {"error": "Esa regla ya está en reglas_dictado.md."}
-    bk = N.CONOC / "copias"
+    bk = CON.CONOC / "copias"
     bk.mkdir(parents=True, exist_ok=True)
     if actual:
         (bk / time.strftime("reglas_dictado_%Y%m%d_%H%M%S.md")).write_text(actual, encoding="utf-8")

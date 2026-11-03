@@ -35,7 +35,16 @@ from transcripcion.casos.indice import IndiceCasos
 from transcripcion.base.persistencia import escribir_atomico
 from transcripcion.aprendizaje.pendiente import ColaAprendizaje
 import mantenimiento as M
-import nucleo as N
+from transcripcion.conocimiento import archivos as CON
+from transcripcion.conocimiento import medicos as MED
+from transcripcion.conocimiento import plantillas as PL
+from transcripcion.controles import avisos as AV
+from transcripcion.controles import marcas as MAR
+from transcripcion.ia import ejemplos as EJEM
+from transcripcion.ia import ollama as OLL
+from transcripcion.ia import prompt as PR
+from transcripcion.informe import formato as FMT
+from fase1_transcribir import normalizar
 from transcripcion.casos import paciente as PAC
 from transcripcion.base import plataforma as P
 from transcripcion.base import registro as L
@@ -63,7 +72,7 @@ PUERTO_TUNEL = None
 SIMULAR = False       # SIMULAR_IA=1: sin Whisper ni Ollama (solo para pruebas)
 COLA_AL_REINICIAR = None
 APRENDIZAJE = None    # cola persistente de aprendizaje (se crea en configurar)
-VERSION = "2026.11.4"
+VERSION = "2026.11.5"
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en esta misma PC
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
@@ -85,7 +94,7 @@ def ia_lista():
     if SIMULAR:
         return ia_simulada() != "caida"
     if time.time() - _IA_CACHE["t"] > 5:
-        _IA_CACHE.update(t=time.time(), ok=N.ollama_modelos() is not None)
+        _IA_CACHE.update(t=time.time(), ok=OLL.ollama_modelos() is not None)
     return _IA_CACHE["ok"]
 
 
@@ -98,7 +107,7 @@ def estado_ia():
     """'ok', 'caida' (Ollama no responde) o 'sin_modelo'."""
     if SIMULAR:
         return ia_simulada()
-    mods = N.ollama_modelos()
+    mods = OLL.ollama_modelos()
     if mods is None:
         return "caida"
     return "ok" if modelo_presente(mods) else "sin_modelo"
@@ -151,7 +160,7 @@ def estudios_de(n):
     if c and c[0] == firma:
         return c[1]
     try:
-        t = N.estudios_del_informe(f.read_text(encoding="utf-8"))
+        t = PL.estudios_del_informe(f.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError):
         return None
     _ESTUDIOS[n] = (firma, t)
@@ -758,7 +767,7 @@ def listar_casos(pc=LOCAL, remoto=False):
 
 
 def lineas_para_web(salida, dictado, palabras):
-    marcado = N.marcar(salida, dictado, palabras)
+    marcado = MAR.marcar(salida, dictado, palabras)
     out = []
     for ln in marcado:
         texto = "".join(t for t, _, _ in ln["segs"])
@@ -766,11 +775,11 @@ def lineas_para_web(salida, dictado, palabras):
         for t, tipo, mot in ln["segs"]:
             seg = {"t": t}
             if tipo:
-                seg.update(tipo=tipo, motivo=mot, seg=N.buscar_tiempo(t, palabras))
+                seg.update(tipo=tipo, motivo=mot, seg=MAR.buscar_tiempo(t, palabras))
             segs.append(seg)
         out.append({"segs": segs, "linea": ln["linea"],
-                    "motivo": (ln.get("motivo") or N.MOTIVO_LINEA.get(ln["linea"])) if ln["linea"] else None,
-                    "titulo": ln["titulo"], "seg": N.buscar_tiempo(texto, palabras) if texto.strip() else None})
+                    "motivo": (ln.get("motivo") or MAR.MOTIVO_LINEA.get(ln["linea"])) if ln["linea"] else None,
+                    "titulo": ln["titulo"], "seg": MAR.buscar_tiempo(texto, palabras) if texto.strip() else None})
     total = sum(1 for l in out if l["linea"]) + sum(1 for l in out for s in l["segs"] if s.get("tipo"))
     return out, total
 
@@ -780,10 +789,10 @@ VERSION_MARCAS = 2      # 2: motivos detallados ("Dictado: 12 / Informe: 2") e i
 
 def guardar_marcas(n, salida, dictado, palabras, huecos=None):
     lineas, total = lineas_para_web(salida, dictado, palabras)
-    om = N.omisiones(dictado, salida, palabras)
+    om = AV.omisiones(dictado, salida, palabras)
     om += [{"dato": f"posible parte no transcrita {mmss(h['ini'])}–{mmss(h['fin'])}", "seg": h["ini"] + 0.5,
             "hueco": True, "ini": h["ini"], "fin": h["fin"]} for h in (huecos or [])]
-    nuevos = N.estudios_sin_plantilla(salida)
+    nuevos = AV.estudios_sin_plantilla(salida)
     escribir_atomico(DATOS / f"{n}.marcas.json", json.dumps({"v": VERSION_MARCAS, "lineas": lineas, "omisiones": om, "estudios_nuevos": nuevos,
                                                        "total": total + len(om)}, ensure_ascii=False))
     return lineas, om
@@ -805,12 +814,12 @@ def cargar_caso(nombre):
     om_ok = borrador["omisiones_ok"]
     fin = DATOS / f"{nombre}.final.txt"
     # cada palabra con su forma normalizada ("veintitrés" -> "23"), para ubicar cada línea del informe en el dictado
-    palabras = [dict(w, n=re.sub(r"[^a-z0-9.]", "", N.normalizar(w["p"])).strip(".")) for w in trans["palabras"]]
+    palabras = [dict(w, n=re.sub(r"[^a-z0-9.]", "", normalizar(w["p"])).strip(".")) for w in trans["palabras"]]
     return {"nombre": nombre, "dictado": trans["texto"], "palabras": palabras, "lineas": lineas,
             "omisiones": om, "omisiones_ok": om_ok, "medico": medico_de(nombre), "voz": resumen_voz(nombre),
             "paciente": PAC.de(DATOS, nombre), "titulo": titulo_de(nombre),
             "estudios": estudios_de(nombre), "dur": duracion_de(nombre),
-            "estudios_nuevos": N.estudios_sin_plantilla(ia.read_text(encoding="utf-8")),
+            "estudios_nuevos": AV.estudios_sin_plantilla(ia.read_text(encoding="utf-8")),
             "borrador": borrador["html"],
             "borrador_revision": borrador.get("revision", 0),
             "revisado": fin.exists(), "tiene_audio": ruta_audio(nombre) is not None,
@@ -985,7 +994,7 @@ def trabajador():
                                 avance(n, "Transcribiendo el audio")((k + 1) * paso * 10, dem * 10)
                         else:
                             if whisper is None:
-                                N.liberar_ia(CFG["modelo_ia"])
+                                OLL.liberar_ia(CFG["modelo_ia"])
                                 carga_desde = time.perf_counter()
                                 from fase1_transcribir import cargar_modelo
                                 poner_estado(n, "transcribiendo", "Cargando Whisper…")
@@ -1053,7 +1062,7 @@ def trabajador():
                 L.debug("WHISPER", "Whisper liberado de la placa de video.")
             # 2) IA
             etapa = "IA"
-            banco = N.cargar_banco() if trans else []
+            banco = EJEM.cargar_banco() if trans else []
             for n in trans:
                 try:
                     if n in BORRADOS:
@@ -1077,9 +1086,9 @@ def trabajador():
                         med = medico_de(n) or None
                         # sin médico confirmado (voz dudosa o sin reconocer): plantilla general, sin estilos de médico
                         sin_est = not med and resumen_voz(n) is not None
-                        ej = N.elegir_ejemplos(dic, banco, k=CFG["ejemplos_por_informe"], excluir=n, medico=med,
+                        ej = EJEM.elegir_ejemplos(dic, banco, k=CFG["ejemplos_por_informe"], excluir=n, medico=med,
                                                usuario=usu)
-                        salida, _, t_in, t_out = N.llamar_ia(CFG["modelo_ia"], N.armar_mensajes(dic, ej, med, sin_estilos=sin_est, usuario=usu), metricas=metricas_ia)
+                        salida, _, t_in, t_out = OLL.llamar_ia(CFG["modelo_ia"], PR.armar_mensajes(dic, ej, med, sin_estilos=sin_est, usuario=usu), metricas=metricas_ia)
                         tokens = f"{t_in or '?'} tokens de entrada, {t_out or '?'} de salida"
                     escribir_atomico(DATOS / f"{n}.informe_ia.txt", salida)
                     escribir_atomico(DATOS / f"{n}.estilo.txt", usu or "")
@@ -1103,7 +1112,7 @@ def trabajador():
                     if not SIMULAR:
                         anotar_tiempo(info[n]["dur"], None if info[n]["cache_asr"] else info[n]["whisper"], ia_s)
                     r = resumen_avisos(n, {"lineas": lineas, "omisiones": om})
-                    nuevos = N.estudios_sin_plantilla(salida)
+                    nuevos = AV.estudios_sin_plantilla(salida)
                     L.contar("generados")
                     med = medico_de(n)
                     vz = resumen_voz(n) or {}
@@ -1783,7 +1792,7 @@ def texto_a_marcado(texto):
     while lineas and not lineas[0].strip():
         lineas.pop(0)
     final = "\n".join(lineas).strip()
-    return final, [{"segs": [(l, None, None)], "linea": None, "titulo": N.es_titulo(l)} for l in final.split("\n")]
+    return final, [{"segs": [(l, None, None)], "linea": None, "titulo": PL.es_titulo(l)} for l in final.split("\n")]
 
 
 FMT_LOCK = threading.Lock()
@@ -1861,7 +1870,7 @@ def _finalizar(nombre, texto, quien=LOCAL, usuario=None):
     final, marcado = texto_a_marcado(texto)
     ia = (DATOS / f"{nombre}.informe_ia.txt").read_text(encoding="utf-8")
     dic = (DATOS / f"{nombre}.dictado.txt").read_text(encoding="utf-8")
-    pc = pct_corregido("\n".join(l.rstrip() for l in N.texto_limpio(ia).splitlines()), final)
+    pc = pct_corregido("\n".join(l.rstrip() for l in MAR.texto_limpio(ia).splitlines()), final)
     fin_f = DATOS / f"{nombre}.final.txt"
     ya_guardado = fin_f.exists()
     reg = DATOS / f"{nombre}.ejemplo.txt"
@@ -2152,8 +2161,8 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/api/admin/estado":
                 self._json(dict(estado_admin(), visor=visor))
             elif u.path == "/api/admin/medicos":
-                self._json({"medicos": [{"nombre": m, "notas": N.notas_medico(m)}
-                                          for m in N.lista_medicos()], "visor": visor})
+                self._json({"medicos": [{"nombre": m, "notas": MED.notas_medico(m)}
+                                          for m in MED.lista_medicos()], "visor": visor})
             elif u.path == "/api/admin/estadisticas":
                 q = urllib.parse.parse_qs(u.query)
                 try:
@@ -2184,8 +2193,8 @@ class H(BaseHTTPRequestHandler):
                 return self._json({"error": "Entrá con tu usuario."}, 403)
             self._json({"formato": U.formato(self.usuario), "general": {k: CFG.get(k) for k in U.FORMATO},
                         "fuentes": list(U.FUENTES), "reglas": U.leer_archivo(self.usuario, "reglas_dictado.md"),
-                        "plantillas_propias": [n for n, _ in N.secciones_de_usuario(self.usuario)],
-                        "medicos_propios": N.medicos_con_notas_propias(self.usuario)})
+                        "plantillas_propias": [n for n, _ in PL.secciones_de_usuario(self.usuario)],
+                        "medicos_propios": MED.medicos_con_notas_propias(self.usuario)})
         elif u.path == "/api/cliente/estado":
             instantanea = listar_casos(self.pc)
             casos = [{"nombre": c["nombre"], "titulo": c["titulo"], "estado": c["estado"], "marcas": c["marcas"],
@@ -2222,20 +2231,20 @@ class H(BaseHTTPRequestHandler):
                         "pausa": bool(TRABAJO.get("en_pausa"))})
         elif u.path == "/api/formato":
             cfg = U.cfg_de(CFG, self.usuario)
-            self._json({"palabras_titulo": sorted(N.PALABRAS_ESTUDIO),
+            self._json({"palabras_titulo": sorted(PL.PALABRAS_ESTUDIO),
                         "negrita_titulos": cfg.get("negrita_titulos", True),
                         "fuente": cfg.get("fuente"), "tamano": cfg.get("tamano_fuente"),
-                        "prefijos": CFG.get("negrita_si_empieza_con", N.NEGRITA_DEF),
-                        "exactas": CFG.get("negrita_lineas_exactas", N.NEGRITA_EXACTAS)})
+                        "prefijos": CFG.get("negrita_si_empieza_con", FMT.NEGRITA_DEF),
+                        "exactas": CFG.get("negrita_lineas_exactas", FMT.NEGRITA_EXACTAS)})
         elif u.path == "/api/medicos":
             rv = VOZ.resumen()
             out = []
-            for m in N.lista_medicos():
-                propias = N.notas_propias(m, self.usuario)
-                x = {"nombre": m, "notas": N.notas_medico(m, self.usuario), "voz": rv.get(m, {}).get("n", 0),
+            for m in MED.lista_medicos():
+                propias = MED.notas_propias(m, self.usuario)
+                x = {"nombre": m, "notas": MED.notas_medico(m, self.usuario), "voz": rv.get(m, {}).get("n", 0),
                      "propias": propias is not None}
                 if propias is not None:
-                    x["generales"] = N.notas_medico(m)
+                    x["generales"] = MED.notas_medico(m)
                 out.append(x)
             self._json({"medicos": out})
         elif u.path == "/api/voces":
@@ -2258,7 +2267,7 @@ class H(BaseHTTPRequestHandler):
         elif u.path == "/api/voces/agrupar":
             self._json(grupos_de_voces())
         elif u.path == "/api/plantillas":
-            self._json({"secciones": N.secciones_con_origen(self.usuario), "con_usuario": bool(self.usuario)})
+            self._json({"secciones": PL.secciones_con_origen(self.usuario), "con_usuario": bool(self.usuario)})
         elif u.path == "/api/caso":
             n = q.get("nombre", [""])[0]
             try:
@@ -2485,14 +2494,14 @@ class H(BaseHTTPRequestHandler):
                         if not self.usuario:
                             return self._json({"error": "Para guardar notas solo para vos tenés que entrar con tu usuario."}, 403)
                         nom = str(datos.get("medico", ""))
-                        N.guardar_notas_propias(nom, self.usuario, datos.get("notas", "") if destino == "mio" else None)
+                        MED.guardar_notas_propias(nom, self.usuario, datos.get("notas", "") if destino == "mio" else None)
                         L.ok("CONFIG", f"Notas propias de {self.quien} sobre {nom} "
                                        + ("guardadas." if destino == "mio" else "quitadas: vuelve a usar las generales."))
                         return self._json({"ok": True, "medico": nom, "destino": destino})
-                    nom = N.guardar_medico(datos.get("medico", ""), datos.get("notas", ""),
+                    nom = MED.guardar_medico(datos.get("medico", ""), datos.get("notas", ""),
                                            crear=datos.get("crear") is True)
                     if self.usuario and not datos.get("crear"):
-                        N.guardar_notas_propias(nom, self.usuario, None)   # pasan a ser las de todos
+                        MED.guardar_notas_propias(nom, self.usuario, None)   # pasan a ser las de todos
                 except FileExistsError as ex:
                     return self._json({"error": str(ex)}, 409)
                 except FileNotFoundError as ex:
@@ -2542,7 +2551,7 @@ class H(BaseHTTPRequestHandler):
                     return self._json({"error": "No hay plantillas para guardar"}, 400)
                 destino = datos.get("destino") or ("mio" if self.usuario else "todos")
                 try:
-                    r = N.aplicar_plantillas(secs, self.usuario, destino)
+                    r = PL.aplicar_plantillas(secs, self.usuario, destino)
                 except ValueError as ex:
                     return self._json({"error": str(ex)}, 400)
                 if r["sin_cambios"]:
@@ -2557,7 +2566,7 @@ class H(BaseHTTPRequestHandler):
                 if not self.usuario:
                     return self._json({"error": "Entrá con tu usuario."}, 403)
                 nom = str(datos.get("nombre") or "")
-                ok = N.volver_a_general(self.usuario, nom)
+                ok = PL.volver_a_general(self.usuario, nom)
                 if ok:
                     L.info("CONFIG", f"{self.quien} volvió a la plantilla general de «{nom}».")
                 return self._json({"ok": ok})
@@ -2857,8 +2866,8 @@ def estado_usuarios():
     ses = R.sesiones_de_usuarios()
     out = []
     for u in U.lista():
-        prop = {"plantillas": len(N.secciones_de_usuario(u["clave"])),
-                "medicos": len(N.medicos_con_notas_propias(u["clave"])),
+        prop = {"plantillas": len(PL.secciones_de_usuario(u["clave"])),
+                "medicos": len(MED.medicos_con_notas_propias(u["clave"])),
                 "reglas": bool(U.leer_archivo(u["clave"], "reglas_dictado.md").strip()),
                 "formato": bool(U.formato(u["clave"]))}
         out.append({**u, "en": sorted(set(ses.get(u["clave"], []))), "propio": prop})
@@ -2900,12 +2909,12 @@ def accion_admin(accion, d, quien=None):
     if accion in ("medicos/agregar", "medicos/modificar", "medicos/eliminar"):
         try:
             if accion == "medicos/eliminar":
-                N.eliminar_medico(d.get("original"))
+                MED.eliminar_medico(d.get("original"))
                 nombre = d.get("original")
             else:
                 if accion == "medicos/modificar" and not isinstance(d.get("original"), str):
                     return {"error": "Elegí el médico que querés modificar."}, 400
-                nombre = N.guardar_medico(d.get("nombre", ""), d.get("notas", ""),
+                nombre = MED.guardar_medico(d.get("nombre", ""), d.get("notas", ""),
                                           crear=accion == "medicos/agregar",
                                           original=d.get("original") if accion == "medicos/modificar" else None)
             L.ok("CONFIG", f"Médicos: {accion.split('/')[-1]} «{nombre}» {desde}.")
@@ -3320,7 +3329,7 @@ def main():
     titulo = M.titulo_consola()          # antes de que el servidor cambie el título de la ventana
     configurar(ajustes.cargar(AQUI))
     ajustes.preparar_carpetas(AJUSTES)
-    N.preparar_conocimiento()
+    CON.preparar_conocimiento()
     L.configurar()
     srv = None
     for intento in range(6):             # al reiniciar desde el panel, Windows puede tardar un instante en soltar el puerto

@@ -21,7 +21,13 @@ import time
 from pathlib import Path
 
 from transcripcion import ajustes
-import nucleo as N
+from transcripcion.conocimiento import archivos as CON
+from transcripcion.controles import avisos as AV
+from transcripcion.controles import marcas as MAR
+from transcripcion.ia import ejemplos as EJEM
+from transcripcion.ia import ollama as OLL
+from transcripcion.ia import prompt as PR
+from transcripcion.informe import formato as FMT
 from transcripcion.base import plataforma as P
 from fase1_transcribir import cargar_modelo, transcribir, duracion
 
@@ -90,7 +96,7 @@ def parrafos_docx(marcado, cfg):
         segs = [(segs[0][0].lstrip(), *segs[0][1:])] + list(segs[1:]) if segs else segs
         alin = "center" if ln["titulo"] and cfg.get("centrar_titulos", True) else ""
         out.append({"segs": segs, "linea": ln["linea"], "alin": alin, "alin_def": alin,
-                    "negrita": N.debe_ir_en_negrita("".join(t for t, _, _ in ln["segs"]), ln["titulo"], cfg)})
+                    "negrita": FMT.debe_ir_en_negrita("".join(t for t, _, _ in ln["segs"]), ln["titulo"], cfg)})
     return out
 
 
@@ -236,13 +242,13 @@ audio{{width:100%;position:sticky;top:0;z-index:2;background:var(--bg);padding:6
 .box h2{{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mu);margin:0 0 8px}}
 .w{{cursor:pointer;border-radius:3px}}.w:hover{{outline:1px solid var(--mu)}}.baja{{background:var(--rojo)}}.media{{background:var(--amarillo)}}
 .mu{{color:var(--mu);font-size:13px}}
-{N.CSS_MARCAS}
+{MAR.CSS_MARCAS}
 </style><script>function ir(t){{var a=document.getElementById('au');a.currentTime=Math.max(0,t-0.5);a.play();}}</script>
 </head><body><main><h1>{html.escape(nombre)}</h1>
 <audio id="au" controls src="{html.escape(rel)}"></audio>
 <p class="mu">Clic en una marca o en una palabra del dictado para escuchar ese momento.
 Rojo: dato no dictado o a completar · Amarillo: dudoso · Gris: frase de plantilla no dictada · Turquesa: línea no encontrada en el dictado.</p>
-<div class="cols"><div class="box"><h2>Informe</h2>{N.a_html(marcado, palabras)}</div>
+<div class="cols"><div class="box"><h2>Informe</h2>{MAR.a_html(marcado, palabras)}</div>
 <div class="box"><h2>Dictado (Whisper)</h2>{pal}</div></div></main></body></html>"""
     destino.write_text(doc, encoding="utf-8")
 
@@ -250,7 +256,7 @@ Rojo: dato no dictado o a completar · Amarillo: dudoso · Gris: frase de planti
 # ------------------------------------------------------------------- main
 def main():
     cfg = config()
-    N.preparar_conocimiento()
+    CON.preparar_conocimiento()
     audios = juntar_audios(sys.argv[1:], cfg)
     if not audios:
         print(f"No hay audios. Arrastrá audios sobre informe.bat o dejalos en:\n  {cfg['carpeta_audios_nuevos']}")
@@ -265,12 +271,12 @@ def main():
     except Exception as ex:
         print("(no se pudo aprender de los informes revisados:", ex, ")")
 
-    if N.ollama_modelos() is None:
+    if OLL.ollama_modelos() is None:
         print("[ERROR] Ollama no está abierto. Abrí Ollama y volvé a intentar.")
         sys.exit(1)
 
     # 1) Whisper (primero se libera la placa de video)
-    N.liberar_ia(cfg["modelo_ia"])
+    OLL.liberar_ia(cfg["modelo_ia"])
     t0 = time.time()
     modelo = cargar_modelo(cfg["modelo_whisper"], cfg.get("dispositivo_whisper", "cuda"))
     trans = {}
@@ -288,15 +294,15 @@ def main():
     gc.collect()
 
     # 2) IA local -> informe
-    banco = N.cargar_banco()
+    banco = EJEM.cargar_banco()
     hechos = []
     for k, a in enumerate(audios, 1):
         dic, pal = trans[a]["texto"], trans[a]["palabras"]
         print(f"[{k}/{len(audios)}] Armando informe de {a.name}...", end=" ", flush=True)
-        ej = N.elegir_ejemplos(dic, banco, k=cfg["ejemplos_por_informe"], excluir=a.stem)
-        salida, seg, _, _ = N.llamar_ia(cfg["modelo_ia"], N.armar_mensajes(dic, ej))
-        marcado = N.marcar(salida, dic, pal)
-        om = N.omisiones(dic, salida, pal)
+        ej = EJEM.elegir_ejemplos(dic, banco, k=cfg["ejemplos_por_informe"], excluir=a.stem)
+        salida, seg, _, _ = OLL.llamar_ia(cfg["modelo_ia"], PR.armar_mensajes(dic, ej))
+        marcado = MAR.marcar(salida, dic, pal)
+        om = AV.omisiones(dic, salida, pal)
         om += [{"dato": f"posible parte no transcrita {h['ini']:.0f}-{h['fin']:.0f}s", "seg": None}
                for h in trans[a].get("huecos", [])]
         if om:
@@ -311,7 +317,7 @@ def main():
         (sal / "revision" / "datos" / (nombre + ".informe_ia.txt")).write_text(salida, encoding="utf-8")
         (sal / "revision" / "datos" / (nombre + ".dictado.txt")).write_text(dic, encoding="utf-8")
         (sal / "revision" / "datos" / (nombre + ".audio.txt")).write_text(str(a.resolve()), encoding="utf-8")
-        c = N.contar_marcas(marcado)
+        c = MAR.contar_marcas(marcado)
         rojas = c.get("numero", 0) + c.get("completar", 0)
         print(f"{seg:.0f}s · marcas: {rojas} rojas, {c.get('dudoso',0)+c.get('bajaconf',0)} amarillas, "
               f"{c.get('verificar',0)} turquesa, {c.get('plantilla',0)} grises")

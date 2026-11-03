@@ -180,7 +180,6 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 
 ```
 ├── servidor.py              Servidor HTTP, cola de procesamiento y API de la interfaz
-├── nucleo.py                Prompt, selección de plantillas/ejemplos, llamada a Ollama y controles de revisión
 ├── fase1_transcribir.py     Whisper, lectura de audio y normalización del texto
 ├── huecos.py                Detección de tramos no transcritos y segunda pasada
 ├── informe.py               Generación del Word (python-docx) y modo consola
@@ -192,8 +191,9 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 ├── app_cliente.py           Manifiesto de actualización de la app del trabajo
 ├── configurar_acceso.py     Contraseña del acceso remoto y PC autorizadas
 ├── configurar_tunel.py      Elegir el túnel: Cloudflare o Microsoft Dev Tunnels
-├── transcripcion/           Paquete con los módulos ya reorganizados (ajustes, base, casos, procesamiento,
-│                            aprendizaje, acceso); ver docs/refactor.md
+├── transcripcion/           Paquete con los módulos reorganizados: ia/ (prompt, ejemplos, Ollama),
+│                            controles/ (marcas y avisos), conocimiento/ (plantillas y médicos), ajustes,
+│                            base, casos, procesamiento, aprendizaje, acceso; ver docs/refactor.md
 ├── web/                     Interfaz de revisión, panel de administración y estadísticas
 ├── cliente_codigo/          Código fuente de la app de Windows (C#)
 ├── cliente/                 Carpeta de distribución de la app (solo el manual y el .config se versionan)

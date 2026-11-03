@@ -20,7 +20,8 @@ import time
 import hashlib
 from pathlib import Path
 
-import nucleo as N
+from transcripcion.conocimiento import archivos as CON
+from transcripcion.controles import marcas as MAR
 from transcripcion.base.persistencia import escribir_atomico
 from transcripcion.aprendizaje import almacen as AL
 
@@ -66,7 +67,7 @@ def registrar_ejemplo(nombre, dictado, ia, final, clave=None, medico=None, *, re
     clave = clave or time.strftime("%Y%m%d_%H%M%S_") + nombre
     escribir_atomico(EJ / f"{clave}.dictado.txt", dictado)
     escribir_atomico(EJ / f"{clave}.informe.txt", final.strip() + "\n")
-    escribir_atomico(EJ / f"{clave}.ia.txt", N.texto_limpio(ia))
+    escribir_atomico(EJ / f"{clave}.ia.txt", MAR.texto_limpio(ia))
     if medico:
         escribir_atomico(EJ / f"{clave}.medico.txt", medico)
     else:
@@ -75,13 +76,13 @@ def registrar_ejemplo(nombre, dictado, ia, final, clave=None, medico=None, *, re
         escribir_atomico(EJ / f"{clave}.usuario.txt", usuario)
     else:
         (EJ / f"{clave}.usuario.txt").unlink(missing_ok=True)
-    ia_sin_espacios = "\n".join(l.rstrip() for l in N.texto_limpio(ia).splitlines())
+    ia_sin_espacios = "\n".join(l.rstrip() for l in MAR.texto_limpio(ia).splitlines())
     pc = pct_corregido(ia_sin_espacios, final)
     fecha = fecha or time.strftime("%Y-%m-%d %H:%M")
     with AL.abrir(HIST) as c:
         c.execute('INSERT OR REPLACE INTO historial VALUES (?,?,?,?,?)',
                   (fecha[:10], nombre, fecha, len(final.split()), f"{pc*100:.1f}"))
-        _indexar_correcciones(c, clave, N.texto_limpio(ia), final.strip() + "\n")
+        _indexar_correcciones(c, clave, MAR.texto_limpio(ia), final.strip() + "\n")
         AL.poner_usuario(c, clave, usuario)
     if recalcular:
         try:
@@ -170,7 +171,7 @@ def analizar_correcciones(minimo=2, *, reconstruir=False):
                     viejo = DATOS_INF / f'{nombre}.informe_ia.txt'
                     if not viejo.exists():
                         continue
-                    escribir_atomico(ia_f, N.texto_limpio(viejo.read_text(encoding='utf-8')))
+                    escribir_atomico(ia_f, MAR.texto_limpio(viejo.read_text(encoding='utf-8')))
                 claves.add(clave)
                 _indexar_correcciones(c, clave, ia_f.read_text(encoding='utf-8'), inf.read_text(encoding='utf-8'))
                 usu = EJ / f'{clave}.usuario.txt'
@@ -237,7 +238,7 @@ def aprender(cfg, silencioso=False):
         registro = procesado(docx)
         if registro.get("mtime") == mt:
             continue
-        ia = N.texto_limpio(ia_f.read_text(encoding="utf-8"))
+        ia = MAR.texto_limpio(ia_f.read_text(encoding="utf-8"))
         titulo = next((l for l in ia.splitlines() if l.strip()), "")
         try:
             final, resaltado = leer_docx(docx, titulo, int(cfg["lineas_vacias_para_encabezado"]))
@@ -276,6 +277,6 @@ def resumen():
 if __name__ == "__main__":
     from informe import config
     cfg = config()
-    N.preparar_conocimiento()
+    CON.preparar_conocimiento()
     aprender(cfg)
     resumen()

@@ -16,8 +16,13 @@ sys.path.insert(0, str(AQUI))
 
 # --- Dónde vive cada función hoy. Al mover código, cambiar solo estas líneas. ---------------------------------
 from fase1_transcribir import normalizar, palabras_a_numeros, datos_criticos   # noqa: E402
-from nucleo import (marcar, a_html, contar_marcas, omisiones, ordenar_estudios,   # noqa: E402
-                    estudios_sin_plantilla, armar_mensajes, elegir_ejemplos, categorias, preparar_conocimiento)
+from transcripcion.controles.marcas import marcar, a_html, contar_marcas   # noqa: E402
+from transcripcion.controles.avisos import omisiones, estudios_sin_plantilla   # noqa: E402
+from transcripcion.controles.orden import ordenar_estudios   # noqa: E402
+from transcripcion.ia.prompt import armar_mensajes   # noqa: E402
+from transcripcion.ia.ejemplos import elegir_ejemplos   # noqa: E402
+from transcripcion.conocimiento.plantillas import categorias   # noqa: E402
+from transcripcion.conocimiento.archivos import preparar_conocimiento   # noqa: E402
 from informe import config, parrafos_docx   # noqa: E402
 
 

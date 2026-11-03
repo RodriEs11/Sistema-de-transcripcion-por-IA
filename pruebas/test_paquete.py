@@ -15,7 +15,7 @@ from transcripcion.base import plataforma, registro  # noqa: E402
 
 MOVIDOS = ("plataforma", "persistencia", "registro", "ajustes", "borradores", "paciente", "indice_casos",
            "cola_procesamiento", "lotes_ia", "cache_transcripcion", "almacen_aprendizaje", "aprendizaje_pendiente",
-           "usuarios")
+           "usuarios", "nucleo")
 
 
 class Paquete(unittest.TestCase):
@@ -39,6 +39,17 @@ class Paquete(unittest.TestCase):
                 continue
             with self.subTest(archivo=p.relative_to(RAIZ).as_posix()):
                 self.assertIsNone(patron.search(p.read_text(encoding="utf-8")))
+
+    def test_ningun_archivo_del_paquete_queda_ignorado_por_git(self):
+        """.gitignore excluye carpetas de datos por nombre (conocimiento/, ejemplos/…): un subpaquete con ese
+        nombre quedaría fuera del repositorio sin que nadie lo note."""
+        import shutil
+        import subprocess
+        if not shutil.which("git") or not (RAIZ / ".git").exists():
+            self.skipTest("sin git en este entorno")
+        archivos = [p.relative_to(RAIZ).as_posix() for p in (RAIZ / "transcripcion").rglob("*.py")]
+        r = subprocess.run(["git", "check-ignore", "--no-index", *archivos], cwd=RAIZ, capture_output=True, text=True)
+        self.assertEqual(r.stdout.split(), [], "archivos del paquete ignorados por .gitignore")
 
     def test_modulos_movidos_no_quedan_en_la_raiz(self):
         for nombre in MOVIDOS:

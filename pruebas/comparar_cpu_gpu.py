@@ -100,16 +100,19 @@ def trabajador(raiz, modo, numero, modelo_whisper):
     sys.path.insert(0, str(raiz/'sistema'))
     import fase1_transcribir as F
     import huecos as H
-    import nucleo as N
+    from transcripcion.controles import avisos as AV
+    from transcripcion.controles import marcas as MAR
+    from transcripcion.ia import ollama as OLL
+    from transcripcion.ia import prompt as PR
     import ctranslate2
     puerto = 11435 if modo == 'actual' else 11436
-    N.OLLAMA = f'http://127.0.0.1:{puerto}'
-    post_original = N._post
+    OLL.OLLAMA = f'http://127.0.0.1:{puerto}'
+    post_original = OLL._post
     if modo == 'paralelo':
         def post_cpu(payload, timeout=600):
             payload = dict(payload, options=dict(payload['options'], num_gpu=0))
             return post_original(payload, timeout=timeout)
-        N._post = post_cpu
+        OLL._post = post_cpu
     audios = sorted((raiz/'audios').glob('*.wav'))
     vocab = F.leer_vocabulario(F.VOCAB_DEF)
     registros = []
@@ -127,9 +130,9 @@ def trabajador(raiz, modo, numero, modelo_whisper):
     def adaptar(t):
         t0 = ahora()
         metricas = {}
-        salida, _, entrada, tokens = N.llamar_ia(MODELO, N.armar_mensajes(t['texto'], EJEMPLOS), metricas=metricas)
-        marcado = N.marcar(salida, t['texto'], t['palabras'])
-        omisiones = N.omisiones(t['texto'], salida, t['palabras'])
+        salida, _, entrada, tokens = OLL.llamar_ia(MODELO, PR.armar_mensajes(t['texto'], EJEMPLOS), metricas=metricas)
+        marcado = MAR.marcar(salida, t['texto'], t['palabras'])
+        omisiones = AV.omisiones(t['texto'], salida, t['palabras'])
         listo = ahora()
         modelos = G.api(puerto, 'ps')['models']
         if len(modelos) != 1 or modelos[0]['name'] != MODELO:
@@ -224,9 +227,9 @@ def ejecutar(origen, espera):
     raiz.mkdir()
     (raiz/'sistema').mkdir()
     (raiz/'audios').mkdir()
-    for nombre in ('fase1_transcribir.py', 'huecos.py', 'nucleo.py', 'vocabulario.txt'):
+    for nombre in ('fase1_transcribir.py', 'huecos.py', 'vocabulario.txt'):
         shutil.copy2(proyecto/nombre, raiz/'sistema'/nombre)
-    # paquete con registro, plataforma, persistencia y usuarios (nucleo los importa)
+    # paquete: núcleo (ia, controles, conocimiento), registro, plataforma, persistencia y usuarios
     shutil.copytree(proyecto/'transcripcion', raiz/'sistema'/'transcripcion', ignore=shutil.ignore_patterns('__pycache__'))
     shutil.copytree(proyecto/'conocimiento.ejemplo', raiz/'sistema'/'conocimiento.ejemplo')
     for nombre in firmas:

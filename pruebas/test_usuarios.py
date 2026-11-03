@@ -14,7 +14,11 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from transcripcion import ajustes
 import servidor as S
-import nucleo as N
+from transcripcion.conocimiento import archivos as CON
+from transcripcion.conocimiento import medicos as MED
+from transcripcion.conocimiento import plantillas as PL
+from transcripcion.ia import ejemplos as EJEM
+from transcripcion.ia import prompt as PR
 import remoto as R
 from transcripcion.acceso import usuarios as U
 import aprender as AP
@@ -45,7 +49,7 @@ class Base(unittest.TestCase):
         (conoc / "plantillas.md").write_text(PLANTILLAS, encoding="utf-8")
         (conoc / "reglas_dictado.md").write_text("- Regla general ficticia.\n", encoding="utf-8")
         self.d = d
-        for obj, nombre, valor in ((N, "CONOC", conoc), (N, "DIR_MED", conoc / "medicos"),
+        for obj, nombre, valor in ((CON, "CONOC", conoc), (MED, "DIR_MED", conoc / "medicos"),
                                    (U, "ARCH", d / "usuarios.json"), (U, "CARPETA", conoc / "usuarios"),
                                    (R, "ARCH", d / "acceso_remoto.json"), (R, "ARCH_SESIONES", d / "sesiones.json"),
                                    (R, "SESIONES", {}), (R, "FALLOS", {}), (R, "CARPETA_CLIENTE", d / "cliente"),
@@ -150,60 +154,60 @@ class SesionesTest(Base):
 class CapasTest(Base):
     def test_plantillas_propias_y_generales(self):
         U.crear("Ana", "inicial1")
-        nombres = [n for n, _ in N.secciones_plantillas("ana")[1]]
+        nombres = [n for n, _ in PL.secciones_plantillas("ana")[1]]
         self.assertEqual(nombres, ["ECOGRAFÍA TIROIDEA", "MAMOGRAFÍA"])
-        vistas = [(x["nombre"], x["cuerpo"]) for x in N.secciones_con_origen("ana")]
+        vistas = [(x["nombre"], x["cuerpo"]) for x in PL.secciones_con_origen("ana")]
         cambiadas = [(n, c + "\n- Frase propia de Ana." if n == "MAMOGRAFÍA" else c) for n, c in vistas]
         cambiadas.append(("ECOGRAFÍA RENAL", "TITULO: ECOGRAFÍA RENAL\n- Riñones normales."))
-        r = N.aplicar_plantillas(cambiadas, "ana", "mio")
+        r = PL.aplicar_plantillas(cambiadas, "ana", "mio")
         self.assertEqual(r["propias"], 2)
-        self.assertNotIn("Frase propia", N.leer("plantillas.md"))
-        origen = {x["nombre"]: x["origen"] for x in N.secciones_con_origen("ana")}
+        self.assertNotIn("Frase propia", CON.leer("plantillas.md"))
+        origen = {x["nombre"]: x["origen"] for x in PL.secciones_con_origen("ana")}
         self.assertEqual(origen, {"ECOGRAFÍA TIROIDEA": "general", "MAMOGRAFÍA": "propia", "ECOGRAFÍA RENAL": "nueva"})
-        self.assertIn("Frase propia", N.plantillas_relevantes("mamografía bilateral", usuario="ana"))
-        self.assertNotIn("Frase propia", N.plantillas_relevantes("mamografía bilateral"))
-        self.assertNotIn("Frase propia", N.plantillas_relevantes("mamografía bilateral", usuario="otro"))
+        self.assertIn("Frase propia", PL.plantillas_relevantes("mamografía bilateral", usuario="ana"))
+        self.assertNotIn("Frase propia", PL.plantillas_relevantes("mamografía bilateral"))
+        self.assertNotIn("Frase propia", PL.plantillas_relevantes("mamografía bilateral", usuario="otro"))
         # una frase de la plantilla de cualquiera cuenta como frase de plantilla para los controles
-        self.assertIn("- Frase propia de Ana.", N.frases_de_plantilla())
+        self.assertIn("- Frase propia de Ana.", PL.frases_de_plantilla())
         # borrar una general «solo para mí» no se puede: se avisa
-        sin_tiroides = [(x["nombre"], x["cuerpo"]) for x in N.secciones_con_origen("ana") if "TIROIDEA" not in x["nombre"]]
-        r = N.aplicar_plantillas(sin_tiroides, "ana", "mio")
+        sin_tiroides = [(x["nombre"], x["cuerpo"]) for x in PL.secciones_con_origen("ana") if "TIROIDEA" not in x["nombre"]]
+        r = PL.aplicar_plantillas(sin_tiroides, "ana", "mio")
         self.assertEqual(r["no_borradas"], ["ECOGRAFÍA TIROIDEA"])
-        self.assertIn("ECOGRAFÍA TIROIDEA", N.leer("plantillas.md"))
+        self.assertIn("ECOGRAFÍA TIROIDEA", CON.leer("plantillas.md"))
         # «para todos»: pasa a la general y deja de ser propia
-        todas = [(x["nombre"], x["cuerpo"]) for x in N.secciones_con_origen("ana")]
+        todas = [(x["nombre"], x["cuerpo"]) for x in PL.secciones_con_origen("ana")]
         todas = [(n, c.replace("Frase propia de Ana", "Frase de todos")) for n, c in todas]
-        N.aplicar_plantillas(todas, "ana", "todos")
-        self.assertIn("Frase de todos", N.leer("plantillas.md"))
-        origen = {x["nombre"]: x["origen"] for x in N.secciones_con_origen("ana")}
+        PL.aplicar_plantillas(todas, "ana", "todos")
+        self.assertIn("Frase de todos", CON.leer("plantillas.md"))
+        origen = {x["nombre"]: x["origen"] for x in PL.secciones_con_origen("ana")}
         self.assertEqual(origen["MAMOGRAFÍA"], "general")
         self.assertEqual(origen["ECOGRAFÍA RENAL"], "nueva")
-        self.assertTrue(N.volver_a_general("ana", "ECOGRAFÍA RENAL"))     # la que era solo suya se quita
-        self.assertNotIn("ECOGRAFÍA RENAL", [x["nombre"] for x in N.secciones_con_origen("ana")])
-        self.assertFalse(N.volver_a_general("ana", "ECOGRAFÍA RENAL"))
-        actuales = [(x["nombre"], x["cuerpo"]) for x in N.secciones_con_origen("ana")]
-        self.assertEqual(N.aplicar_plantillas(actuales, "ana", "todos")["sin_cambios"], True)
+        self.assertTrue(PL.volver_a_general("ana", "ECOGRAFÍA RENAL"))     # la que era solo suya se quita
+        self.assertNotIn("ECOGRAFÍA RENAL", [x["nombre"] for x in PL.secciones_con_origen("ana")])
+        self.assertFalse(PL.volver_a_general("ana", "ECOGRAFÍA RENAL"))
+        actuales = [(x["nombre"], x["cuerpo"]) for x in PL.secciones_con_origen("ana")]
+        self.assertEqual(PL.aplicar_plantillas(actuales, "ana", "todos")["sin_cambios"], True)
 
     def test_notas_reglas_y_prompt(self):
         U.crear("Ana", "inicial1")
-        N.guardar_medico("Dr. Ficticio", "Notas generales.", crear=True)
-        self.assertIsNone(N.notas_propias("Dr. Ficticio", "ana"))
-        N.guardar_notas_propias("Dr. Ficticio", "ana", "Notas de Ana.")
-        self.assertEqual(N.notas_medico("Dr. Ficticio", "ana"), "Notas de Ana.")
-        self.assertEqual(N.notas_medico("Dr. Ficticio"), "Notas generales.")
-        self.assertEqual(N.medicos_con_notas_propias("ana"), ["Dr. Ficticio"])
-        N.guardar_medico("Dr. Renombrado", "Notas generales.", original="Dr. Ficticio")
-        self.assertEqual(N.notas_medico("Dr. Renombrado", "ana"), "Notas de Ana.")
+        MED.guardar_medico("Dr. Ficticio", "Notas generales.", crear=True)
+        self.assertIsNone(MED.notas_propias("Dr. Ficticio", "ana"))
+        MED.guardar_notas_propias("Dr. Ficticio", "ana", "Notas de Ana.")
+        self.assertEqual(MED.notas_medico("Dr. Ficticio", "ana"), "Notas de Ana.")
+        self.assertEqual(MED.notas_medico("Dr. Ficticio"), "Notas generales.")
+        self.assertEqual(MED.medicos_con_notas_propias("ana"), ["Dr. Ficticio"])
+        MED.guardar_medico("Dr. Renombrado", "Notas generales.", original="Dr. Ficticio")
+        self.assertEqual(MED.notas_medico("Dr. Renombrado", "ana"), "Notas de Ana.")
         U.escribir_archivo("ana", "reglas_dictado.md", "- Regla propia de Ana.\n")
         U.escribir_archivo("ana", "correcciones_aprendidas.md", "# x\n\n- Corrección propia de Ana.\n")
         ej = [{"dictado": "dictado ajeno", "informe": "INFORME", "usuario": "beto", "ajeno": True}]
-        sis = N.armar_mensajes("mamografía", ej, "Dr. Renombrado", usuario="ana")
+        sis = PR.armar_mensajes("mamografía", ej, "Dr. Renombrado", usuario="ana")
         texto = sis[0]["content"]
         for esperado in ("Regla general ficticia", "Regla propia de Ana", "Notas de Ana.", "Corrección propia de Ana",
                          "OTRO transcriptor"):
             self.assertIn(esperado, texto)
         self.assertIn("ejemplo de otro transcriptor", sis[1]["content"])
-        general = N.armar_mensajes("mamografía", [], "Dr. Renombrado")[0]["content"]
+        general = PR.armar_mensajes("mamografía", [], "Dr. Renombrado")[0]["content"]
         self.assertNotIn("Regla propia de Ana", general)
         self.assertIn("Notas generales.", general)
 
@@ -214,12 +218,12 @@ class CapasTest(Base):
             {"nombre": "c", "dictado": "mamografía bilateral densidad b nódulo", "informe": "x", "usuario": None},
             {"nombre": "d", "dictado": "ecografía tiroidea normal", "informe": "x", "usuario": "ana"},
         ]
-        el = N.elegir_ejemplos("mamografía bilateral densidad b dictada", banco, k=3, usuario="ana")
+        el = EJEM.elegir_ejemplos("mamografía bilateral densidad b dictada", banco, k=3, usuario="ana")
         self.assertEqual(el[0]["nombre"], "b")                 # propio y del mismo estudio primero
         self.assertNotIn("d", [e["nombre"] for e in el[:2]])   # propio pero de otro estudio: después
         self.assertTrue(next(e for e in el if e["nombre"] == "a").get("ajeno"))
         self.assertFalse(next(e for e in el if e["nombre"] == "c").get("ajeno"))
-        sin = N.elegir_ejemplos("mamografía bilateral densidad b dictada", banco, k=3)
+        sin = EJEM.elegir_ejemplos("mamografía bilateral densidad b dictada", banco, k=3)
         self.assertFalse(any(e.get("ajeno") for e in sin))
 
 
@@ -244,7 +248,7 @@ class AprendizajeTest(Base):
         self.assertIn("fibronodular", propias)
         self.assertNotIn("fibronodular", AP.ARCH_CORR.read_text(encoding="utf-8"))
         self.assertEqual((AP.EJ / "2026_0_caso0.usuario.txt").read_text(encoding="utf-8"), "ana")
-        banco = N._leer_banco(self.d / "f1", self.d / "aud", AP.EJ)
+        banco = EJEM._leer_banco(self.d / "f1", self.d / "aud", AP.EJ)
         self.assertEqual({e["usuario"] for e in banco}, {"ana"})
         AP.registrar_ejemplo("caso9", "dictado ficticio", ia, final, clave="2026_9_caso9", usuario="beto")
         self.assertIn("fibronodular", AP.ARCH_CORR.read_text(encoding="utf-8"))     # la hicieron dos distintos
@@ -314,14 +318,14 @@ class HttpTest(Base):
                 for x in secs]
         st, r, _, _ = self.pedir("/api/plantillas", {"secciones": secs, "destino": "mio"}, galleta)
         self.assertEqual((st, r["propias"]), (200, 1))
-        self.assertNotIn("Propia", N.leer("plantillas.md"))
+        self.assertNotIn("Propia", CON.leer("plantillas.md"))
         # notas propias de un médico
-        N.guardar_medico("Dr. Ficticio", "Generales.", crear=True)
+        MED.guardar_medico("Dr. Ficticio", "Generales.", crear=True)
         self.assertEqual(self.pedir("/api/medico", {"medico": "Dr. Ficticio", "notas": "De Ana.", "destino": "mio"},
                                     galleta)[0], 200)
         meds = self.pedir("/api/medicos", cookie=galleta)[1]["medicos"]
         self.assertEqual((meds[0]["notas"], meds[0]["propias"], meds[0]["generales"]), ("De Ana.", True, "Generales."))
-        self.assertEqual(N.notas_medico("Dr. Ficticio"), "Generales.")
+        self.assertEqual(MED.notas_medico("Dr. Ficticio"), "Generales.")
         # preferencias y formato
         self.assertEqual(self.pedir("/api/usuario/preferencias", {"preferencias": {"tema": "dark"}}, galleta)[0], 200)
         self.assertEqual(self.pedir("/api/mi_pc", cookie=galleta)[1]["preferencias"], {"tema": "dark"})

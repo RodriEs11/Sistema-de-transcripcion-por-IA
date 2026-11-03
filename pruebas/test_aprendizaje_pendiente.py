@@ -67,8 +67,8 @@ class WordTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             carpeta = Path(tmp); datos = carpeta/'datos'; datos.mkdir()
             self.addCleanup(S.configurar, S.configurar(ajustes.para_pruebas(carpeta)))
-            conoc = patch.object(S.N, 'CONOC', carpeta/'conocimiento'); conoc.start(); self.addCleanup(conoc.stop)
-            S.N.preparar_conocimiento()     # conocimiento de ejemplo, nunca el de la instalación
+            conoc = patch.object(S.CON, 'CONOC', carpeta/'conocimiento'); conoc.start(); self.addCleanup(conoc.stop)
+            S.CON.preparar_conocimiento()     # conocimiento de ejemplo, nunca el de la instalación
             (datos/'ficticio.informe_ia.txt').write_text('Informe ficticio.', encoding='utf-8')
             (datos/'ficticio.dictado.txt').write_text('Dictado ficticio.', encoding='utf-8')
             cola = ColaAprendizaje(datos/'_aprendizaje', lambda d: None, lambda: None)

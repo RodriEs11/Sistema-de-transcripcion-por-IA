@@ -10,6 +10,8 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from transcripcion.procesamiento import lotes as B
 from transcripcion.procesamiento import cache_transcripcion as C
+from transcripcion.ia import ejemplos as EJEM
+from transcripcion.ia import ollama as OLL
 RESPALDO = Path(__file__).resolve().parents[1]/"respaldo"
 RESPALDO.mkdir(exist_ok=True)
 
@@ -64,32 +66,29 @@ class LotesTest(unittest.TestCase):
             cache.write_text('roto');self.assertIsNone(C.leer(cache,firma))
 
     def test_metricas_no_cambian_payload_ni_contrato(self):
-        import nucleo as N
-        with patch.object(N,'_post',return_value={'message':{'content':'Informe ficticio.'},'load_duration':2_000_000_000,'prompt_eval_count':10,'eval_count':20}) as llamada:
-            metricas={};r=N.llamar_ia('modelo-ficticio',[],metricas=metricas)
+        with patch.object(OLL,'_post',return_value={'message':{'content':'Informe ficticio.'},'load_duration':2_000_000_000,'prompt_eval_count':10,'eval_count':20}) as llamada:
+            metricas={};r=OLL.llamar_ia('modelo-ficticio',[],metricas=metricas)
             self.assertEqual(len(r),4);self.assertEqual(r[2:],(10,20))
             self.assertEqual(metricas['load_duration_s'],2)
             self.assertEqual(llamada.call_args.args[0]['options'],{'temperature':.1,'num_ctx':12288})
 
     def test_banco_reutiliza_e_invalida_ejemplo_editado(self):
-        import nucleo as N
         with tempfile.TemporaryDirectory(dir=RESPALDO) as tmp:
             p=Path(tmp);ej=p/'ej';ej.mkdir()
             (ej/'ficticio.dictado.txt').write_text('Dictado ficticio',encoding='utf-8')
             (ej/'ficticio.informe.txt').write_text('Informe ficticio',encoding='utf-8')
-            with patch.object(N,'_leer_banco',wraps=N._leer_banco) as leer:
-                uno=N.cargar_banco(p/'fase1',p/'audios',ej)
+            with patch.object(EJEM,'_leer_banco',wraps=EJEM._leer_banco) as leer:
+                uno=EJEM.cargar_banco(p/'fase1',p/'audios',ej)
                 uno[0]['informe']='Cambio del consumidor'
-                self.assertEqual(N.cargar_banco(p/'fase1',p/'audios',ej)[0]['informe'],'Informe ficticio')
+                self.assertEqual(EJEM.cargar_banco(p/'fase1',p/'audios',ej)[0]['informe'],'Informe ficticio')
                 self.assertEqual(leer.call_count,1)
                 (ej/'ficticio.informe.txt').write_text('Informe ficticio actualizado',encoding='utf-8')
-                self.assertEqual(N.cargar_banco(p/'fase1',p/'audios',ej)[0]['informe'],'Informe ficticio actualizado')
+                self.assertEqual(EJEM.cargar_banco(p/'fase1',p/'audios',ej)[0]['informe'],'Informe ficticio actualizado')
                 self.assertEqual(leer.call_count,2)
 
     def test_perfiles_incluyen_revision_de_plantillas(self):
-        import nucleo as N
-        primero=N._perfil_ejemplo('abdominal',('abdominal',))[0]
-        segundo=N._perfil_ejemplo('abdominal',('renal',))[0]
+        primero=EJEM._perfil_ejemplo('abdominal',('abdominal',))[0]
+        segundo=EJEM._perfil_ejemplo('abdominal',('renal',))[0]
         self.assertIn('pl:abdominal',primero)
         self.assertNotIn('pl:abdominal',segundo)
 
@@ -138,9 +137,9 @@ class TrabajadorTest(unittest.TestCase):
             pila.enter_context(patch.object(S.PAC,'calcular'))
             pila.enter_context(patch.object(S.L,'actividad'))
             pila.enter_context(patch.object(S.L,'error'))
-            pila.enter_context(patch.object(S.N,'cargar_banco',return_value=[]))
-            pila.enter_context(patch.object(S.N,'estudios_sin_plantilla',return_value=[]))
-            liberar=pila.enter_context(patch.object(S.N,'liberar_ia'))
+            pila.enter_context(patch.object(S.EJEM,'cargar_banco',return_value=[]))
+            pila.enter_context(patch.object(S.AV,'estudios_sin_plantilla',return_value=[]))
+            liberar=pila.enter_context(patch.object(S.OLL,'liberar_ia'))
             if cache:
                 if cache is True:
                     pila.enter_context(patch.object(S.CACHE_ASR,'firma',return_value={'ficticia':True}))
@@ -156,9 +155,9 @@ class TrabajadorTest(unittest.TestCase):
                     pila.enter_context(patch.object(F,'cargar_audio',return_value=[]))
                     pila.enter_context(patch.object(H,'reparar',return_value=([],[])))
                     pila.enter_context(patch.object(H,'texto_de',return_value='Dictado ficticio'))
-                pila.enter_context(patch.object(S.N,'elegir_ejemplos',return_value=[]))
-                pila.enter_context(patch.object(S.N,'armar_mensajes',return_value=[]))
-                pila.enter_context(patch.object(S.N,'llamar_ia',return_value=('Informe ficticio.',0,10,20)))
+                pila.enter_context(patch.object(S.EJEM,'elegir_ejemplos',return_value=[]))
+                pila.enter_context(patch.object(S.PR,'armar_mensajes',return_value=[]))
+                pila.enter_context(patch.object(S.OLL,'llamar_ia',return_value=('Informe ficticio.',0,10,20)))
             with self.assertRaises(FinTrabajador):
                 S.trabajador()
             if cache == 'fria':

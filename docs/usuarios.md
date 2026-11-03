@@ -90,7 +90,7 @@ todos juntas: una frase de la plantilla de cualquiera es frase de plantilla.
 
 ### Generar
 `servidor.py` lee `<caso>.usuario.txt` y lo pasa a `elegir_ejemplos(..., usuario)` y `armar_mensajes(..., usuario)`
-(`nucleo.py`): plantillas propias, notas propias del médico, reglas propias, correcciones propias y ejemplos propios
+(`transcripcion/ia/ejemplos.py` y `transcripcion/ia/prompt.py`): plantillas propias, notas propias del médico, reglas propias, correcciones propias y ejemplos propios
 primero. Guarda `<caso>.estilo.txt`. **Volver a generar** usa siempre el estilo de quien lo pide.
 
 ### Aprender

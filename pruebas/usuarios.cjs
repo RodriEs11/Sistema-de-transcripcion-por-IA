@@ -10,7 +10,9 @@ const codigo=`
 import json, sys, tempfile, threading
 from pathlib import Path
 from unittest.mock import patch
-import servidor as S, nucleo as N, remoto as R
+import servidor as S, remoto as R
+from transcripcion.conocimiento import archivos as CON
+from transcripcion.conocimiento import medicos as MED
 from transcripcion import ajustes
 from transcripcion.acceso import usuarios as U
 Path('respaldo').mkdir(exist_ok=True)
@@ -25,19 +27,19 @@ with tempfile.TemporaryDirectory(prefix='ui_usuarios_', dir='respaldo') as c:
     (datos / f'{n}.dictado.txt').write_text('mamografía densidad b', encoding='utf-8')
     (datos / f'{n}.informe_ia.txt').write_text('MAMOGRAFÍA\\n\\n-Mamas de densidad tipo B.\\n\\nLo saluda atte.\\n', encoding='utf-8')
     (datos / f'{n}.estilo.txt').write_text('beto', encoding='utf-8')
-    with patch.object(N, 'CONOC', conoc), patch.object(N, 'DIR_MED', conoc / 'medicos'), \\
+    with patch.object(CON, 'CONOC', conoc), patch.object(MED, 'DIR_MED', conoc / 'medicos'), \\
          patch.object(U, 'ARCH', c / 'usuarios.json'), patch.object(U, 'CARPETA', conoc / 'usuarios'), \\
          patch.object(R, 'ARCH_SESIONES', c / 'sesiones.json'), patch.object(S, 'DATOS', datos), \\
          patch.object(S, 'NUEVOS', c / 'Audios_nuevos'), patch.object(S, 'INFORMES', c / 'Informes'):
         U.crear('Ana Prueba', 'inicial1'); U.crear('Beto', 'inicial2')
-        N.guardar_medico('Dr. Ficticio', 'Notas generales.', crear=True)
+        MED.guardar_medico('Dr. Ficticio', 'Notas generales.', crear=True)
         http = S.ThreadingHTTPServer(('127.0.0.1', 0), S.H)
         S.PUERTO = http.server_port
         hilo = threading.Thread(target=http.serve_forever, daemon=True); hilo.start()
         sys.stdout.write(str(S.PUERTO) + '\\n'); sys.stdout.flush()
         sys.stdin.readline()
-        print(json.dumps({'general': N.leer('plantillas.md'), 'propias': U.leer_archivo('ana-prueba', 'plantillas.md'),
-                          'notas': N.notas_medico('Dr. Ficticio'), 'notas_ana': N.notas_medico('Dr. Ficticio', 'ana-prueba'),
+        print(json.dumps({'general': CON.leer('plantillas.md'), 'propias': U.leer_archivo('ana-prueba', 'plantillas.md'),
+                          'notas': MED.notas_medico('Dr. Ficticio'), 'notas_ana': MED.notas_medico('Dr. Ficticio', 'ana-prueba'),
                           'formato': U.formato('ana-prueba'), 'prefs': U.preferencias('ana-prueba'),
                           'reglas': U.leer_archivo('ana-prueba', 'reglas_dictado.md')}))
         sys.stdout.flush()

@@ -9,6 +9,18 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [Servidor 2026.11.5] — 2026-11-03
+
+Etapa 3 del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles: mismo prompt,
+mismas marcas y mismos avisos (contrato del núcleo en verde sin regenerar).
+
+### Cambiado
+- `nucleo.py` se partió en `transcripcion/conocimiento/` (archivos, plantillas, médicos), `transcripcion/ia/`
+  (prompt, ejemplos, cliente de Ollama), `transcripcion/controles/` (marcas, controles clínicos, avisos, orden de
+  estudios), `transcripcion/informe/formato.py` (negritas) y `transcripcion/texto/palabras.py`.
+- `instalar.sh` (Linux) prepara la carpeta `conocimiento/` llamando a `preparar_conocimiento()`. Antes lo hacía
+  importando `nucleo`, que desde el Servidor 2026.11.3 ya no tiene ese efecto (el servidor la creaba igual al arrancar).
+
 ## [Servidor 2026.11.4] — 2026-11-03
 
 Etapa 2a del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles: mismas

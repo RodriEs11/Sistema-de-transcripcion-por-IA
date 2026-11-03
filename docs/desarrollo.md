@@ -70,8 +70,10 @@ ajustes.preparar_carpetas(aj)
 self.addCleanup(S.configurar, S.configurar(aj))    # configurar devuelve los ajustes anteriores
 ```
 
-Lo que lee `nucleo` (plantillas, reglas, médicos) también debe apuntar a la carpeta temporal
-(`patch.object(N, "CONOC", carpeta / "conocimiento")` y `N.preparar_conocimiento()`), igual que los registros
+Lo que se lee del conocimiento (plantillas, reglas, médicos) también debe apuntar a la carpeta temporal
+(`patch.object(CON, "CONOC", carpeta / "conocimiento")`, `patch.object(MED, "DIR_MED", …)` y
+`CON.preparar_conocimiento()`, con `from transcripcion.conocimiento import archivos as CON, medicos as MED`).
+`CONOC` siempre se usa como `CON.CONOC`, nunca importado suelto: así el reemplazo llega a todos. Igual que los registros
 (`registro.CARPETA`) y la carpeta del cliente (`remoto.CARPETA_CLIENTE`): nunca los de la instalación.
 Usar datos ficticios; no apuntar las pruebas HTTP o de carga al servidor en uso. Los scripts Playwright permiten
 `PLAYWRIGHT_MODULE`, `BROWSER_CHANNEL` y, para `medicos.cjs`, `PYTHON`; este último necesita
