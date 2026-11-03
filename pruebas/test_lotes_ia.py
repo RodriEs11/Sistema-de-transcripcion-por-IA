@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from transcripcion.procesamiento import lotes as B
 from transcripcion.procesamiento import cache_transcripcion as C
 from transcripcion.ia import ejemplos as EJEM
+from transcripcion.base import registro as L
 from transcripcion.ia import ollama as OLL
 RESPALDO = Path(__file__).resolve().parents[1]/"respaldo"
 RESPALDO.mkdir(exist_ok=True)
@@ -35,19 +36,23 @@ class LotesTest(unittest.TestCase):
         self.assertEqual(B.formar(queue.Queue(),'solo',{},lambda n:30),['solo'])
 
     def test_encolado_repetido_no_duplica_trabajo(self):
-        import servidor as S
-        q=queue.Queue()
-        with patch.object(S,'COLA',q), patch.object(S,'ESTADO',{}), patch.object(S,'ENCOLADO',{}), patch.object(S,'BORRADOS',set()):
-            self.assertTrue(S.encolar('ficticio'))
-            self.assertFalse(S.encolar('ficticio'))
+        from transcripcion.casos.repositorio import Casos
+        from transcripcion.procesamiento.estado import Procesamiento
+        proc=Procesamiento(Casos(Path('datos-ficticios'),Path('audios-ficticios')))   # sin cola duradera
+        q=proc.cola
+        with patch.object(L,'estado'):
+            self.assertTrue(proc.encolar('ficticio'))
+            self.assertFalse(proc.encolar('ficticio'))
             self.assertEqual(q.qsize(),1)
-            S.ESTADO['ficticio']['estado']='listo'
-            self.assertTrue(S.encolar('ficticio'))
+            proc.estado['ficticio']['estado']='listo'
+            self.assertTrue(proc.encolar('ficticio'))
             self.assertEqual(q.qsize(),2)
 
     def test_caso_borrado_no_retiene_espera_de_ia(self):
         import servidor as S
-        with patch.object(S,'BORRADOS',{'ficticio'}), patch.object(S,'estado_ia') as consultar:
+        from transcripcion.procesamiento.estado import Procesamiento
+        proc=Procesamiento(None);proc.borrados.add('ficticio')
+        with patch.object(S,'PROC',proc), patch.object(S,'estado_ia') as consultar:
             S.esperar_ia('ficticio',['ficticio'])
             consultar.assert_not_called()
 
@@ -108,7 +113,10 @@ class TrabajadorTest(unittest.TestCase):
     def ejecutar(self, fallo=None, cache=False):
         import servidor as S
         with tempfile.TemporaryDirectory(dir=RESPALDO) as tmp, ExitStack() as pila:
-            raiz=Path(tmp);datos=raiz/'datos';datos.mkdir()
+            raiz=Path(tmp)
+            from transcripcion import ajustes
+            aj=ajustes.para_pruebas(raiz,lote_max_audios=2,lote_max_segundos=180)
+            datos=aj.datos;datos.mkdir(parents=True)
             cola=ColaFinita()
             trans={'texto':'Dictado ficticio','palabras':[],'huecos':[]}
             for n in ['uno','dos','tres']:
@@ -119,20 +127,23 @@ class TrabajadorTest(unittest.TestCase):
             if fallo:
                 etapa,caso=fallo
                 (raiz/'resultados'/etapa/f'{caso}.json').write_text('roto',encoding='utf-8')
-            from transcripcion import ajustes
-            cfg=ajustes.para_pruebas(raiz,lote_max_audios=2,lote_max_segundos=180).cfg
-            for nombre,valor in [('AQUI',raiz),('DATOS',datos),('COLA',cola),('CFG',cfg),('SIMULAR',not cache),('ESTADO',{}),('BORRADOS',set()),('PAUSAS',{}),('PAUSADO_S',{}),('REINICIO',{}),('TRABAJO',{}),('ENCOLADO',{})]:
+            pila.callback(S.configurar,S.configurar(aj))      # casos y procesamiento nuevos
+            S.PROC.cola=cola
+            for nombre,valor in [('AQUI',raiz),('SIMULAR',not cache),('REINICIO',{})]:
                 pila.enter_context(patch.object(S,nombre,valor))
             pila.enter_context(patch.dict('os.environ',{'SIMULAR_DEMORA':'0'}))
             eventos=[]
-            original=S.empezar;estado=S.poner_estado
+            original=S.PROC.empezar;estado=S.PROC.poner_estado
             def empezar(n,e,msg=''):
                 eventos.append((n,e));return original(n,e,msg)
             def poner(n,e,msg=''):
                 eventos.append((n,e));return estado(n,e,msg)
-            pila.enter_context(patch.object(S,'empezar',side_effect=empezar))
-            pila.enter_context(patch.object(S,'poner_estado',side_effect=poner))
-            for nombre,valor in [('ruta_audio',lambda n:raiz/f'{n}.wav'),('duracion_de',lambda n:30),('duracion_wav',lambda **kw:30),('esperar_ia',lambda *a:None),('calcular_voz',lambda *a:None),('anotar_voz',lambda *a,**kw:None),('resumen_voz',lambda n:None),('datos_csv',lambda n:{}),('anotar_tiempo',lambda *a:None),('guardar_marcas',lambda *a:([],[])),('resumen_avisos',lambda *a:{'faltan':[],'rojo':0,'amarillo':0,'turq':0,'gris':0,'huecos':[]})]:
+            pila.enter_context(patch.object(S.PROC,'empezar',side_effect=empezar))
+            pila.enter_context(patch.object(S.PROC,'poner_estado',side_effect=poner))
+            pila.enter_context(patch.object(S.PROC,'anotar_tiempo',side_effect=lambda *a:None))
+            for nombre,valor in [('ruta_audio',lambda n:raiz/f'{n}.wav'),('duracion_de',lambda n:30),('anotar_voz',lambda *a,**kw:None),('datos_csv',lambda n:{}),('resumen_avisos',lambda *a:{'faltan':[],'rojo':0,'amarillo':0,'turq':0,'gris':0,'huecos':[]})]:
+                pila.enter_context(patch.object(S.CASOS,nombre,side_effect=valor))
+            for nombre,valor in [('duracion_wav',lambda **kw:30),('esperar_ia',lambda *a:None),('calcular_voz',lambda *a:None),('resumen_voz',lambda n:None),('guardar_marcas',lambda *a:([],[]))]:
                 pila.enter_context(patch.object(S,nombre,side_effect=valor))
             pila.enter_context(patch.object(S.PAC,'calcular'))
             pila.enter_context(patch.object(S.L,'actividad'))
@@ -166,7 +177,7 @@ class TrabajadorTest(unittest.TestCase):
                 self.assertEqual(asr.call_count,3)
                 self.assertEqual(cargar.call_count,cargas)
                 self.assertEqual(liberar.call_count,descargas)
-            salida=dict(S.ESTADO)
+            salida=dict(S.PROC.estado)
             metricas=json.loads((datos/'tres.rendimiento.json').read_text(encoding='utf-8'))
             if cache is True:liberar.assert_not_called()
             return eventos,salida,metricas
