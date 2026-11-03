@@ -92,7 +92,8 @@ Los nombres son orientativos: cada etapa puede ajustarlos y lo deja escrito acá
 |---|---|---|---|---|
 | 0 | **Red de seguridad** | Contratos HTTP y del núcleo, ruff mínimo en el CI, este plan y el ADR 0001 | Nulo (solo pruebas y docs) | — |
 | 1 | **Ajustes y arranque sin efectos** | `ajustes.py` (pasa a `transcripcion/` en la etapa 2); `servidor.py` y `nucleo.py` dejan de leer config y crear carpetas al importarse (todo pasa al arranque); prueba «importar no escribe nada» | Medio | Servidor |
-| 2 | **Paquete y carpetas** | Crear `transcripcion/` y mover los módulos que ya son independientes (plataforma, persistencia, registro, borradores, paciente, índice, cola, lotes, caché, almacén de aprendizaje, usuarios). Scripts a `scripts/` y `herramientas/` dejando lanzadores en la raíz. Adaptar `mantenimiento.py` (detección de código cambiado), `crear_entorno_pruebas.py`, el CI y `verificar_paquete.py` | Medio (muchos imports) | Servidor |
+| 2a | **Paquete con los módulos base** | Crear `transcripcion/` y mover los módulos que ya son independientes (plataforma, persistencia, registro, ajustes, borradores, paciente, índice, cola, lotes, caché, almacén y cola de aprendizaje, usuarios). Adaptar `mantenimiento.py` (detección de código cambiado y prueba previa al reinicio), las herramientas que copian el código y el CI | Medio (muchos imports) | Servidor |
+| 2b | **Scripts y herramientas** | Scripts de mantenimiento y activación a `scripts/`, herramientas de desarrollo y evaluación a `herramientas/`, dejando lanzadores en la raíz para lo que se usa desde un `.bat` o desde la documentación | Bajo | — |
 | 3 | **Núcleo** | `nucleo.py` → `ia/` (ollama, plantillas, ejemplos, prompt) y `controles/` (marcas, clínicos, omisiones, orden). Guardia: contrato del núcleo | Bajo | Servidor |
 | 4 | **Transcripción** | `fase1_transcribir.py` → `asr/whisper.py` y `texto/normalizacion.py`; los reportes de evaluación a `herramientas/` | Bajo | Servidor |
 | 5 | **Dominio del servidor** | De `servidor.py`: `casos/` (archivos de un caso, listado, borrado) y `procesamiento/` (trabajador, pausas, tiempos) como objetos con su estado, sin globales | **Alto** | Servidor |
@@ -109,8 +110,9 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 | Etapa | Rama / PR | Estado |
 |---|---|---|
 | 0 | `test/red-de-seguridad-refactor` · PR #13 | Hecha (fusionada el 03/11) |
-| 1 | `refactor/1-ajustes-sin-efectos` · Servidor 2026.11.3 | En revisión |
-| 2–9 | — | Pendiente |
+| 1 | `refactor/1-ajustes-sin-efectos` · PR #14 · Servidor 2026.11.3 | Hecha (fusionada el 03/11) |
+| 2a | `refactor/2-paquete-base` · Servidor 2026.11.4 | En revisión |
+| 2b–9 | — | Pendiente |
 
 ### Etapa 1: qué quedó
 
@@ -126,6 +128,27 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 - Lo que apareció: cinco pruebas usaban sin querer las carpetas reales (Word de prueba en `Informes`, registros,
   `cliente/conexion.json`, plantillas reales). Se corrigieron y ahora la suite completa no deja nada fuera de
   `respaldo/`. Queda para más adelante: `sys.stdout.reconfigure` al importar en algunos scripts (no escribe archivos).
+
+### Etapa 2a: qué quedó
+
+| Antes (raíz) | Ahora | Se importa como |
+|---|---|---|
+| `plataforma.py`, `persistencia.py`, `registro.py` | `transcripcion/base/` | `from transcripcion.base import registro as L` |
+| `ajustes.py` | `transcripcion/ajustes.py` | `from transcripcion import ajustes` |
+| `borradores.py`, `paciente.py`, `indice_casos.py` | `transcripcion/casos/` (`indice.py`) | `from transcripcion.casos.indice import IndiceCasos` |
+| `cola_procesamiento.py`, `lotes_ia.py`, `cache_transcripcion.py` | `transcripcion/procesamiento/` (`cola.py`, `lotes.py`) | `from transcripcion.procesamiento import cola as CP` |
+| `almacen_aprendizaje.py`, `aprendizaje_pendiente.py` | `transcripcion/aprendizaje/` (`almacen.py`, `pendiente.py`) | `from transcripcion.aprendizaje import almacen as AL` |
+| `usuarios.py` | `transcripcion/acceso/usuarios.py` | `from transcripcion.acceso import usuarios as U` |
+
+- Los alias de siempre (`L`, `P`, `U`, `CP`, `AL`…) se conservan: el código que los usa no cambió.
+- `transcripcion.RAIZ` es la carpeta del sistema. `plataforma`, `registro`, `usuarios` y `ajustes` ubican los datos
+  de la instalación (registros, usuarios.json, conocimiento, cloudflared, configuracion.json) desde ahí y no desde
+  su propia carpeta: `pruebas/test_paquete.py` lo verifica. Los nombres de los archivos de datos no cambiaron.
+- `mantenimiento.py`: el aviso «código cambiado, hace falta reiniciar» incluye los módulos del paquete
+  (`transcripcion/base/registro.py`…) y la prueba previa al reinicio compila también el paquete
+  (`pruebas/test_mantenimiento_codigo.py`).
+- `pruebas/validar_gpu_real.py` y `pruebas/comparar_cpu_gpu.py` copian el paquete. Estaban rotas desde que
+  `nucleo.py` importa `usuarios` (no lo copiaban). `medir_listado.py` y el artefacto del CI también lo incluyen.
 
 ## Red de seguridad (etapa 0)
 

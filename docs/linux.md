@@ -84,7 +84,7 @@ ssh -L 8765:127.0.0.1:8765 usuario@servidor
 | «Abrir…» del panel, abrir el Word | Explorador / Word | `xdg-open` (solo con escritorio) |
 | Rutas de `configuracion.json` | `..\\Informes` | se aceptan igual (`..\\Informes` = `../Informes`) |
 
-Todo lo que depende del sistema está en `plataforma.py` (Python) y `linux/comun.sh` (scripts).
+Todo lo que depende del sistema está en `transcripcion/base/plataforma.py` (Python) y `linux/comun.sh` (scripts).
 
 ## Solución de problemas
 

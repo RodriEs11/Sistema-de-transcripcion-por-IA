@@ -27,7 +27,7 @@ de WebView2, pospone la actualización. No utiliza una espera fija como prueba d
 
 ## Formato y compatibilidad de borradores
 
-`borradores.py` guarda un archivo `NOMBRE.borrador.json` con:
+`transcripcion/casos/borradores.py` guarda un archivo `NOMBRE.borrador.json` con:
 
 ```json
 {"v": 1, "html": "<div>Texto ficticio</div>", "omisiones_ok": [], "revision": 1}

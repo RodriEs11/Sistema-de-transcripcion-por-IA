@@ -28,7 +28,7 @@ flowchart TB
         OL[("Ollama<br/>gemma4:12b")]
         INF["informe.py<br/>python-docx"]
         APR["aprender.py"]
-        REG["registro.py"]
+        REG["transcripcion/base/registro.py"]
         FS[("Disco local<br/>Informes · ejemplos · conocimiento")]
         HTTP --> COLA --> WH --> NU --> OL
         HTTP --> INF --> FS
@@ -44,14 +44,22 @@ flowchart TB
 
 ## Módulos del servidor
 
+Los módulos se están pasando por etapas al paquete `transcripcion/` ([refactor.md](refactor.md)). Los que siguen
+en la raíz son los puntos de entrada y lo que todavía no se reorganizó.
+
 | Módulo | Responsabilidad |
 |---|---|
-| `ajustes.py` | Ajustes del arranque (`configuracion.json` + variables de entorno) como objeto; crea las carpetas de trabajo solo cuando se lo piden. Ningún módulo lee la configuración al importarse |
+| `transcripcion/ajustes.py` | Ajustes del arranque (`configuracion.json` + variables de entorno) como objeto; crea las carpetas de trabajo solo cuando se lo piden. Ningún módulo lee la configuración al importarse |
+| `transcripcion/__init__.py` | `RAIZ`: la carpeta del sistema. Los datos de la instalación (registros, usuarios, conocimiento…) se ubican desde ahí, no desde la carpeta del paquete |
+| `transcripcion/base/` | `plataforma` (Windows/Linux), `persistencia` (escritura atómica), `registro` (consola con colores, título de ventana, logs diarios, `actividad.csv`) |
+| `transcripcion/casos/` | `borradores` (borrador con control de revisión), `paciente` (nombre del paciente para la lista, nunca va a la IA ni al informe), `indice` (metadatos del listado) |
+| `transcripcion/procesamiento/` | `cola` (cola SQLite duradera), `lotes` (lotes FIFO de IA), `cache_transcripcion` (reutilizar Whisper) |
+| `transcripcion/aprendizaje/` | `almacen` (correcciones e historial en SQLite), `pendiente` (cola persistente de aprendizaje) |
+| `transcripcion/acceso/` | `usuarios` (transcriptores, contraseñas y estilo propio) |
 | `servidor.py` | Servidor HTTP (`ThreadingHTTPServer`), rutas de la API, cola y trabajador, bloqueos de casos, borrado, panel de administración |
 | `fase1_transcribir.py` | Carga de Whisper, lectura de WAV propia, normalización de texto y números, extracción de datos críticos |
 | `huecos.py` | Busca regiones con energía de voz y sin palabras, y las re-transcribe |
 | `nucleo.py` | Plantillas, detección de estudio, armado del prompt, selección de ejemplos/referencias, llamada a Ollama, orden de estudios, marcas y omisiones |
-| `paciente.py` | Extrae el nombre del paciente del inicio del dictado (solo para la lista) |
 | `informe.py` | Lectura de la configuración para el modo consola (vía `ajustes`), párrafos con formato, Word (A4, Tahoma, negritas, centrado) y modo consola |
 | `aprender.py` | Ejemplos aprendidos, `historial.csv`, `correcciones_aprendidas.md` |
 | `importar_informes.py` | Convierte informes Word en referencias o en plantillas |
@@ -59,7 +67,6 @@ flowchart TB
 | `admin.py` | Permisos del panel y lectura de los registros |
 | `estadisticas.py` | Métricas de calidad y tiempo (solo lectura) |
 | `voces.py` | Huella de voz (WeSpeaker ONNX), muestras por médico, detección y agrupamiento ([voz.md](voz.md)) |
-| `registro.py` | Consola con colores, título de ventana, logs diarios, `actividad.csv` |
 | `app_cliente.py` | Manifiesto (SHA-256) de la carpeta `cliente\` para la actualización automática |
 
 La interfaz está en `web/` y no usa *frameworks* ni dependencias externas: `index.html` (revisión),

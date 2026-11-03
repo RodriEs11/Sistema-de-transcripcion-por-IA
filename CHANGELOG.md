@@ -9,6 +9,22 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [Servidor 2026.11.4] — 2026-11-03
+
+Etapa 2a del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles: mismas
+pantallas, mismas respuestas HTTP y mismos archivos de datos (contratos en verde sin regenerar).
+
+### Cambiado
+- Nuevo paquete `transcripcion/` con los módulos que ya eran independientes: `base/` (plataforma, persistencia,
+  registro), `ajustes`, `casos/` (borradores, paciente, índice), `procesamiento/` (cola, lotes, caché de
+  transcripción), `aprendizaje/` (almacén, cola pendiente) y `acceso/` (usuarios). La tabla de equivalencias está
+  en `docs/refactor.md`. Los registros, `usuarios.json`, `conocimiento/` y demás datos siguen en la carpeta del sistema.
+- El aviso del panel «código cambiado: hace falta reiniciar» y la prueba previa al reinicio incluyen el paquete.
+
+### Corregido
+- `pruebas/validar_gpu_real.py` y `pruebas/comparar_cpu_gpu.py` no arrancaban desde que `nucleo.py` importa los
+  usuarios: copiaban una lista fija de archivos sin `usuarios.py`. Ahora copian el paquete.
+
 ## [Servidor 2026.11.3] — 2026-11-03
 
 Etapa 1 del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles: mismas
