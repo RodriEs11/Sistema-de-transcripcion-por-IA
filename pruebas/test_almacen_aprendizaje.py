@@ -8,7 +8,7 @@ from unittest.mock import patch
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from transcripcion.aprendizaje import almacen as AL
-import aprender as A
+from transcripcion.aprendizaje import aprender as A
 
 
 class AlmacenTest(unittest.TestCase):
@@ -88,7 +88,7 @@ class AlmacenTest(unittest.TestCase):
             self.assertIn('frecuentes',str(plan))
 
     def test_estadisticas_lee_historial_actual_y_detecta_actualizacion(self):
-        import estadisticas as E
+        from transcripcion.operacion import estadisticas as E
         self.registrar('uno')
         with patch.object(E,'HIST',self.hist), patch.object(E,'EJ',self.ej), patch.object(E.L,'CARPETA',self.raiz), patch.object(E,'_CACHE',{'firma':None,'t':0,'informes':[],'generados':[]}):
             actual={'medico':lambda n:None,'estudios':lambda n:None}

@@ -19,9 +19,9 @@ from transcripcion.conocimiento import medicos as MED
 from transcripcion.conocimiento import plantillas as PL
 from transcripcion.ia import ejemplos as EJEM
 from transcripcion.ia import prompt as PR
-import remoto as R
+from transcripcion.acceso import remoto as R
 from transcripcion.acceso import usuarios as U
-import aprender as AP
+from transcripcion.aprendizaje import aprender as AP
 
 PLANTILLAS = """# PLANTILLAS FICTICIAS
 

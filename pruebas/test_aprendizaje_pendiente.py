@@ -61,7 +61,7 @@ class ColaTest(unittest.TestCase):
 class WordTest(unittest.TestCase):
     def test_finalizar_no_invoca_aprendizaje_y_word_es_valido(self):
         import servidor as S
-        import aprender as A
+        from transcripcion.aprendizaje import aprender as A
         from transcripcion import ajustes
         from docx import Document
         with tempfile.TemporaryDirectory() as tmp:
@@ -101,7 +101,7 @@ class WordTest(unittest.TestCase):
                 self.assertEqual(json.loads((datos/'_aprendizaje/ficticio.json').read_text(encoding='utf-8'))["final"], 'Nueva versión ficticia.')
 
     def test_registrar_reintento_no_duplica_historial_ni_reanaliza(self):
-        import aprender as A
+        from transcripcion.aprendizaje import aprender as A
         with tempfile.TemporaryDirectory() as tmp:
             carpeta = Path(tmp)
             with patch.object(A,'EJ',carpeta/'ejemplos'), patch.object(A,'HIST',carpeta/'historial.csv'), patch.object(A,'analizar_correcciones',side_effect=AssertionError('Análisis pesado en guardado')):
