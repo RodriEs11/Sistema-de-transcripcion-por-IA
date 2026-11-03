@@ -9,6 +9,18 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [Servidor 2026.11.8] — 2026-11-03
+
+Etapa 6a del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles (contratos en
+verde sin regenerar; probado además con un servidor simulado: subir, pausar, reanudar, panel y mensajes).
+
+### Cambiado
+- Los servicios salieron de `servidor.py` a objetos del paquete que reciben lo que usan: el trabajador
+  (`procesamiento/trabajador.py`), la lista y el caso abierto (`casos/vista.py`), el borrado (`casos/borrado.py`), la voz
+  (`voz/servicio.py`; `voces.py` pasa a `voz/huellas.py`), el estado de la IA (`operacion/ia.py`), el reinicio y los
+  mensajes (`operacion/reinicio.py`) y «Guardar Word y aprender» (`informe/guardado.py`, con el Word en `informe/word.py`).
+  `servidor.py` baja a ~1.700 líneas: arranque, HTTP y panel.
+
 ## [Servidor 2026.11.7] — 2026-11-03
 
 Etapa 5 del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles: mismas

@@ -76,7 +76,7 @@ BORRADO = None # borrado de casos (transcripcion.casos.borrado)
 OPER = None   # reinicio programado y mensajes a las PC (transcripcion.operacion.reinicio)
 TRAB = None   # trabajador de la cola (transcripcion.procesamiento.trabajador)
 GUARDADO = None  # Guardar Word y aprender, vista previa (transcripcion.informe.guardado)
-VERSION = "2026.11.7"
+VERSION = "2026.11.8"
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
                  "/admin/correcciones": "correcciones.html", "/admin/medicos": "medicos.html"}

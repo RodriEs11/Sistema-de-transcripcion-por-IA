@@ -179,9 +179,9 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 ## Estructura del repositorio
 
 ```
-├── servidor.py              Servidor HTTP, cola de procesamiento y API de la interfaz
+├── servidor.py              Arranque (crea los objetos del paquete), servidor HTTP, API de la interfaz y panel
 ├── fase1_transcribir.py     Evaluación de Whisper sobre audios de ejemplo y prueba de la GPU (--verificar)
-├── informe.py               Generación del Word (python-docx) y modo consola
+├── informe.py               Modo consola: audios -> Word sin la interfaz (el Word está en transcripcion/informe/word.py)
 ├── aprender.py              Ejemplos aprendidos, historial y correcciones frecuentes
 ├── importar_informes.py     Importa informes Word como referencias o plantillas
 ├── remoto.py                Túnel de Cloudflare, publicación en ntfy, llaves y sesiones

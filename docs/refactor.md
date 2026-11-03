@@ -98,7 +98,7 @@ Los nombres son orientativos: cada etapa puede ajustarlos y lo deja escrito acá
 | 3 | **Núcleo** | `nucleo.py` → `conocimiento/` (archivos, plantillas, médicos), `ia/` (ollama, ejemplos, prompt) y `controles/` (marcas, clínicos, avisos, orden). Guardia: contrato del núcleo | Bajo | Servidor |
 | 4 | **Transcripción** | `fase1_transcribir.py` → `asr/whisper.py` y `texto/normalizacion.py`; `huecos.py` → `asr/huecos.py`. `fase1_transcribir.py` queda como herramienta de evaluación (pasa a `herramientas/` en la 2b) | Bajo | Servidor |
 | 5 | **Estado del servidor en objetos** | De `servidor.py`: `Casos` (`casos/repositorio.py`: archivos de cada caso, cachés, índice del listado) y `Procesamiento` (`procesamiento/estado.py`: etapas, cola, pausas, tiempos) como objetos creados en `configurar()`, sin las globales sueltas | **Alto** | Servidor |
-| 6a | **Servicios fuera de `servidor.py`** | Trabajador → `procesamiento/trabajador.py`; listado y borrado → `casos/`; voz → `voz/`; reinicio, mensajes y estado del túnel/IA → `operacion/`. Cada uno recibe los objetos que usa | **Alto** | Servidor |
+| 6a | **Servicios fuera de `servidor.py`** | Trabajador → `procesamiento/trabajador.py`; lista, caso abierto y borrado → `casos/`; voz → `voz/`; estado de la IA, reinicio y mensajes → `operacion/`; «Guardar Word» y Word → `informe/`. Cada uno recibe en su constructor los objetos que usa | **Alto** | Servidor |
 | 6b | **HTTP** | Tabla de rutas y handlers por área (casos, conocimiento, cliente, usuario, admin, páginas); páginas HTML fuera de las cadenas; `servidor.py` queda como entrada de pocas líneas | **Alto** | Servidor |
 | 7 | **Página principal** | `web/index.html` → `css/` y módulos `js/` (api, lista, editor, audio y onda, marcas, atajos, usuario) | Medio | Servidor + App |
 | 8 | **App de escritorio** | `VentanaPrincipal.cs` en clases por responsabilidad (bandeja, compacto, puente con la página, actualizaciones) | Medio | App |
@@ -116,8 +116,9 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 | 2a | `refactor/2-paquete-base` · PR #15 · Servidor 2026.11.4 | Hecha (fusionada el 03/11) |
 | 3 | `refactor/3-nucleo` · PR #16 · Servidor 2026.11.5 | Hecha (fusionada el 03/11) |
 | 4 | `refactor/4-transcripcion` · PR #17 · Servidor 2026.11.6 | Hecha (fusionada el 03/11) |
-| 5 | `refactor/5-casos-procesamiento` · Servidor 2026.11.7 | En revisión |
-| 2b, 6–9 | — | Pendiente |
+| 5 | `refactor/5-casos-procesamiento` · PR #18 · Servidor 2026.11.7 | En revisión |
+| 6a | `refactor/6a-servicios` (sobre la etapa 5) · Servidor 2026.11.8 | En revisión |
+| 2b, 6b–9 | — | Pendiente |
 
 ### Etapa 1: qué quedó
 
@@ -186,6 +187,36 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 - `.gitignore` excluye `conocimiento/` por nombre en cualquier carpeta: se agregó la excepción
   `!/transcripcion/conocimiento/` y `test_paquete.py` verifica que ningún archivo del paquete quede ignorado.
 - `fase1_transcribir` sigue en la raíz (los módulos nuevos lo importan): pasa al paquete en la etapa 4.
+
+### Etapa 6a: qué quedó
+
+`servidor.py` bajó de ~2.910 a ~1.700 líneas. `configurar(ajustes)` arma los objetos en orden de dependencia, cada
+uno con lo que usa en su constructor (sin buscar globales):
+
+```python
+CASOS = Casos(DATOS, NUEVOS)
+PROC = Procesamiento(CASOS)
+IA = EstadoIA(CFG, SIMULAR, AQUI, CASOS, PROC)                       # transcripcion/operacion/ia.py
+VOCES = ServicioVoz(CFG, CASOS, PROC)                                # transcripcion/voz/servicio.py
+VISTA = VistaCasos(CASOS, PROC, VOCES, INICIO, R)                    # transcripcion/casos/vista.py
+BORRADO = Borrado(CASOS, PROC, INFORMES, R)                          # transcripcion/casos/borrado.py
+OPER = Operacion(CASOS, PROC, COLA_AL_REINICIAR, TUNEL, SRV, FIN_LOCK, M)   # transcripcion/operacion/reinicio.py
+TRAB = Trabajador(CFG, SIMULAR, AQUI, INFORMES, COLA_AL_REINICIAR, CASOS, PROC, IA, VOCES, VISTA, OPER)
+GUARDADO = Guardado(CFG, INFORMES, CASOS, VOCES, FIN_LOCK, APRENDER, EST)   # transcripcion/informe/guardado.py
+APRENDIZAJE = ColaAprendizaje(..., GUARDADO.aplicar_aprendizaje, GUARDADO.analizar_aprendizaje)
+GUARDADO.aprendizaje = APRENDIZAJE
+```
+
+- También se movieron: `voces.py` → `transcripcion/voz/huellas.py` (con `RAIZ` para `modelos/` y `voces/`); el Word de
+  `informe.py` (hoja, párrafos, formato, `escribir_docx`) → `transcripcion/informe/word.py`; `texto_marcas` y
+  `mensaje_amigable` → `transcripcion/base/formatos.py`; `SUFIJOS_CASO` → `casos/repositorio.py`.
+- Los módulos de la raíz que todavía usan algunos servicios (`remoto`, `mantenimiento`, `aprender`, `estadisticas`)
+  se les pasan en el constructor: el paquete sigue sin importar nada de la raíz. Pasan al paquete con la etapa 6b.
+- Pruebas: parchean métodos de los objetos (`S.TRAB`, `S.VISTA`, `S.VOCES`, `S.IA`, `S.BORRADO`, `S.GUARDADO`) o, si
+  el objeto lo crea `main()`, el método en la clase (`patch.object(Trabajador, "reanudar_cola")`). Un «reinicio» en una
+  prueba es `S.configurar(aj)` otra vez (objetos nuevos con las mismas carpetas).
+- Además de la suite, se probó un servidor real en modo simulado: subir, pausar a mitad de la transcripción,
+  panel de administración, reanudar, informe listo y mensaje a las PC, sin errores en la consola.
 
 ### Etapa 5: qué quedó
 

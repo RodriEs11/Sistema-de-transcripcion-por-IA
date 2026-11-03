@@ -5,7 +5,7 @@ revisados. No hace falta elegir el médico antes de mandar los audios: alcanza c
 
 ## Cómo funciona
 
-1. Después de Whisper, `voces.py` calcula la huella del audio: un vector de 256 números que describe la voz
+1. Después de Whisper, `transcripcion/voz/huellas.py` calcula la huella del audio: un vector de 256 números que describe la voz
    (modelo **WeSpeaker ResNet34**, entrenado con VoxCeleb, en formato ONNX). Usa solo los tramos con voz (los tiempos
    de las palabras de Whisper), hasta 120 s, en partes de 20 s que se promedian. Corre en el procesador con
    `onnxruntime` (ya viene con faster-whisper) y tarda 1 o 2 segundos; no usa la placa de video.
@@ -46,7 +46,8 @@ respeta: la voz solo se anota para las estadísticas.
 
 | Archivo | Contenido |
 |---|---|
-| `sistema/voces.py` | Características (fbank como Kaldi, en numpy), huella, muestras, detección y agrupamiento |
+| `transcripcion/voz/huellas.py` | Características (fbank como Kaldi, en numpy), huella, muestras, detección y agrupamiento |
+| `transcripcion/voz/servicio.py` | `ServicioVoz`: huella de cada caso, médico detectado, muestra al guardar, agrupar voces, hilo de arranque |
 | `sistema/modelos/wespeaker_resnet34.onnx` | El modelo (26 MB). Si falta, el servidor lo baja solo al arrancar desde las versiones publicadas de sherpa-onnx en GitHub y verifica su SHA-256 |
 | `sistema/voces/huellas.json` | Muestras etiquetadas: `{"muestras": {caso: {medico, h, fecha, fuente, seg, modelo}}}` |
 | `Informes/revision/datos/<caso>.voz.json` | Huella del caso, resultado de la detección, `medico_por` (`voz`, `usuaria`, `pc` o vacío) y `medico_ia` |
