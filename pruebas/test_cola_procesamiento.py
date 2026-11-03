@@ -192,7 +192,7 @@ class ServidorTest(unittest.TestCase):
         self.iniciar();self.assertEqual(list(self.S.COLA.queue),['huerfano'])
 
     def test_checkpoint_valido_no_regenera_ni_borra_revision(self):
-        c=self.iniciar();self.audio('listo');self.S.encolar('listo')
+        self.iniciar();self.audio('listo');self.S.encolar('listo')
         for sufijo in self.S.ARCHIVOS_RESULTADO:(self.datos/('listo'+sufijo)).write_text('Resultado ficticio',encoding='utf-8')
         self.S.confirmar_resultado('listo',self.S.firma_audio(self.audios/'listo.wav'))
         borrador=self.datos/'listo.borrador.html';borrador.write_text('Edición ficticia conservada')
@@ -214,7 +214,7 @@ class ServidorTest(unittest.TestCase):
         self.assertEqual(word.read_bytes(),b'Word exclusivamente ficticio');self.assertEqual(formato.read_text(),'{"v":2}')
 
     def test_una_solicitud_nueva_no_reutiliza_checkpoint_anterior(self):
-        c=self.iniciar();self.audio('caso');self.S.encolar('caso')
+        self.iniciar();self.audio('caso');self.S.encolar('caso')
         for s in self.S.ARCHIVOS_RESULTADO:(self.datos/('caso'+s)).write_text('Resultado ficticio')
         self.S.confirmar_resultado('caso',self.S.firma_audio(self.audios/'caso.wav'));self.S.poner_estado('caso','listo')
         self.S.encolar('caso');self.assertFalse(self.S.resultado_confirmado('caso'))

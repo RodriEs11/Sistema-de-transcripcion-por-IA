@@ -1,0 +1,1797 @@
+{
+ "informes": {
+  "birads_y_lado": {
+   "categorias": [
+    "mama"
+   ],
+   "conteo": {
+    "numero": 2,
+    "verificar": 1
+   },
+   "html": "<div class=\"ln tit\">ECOGRAFÍA MAMARIA</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">-En mama <mark class=\"m-verificar\" title=\"Informe: «izquierda» · no se dictó junto a este hallazgo. Cerca se dictó: derecha. Verificá que corresponda\">izquierda</mark>, hora <mark class=\"m-numero\" title=\"Dictado: 3 / Informe: 11\">11</mark>, imagen nodular sólida hipoecogénica de 8 mm.</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">Bi-Rads <mark class=\"m-numero\" title=\"Dictado: Bi-Rads 3 / Informe: Bi-Rads 2\">2</mark>.</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">Lo saluda atte.</div>",
+   "marcado": [
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "ECOGRAFÍA MAMARIA",
+       null,
+       null
+      ]
+     ],
+     "titulo": true
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "-En mama ",
+       null,
+       null
+      ],
+      [
+       "izquierda",
+       "verificar",
+       "Informe: «izquierda» · no se dictó junto a este hallazgo. Cerca se dictó: derecha. Verificá que corresponda"
+      ],
+      [
+       ", hora ",
+       null,
+       null
+      ],
+      [
+       "11",
+       "numero",
+       "Dictado: 3 / Informe: 11"
+      ],
+      [
+       ", imagen nodular sólida hipoecogénica de ",
+       null,
+       null
+      ],
+      [
+       "8",
+       null,
+       null
+      ],
+      [
+       " mm.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "Bi-Rads ",
+       null,
+       null
+      ],
+      [
+       "2",
+       "numero",
+       "Dictado: Bi-Rads 3 / Informe: Bi-Rads 2"
+      ],
+      [
+       ".",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    }
+   ],
+   "omisiones": [
+    {
+     "dato": "3",
+     "seg": null
+    }
+   ],
+   "ordenado": "ECOGRAFÍA MAMARIA\n\n-En mama izquierda, hora 11, imagen nodular sólida hipoecogénica de 8 mm.\n\nBi-Rads 2.\n\nLo saluda atte.",
+   "parrafos_word": [
+    {
+     "alin": "center",
+     "alin_def": "center",
+     "linea": null,
+     "negrita": true,
+     "segs": [
+      [
+       "ECOGRAFÍA MAMARIA",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "-En mama ",
+       null,
+       null
+      ],
+      [
+       "izquierda",
+       "verificar",
+       "Informe: «izquierda» · no se dictó junto a este hallazgo. Cerca se dictó: derecha. Verificá que corresponda"
+      ],
+      [
+       ", hora ",
+       null,
+       null
+      ],
+      [
+       "11",
+       "numero",
+       "Dictado: 3 / Informe: 11"
+      ],
+      [
+       ", imagen nodular sólida hipoecogénica de ",
+       null,
+       null
+      ],
+      [
+       "8",
+       null,
+       null
+      ],
+      [
+       " mm.",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "Bi-Rads ",
+       null,
+       null
+      ],
+      [
+       "2",
+       "numero",
+       "Dictado: Bi-Rads 3 / Informe: Bi-Rads 2"
+      ],
+      [
+       ".",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ]
+    }
+   ],
+   "sin_plantilla": [
+    "ECOGRAFÍA MAMARIA"
+   ]
+  },
+  "dudas_y_completar": {
+   "categorias": [
+    "torax"
+   ],
+   "conteo": {
+    "dudoso": 1,
+    "plantilla": 1,
+    "verificar": 1
+   },
+   "html": "<div class=\"ln tit\">RX DE TÓRAX (FRENTE)</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">-Campos pulmonares sin imágenes focales.</div>\n<div class=\"ln l-plantilla\" title=\"Frase de plantilla que el médico no dictó: confirmá que corresponde\">-Senos costofrénicos libres.</div>\n<div class=\"ln\">-Silueta cardíaca <mark class=\"m-dudoso\" title=\"La IA no entendió bien esta parte y propone «agrandada». Escuchá el audio para confirmarlo\">agrandada</mark>.</div>\n<div class=\"ln l-verificar\" title=\"No encontré en el dictado: Índice, cardiotorácico, COMPLETAR. Verificá que esta línea corresponda\">-Índice cardiotorácico de [COMPLETAR].</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">Lo saluda atte.</div>",
+   "marcado": [
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "RX DE TÓRAX (FRENTE)",
+       null,
+       null
+      ]
+     ],
+     "titulo": true
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "-Campos pulmonares sin imágenes focales.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": "plantilla",
+     "motivo": "Frase de plantilla que el médico no dictó: confirmá que corresponde",
+     "segs": [
+      [
+       "-Senos costofrénicos libres.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "-Silueta cardíaca ",
+       null,
+       null
+      ],
+      [
+       "agrandada",
+       "dudoso",
+       "La IA no entendió bien esta parte y propone «agrandada». Escuchá el audio para confirmarlo"
+      ],
+      [
+       ".",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": "verificar",
+     "motivo": "No encontré en el dictado: Índice, cardiotorácico, COMPLETAR. Verificá que esta línea corresponda",
+     "segs": [
+      [
+       "-Índice cardiotorácico de [COMPLETAR].",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    }
+   ],
+   "omisiones": [],
+   "ordenado": "RX DE TÓRAX (FRENTE)\n\n-Campos pulmonares sin imágenes focales.\n-Senos costofrénicos libres.\n-Silueta cardíaca [[?agrandada]].\n-Índice cardiotorácico de [COMPLETAR].\n\nLo saluda atte.",
+   "parrafos_word": [
+    {
+     "alin": "center",
+     "alin_def": "center",
+     "linea": null,
+     "negrita": true,
+     "segs": [
+      [
+       "RX DE TÓRAX (FRENTE)",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "-Campos pulmonares sin imágenes focales.",
+       null,
+       null
+      ]
+     ]
+    },
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": "plantilla",
+     "negrita": false,
+     "segs": [
+      [
+       "-Senos costofrénicos libres.",
+       null,
+       null
+      ]
+     ]
+    },
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "-Silueta cardíaca ",
+       null,
+       null
+      ],
+      [
+       "agrandada",
+       "dudoso",
+       "La IA no entendió bien esta parte y propone «agrandada». Escuchá el audio para confirmarlo"
+      ],
+      [
+       ".",
+       null,
+       null
+      ]
+     ]
+    },
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": "verificar",
+     "negrita": false,
+     "segs": [
+      [
+       "-Índice cardiotorácico de [COMPLETAR].",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ]
+    }
+   ],
+   "sin_plantilla": []
+  },
+  "niveles_y_horas": {
+   "categorias": [
+    "columna"
+   ],
+   "conteo": {},
+   "html": "<div class=\"ln tit\">RM DE COLUMNA LUMBOSACRA</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">-Protrusión discal L4-L5 y L5-S1.</div>\n<div class=\"ln\">-Quiste en H2.</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">Lo saluda atte.</div>",
+   "marcado": [
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "RM DE COLUMNA LUMBOSACRA",
+       null,
+       null
+      ]
+     ],
+     "titulo": true
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "-Protrusión discal ",
+       null,
+       null
+      ],
+      [
+       "L4-L5",
+       null,
+       null
+      ],
+      [
+       " y ",
+       null,
+       null
+      ],
+      [
+       "L5-S1",
+       null,
+       null
+      ],
+      [
+       ".",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "-Quiste en ",
+       null,
+       null
+      ],
+      [
+       "H2",
+       null,
+       null
+      ],
+      [
+       ".",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    }
+   ],
+   "omisiones": [
+    {
+     "dato": "H12",
+     "seg": null
+    }
+   ],
+   "ordenado": "RM DE COLUMNA LUMBOSACRA\n\n-Protrusión discal L4-L5 y L5-S1.\n-Quiste en H2.\n\nLo saluda atte.",
+   "parrafos_word": [
+    {
+     "alin": "center",
+     "alin_def": "center",
+     "linea": null,
+     "negrita": true,
+     "segs": [
+      [
+       "RM DE COLUMNA LUMBOSACRA",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "-Protrusión discal ",
+       null,
+       null
+      ],
+      [
+       "L4-L5",
+       null,
+       null
+      ],
+      [
+       " y ",
+       null,
+       null
+      ],
+      [
+       "L5-S1",
+       null,
+       null
+      ],
+      [
+       ".",
+       null,
+       null
+      ]
+     ]
+    },
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "-Quiste en ",
+       null,
+       null
+      ],
+      [
+       "H2",
+       null,
+       null
+      ],
+      [
+       ".",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ]
+    }
+   ],
+   "sin_plantilla": [
+    "RM DE COLUMNA LUMBOSACRA"
+   ]
+  },
+  "numero_distinto": {
+   "categorias": [
+    "pl:renal"
+   ],
+   "conteo": {
+    "numero": 1
+   },
+   "html": "<div class=\"ln tit\">ECOGRAFÍA RENAL BILATERAL</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">-Riñón derecho de 105mm de diámetro longitudinal.</div>\n<div class=\"ln\">-Riñón izquierdo de <mark class=\"m-numero\" title=\"Informe: 101 · este número no aparece en el dictado\">101</mark>mm de diámetro longitudinal.</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">Lo saluda atte.</div>",
+   "marcado": [
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "ECOGRAFÍA RENAL BILATERAL",
+       null,
+       null
+      ]
+     ],
+     "titulo": true
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "-Riñón derecho de ",
+       null,
+       null
+      ],
+      [
+       "105",
+       null,
+       null
+      ],
+      [
+       "mm de diámetro longitudinal.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "-Riñón izquierdo de ",
+       null,
+       null
+      ],
+      [
+       "101",
+       "numero",
+       "Informe: 101 · este número no aparece en el dictado"
+      ],
+      [
+       "mm de diámetro longitudinal.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    }
+   ],
+   "omisiones": [
+    {
+     "dato": "110",
+     "seg": null
+    }
+   ],
+   "ordenado": "ECOGRAFÍA RENAL BILATERAL\n\n-Riñón derecho de 105mm de diámetro longitudinal.\n-Riñón izquierdo de 101mm de diámetro longitudinal.\n\nLo saluda atte.",
+   "parrafos_word": [
+    {
+     "alin": "center",
+     "alin_def": "center",
+     "linea": null,
+     "negrita": true,
+     "segs": [
+      [
+       "ECOGRAFÍA RENAL BILATERAL",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "-Riñón derecho de ",
+       null,
+       null
+      ],
+      [
+       "105",
+       null,
+       null
+      ],
+      [
+       "mm de diámetro longitudinal.",
+       null,
+       null
+      ]
+     ]
+    },
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "-Riñón izquierdo de ",
+       null,
+       null
+      ],
+      [
+       "101",
+       "numero",
+       "Informe: 101 · este número no aparece en el dictado"
+      ],
+      [
+       "mm de diámetro longitudinal.",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ]
+    }
+   ],
+   "sin_plantilla": []
+  },
+  "orden_estudios": {
+   "categorias": [
+    "gine",
+    "mama"
+   ],
+   "conteo": {
+    "verificar": 1
+   },
+   "html": "<div class=\"ln tit\">ECOGRAFÍA GINECOLÓGICA TRANSVAGINAL</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">-Útero de forma y tamaño normal.</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln tit\">MAMOGRAFÍA DIGITAL BILATERAL</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln l-verificar\" title=\"No encontré en el dictado: Mamas, densidad, tipo. Verificá que esta línea corresponda\">-Mamas de densidad tipo B.</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">Lo saluda atte.</div>",
+   "marcado": [
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "ECOGRAFÍA GINECOLÓGICA TRANSVAGINAL",
+       null,
+       null
+      ]
+     ],
+     "titulo": true
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "-Útero de forma y tamaño normal.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "MAMOGRAFÍA DIGITAL BILATERAL",
+       null,
+       null
+      ]
+     ],
+     "titulo": true
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": "verificar",
+     "motivo": "No encontré en el dictado: Mamas, densidad, tipo. Verificá que esta línea corresponda",
+     "segs": [
+      [
+       "-Mamas de densidad tipo B.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    }
+   ],
+   "omisiones": [],
+   "ordenado": "MAMOGRAFÍA DIGITAL BILATERAL\n\n-Mamas de densidad tipo B.\n\nECOGRAFÍA GINECOLÓGICA TRANSVAGINAL\n\n-Útero de forma y tamaño normal.\n\nLo saluda atte.",
+   "parrafos_word": [
+    {
+     "alin": "center",
+     "alin_def": "center",
+     "linea": null,
+     "negrita": true,
+     "segs": [
+      [
+       "ECOGRAFÍA GINECOLÓGICA TRANSVAGINAL",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "-Útero de forma y tamaño normal.",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "center",
+     "alin_def": "center",
+     "linea": null,
+     "negrita": true,
+     "segs": [
+      [
+       "MAMOGRAFÍA DIGITAL BILATERAL",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": "verificar",
+     "negrita": false,
+     "segs": [
+      [
+       "-Mamas de densidad tipo B.",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ]
+    }
+   ],
+   "sin_plantilla": [
+    "ECOGRAFÍA GINECOLÓGICA TRANSVAGINAL",
+    "MAMOGRAFÍA DIGITAL BILATERAL"
+   ]
+  },
+  "protocolo_literal_sin_plantilla": {
+   "categorias": [
+    "columna"
+   ],
+   "conteo": {
+    "completar": 1
+   },
+   "html": "<div class=\"ln tit\">RX DE COLUMNA LUMBOSACRA</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\"><mark class=\"m-completar\" title=\"La IA escribió «protocolo normal» sin el texto: falta la plantilla de este estudio. Escribí las viñetas del protocolo normal\">[COMPLETAR: protocolo normal de este estudio]</mark></div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">Lo saluda atte.</div>",
+   "marcado": [
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "RX DE COLUMNA LUMBOSACRA",
+       null,
+       null
+      ]
+     ],
+     "titulo": true
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "segs": [
+      [
+       "[COMPLETAR: protocolo normal de este estudio]",
+       "completar",
+       "La IA escribió «protocolo normal» sin el texto: falta la plantilla de este estudio. Escribí las viñetas del protocolo normal"
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    }
+   ],
+   "omisiones": [],
+   "ordenado": "RX DE COLUMNA LUMBOSACRA\n\n-Protocolo normal.\n\nLo saluda atte.",
+   "parrafos_word": [
+    {
+     "alin": "center",
+     "alin_def": "center",
+     "linea": null,
+     "negrita": true,
+     "segs": [
+      [
+       "RX DE COLUMNA LUMBOSACRA",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "[COMPLETAR: protocolo normal de este estudio]",
+       "completar",
+       "La IA escribió «protocolo normal» sin el texto: falta la plantilla de este estudio. Escribí las viñetas del protocolo normal"
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ]
+    }
+   ],
+   "sin_plantilla": [
+    "RX DE COLUMNA LUMBOSACRA"
+   ]
+  },
+  "tiroides_coincide": {
+   "categorias": [
+    "tiroides"
+   ],
+   "conteo": {},
+   "html": "<div class=\"ln tit\">ECOGRAFÍA TIROIDEA</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">-Glándula tiroides de forma y tamaño normal.</div>\n<div class=\"ln\">-Lóbulo derecho de 45 x 15 mm.</div>\n<div class=\"ln\">-Lóbulo izquierdo de 43 x 14 mm.</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">Lo saluda atte.</div>",
+   "marcado": [
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "ECOGRAFÍA TIROIDEA",
+       null,
+       null
+      ]
+     ],
+     "titulo": true
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "-Glándula tiroides de forma y tamaño normal.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "-Lóbulo derecho de ",
+       null,
+       null
+      ],
+      [
+       "45",
+       null,
+       null
+      ],
+      [
+       " x ",
+       null,
+       null
+      ],
+      [
+       "15",
+       null,
+       null
+      ],
+      [
+       " mm.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "-Lóbulo izquierdo de ",
+       null,
+       null
+      ],
+      [
+       "43",
+       null,
+       null
+      ],
+      [
+       " x ",
+       null,
+       null
+      ],
+      [
+       "14",
+       null,
+       null
+      ],
+      [
+       " mm.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    }
+   ],
+   "omisiones": [],
+   "ordenado": "ECOGRAFÍA TIROIDEA\n\n-Glándula tiroides de forma y tamaño normal.\n-Lóbulo derecho de 45 x 15 mm.\n-Lóbulo izquierdo de 43 x 14 mm.\n\nLo saluda atte.",
+   "parrafos_word": [
+    {
+     "alin": "center",
+     "alin_def": "center",
+     "linea": null,
+     "negrita": true,
+     "segs": [
+      [
+       "ECOGRAFÍA TIROIDEA",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "-Glándula tiroides de forma y tamaño normal.",
+       null,
+       null
+      ]
+     ]
+    },
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "-Lóbulo derecho de ",
+       null,
+       null
+      ],
+      [
+       "45",
+       null,
+       null
+      ],
+      [
+       " x ",
+       null,
+       null
+      ],
+      [
+       "15",
+       null,
+       null
+      ],
+      [
+       " mm.",
+       null,
+       null
+      ]
+     ]
+    },
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "-Lóbulo izquierdo de ",
+       null,
+       null
+      ],
+      [
+       "43",
+       null,
+       null
+      ],
+      [
+       " x ",
+       null,
+       null
+      ],
+      [
+       "14",
+       null,
+       null
+      ],
+      [
+       " mm.",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ]
+    }
+   ],
+   "sin_plantilla": [
+    "ECOGRAFÍA TIROIDEA"
+   ]
+  },
+  "whisper_junta_numeros": {
+   "categorias": [
+    "gine"
+   ],
+   "conteo": {
+    "bajaconf": 1,
+    "numero": 3,
+    "verificar": 1
+   },
+   "html": "<div class=\"ln l-verificar tit\" title=\"No reconozco «ECOGRAFÍA GINECOLÓGICA TRANSVAGINAL» en el dictado: confirmá que es el estudio que se dictó\">ECOGRAFÍA GINECOLÓGICA TRANSVAGINAL</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">-Útero en anteversión de <mark class=\"m-numero\" title=\"Dictado: 984951 / Informe: 98\">98</mark> x <mark class=\"m-numero\" title=\"Dictado: 984951 / Informe: 49\">49</mark> x <mark class=\"m-numero\" title=\"Dictado: 984951 / Informe: 51\">51</mark> mm.</div>\n<div class=\"ln\">-Endometrio de <mark class=\"m-bajaconf\" title=\"Whisper oyó «6» con poca seguridad (confianza 52 %): escuchalo para confirmar\" onclick=\"ir(4.0)\" style=\"cursor:pointer\">6</mark> mm.</div>\n<div class=\"ln\">&nbsp;</div>\n<div class=\"ln\">Lo saluda atte.</div>",
+   "marcado": [
+    {
+     "linea": "verificar",
+     "motivo": "No reconozco «ECOGRAFÍA GINECOLÓGICA TRANSVAGINAL» en el dictado: confirmá que es el estudio que se dictó",
+     "segs": [
+      [
+       "ECOGRAFÍA GINECOLÓGICA TRANSVAGINAL",
+       null,
+       null
+      ]
+     ],
+     "titulo": true
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "-Útero en anteversión de ",
+       null,
+       null
+      ],
+      [
+       "98",
+       "numero",
+       "Dictado: 984951 / Informe: 98"
+      ],
+      [
+       " x ",
+       null,
+       null
+      ],
+      [
+       "49",
+       "numero",
+       "Dictado: 984951 / Informe: 49"
+      ],
+      [
+       " x ",
+       null,
+       null
+      ],
+      [
+       "51",
+       "numero",
+       "Dictado: 984951 / Informe: 51"
+      ],
+      [
+       " mm.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "-Endometrio de ",
+       null,
+       null
+      ],
+      [
+       "6",
+       "bajaconf",
+       "Whisper oyó «6» con poca seguridad (confianza 52 %): escuchalo para confirmar"
+      ],
+      [
+       " mm.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    },
+    {
+     "linea": null,
+     "motivo": null,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ],
+     "titulo": false
+    }
+   ],
+   "omisiones": [
+    {
+     "dato": "984951",
+     "seg": 1.4
+    }
+   ],
+   "ordenado": "ECOGRAFÍA GINECOLÓGICA TRANSVAGINAL\n\n-Útero en anteversión de 98 x 49 x 51 mm.\n-Endometrio de 6 mm.\n\nLo saluda atte.",
+   "parrafos_word": [
+    {
+     "alin": "center",
+     "alin_def": "center",
+     "linea": "verificar",
+     "negrita": true,
+     "segs": [
+      [
+       "ECOGRAFÍA GINECOLÓGICA TRANSVAGINAL",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "-Útero en anteversión de ",
+       null,
+       null
+      ],
+      [
+       "98",
+       "numero",
+       "Dictado: 984951 / Informe: 98"
+      ],
+      [
+       " x ",
+       null,
+       null
+      ],
+      [
+       "49",
+       "numero",
+       "Dictado: 984951 / Informe: 49"
+      ],
+      [
+       " x ",
+       null,
+       null
+      ],
+      [
+       "51",
+       "numero",
+       "Dictado: 984951 / Informe: 51"
+      ],
+      [
+       " mm.",
+       null,
+       null
+      ]
+     ]
+    },
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "-Endometrio de ",
+       null,
+       null
+      ],
+      [
+       "6",
+       "bajaconf",
+       "Whisper oyó «6» con poca seguridad (confianza 52 %): escuchalo para confirmar"
+      ],
+      [
+       " mm.",
+       null,
+       null
+      ]
+     ]
+    },
+    null,
+    {
+     "alin": "",
+     "alin_def": "",
+     "linea": null,
+     "negrita": false,
+     "segs": [
+      [
+       "Lo saluda atte.",
+       null,
+       null
+      ]
+     ]
+    }
+   ],
+   "sin_plantilla": [
+    "ECOGRAFÍA GINECOLÓGICA TRANSVAGINAL"
+   ]
+  }
+ },
+ "normalizar": {
+  "Lóbulo derecho mide cuarenta y cinco por quince milímetros": {
+   "datos_criticos": [
+    "15",
+    "45"
+   ],
+   "normalizar": "lobulo derecho mide 45 por 15 milimetros",
+   "palabras_a_numeros": "L ó bulo derecho mide 45 por 15000 í metros"
+  },
+  "doscientos treinta y ocho": {
+   "datos_criticos": [
+    "238"
+   ],
+   "normalizar": "238",
+   "palabras_a_numeros": "238"
+  },
+  "hernia discal L5, S1 y L4 L5": {
+   "datos_criticos": [
+    "l4l5",
+    "l5s1"
+   ],
+   "normalizar": "hernia discal l5s1 y l4l5",
+   "palabras_a_numeros": "hernia discal L 5 , S 1 y L 4 L 5"
+  },
+  "imagen quística a hora once de la mama izquierda": {
+   "datos_criticos": [
+    "h11"
+   ],
+   "normalizar": "imagen quistica a h11 de la mama izquierda",
+   "palabras_a_numeros": "imagen qu í stica a hora 11 de la mama izquierda"
+  },
+  "le ponemos un tres": {
+   "datos_criticos": [
+    "3"
+   ],
+   "normalizar": "le ponemos un 3",
+   "palabras_a_numeros": "le ponemos un 3"
+  },
+  "mide 105, 48, 57": {
+   "datos_criticos": [
+    "105",
+    "48",
+    "57"
+   ],
+   "normalizar": "mide 105 , 48 , 57",
+   "palabras_a_numeros": "mide 105 , 48 , 57"
+  },
+  "punto y aparte barra fin": {
+   "datos_criticos": [],
+   "normalizar": "punto y aparte barra fin",
+   "palabras_a_numeros": "punto y aparte barra fin"
+  },
+  "veintitrés coma cinco milímetros": {
+   "datos_criticos": [
+    "23.5"
+   ],
+   "normalizar": "23.5 milimetros",
+   "palabras_a_numeros": "veintitr é s coma 5000 í metros"
+  }
+ },
+ "prompt": {
+  "excluye_mismo_audio": {
+   "ejemplos": [
+    "ej_tiroides"
+   ],
+   "mensajes": [
+    {
+     "content": "Sos un asistente de transcripción médica de un servicio de diagnóstico por imágenes de Argentina.\nRecibís el DICTADO de un médico (texto generado por un reconocedor de voz, con errores) y escribís el INFORME FINAL\nexactamente con el formato de las plantillas del servicio.\n\nREGLAS:\n1. Usá las plantillas y frases habituales de abajo, palabra por palabra, siempre que correspondan.\n2. Todo hallazgo, medida, número, lado (derecho/izquierdo), hora (H12) o nivel (L5-S1) sale SOLO del dictado.\n   Nunca inventes datos. Si un dato que la plantilla necesita no fue dictado, escribí [[COMPLETAR: qué falta]].\n3. El reconocedor de voz deforma palabras. Corregilas usando el vocabulario de las plantillas.\n   Si no estás seguro de qué quiso decir el médico, escribí tu mejor propuesta así: [[?texto propuesto]].\n4. No incluyas el nombre del paciente ni comentarios del médico dirigidos al transcriptor.\n5. Respondé SOLO con el informe, sin explicaciones, sin markdown, sin ```.\n6. Nunca escribas \"protocolo normal\" como texto: reemplazalo por las viñetas del PROTOCOLO NORMAL de la plantilla.\n\nFORMATO:\n- Título de cada estudio en su propia línea, luego una línea en blanco, luego las viñetas que empiezan con \"-\" (sin espacio).\n- Línea en blanco entre estudios. Último renglón: \"Lo saluda atte.\"\n\n===== PLANTILLAS =====\n# PLANTILLAS DE INFORMES (EJEMPLO)\n# Este archivo lo lee la IA. Cada estudio empieza con \"## NOMBRE\" y tiene:\n#   TITULO:            el título del estudio (alternativas separadas por \"|\")\n#   TEXTO FIJO:        líneas que van siempre debajo del título (no se controlan contra el dictado)\n#   PROTOCOLO NORMAL:  lo que se escribe cuando el médico dicta \"protocolo normal\"\n#   FRASES HABITUALES: frases que la IA puede usar si se dictan\n# Los huecos se marcan con <...>. Una plantilla propia de un médico se nombra \"## ESTUDIO (estilo Apellido)\".\n# Este contenido es ilustrativo: reemplazalo por las plantillas de tu servicio.\n\n## RX DE TÓRAX\nTITULO: RX de Tórax (frente)  |  RX de Tórax (frente y perfil)   (según lo dictado)\nPROTOCOLO NORMAL:\n-Campos pulmonares sin imágenes focales.\n-Senos costofrénicos libres.\n-Silueta cardíaca de tamaño conservado.\n\n===== CÓMO DICTAN =====\n# CÓMO DICTAN LOS MÉDICOS (convenciones de ejemplo)\n- Al principio pueden decir el nombre del paciente: NO va en el informe.\n- \"protocolo normal\" = usar el PROTOCOLO NORMAL de la plantilla del estudio.\n- \"protocolo normal pero adicionamos X\" = protocolo normal + X como última viñeta.\n- \"punto y aparte\" = nueva viñeta. \"punto seguido\" = misma viñeta, nueva oración.\n- \"barra\" = \"/\". \"dos puntos\" = \":\". \"fin\" / \"punto final\" = terminó el dictado.\n- \"hora 11\" (mama) = H11. \"L5, S1\" = L5-S1.\n- Medidas: \"23 por 24\" = \"23 x 24mm\".\n- Correcciones (\"perdón\", \"mejor dicho\"): usar lo último que se dijo.\n- Si un dato no se entiende, escribir [[COMPLETAR: dato]]. Nunca suponerlo.\n\n",
+     "role": "system"
+    },
+    {
+     "content": "DICTADO:\nEcografía tiroidea protocolo normal lóbulo derecho 40 por 12",
+     "role": "user"
+    },
+    {
+     "content": "ECOGRAFÍA TIROIDEA\n\n-Glándula tiroides de forma y tamaño normal.\n\nLo saluda atte.",
+     "role": "assistant"
+    },
+    {
+     "content": "DICTADO:\nRX de tórax frente protocolo normal",
+     "role": "user"
+    }
+   ]
+  },
+  "mama_con_medico": {
+   "ejemplos": [
+    "ej_mama_medico",
+    "ej_renal"
+   ],
+   "mensajes": [
+    {
+     "content": "Sos un asistente de transcripción médica de un servicio de diagnóstico por imágenes de Argentina.\nRecibís el DICTADO de un médico (texto generado por un reconocedor de voz, con errores) y escribís el INFORME FINAL\nexactamente con el formato de las plantillas del servicio.\n\nREGLAS:\n1. Usá las plantillas y frases habituales de abajo, palabra por palabra, siempre que correspondan.\n2. Todo hallazgo, medida, número, lado (derecho/izquierdo), hora (H12) o nivel (L5-S1) sale SOLO del dictado.\n   Nunca inventes datos. Si un dato que la plantilla necesita no fue dictado, escribí [[COMPLETAR: qué falta]].\n3. El reconocedor de voz deforma palabras. Corregilas usando el vocabulario de las plantillas.\n   Si no estás seguro de qué quiso decir el médico, escribí tu mejor propuesta así: [[?texto propuesto]].\n4. No incluyas el nombre del paciente ni comentarios del médico dirigidos al transcriptor.\n5. Respondé SOLO con el informe, sin explicaciones, sin markdown, sin ```.\n6. Nunca escribas \"protocolo normal\" como texto: reemplazalo por las viñetas del PROTOCOLO NORMAL de la plantilla.\n\nFORMATO:\n- Título de cada estudio en su propia línea, luego una línea en blanco, luego las viñetas que empiezan con \"-\" (sin espacio).\n- Línea en blanco entre estudios. Último renglón: \"Lo saluda atte.\"\n\n===== PLANTILLAS =====\n# PLANTILLAS DE INFORMES (EJEMPLO)\n# Este archivo lo lee la IA. Cada estudio empieza con \"## NOMBRE\" y tiene:\n#   TITULO:            el título del estudio (alternativas separadas por \"|\")\n#   TEXTO FIJO:        líneas que van siempre debajo del título (no se controlan contra el dictado)\n#   PROTOCOLO NORMAL:  lo que se escribe cuando el médico dicta \"protocolo normal\"\n#   FRASES HABITUALES: frases que la IA puede usar si se dictan\n# Los huecos se marcan con <...>. Una plantilla propia de un médico se nombra \"## ESTUDIO (estilo Apellido)\".\n# Este contenido es ilustrativo: reemplazalo por las plantillas de tu servicio.\n\n\n\n===== CÓMO DICTAN =====\n# CÓMO DICTAN LOS MÉDICOS (convenciones de ejemplo)\n- Al principio pueden decir el nombre del paciente: NO va en el informe.\n- \"protocolo normal\" = usar el PROTOCOLO NORMAL de la plantilla del estudio.\n- \"protocolo normal pero adicionamos X\" = protocolo normal + X como última viñeta.\n- \"punto y aparte\" = nueva viñeta. \"punto seguido\" = misma viñeta, nueva oración.\n- \"barra\" = \"/\". \"dos puntos\" = \":\". \"fin\" / \"punto final\" = terminó el dictado.\n- \"hora 11\" (mama) = H11. \"L5, S1\" = L5-S1.\n- Medidas: \"23 por 24\" = \"23 x 24mm\".\n- Correcciones (\"perdón\", \"mejor dicho\"): usar lo último que se dijo.\n- Si un dato no se entiende, escribir [[COMPLETAR: dato]]. Nunca suponerlo.\n\n",
+     "role": "system"
+    },
+    {
+     "content": "DICTADO:\nEcografía mamaria imagen quística le ponemos un 2",
+     "role": "user"
+    },
+    {
+     "content": "ECOGRAFÍA MAMARIA\n\n-Imagen quística.\n\nBi-Rads 2.\n\nLo saluda atte.",
+     "role": "assistant"
+    },
+    {
+     "content": "DICTADO:\nEcografía renal riñones normales",
+     "role": "user"
+    },
+    {
+     "content": "ECOGRAFÍA RENAL BILATERAL\n\n-Riñones de forma, tamaño y ecoestructura conservados.\n\nLo saluda atte.",
+     "role": "assistant"
+    },
+    {
+     "content": "DICTADO:\nEcografía mamaria. Imagen quística a hora 11. Le ponemos un 2.",
+     "role": "user"
+    }
+   ]
+  },
+  "tiroides": {
+   "ejemplos": [
+    "ej_tiroides",
+    "ej_mama_medico"
+   ],
+   "mensajes": [
+    {
+     "content": "Sos un asistente de transcripción médica de un servicio de diagnóstico por imágenes de Argentina.\nRecibís el DICTADO de un médico (texto generado por un reconocedor de voz, con errores) y escribís el INFORME FINAL\nexactamente con el formato de las plantillas del servicio.\n\nREGLAS:\n1. Usá las plantillas y frases habituales de abajo, palabra por palabra, siempre que correspondan.\n2. Todo hallazgo, medida, número, lado (derecho/izquierdo), hora (H12) o nivel (L5-S1) sale SOLO del dictado.\n   Nunca inventes datos. Si un dato que la plantilla necesita no fue dictado, escribí [[COMPLETAR: qué falta]].\n3. El reconocedor de voz deforma palabras. Corregilas usando el vocabulario de las plantillas.\n   Si no estás seguro de qué quiso decir el médico, escribí tu mejor propuesta así: [[?texto propuesto]].\n4. No incluyas el nombre del paciente ni comentarios del médico dirigidos al transcriptor.\n5. Respondé SOLO con el informe, sin explicaciones, sin markdown, sin ```.\n6. Nunca escribas \"protocolo normal\" como texto: reemplazalo por las viñetas del PROTOCOLO NORMAL de la plantilla.\n\nFORMATO:\n- Título de cada estudio en su propia línea, luego una línea en blanco, luego las viñetas que empiezan con \"-\" (sin espacio).\n- Línea en blanco entre estudios. Último renglón: \"Lo saluda atte.\"\n\n===== PLANTILLAS =====\n# PLANTILLAS DE INFORMES (EJEMPLO)\n# Este archivo lo lee la IA. Cada estudio empieza con \"## NOMBRE\" y tiene:\n#   TITULO:            el título del estudio (alternativas separadas por \"|\")\n#   TEXTO FIJO:        líneas que van siempre debajo del título (no se controlan contra el dictado)\n#   PROTOCOLO NORMAL:  lo que se escribe cuando el médico dicta \"protocolo normal\"\n#   FRASES HABITUALES: frases que la IA puede usar si se dictan\n# Los huecos se marcan con <...>. Una plantilla propia de un médico se nombra \"## ESTUDIO (estilo Apellido)\".\n# Este contenido es ilustrativo: reemplazalo por las plantillas de tu servicio.\n\n\n\n===== CÓMO DICTAN =====\n# CÓMO DICTAN LOS MÉDICOS (convenciones de ejemplo)\n- Al principio pueden decir el nombre del paciente: NO va en el informe.\n- \"protocolo normal\" = usar el PROTOCOLO NORMAL de la plantilla del estudio.\n- \"protocolo normal pero adicionamos X\" = protocolo normal + X como última viñeta.\n- \"punto y aparte\" = nueva viñeta. \"punto seguido\" = misma viñeta, nueva oración.\n- \"barra\" = \"/\". \"dos puntos\" = \":\". \"fin\" / \"punto final\" = terminó el dictado.\n- \"hora 11\" (mama) = H11. \"L5, S1\" = L5-S1.\n- Medidas: \"23 por 24\" = \"23 x 24mm\".\n- Correcciones (\"perdón\", \"mejor dicho\"): usar lo último que se dijo.\n- Si un dato no se entiende, escribir [[COMPLETAR: dato]]. Nunca suponerlo.\n\n",
+     "role": "system"
+    },
+    {
+     "content": "DICTADO:\nEcografía tiroidea protocolo normal lóbulo derecho 40 por 12",
+     "role": "user"
+    },
+    {
+     "content": "ECOGRAFÍA TIROIDEA\n\n-Glándula tiroides de forma y tamaño normal.\n\nLo saluda atte.",
+     "role": "assistant"
+    },
+    {
+     "content": "DICTADO:\nEcografía mamaria imagen quística le ponemos un 2",
+     "role": "user"
+    },
+    {
+     "content": "ECOGRAFÍA MAMARIA\n\n-Imagen quística.\n\nBi-Rads 2.\n\nLo saluda atte.",
+     "role": "assistant"
+    },
+    {
+     "content": "DICTADO:\nEcografía tiroidea. Lóbulo derecho mide 45 por 15 milímetros.",
+     "role": "user"
+    }
+   ]
+  }
+ }
+}

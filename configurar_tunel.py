@@ -130,7 +130,7 @@ Listo: el servidor va a usar Microsoft Dev Tunnels.
 def usar_cloudflare():
     R.guardar_config_tunel(servicio="cloudflare")
     L.ok("TÚNEL", "Túnel cambiado al rápido de Cloudflare con configurar_tunel. Se toma al reiniciar el servidor.")
-    print(f"\nListo: el servidor va a usar el túnel rápido de Cloudflare. Reinicialo para que lo tome.")
+    print("\nListo: el servidor va a usar el túnel rápido de Cloudflare. Reinicialo para que lo tome.")
 
 
 def main():

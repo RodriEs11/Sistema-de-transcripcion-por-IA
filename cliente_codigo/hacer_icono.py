@@ -79,7 +79,6 @@ def dib(img):
     ancho_mask = ((w + 31) // 32) * 4
     mask = b""
     for yy in range(h - 1, -1, -1):
-        bits = 0
         fila = bytearray(ancho_mask)
         for xx in range(w):
             if px[xx, yy][3] == 0:

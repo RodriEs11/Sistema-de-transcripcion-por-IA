@@ -1,0 +1,16 @@
+# Configuración de herramientas de desarrollo. El sistema todavía no se instala como paquete:
+# se ejecuta desde esta carpeta (ver docs/refactor.md para la estructura destino).
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+extend-exclude = ["respaldo", "modelos", ".venv", "node_modules"]
+
+[tool.ruff.lint]
+# Etapa 0 del refactor: solo errores reales (nombres sin definir, imports sin usar, sintaxis).
+# Las reglas de estilo (E501, E701/E702, I001…) se activan por módulo a medida que se refactoriza;
+# ver docs/refactor.md → «Calidad del código».
+select = ["E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+"pruebas/contratos/calcular_nucleo.py" = ["E402"]

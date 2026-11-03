@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from docx import Document
 from docx.oxml.ns import qn
-from informe import aplicar_formato, escribir_docx, parrafos_docx, pagina
+from informe import aplicar_formato, escribir_docx, pagina
 
 
 class EditorWordTest(unittest.TestCase):

@@ -1,0 +1,78 @@
+{
+ "_nota": "Datos 100% ficticios. Entradas del contrato del núcleo (ver calcular_nucleo.py y docs/refactor.md).",
+ "frases": [
+  "Lóbulo derecho mide cuarenta y cinco por quince milímetros",
+  "imagen quística a hora once de la mama izquierda",
+  "le ponemos un tres",
+  "mide 105, 48, 57",
+  "hernia discal L5, S1 y L4 L5",
+  "veintitrés coma cinco milímetros",
+  "doscientos treinta y ocho",
+  "punto y aparte barra fin"
+ ],
+ "informes": [
+  {
+   "id": "tiroides_coincide",
+   "dictado": "Ecografía tiroidea. Glándula tiroides de forma y tamaño normal. Lóbulo derecho mide 45 por 15 milímetros. Lóbulo izquierdo mide 43 por 14 milímetros.",
+   "informe": "ECOGRAFÍA TIROIDEA\n\n-Glándula tiroides de forma y tamaño normal.\n-Lóbulo derecho de 45 x 15 mm.\n-Lóbulo izquierdo de 43 x 14 mm.\n\nLo saluda atte."
+  },
+  {
+   "id": "numero_distinto",
+   "dictado": "Ecografía renal. Riñón derecho de 105 milímetros. Riñón izquierdo de 110 milímetros.",
+   "informe": "ECOGRAFÍA RENAL BILATERAL\n\n-Riñón derecho de 105mm de diámetro longitudinal.\n-Riñón izquierdo de 101mm de diámetro longitudinal.\n\nLo saluda atte."
+  },
+  {
+   "id": "birads_y_lado",
+   "dictado": "Ecografía mamaria. En mama derecha hora 11 imagen nodular sólida hipoecogénica de 8 milímetros. Le ponemos un 3.",
+   "informe": "ECOGRAFÍA MAMARIA\n\n-En mama izquierda, hora 11, imagen nodular sólida hipoecogénica de 8 mm.\n\nBi-Rads 2.\n\nLo saluda atte."
+  },
+  {
+   "id": "whisper_junta_numeros",
+   "dictado": "Útero en anteversión mide 984951 milímetros. Endometrio de 6 milímetros.",
+   "informe": "ECOGRAFÍA GINECOLÓGICA TRANSVAGINAL\n\n-Útero en anteversión de 98 x 49 x 51 mm.\n-Endometrio de 6 mm.\n\nLo saluda atte.",
+   "palabras": [
+    {"p": " Útero", "ini": 0.0, "fin": 0.4, "conf": 0.97},
+    {"p": " en", "ini": 0.4, "fin": 0.5, "conf": 0.99},
+    {"p": " anteversión", "ini": 0.5, "fin": 1.1, "conf": 0.93},
+    {"p": " mide", "ini": 1.1, "fin": 1.4, "conf": 0.98},
+    {"p": " 984951", "ini": 1.4, "fin": 2.6, "conf": 0.41},
+    {"p": " milímetros.", "ini": 2.6, "fin": 3.1, "conf": 0.95},
+    {"p": " Endometrio", "ini": 3.3, "fin": 3.9, "conf": 0.96},
+    {"p": " de", "ini": 3.9, "fin": 4.0, "conf": 0.99},
+    {"p": " 6", "ini": 4.0, "fin": 4.2, "conf": 0.52},
+    {"p": " milímetros.", "ini": 4.2, "fin": 4.8, "conf": 0.97}
+   ]
+  },
+  {
+   "id": "orden_estudios",
+   "dictado": "Transvaginal útero normal. Mamografía protocolo normal.",
+   "informe": "ECOGRAFÍA GINECOLÓGICA TRANSVAGINAL\n\n-Útero de forma y tamaño normal.\n\nMAMOGRAFÍA DIGITAL BILATERAL\n\n-Mamas de densidad tipo B.\n\nLo saluda atte."
+  },
+  {
+   "id": "dudas_y_completar",
+   "dictado": "RX de tórax frente. Campos pulmonares sin imágenes focales. Silueta cardíaca agrandada.",
+   "informe": "RX DE TÓRAX (FRENTE)\n\n-Campos pulmonares sin imágenes focales.\n-Senos costofrénicos libres.\n-Silueta cardíaca [[?agrandada]].\n-Índice cardiotorácico de [COMPLETAR].\n\nLo saluda atte."
+  },
+  {
+   "id": "protocolo_literal_sin_plantilla",
+   "dictado": "Colonia lombosagra protocolo normal.",
+   "informe": "RX DE COLUMNA LUMBOSACRA\n\n-Protocolo normal.\n\nLo saluda atte."
+  },
+  {
+   "id": "niveles_y_horas",
+   "dictado": "Resonancia de columna. Protrusión discal L4 L5 y L5 S1. Quiste a hora 2, perdón, hora 12.",
+   "informe": "RM DE COLUMNA LUMBOSACRA\n\n-Protrusión discal L4-L5 y L5-S1.\n-Quiste en H2.\n\nLo saluda atte."
+  }
+ ],
+ "banco": [
+  {"nombre": "ej_tiroides", "dictado": "Ecografía tiroidea protocolo normal lóbulo derecho 40 por 12", "informe": "ECOGRAFÍA TIROIDEA\n\n-Glándula tiroides de forma y tamaño normal.\n\nLo saluda atte."},
+  {"nombre": "ej_renal", "dictado": "Ecografía renal riñones normales", "informe": "ECOGRAFÍA RENAL BILATERAL\n\n-Riñones de forma, tamaño y ecoestructura conservados.\n\nLo saluda atte."},
+  {"nombre": "ej_torax", "dictado": "RX de tórax frente protocolo normal", "informe": "RX DE TÓRAX (FRENTE)\n\n-Campos pulmonares sin imágenes focales.\n\nLo saluda atte."},
+  {"nombre": "ej_mama_medico", "dictado": "Ecografía mamaria imagen quística le ponemos un 2", "informe": "ECOGRAFÍA MAMARIA\n\n-Imagen quística.\n\nBi-Rads 2.\n\nLo saluda atte.", "medico": "Ficticio", "aprendido": true}
+ ],
+ "prompts": [
+  {"id": "tiroides", "dictado": "Ecografía tiroidea. Lóbulo derecho mide 45 por 15 milímetros.", "k": 2},
+  {"id": "mama_con_medico", "dictado": "Ecografía mamaria. Imagen quística a hora 11. Le ponemos un 2.", "k": 2, "medico": "Ficticio"},
+  {"id": "excluye_mismo_audio", "dictado": "RX de tórax frente protocolo normal", "k": 1, "excluir": "ej_torax"}
+ ]
+}

@@ -8,6 +8,8 @@
   en `respaldo/respaldo_AAAAMMDD_HHMMSS_antes_de_<cambio>/` antes de editarlos.
 - No usar datos de pacientes en pruebas. No versionar secretos, configuración local,
   informes, audios, registros ni binarios. No sobrescribir la configuración local con la de ejemplo.
+- Hay un refactor por etapas en curso: antes de mover o reorganizar código, leer `docs/refactor.md`
+  (reglas de cada PR, estructura destino y estado). Las decisiones de arquitectura van en `docs/adr/`.
 
 ## Ramas y orden de trabajo
 
@@ -79,6 +81,9 @@ No dar por terminado un cambio funcional hasta completar su versión, documentac
 - Ejecutar pruebas pertinentes a lo modificado: Python, JavaScript, exportación a Word,
   interfaz en modo simulado y/o Windows según el alcance. No sustituir una prueba funcional
   por comprobar números de versión. No duplicar pruebas sin motivo.
+- Los contratos `pruebas/test_contrato_http.py` y `pruebas/test_contrato_nucleo.py` fijan el comportamiento.
+  Un refactor nunca los regenera; un cambio funcional deliberado regenera el del núcleo
+  (`ACTUALIZAR_CONTRATOS=1`) y explica el diff en el PR. `python -m ruff check .` sin errores.
 - Para Windows ejecutar `powershell -NoProfile -ExecutionPolicy Bypass -File cliente_codigo/compilar.ps1`
   (la opción de ejecución aplica solo a ese proceso; no cambia la política de Windows).
   Compila a una carpeta temporal, verifica versión y ejecuta `--autoprueba` antes de sustituir
