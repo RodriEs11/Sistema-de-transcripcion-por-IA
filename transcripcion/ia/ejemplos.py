@@ -8,7 +8,7 @@ import os
 from functools import lru_cache
 import threading
 from pathlib import Path
-from fase1_transcribir import sin_acentos
+from transcripcion.texto.normalizacion import sin_acentos
 from transcripcion import RAIZ
 from transcripcion.conocimiento import plantillas as PL
 from transcripcion.texto import palabras as PAL

@@ -44,7 +44,7 @@ from transcripcion.ia import ejemplos as EJEM
 from transcripcion.ia import ollama as OLL
 from transcripcion.ia import prompt as PR
 from transcripcion.informe import formato as FMT
-from fase1_transcribir import normalizar
+from transcripcion.texto.normalizacion import normalizar
 from transcripcion.casos import paciente as PAC
 from transcripcion.base import plataforma as P
 from transcripcion.base import registro as L
@@ -849,8 +849,8 @@ def forma_de_onda(nombre, n=1600):
         except ValueError:
             pass
     import numpy as np
-    from fase1_transcribir import cargar_audio
-    x = np.abs(cargar_audio(a))
+    from transcripcion.asr import whisper as W
+    x = np.abs(W.cargar_audio(a))
     dur = len(x) / 16000.0
     if not len(x):
         return {"firma": firma, "dur": 0, "picos": []}
@@ -969,11 +969,12 @@ def trabajador():
                                 version_whisper = version('faster-whisper') + '/' + version('ctranslate2')
                             except PackageNotFoundError:
                                 version_whisper = 'desconocida'
-                            from fase1_transcribir import VOCAB_DEF
+                            from transcripcion.asr import huecos as H, whisper as W
                             try:
+                                # el código que produce la transcripción también firma la caché
                                 firma_asr = CACHE_ASR.firma(a, {'modelo': CFG['modelo_whisper'],
                                     'dispositivo': CFG.get('dispositivo_whisper','cuda'), 'faster_whisper': version_whisper},
-                                    [AQUI/'fase1_transcribir.py', AQUI/'huecos.py', VOCAB_DEF])
+                                    [Path(W.__file__), Path(H.__file__), W.VOCAB_DEF])
                                 previa = CACHE_ASR.leer(DATOS/f'{n}.transcripcion_cache.json', firma_asr)
                                 if previa is not None:
                                     trans[n] = previa
@@ -996,23 +997,22 @@ def trabajador():
                             if whisper is None:
                                 OLL.liberar_ia(CFG["modelo_ia"])
                                 carga_desde = time.perf_counter()
-                                from fase1_transcribir import cargar_modelo
+                                from transcripcion.asr import whisper as W
                                 poner_estado(n, "transcribiendo", "Cargando Whisper…")
                                 L.info("WHISPER", f"Cargando Whisper {CFG['modelo_whisper']} " + ("en la placa de video…" if CFG.get("dispositivo_whisper", "cuda") == "cuda" else "en el procesador (más lento)…"))
                                 tc = time.time()
                                 with contextlib.redirect_stdout(L.SalidaAlRegistro("WHISPER")):
-                                    whisper = cargar_modelo(CFG["modelo_whisper"], CFG.get("dispositivo_whisper", "cuda"))
+                                    whisper = W.cargar_modelo(CFG["modelo_whisper"], CFG.get("dispositivo_whisper", "cuda"))
                                 carga_whisper = time.perf_counter() - carga_desde
                                 L.ok("WHISPER", f"Whisper cargado en {L.seg(time.time() - tc)}.")
                                 poner_estado(n, "transcribiendo", "Transcribiendo el audio…")
                                 t0 = time.perf_counter()
-                            from fase1_transcribir import transcribir, leer_vocabulario, cargar_audio, VOCAB_DEF
-                            import huecos as H
-                            prompt = leer_vocabulario(VOCAB_DEF)
+                            from transcripcion.asr import huecos as H, whisper as W
+                            prompt = W.leer_vocabulario(W.VOCAB_DEF)
                             punto_de_pausa(n)           # se pidió la pausa mientras se cargaba Whisper
-                            t = transcribir(whisper, a, prompt, al_avanzar=avance(n, "Transcribiendo el audio"))
+                            t = W.transcribir(whisper, a, prompt, al_avanzar=avance(n, "Transcribiendo el audio"))
                             poner_estado(n, "transcribiendo", "Revisando partes que Whisper pudo saltear…")
-                            pal, pend = H.reparar(whisper, cargar_audio(a), t["palabras"], prompt,
+                            pal, pend = H.reparar(whisper, W.cargar_audio(a), t["palabras"], prompt,
                                                   al_avanzar=avance(n, "Revisando partes que Whisper pudo saltear"))
                             recuperadas = max(0, len(pal) - len(t["palabras"]))
                             trans[n] = {"texto": H.texto_de(pal), "palabras": pal, "huecos": pend}

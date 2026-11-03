@@ -93,7 +93,7 @@ def _anotar(nombre):
 
 def _gancho(evento, args):
     """Se llama en cada import que carga un módulo nuevo: anota la versión de los de esta carpeta que se
-    cargan tarde (aprender, huecos, fase1_transcribir... se importan recién cuando se usan)."""
+    cargan tarde (aprender, transcripcion.asr.huecos y whisper... se importan recién cuando se usan)."""
     if evento != "import":
         return
     try:
