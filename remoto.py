@@ -3,9 +3,10 @@
 ACCESO REMOTO: lo que necesita el servidor para que las PC del trabajo (info-01, info-02...)
 se conecten por un tunel: el rapido de Cloudflare o Microsoft Dev Tunnels (se elige con configurar_tunel).
 
-- Contrasena del sistema (se guarda solo su "huella" PBKDF2, nunca la contrasena).
+- Contrasena del sistema (se guarda solo su "huella" PBKDF2, nunca la contrasena). Cuando hay transcriptores
+  creados (usuarios.py) ya no sirve para entrar: cada uno entra con su usuario y su contrasena.
 - Una llave por PC: se crea al vincular la PC y se puede anular.
-- Sesiones de la interfaz (cookie de 12 h) y codigos de un solo uso para que la app entre sin
+- Sesiones de la interfaz (cookie hasta cerrar la app, 12 h como mucho, con el transcriptor que entro) y codigos de un solo uso para que la app entre sin
   volver a pedir la contrasena.
 - Bloqueo de casos: un caso abierto en una PC no se puede abrir en otra.
 - Medico elegido por PC.
@@ -30,17 +31,21 @@ from pathlib import Path
 
 import plataforma as P
 import registro as L
+import usuarios as U
 from persistencia import escribir_atomico
 
 AQUI = Path(__file__).resolve().parent
 ARCH = AQUI / "acceso_remoto.json"
+ARCH_SESIONES = AQUI / "sesiones.json"
 CARPETA_CLIENTE = AQUI / "cliente"
 NTFY = "https://ntfy.sh"
 SESION_SEG = 12 * 3600
+SESION_INACTIVA_SEG = 30 * 60     # sesión con transcriptor sin ninguna consulta de la página en ese tiempo: se cierra
+ACTIVO_SEG = 5 * 60               # «usuario activo» de una PC: su página consultó en los últimos 5 minutos
 BLOQUEO_SEG = 45
 _lock = threading.RLock()
 
-SESIONES = {}    # sid -> {"pc", "exp"}
+SESIONES = {}    # huella del sid -> {"pc", "exp", "usuario", "local", "ult"}
 CODIGOS = {}     # codigo -> {"pc", "exp"}
 BLOQUEOS = {}    # nombre de caso -> {"pc", "t" (última señal), "desde" (cuándo lo abrió)}
 LIBERADOS = {}   # nombre de caso -> {"pc", "t"}: casos que el panel le sacó a una PC
@@ -220,13 +225,22 @@ def anotar_fallo(ip):
 PC_VALIDA = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,23}$")
 
 
-def vincular(pc, contrasena, ip):
-    """Devuelve (llave, error)."""
+def vincular(pc, contrasena, ip, usuario=None):
+    """Devuelve (llave, error). Con transcriptores creados se vincula con el usuario y la contraseña de
+    cualquiera de ellos (la contraseña compartida del sistema deja de servir); sin ninguno, como antes."""
     if demasiados_fallos(ip):
         return None, "Demasiados intentos fallidos. Esperá 10 minutos."
     if not PC_VALIDA.match(pc or ""):
         return None, "El nombre de la PC solo puede tener letras, números y guiones (ej. info-01)."
-    if not contrasena_ok(contrasena):
+    if U.hay_usuarios():
+        if not usuario:
+            anotar_fallo(ip)
+            return None, ("Contraseña incorrecta. Ahora cada transcriptor entra con su usuario: actualizá la "
+                          "aplicación o pedí al administrador que conecte esta PC.")
+        if not U.verificar(usuario, contrasena):
+            anotar_fallo(ip)
+            return None, "Usuario o contraseña incorrectos."
+    elif not contrasena_ok(contrasena):
         anotar_fallo(ip)
         return None, "Contraseña incorrecta."
     llave = secrets.token_urlsafe(32)
@@ -253,8 +267,9 @@ def anular_pc(pc):
         d.get("pcs_info", {}).pop(pc, None)       # que no siga figurando en el panel
         ULTIMA_GRABADA.pop(pc, None)
         _grabar(d)
-        for sid in [s for s, v in SESIONES.items() if v["pc"] == pc]:
-            SESIONES.pop(sid, None)
+        for h in [s for s, v in SESIONES.items() if v["pc"] == pc]:
+            SESIONES.pop(h, None)
+        _guardar_sesiones()
         for caso in [c for c, b in BLOQUEOS.items() if b["pc"] == pc]:
             BLOQUEOS.pop(caso, None)
         cerrar_sesiones_admin(pc)
@@ -301,7 +316,7 @@ def anotar_visto(pc, version=None):
 
 def sesiones_de(pc):
     ahora = time.time()
-    return sum(1 for v in SESIONES.values() if v["pc"] == pc and v["exp"] > ahora)
+    return sum(1 for v in list(SESIONES.values()) if v["pc"] == pc and _sesion_vigente(v, ahora))
 
 
 # -------------------------------------------------------------- sesiones
@@ -320,29 +335,127 @@ def canjear_codigo(c):
     return nueva_sesion(v["pc"])
 
 
-def nueva_sesion(pc):
+def _h(sid):
+    """Las sesiones se guardan por la huella del identificador: el archivo no sirve para entrar."""
+    return hashlib.sha256(sid.encode()).hexdigest() if sid else ""
+
+
+def _limpiar_sesiones(ahora):
+    for s in [s for s, v in SESIONES.items() if not _sesion_vigente(v, ahora)]:
+        SESIONES.pop(s, None)
+
+
+def _sesion_vigente(v, ahora):
+    if v["exp"] < ahora:
+        return False
+    # con transcriptor: la página consulta cada pocos segundos; si deja de hacerlo (se cerró la app o el
+    # navegador) la sesión se cierra sola aunque la cookie siguiera viva
+    return not v.get("usuario") or ahora - v.get("ult", ahora) < SESION_INACTIVA_SEG
+
+
+def _guardar_sesiones():
+    """Solo las sesiones con transcriptor: así un reinicio del servidor no obliga a volver a entrar."""
+    try:
+        datos = {h: {k: v[k] for k in ("pc", "exp", "usuario", "local") if k in v}
+                 for h, v in SESIONES.items() if v.get("usuario")}
+        escribir_atomico(ARCH_SESIONES, json.dumps(datos, ensure_ascii=False))
+    except OSError:
+        L.aviso("ACCESO", "No se pudieron guardar las sesiones abiertas (al reiniciar habrá que volver a entrar).", exc=True)
+
+
+def cargar_sesiones():
+    try:
+        datos = json.loads(ARCH_SESIONES.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return 0
+    ahora = time.time()
+    with _lock:
+        for h, v in (datos or {}).items():
+            if isinstance(v, dict) and v.get("exp", 0) > ahora and v.get("usuario") and v.get("pc"):
+                SESIONES[h] = {**v, "ult": ahora}
+    return len(SESIONES)
+
+
+def nueva_sesion(pc, usuario=None, local=False, reemplaza=None):
+    """Sesión de la página. Sin usuario solo sirve para elegir quién entra (la PC ya está identificada)."""
     sid = secrets.token_urlsafe(32)
     with _lock:
         ahora = time.time()
-        for s in [s for s, v in SESIONES.items() if v["exp"] < ahora]:
-            SESIONES.pop(s, None)
-        SESIONES[sid] = {"pc": pc, "exp": ahora + SESION_SEG}
+        _limpiar_sesiones(ahora)
+        if reemplaza:
+            SESIONES.pop(_h(reemplaza), None)
+        SESIONES[_h(sid)] = {"pc": pc, "exp": ahora + SESION_SEG, "usuario": usuario, "local": bool(local), "ult": ahora}
+        if usuario:
+            _guardar_sesiones()
     return sid
 
 
-def pc_de_sesion(sid):
-    v = SESIONES.get(sid or "")
-    if not v or v["exp"] < time.time():
+def sesion(sid):
+    """{"pc", "usuario", "local"} de una sesión vigente (y la marca como usada), o None."""
+    if not sid:
         return None
-    return v["pc"]
+    with _lock:
+        v = SESIONES.get(_h(sid))
+        ahora = time.time()
+        if not v or not _sesion_vigente(v, ahora):
+            if v:
+                SESIONES.pop(_h(sid), None)
+            return None
+        v["ult"] = ahora
+        return dict(v)
+
+
+def pc_de_sesion(sid):
+    v = sesion(sid)
+    return v["pc"] if v and not v.get("local") else None
 
 
 def cerrar_sesion(sid):
-    SESIONES.pop(sid or "", None)
+    with _lock:
+        v = SESIONES.pop(_h(sid), None)
+        if v and v.get("usuario"):
+            _guardar_sesiones()
+    return v
 
 
-def cookie_sesion(sid):
-    return f"ts={sid}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age={SESION_SEG}"
+def cerrar_sesiones_usuario(usuario):
+    """Al desactivar un transcriptor o restablecerle la contraseña."""
+    with _lock:
+        hs = [h for h, v in SESIONES.items() if v.get("usuario") == usuario]
+        for h in hs:
+            SESIONES.pop(h, None)
+        if hs:
+            _guardar_sesiones()
+    return len(hs)
+
+
+def usuario_activo(pc):
+    """Transcriptor que está usando la página en esa PC ahora (para los audios que la app toma sola)."""
+    ahora = time.time()
+    with _lock:
+        cand = [v for v in SESIONES.values() if v["pc"] == pc and v.get("usuario") and _sesion_vigente(v, ahora)
+                and ahora - v.get("ult", 0) < ACTIVO_SEG]
+    return max(cand, key=lambda v: v.get("ult", 0))["usuario"] if cand else None
+
+
+def sesiones_de_usuarios():
+    """{usuario: [pc, ...]} de las sesiones vigentes (para el panel)."""
+    ahora = time.time()
+    out = {}
+    with _lock:
+        for v in SESIONES.values():
+            if v.get("usuario") and _sesion_vigente(v, ahora):
+                out.setdefault(v["usuario"], []).append(v["pc"])
+    return out
+
+
+def cookie_sesion(sid, local=False):
+    # sin Max-Age: la cookie dura hasta que se cierra la app (o el navegador). En la PC del servidor la página es
+    # http://127.0.0.1, sin «Secure» para que el navegador la acepte.
+    return f"ts={sid}; Path=/; HttpOnly;{'' if local else ' Secure;'} SameSite=Lax"
+
+
+COOKIE_SESION_BORRAR = "ts=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"
 
 
 # -------------------------------------------------------------- bloqueos

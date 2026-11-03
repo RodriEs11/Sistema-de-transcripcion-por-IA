@@ -493,7 +493,7 @@ COLUMNAS = ["fecha", "hora", "evento", "caso", "audio_original", "pc", "medico",
             "whisper_s", "ia_s", "palabras_dictado", "marcas_rojas", "marcas_amarillas", "marcas_turquesa",
             "marcas_grises", "datos_faltantes", "partes_no_transcritas", "estudios_sin_plantilla",
             "porcentaje_corregido", "palabras_informe", "revision_s", "medico_voz", "voz_estado", "voz_puntaje",
-            "detalle"]
+            "detalle", "usuario"]
 _COLUMNAS_OK = {"ok": False}      # ya se comprobó que el archivo tiene estas columnas
 
 

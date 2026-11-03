@@ -24,6 +24,7 @@ import urllib.request
 from pathlib import Path
 
 from fase1_transcribir import normalizar, sin_acentos, datos_criticos
+import usuarios as U
 
 AQUI = Path(__file__).resolve().parent
 CONOC = AQUI / "conocimiento"
@@ -51,10 +52,33 @@ def leer(nombre):
     return (CONOC / nombre).read_text(encoding="utf-8-sig")
 
 
+def texto_todas_las_plantillas():
+    """plantillas.md general + las plantillas propias de cada transcriptor. Sirve para los controles (frases de
+    plantilla, texto fijo, estudios conocidos): una frase de la plantilla de cualquiera es frase de plantilla."""
+    partes = [leer("plantillas.md")]
+    for clave in U.claves_con_carpeta():
+        t = U.leer_archivo(clave, "plantillas.md")
+        if t.strip():
+            partes.append(t)
+    return "\n\n".join(partes)
+
+
+def _firma_plantillas():
+    fs = [CONOC / "plantillas.md"] + [U.CARPETA / c / "plantillas.md" for c in U.claves_con_carpeta()]
+    out = []
+    for f in fs:
+        try:
+            st = f.stat()
+            out.append((str(f), st.st_mtime_ns, st.st_size))
+        except FileNotFoundError:
+            pass
+    return tuple(out)
+
+
 def frases_de_plantilla():
-    """Viñetas fijas de plantillas.md (sin huecos <...> ni alternativas |)."""
+    """Viñetas fijas de las plantillas (sin huecos <...> ni alternativas |)."""
     out = set()
-    for l in leer("plantillas.md").splitlines():
+    for l in texto_todas_las_plantillas().splitlines():
         l = l.strip()
         if l.startswith("-") and "<" not in l and "|" not in l and "/  -" not in l:
             out.add(l)
@@ -90,7 +114,7 @@ GENERICAS = {"ecografia", "mamografia", "estudio", "digital", "bilateral", "fren
 def claves_de_plantillas():
     """Palabras que identifican cada estudio de plantillas.md (las de los estudios nuevos)."""
     out = set()
-    for nombre, _ in secciones_plantillas()[1]:
+    for nombre, _ in todas_las_secciones():
         nombre = nombre.split("(")[0]
         for w in re.findall(r"[a-z]{5,}", sin_acentos(nombre.lower())):
             if w not in GENERICAS:
@@ -99,15 +123,130 @@ def claves_de_plantillas():
 
 
 # ------------------------------------------------------- plantillas (secciones)
-def secciones_plantillas():
-    """plantillas.md -> (encabezado, [(nombre, cuerpo), ...]) separando por '## '."""
-    texto = leer("plantillas.md")
+def _partir_secciones(texto):
     partes = re.split(r"(?m)^## ", texto)
     pre, secs = partes[0], []
     for p in partes[1:]:
         nombre, _, cuerpo = p.partition("\n")
         secs.append((nombre.strip(), cuerpo.strip("\n")))
     return pre, secs
+
+
+def _clave_seccion(nombre):
+    return " ".join(sin_acentos(nombre or "").casefold().split())
+
+
+def secciones_de_usuario(usuario):
+    """Secciones que el transcriptor cambió o agregó «solo para mí»."""
+    if not usuario:
+        return []
+    return _partir_secciones(U.leer_archivo(usuario, "plantillas.md"))[1]
+
+
+def secciones_plantillas(usuario=None):
+    """plantillas.md -> (encabezado, [(nombre, cuerpo), ...]) separando por '## '.
+    Con usuario: sus secciones propias reemplazan a la general del mismo nombre y las nuevas se agregan al final."""
+    pre, secs = _partir_secciones(leer("plantillas.md"))
+    propias = secciones_de_usuario(usuario)
+    if propias:
+        por_clave = {_clave_seccion(n): (n, c) for n, c in propias}
+        secs = [por_clave.pop(_clave_seccion(n), (n, c)) for n, c in secs]
+        secs += list(por_clave.values())
+    return pre, secs
+
+
+def todas_las_secciones():
+    """Las generales y las de todos los transcriptores (para reconocer estudios y títulos)."""
+    secs = list(_partir_secciones(leer("plantillas.md"))[1])
+    for clave in U.claves_con_carpeta():
+        secs += secciones_de_usuario(clave)
+    return secs
+
+
+def secciones_con_origen(usuario=None):
+    """Para el editor de plantillas: cada sección con su origen.
+    origen: 'general' · 'propia' (cambiada solo para este transcriptor) · 'nueva' (solo existe en las suyas)."""
+    generales = {_clave_seccion(n): c for n, c in _partir_secciones(leer("plantillas.md"))[1]}
+    propias = {_clave_seccion(n) for n, _ in secciones_de_usuario(usuario)}
+    out = []
+    for n, c in secciones_plantillas(usuario)[1]:
+        k = _clave_seccion(n)
+        if k not in propias:
+            out.append({"nombre": n, "cuerpo": c, "origen": "general"})
+        elif k in generales:
+            out.append({"nombre": n, "cuerpo": c, "origen": "propia", "general": generales[k]})
+        else:
+            out.append({"nombre": n, "cuerpo": c, "origen": "nueva"})
+    return out
+
+
+def guardar_secciones_usuario(usuario, secs):
+    """Guarda las plantillas propias (con copia de la versión anterior en su carpeta copias/)."""
+    anterior = U.leer_archivo(usuario, "plantillas.md")
+    if anterior.strip():
+        bk = U.carpeta(usuario) / "copias"
+        bk.mkdir(parents=True, exist_ok=True)
+        (bk / time.strftime("plantillas_%Y%m%d_%H%M%S.md")).write_text(anterior, encoding="utf-8")
+    texto = "\n\n".join(f"## {n.strip()}\n{c.strip()}" for n, c in secs if n.strip())
+    U.escribir_archivo(usuario, "plantillas.md", "# PLANTILLAS PROPIAS (reemplazan a la general del mismo nombre)\n\n"
+                       + texto + "\n" if texto else "")
+
+
+def aplicar_plantillas(enviadas, usuario, destino):
+    """Lo que manda el editor de plantillas (la lista completa que ve el transcriptor).
+    destino 'todos': lo cambiado va a plantillas.md (y deja de ser propio); 'mio': lo cambiado queda solo para él.
+    Devuelve un resumen {"generales": n, "propias": n, "sin_cambios": bool}."""
+    if destino not in ("todos", "mio"):
+        raise ValueError("Elegí si el cambio es para vos o para todos.")
+    if destino == "mio" and not usuario:
+        raise ValueError("Para guardar solo para vos tenés que entrar con tu usuario.")
+    enviadas = [(str(n).strip(), str(c)) for n, c in enviadas if str(n).strip()]
+    vistas = {_clave_seccion(n): (n, c) for n, c in secciones_plantillas(usuario)[1]}
+    nuevas = {_clave_seccion(n): (n, c) for n, c in enviadas}
+    if len(nuevas) != len(enviadas):
+        raise ValueError("Hay dos plantillas con el mismo nombre: cambiale el nombre a una.")
+    cambiadas = {k: v for k, v in nuevas.items() if k not in vistas or vistas[k][1].strip() != v[1].strip()
+                 or vistas[k][0] != v[0]}
+    borradas = [k for k in vistas if k not in nuevas]
+    if not cambiadas and not borradas:
+        return {"generales": 0, "propias": 0, "sin_cambios": True}
+    _, generales = _partir_secciones(leer("plantillas.md"))
+    gen = {_clave_seccion(n): (n, c) for n, c in generales}
+    propias = {_clave_seccion(n): (n, c) for n, c in secciones_de_usuario(usuario)}
+    if destino == "todos":
+        orden = [k for k in gen if k not in borradas]
+        for k, v in cambiadas.items():
+            gen[k] = v
+            if k not in orden:
+                orden.append(k)
+            propias.pop(k, None)              # ya es la general: deja de ser propia
+        for k in borradas:
+            gen.pop(k, None)
+            propias.pop(k, None)
+        guardar_secciones([gen[k] for k in orden])
+    else:
+        for k, v in cambiadas.items():
+            if k in gen and gen[k][1].strip() == v[1].strip() and gen[k][0] == v[0]:
+                propias.pop(k, None)          # quedó igual a la general
+            else:
+                propias[k] = v
+        for k in borradas:
+            if k in propias:
+                propias.pop(k)                # borrar la propia = volver a la general (si existe)
+    if usuario:
+        guardar_secciones_usuario(usuario, list(propias.values()))
+    return {"generales": len(cambiadas) + len(borradas) if destino == "todos" else 0,
+            "propias": len(cambiadas) + len(borradas) if destino == "mio" else 0, "sin_cambios": False,
+            "no_borradas": [vistas[k][0] for k in borradas if destino == "mio" and k in gen]}
+
+
+def volver_a_general(usuario, nombre):
+    """Quita la versión propia de una plantilla (vuelve a usar la general)."""
+    propias = [(n, c) for n, c in secciones_de_usuario(usuario) if _clave_seccion(n) != _clave_seccion(nombre)]
+    if len(propias) == len(secciones_de_usuario(usuario)):
+        return False
+    guardar_secciones_usuario(usuario, propias)
+    return True
 
 
 def guardar_secciones(secs):
@@ -122,7 +261,7 @@ def guardar_secciones(secs):
 
 def titulos_conocidos():
     tit = set()
-    for nombre, cuerpo in secciones_plantillas()[1]:
+    for nombre, cuerpo in todas_las_secciones():
         tit.add(_clave_titulo(nombre))
         for l in cuerpo.splitlines():
             if l.strip().upper().startswith("TITULO:"):
@@ -154,10 +293,10 @@ def estudios_sin_plantilla(informe):
             continue
         clave = _clave_titulo(l)
         if not clave or (low.startswith("rx ") and "rx osteoarticular" in " ".join(n.lower() for n, _ in
-                                                                              secciones_plantillas()[1])):
+                                                                              todas_las_secciones())):
             continue                    # cualquier RX de una region usa la plantilla osteoarticular
         if low.startswith("tc ") and any(n.lower().startswith("tc osteo") or "texto común" in n.lower()
-                                         for n, _ in secciones_plantillas()[1]):
+                                         for n, _ in todas_las_secciones()):
             continue                    # cualquier TC usa el texto comun de tomografia
         if not any(clave == k or clave.split()[0] == k.split()[0] and
                    (len(clave.split()) == 1 or len(k.split()) == 1 or clave.split()[1][:4] == k.split()[1][:4])
@@ -171,8 +310,10 @@ def _perfil_ejemplo(texto, claves):
     return frozenset(categorias(texto, claves)), frozenset(_palabras_norm(texto))
 
 
-def elegir_ejemplos(dictado, banco, k=3, excluir=None, medico=None):
-    """banco: lista de dicts {nombre, dictado, informe}. Elige los k mas parecidos."""
+def elegir_ejemplos(dictado, banco, k=3, excluir=None, medico=None, usuario=None):
+    """banco: lista de dicts {nombre, dictado, informe, usuario}. Elige los k mas parecidos.
+    Con usuario, primero los del mismo transcriptor (entre los del mismo tipo de estudio); si no alcanzan se completa
+    con los generales y los de otros. Los de otro transcriptor salen marcados con "ajeno": True."""
     claves = tuple(sorted(claves_de_plantillas()))
     cd = categorias(dictado, claves)
     pd = set(_palabras_norm(dictado))
@@ -190,8 +331,22 @@ def elegir_ejemplos(dictado, banco, k=3, excluir=None, medico=None):
         if e.get("aprendido"):
             sim += 0.03                     # y las correcciones recientes
         cand.append((jac, sim, e))
-    cand.sort(key=lambda x: (x[0], x[1]), reverse=True)
-    return [c[2] for c in cand[:k]]
+    if not usuario:
+        cand.sort(key=lambda x: (x[0], x[1]), reverse=True)
+        return [c[2] for c in cand[:k]]
+    # los que mejor coinciden en el tipo de estudio primero (como siempre); dentro de ese grupo, los propios antes
+    # que los demás. Después, el resto con el mismo criterio.
+    tope = max((c[0] for c in cand), default=0)
+    def orden(c):
+        jac, sim, e = c
+        return (jac >= tope - 1e-9, e.get("usuario") == usuario, jac, sim)
+    cand.sort(key=orden, reverse=True)
+    out = []
+    for _, _, e in cand[:k]:
+        if e.get("usuario") and e["usuario"] != usuario:
+            e = dict(e, ajeno=True)
+        out.append(e)
+    return out
 
 
 # ------------------------------------------------------------------ prompt
@@ -238,13 +393,14 @@ def es_del_medico(estilos, medico):
     return bool(m) and any(e in m or m in e for e in estilos)
 
 
-def plantillas_relevantes(dictado, medico=None, sin_estilos=False):
+def plantillas_relevantes(dictado, medico=None, sin_estilos=False, usuario=None):
     """Solo las secciones de plantillas.md que corresponden a lo dictado (el modelo se confunde menos).
     Las secciones '(estilo X)' reemplazan a la general cuando el medico es X.
     sin_estilos: sin médico confirmado (la voz no lo reconoció con seguridad) no van las variantes de otros
     médicos, solo la plantilla general.
-    Si no se reconoce el estudio, van todas las generales."""
-    pre, secs = secciones_plantillas()
+    Si no se reconoce el estudio, van todas las generales.
+    usuario: las plantillas propias del transcriptor reemplazan a las generales del mismo nombre."""
+    pre, secs = secciones_plantillas(usuario)
     d = categorias(dictado)
     if "pet" in d:
         d = {"pet"}                         # el PET describe todo el cuerpo: solo su plantilla
@@ -305,8 +461,19 @@ def elegir_referencias(dictado, k=2, medico=None):
     return [x[2] for x in cand[:k] if x[0] >= 0.5]
 
 
-def armar_mensajes(dictado, ejemplos, medico=None, sin_estilos=False):
-    sis = SISTEMA.format(plantillas=plantillas_relevantes(dictado, medico, sin_estilos), reglas=leer("reglas_dictado.md"))
+def reglas_de(usuario=None):
+    """reglas_dictado.md general + las reglas propias del transcriptor (se suman; si se contradicen, valen las suyas)."""
+    reglas = leer("reglas_dictado.md")
+    propias = U.leer_archivo(usuario, "reglas_dictado.md").strip() if usuario else ""
+    if propias:
+        reglas = (reglas.rstrip() + "\n\n===== REGLAS PROPIAS DE ESTE TRANSCRIPTOR "
+                  "(si contradicen a las de arriba, valen estas) =====\n" + propias + "\n")
+    return reglas
+
+
+def armar_mensajes(dictado, ejemplos, medico=None, sin_estilos=False, usuario=None):
+    """usuario: transcriptor con cuyo estilo se arma el informe (plantillas, notas, reglas y correcciones propias)."""
+    sis = SISTEMA.format(plantillas=plantillas_relevantes(dictado, medico, sin_estilos, usuario), reglas=reglas_de(usuario))
     # referencias: solo si los ejemplos con dictado no cubren bien este tipo de estudio
     d = categorias(dictado)
     cubre = max((len(d & categorias(e["dictado"])) / len(d | categorias(e["dictado"])) for e in ejemplos),
@@ -318,15 +485,22 @@ def armar_mensajes(dictado, ejemplos, medico=None, sin_estilos=False):
                     "Usalos para copiar el formato, el texto fijo y el estilo de las frases. "
                     "NO copies sus hallazgos ni sus medidas: todo hallazgo sale del dictado.\n\n"
                     + "\n\n----------\n\n".join(refs) + "\n")
-    notas = notas_medico(medico) if medico else ""
+    notas = notas_medico(medico, usuario) if medico else ""
     if notas.strip():
         sis += f"\n===== CÓMO DICTA ESTE MÉDICO ({medico}) =====\n{notas.strip()}\n"
     corr = CONOC / "correcciones_aprendidas.md"
     if corr.exists() and corr.read_text(encoding="utf-8").count("\n- ") > 0:
         sis += "\n===== CORRECCIONES FRECUENTES DEL TRANSCRIPTOR =====\n" + corr.read_text(encoding="utf-8")
+    propias = U.leer_archivo(usuario, "correcciones_aprendidas.md") if usuario else ""
+    if propias.count("\n- ") > 0:
+        sis += "\n===== CORRECCIONES FRECUENTES DE ESTE TRANSCRIPTOR =====\n" + propias
+    if any(e.get("ajeno") for e in ejemplos):
+        sis += ("\nAlgunos ejemplos son de OTRO transcriptor (lo dice antes del dictado): usalos para entender cómo "
+                "dicta el médico, pero NO copies su formato ni sus frases si las plantillas dicen otra cosa.\n")
     msgs = [{"role": "system", "content": sis}]
     for e in ejemplos:
-        msgs.append({"role": "user", "content": "DICTADO:\n" + e["dictado"]})
+        msgs.append({"role": "user", "content": ("DICTADO (ejemplo de otro transcriptor: solo para entender el "
+                                                 "dictado):\n" if e.get("ajeno") else "DICTADO:\n") + e["dictado"]})
         msgs.append({"role": "assistant", "content": e["informe"].strip()})
     msgs.append({"role": "user", "content": "DICTADO:\n" + dictado})
     return msgs
@@ -642,7 +816,7 @@ def vocabulario_informes():
     if _VOCAB["set"] is None:
         banco = cargar_banco()
         _VOCAB["n"] = len(banco)
-        v = set(re.findall(r"[a-záéíóúñü]+", leer("plantillas.md").lower()))
+        v = set(re.findall(r"[a-záéíóúñü]+", texto_todas_las_plantillas().lower()))
         for e in banco:
             v |= set(re.findall(r"[a-záéíóúñü]+", e["informe"].lower()))
         _VOCAB["set"] = v
@@ -910,9 +1084,11 @@ def _leer_banco(dir_fase1=None, dir_audios=None, dir_extra=None):
         inf = d.with_name(d.name.replace(".dictado.txt", ".informe.txt"))
         if inf.exists():
             med = d.with_name(d.name.replace(".dictado.txt", ".medico.txt"))
+            usu = d.with_name(d.name.replace(".dictado.txt", ".usuario.txt"))
             banco.append({"nombre": d.name[:-12], "dictado": d.read_text(encoding="utf-8-sig"),
                           "informe": inf.read_text(encoding="utf-8-sig"), "aprendido": True,
-                          "medico": med.read_text(encoding="utf-8").strip() if med.exists() else None})
+                          "medico": med.read_text(encoding="utf-8").strip() if med.exists() else None,
+                          "usuario": (usu.read_text(encoding="utf-8").strip() or None) if usu.exists() else None})
     aprendidos = {e["nombre"].split("_", 2)[-1] for e in banco if e.get("aprendido")}
     return [e for e in banco if e.get("aprendido") or e["nombre"] not in aprendidos]
 
@@ -977,9 +1153,47 @@ def lista_medicos():
     return sorted(p.stem for p in DIR_MED.glob("*.md"))
 
 
-def notas_medico(nombre):
+def notas_medico(nombre, usuario=None):
+    """Notas de cómo dicta el médico. Si el transcriptor tiene las suyas, reemplazan a las generales."""
+    propias = notas_propias(nombre, usuario)
+    if propias is not None:
+        return propias
     f = _archivo_medico(nombre) if nombre else None
     return f.read_text(encoding="utf-8") if f and f.exists() else ""
+
+
+def _archivo_medico_usuario(nombre, usuario):
+    return U.carpeta(usuario) / "medicos" / _archivo_medico(nombre).name
+
+
+def notas_propias(nombre, usuario):
+    """Notas «solo para mí» del transcriptor sobre ese médico, o None si usa las generales."""
+    if not nombre or not usuario:
+        return None
+    f = _archivo_medico_usuario(nombre, usuario)
+    return f.read_text(encoding="utf-8") if f.exists() else None
+
+
+def guardar_notas_propias(nombre, usuario, notas):
+    """notas=None: vuelve a usar las generales."""
+    with _MED_LOCK:
+        if nombre not in lista_medicos():
+            raise FileNotFoundError("El médico ya no existe. Actualizá la lista.")
+        f = _archivo_medico_usuario(nombre, usuario)
+        if notas is None:
+            f.unlink(missing_ok=True)
+            return
+        if not isinstance(notas, str):
+            raise ValueError("Las notas deben ser texto.")
+        f.parent.mkdir(parents=True, exist_ok=True)
+        temporal = f.with_suffix(".md.nuevo")
+        temporal.write_text(notas, encoding="utf-8")
+        temporal.replace(f)
+
+
+def medicos_con_notas_propias(usuario):
+    d = U.carpeta(usuario) / "medicos" if usuario else None
+    return sorted(p.stem for p in d.glob("*.md")) if d and d.is_dir() else []
 
 
 def guardar_medico(nombre, notas, *, crear=False, original=None):
@@ -999,6 +1213,10 @@ def guardar_medico(nombre, notas, *, crear=False, original=None):
             anterior = _archivo_medico(original)
             # El renombrado también admite cambios de mayúsculas en Windows.
             anterior.rename(f)
+            for clave in U.claves_con_carpeta():      # las notas propias de cada transcriptor siguen al médico
+                viejo = _archivo_medico_usuario(original, clave)
+                if viejo.exists():
+                    viejo.rename(_archivo_medico_usuario(nombre, clave))
         temporal = f.with_suffix(".md.nuevo")
         temporal.write_text(notas, encoding="utf-8")
         temporal.replace(f)
@@ -1010,6 +1228,8 @@ def eliminar_medico(nombre):
         if nombre not in lista_medicos():
             raise FileNotFoundError("El médico ya no existe. Actualizá la lista.")
         _archivo_medico(nombre).unlink()
+        for clave in U.claves_con_carpeta():
+            _archivo_medico_usuario(nombre, clave).unlink(missing_ok=True)
 
 
 # ------------------------------------------------- titulos y lineas fijas
@@ -1079,12 +1299,11 @@ _FIJAS = {"mt": None, "exactas": set(), "prefijos": ()}
 
 def es_linea_fija(linea):
     """Lineas de 'texto fijo' de las plantillas (equipo, tecnica...): no se controlan contra el dictado."""
-    f = CONOC / "plantillas.md"
-    mt = f.stat().st_mtime
+    mt = _firma_plantillas()
     if _FIJAS["mt"] != mt:
         ex, pre = set(), []
         en_bloque = False
-        for l in leer("plantillas.md").splitlines():
+        for l in texto_todas_las_plantillas().splitlines():
             l = l.strip()
             up = sin_acentos(l.upper())
             if up.startswith("TEXTO FIJO"):

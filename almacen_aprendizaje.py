@@ -38,6 +38,8 @@ def abrir(historial):
                     c.execute('INSERT OR REPLACE INTO historial VALUES (?,?,?,?,?)',
                               (r['fecha'][:10], r['informe'], r['fecha'], r['palabras'], r['porcentaje_corregido']))
             c.execute('PRAGMA user_version=1')
+        # quién revisó cada ejemplo (transcriptor); sin fila = ejemplo general (anterior a los usuarios)
+        c.execute('CREATE TABLE IF NOT EXISTS ejemplo_usuario (clave TEXT PRIMARY KEY, usuario TEXT NOT NULL)')
         yield c
         c.commit()
     except BaseException:
@@ -94,3 +96,21 @@ def actualizar_ejemplo(c, clave, firma, calcular):
 def quitar_ejemplo(c, clave):
     actualizar_ejemplo(c, clave, '', lambda: [])
     c.execute('DELETE FROM ejemplos WHERE clave=?', (clave,))
+    c.execute('DELETE FROM ejemplo_usuario WHERE clave=?', (clave,))
+
+
+def poner_usuario(c, clave, usuario):
+    if usuario:
+        c.execute('INSERT OR REPLACE INTO ejemplo_usuario VALUES (?,?)', (clave, usuario))
+    else:
+        c.execute('DELETE FROM ejemplo_usuario WHERE clave=?', (clave,))
+
+
+def correcciones_por_fuente(c):
+    """{(op, de, a): {usuario o '' (general): cantidad de ejemplos}}."""
+    out = {}
+    for op, de, a, u in c.execute('SELECT co.op, co.de, co.a, COALESCE(eu.usuario, \'\') FROM contribuciones co '
+                                  'LEFT JOIN ejemplo_usuario eu ON eu.clave = co.clave'):
+        d = out.setdefault((op, de, a), {})
+        d[u] = d.get(u, 0) + 1
+    return out
