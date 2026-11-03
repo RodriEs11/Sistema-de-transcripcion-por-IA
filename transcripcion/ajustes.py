@@ -13,9 +13,10 @@ import json
 import os
 from pathlib import Path
 
-import plataforma as P
+from transcripcion.base import plataforma as P
+from transcripcion import RAIZ
 
-AQUI = Path(__file__).resolve().parent
+AQUI = RAIZ          # carpeta del sistema (no la del paquete)
 
 # Opciones que pueden faltar en una configuracion.json vieja (mismos valores que configuracion.ejemplo.json).
 PREDETERMINADOS = {

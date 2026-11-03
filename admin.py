@@ -11,8 +11,8 @@ import re
 import threading
 import time
 
-import plataforma as P
-import registro as L
+from transcripcion.base import plataforma as P
+from transcripcion.base import registro as L
 import remoto as R
 
 # 2026-10-25 01:44:02  AVISO  TÚNEL     mensaje

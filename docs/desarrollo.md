@@ -63,7 +63,8 @@ Importar un módulo del sistema no lee la configuración ni crea carpetas
 temporal y lo restaura al terminar:
 
 ```python
-import ajustes, servidor as S
+import servidor as S
+from transcripcion import ajustes
 aj = ajustes.para_pruebas(carpeta_temporal)        # Audios_nuevos e Informes adentro; configuración de ejemplo
 ajustes.preparar_carpetas(aj)
 self.addCleanup(S.configurar, S.configurar(aj))    # configurar devuelve los ajustes anteriores
@@ -130,7 +131,7 @@ Ver [protocolo, resultados y límites](comparacion-cpu-gpu.md). Ejecutar sus pru
 
 - **Idioma**: nombres, comentarios y mensajes en español rioplatense, como el resto del código y la interfaz.
 - **Python**: biblioteca estándar siempre que se pueda; las únicas dependencias son las de `requirements.txt`.
-  Todo lo que se muestra o registra pasa por `registro.py` (`L.ok/info/aviso/error`), nunca `print`.
+  Todo lo que se muestra o registra pasa por `transcripcion/base/registro.py` (`L.ok/info/aviso/error`), nunca `print`.
 - **Mensajes al usuario**: claros y sin jerga técnica (`mensaje_amigable`); el detalle técnico va al registro.
 - **`web/index.html` es un solo script**: dos `function` con el mismo nombre no dan error, la última pisa a la
   primera. Antes de agregar funciones, verificar que no haya nombres repetidos (debe salir vacío):

@@ -22,7 +22,7 @@ import time
 import zlib
 from pathlib import Path
 
-import plataforma as P
+from transcripcion.base import plataforma as P
 
 AQUI = Path(__file__).resolve().parent
 GIT = AQUI / ".git"
@@ -32,8 +32,9 @@ EXTRA = ("configuracion.json",)       # se lee solo al arrancar
 _SIN_VENTANA = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 _lock = threading.Lock()
-CARGADO = {}          # "nucleo.py" -> {"hash", "t"}: versión que está usando el servidor
-_LOCALES = set()      # nombres de los módulos de esta carpeta (para el gancho de import)
+CARGADO = {}          # "nucleo.py", "transcripcion/base/registro.py" -> {"hash", "t"}: versión que usa el servidor
+_LOCALES = {}         # módulo del sistema -> archivo ("transcripcion.base.registro" -> "transcripcion/base/registro.py")
+PAQUETE = "transcripcion"   # paquete con los módulos del sistema (docs/refactor.md)
 _HASH = {}            # ruta -> ((tamaño, mtime), hash): no volver a leer archivos que no cambiaron
 _ARRANQUE = {"titulo": None, "git": None, "t": None}
 _CACHE_GIT = {"t": 0, "v": None}
@@ -57,6 +58,29 @@ def _huella(p):
     return h
 
 
+def modulos_locales():
+    """Módulos del sistema y su archivo relativo: los .py de esta carpeta y los del paquete (no los de .venv,
+    respaldo ni pruebas)."""
+    out = {p.stem: p.name for p in AQUI.glob("*.py")}
+    for p in sorted((AQUI / PAQUETE).rglob("*.py")):
+        rel = p.relative_to(AQUI)
+        partes = rel.with_suffix("").parts
+        nombre = ".".join(partes[:-1] if partes[-1] == "__init__" else partes)
+        out[nombre] = rel.as_posix()
+    return out
+
+
+def _archivo_local(f):
+    """Ruta relativa (posix) si el archivo `f` es código del sistema; None si es de otro lado."""
+    try:
+        rel = Path(f).resolve().relative_to(AQUI)
+    except (OSError, ValueError):
+        return None
+    if rel.suffix != ".py" or not (len(rel.parts) == 1 or rel.parts[0] == PAQUETE):
+        return None
+    return rel.as_posix()
+
+
 def _anotar(nombre):
     with _lock:
         if nombre in CARGADO:
@@ -73,9 +97,9 @@ def _gancho(evento, args):
     if evento != "import":
         return
     try:
-        nom = args[0]
-        if nom in _LOCALES and f"{nom}.py" not in CARGADO:
-            _anotar(f"{nom}.py")
+        archivo = _LOCALES.get(args[0])
+        if archivo and archivo not in CARGADO:
+            _anotar(archivo)
     except Exception:
         pass
 
@@ -83,16 +107,12 @@ def _gancho(evento, args):
 def empezar(titulo_consola=None):
     """Al arrancar el servidor (main): anota lo que ya está cargado y vigila lo que se cargue después."""
     _ARRANQUE.update(titulo=titulo_consola, t=time.time())
-    _LOCALES.update(p.stem for p in AQUI.glob("*.py"))
+    _LOCALES.update(modulos_locales())
     for m in list(sys.modules.values()):
         f = getattr(m, "__file__", None)
-        if f and f.endswith(".py"):
-            try:
-                p = Path(f).resolve()
-            except OSError:
-                continue
-            if p.parent == AQUI:
-                _anotar(p.name)
+        archivo = _archivo_local(f) if f else None
+        if archivo:
+            _anotar(archivo)
     for x in EXTRA:
         if (AQUI / x).exists():
             _anotar(x)
@@ -298,14 +318,14 @@ def titulo_consola():
 
 PRUEBA = r"""
 import glob, py_compile, sys
-for f in sorted(glob.glob("*.py")):
+for f in sorted(glob.glob("*.py")) + sorted(glob.glob("transcripcion/**/*.py", recursive=True)):
     try:
         py_compile.compile(f, doraise=True)
     except py_compile.PyCompileError as ex:
         print("ERROR_SINTAXIS", f, file=sys.stderr)
         print(ex.msg, file=sys.stderr)
         sys.exit(3)
-import ajustes
+from transcripcion import ajustes
 ajustes.cargar(crear_config=False)   # configuracion.json legible (importar el servidor ya no la lee)
 import servidor
 print("ok")
@@ -313,8 +333,8 @@ print("ok")
 
 
 def prueba_de_arranque(timeout=120):
-    """Prueba el código de la carpeta en otro proceso (compila todos los .py, lee la configuración e importa el
-    servidor) antes de reiniciar. Devuelve None si anda o el error (últimas líneas)."""
+    """Prueba el código de la carpeta en otro proceso (compila todos los .py, también los del paquete, lee la
+    configuración e importa el servidor) antes de reiniciar. Devuelve None si anda o el error (últimas líneas)."""
     env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONDONTWRITEBYTECODE="1")
     try:
         r = subprocess.run([sys.executable, "-X", "utf8", "-c", PRUEBA], cwd=AQUI, capture_output=True,

@@ -119,7 +119,7 @@ def estado_en_vivo(puerto=8765):
 
 def auditar(raiz, cliente_local, piloto, puerto=8765):
     # No importar servidor/informe/nucleo: sus imports crean carpetas o preparan conocimiento.
-    import borradores as B
+    from transcripcion.casos import borradores as B
     raiz, cliente_local = Path(raiz), Path(cliente_local)
     cfg=leer_json(raiz/'configuracion.json')
     audios=(raiz/Path(cfg['carpeta_audios_nuevos'])).resolve()

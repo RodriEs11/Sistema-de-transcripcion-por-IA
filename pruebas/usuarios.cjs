@@ -10,7 +10,9 @@ const codigo=`
 import json, sys, tempfile, threading
 from pathlib import Path
 from unittest.mock import patch
-import servidor as S, nucleo as N, usuarios as U, remoto as R, ajustes
+import servidor as S, nucleo as N, remoto as R
+from transcripcion import ajustes
+from transcripcion.acceso import usuarios as U
 Path('respaldo').mkdir(exist_ok=True)
 with tempfile.TemporaryDirectory(prefix='ui_usuarios_', dir='respaldo') as c:
     c = Path(c); conoc = c / 'conocimiento'; datos = c / 'Informes' / 'revision' / 'datos'

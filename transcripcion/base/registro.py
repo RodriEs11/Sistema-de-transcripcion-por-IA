@@ -27,8 +27,9 @@ import textwrap
 import threading
 import time
 from pathlib import Path
+from transcripcion import RAIZ
 
-AQUI = Path(__file__).resolve().parent
+AQUI = RAIZ          # carpeta del sistema (no la del paquete)
 CARPETA = AQUI / "registros"
 
 OK = 25

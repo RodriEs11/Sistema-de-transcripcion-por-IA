@@ -12,8 +12,9 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from transcripcion import RAIZ
 
-AQUI = Path(__file__).resolve().parent
+AQUI = RAIZ          # carpeta del sistema (no la del paquete)
 ES_WINDOWS = os.name == "nt"
 NOMBRE = "windows" if ES_WINDOWS else ("mac" if sys.platform == "darwin" else "linux")
 EXT_SCRIPT = ".bat" if ES_WINDOWS else ".sh"

@@ -72,7 +72,7 @@ class RecepcionTest(unittest.TestCase):
         self.encolar.assert_called_with(r['nombre'])
 
     def test_fallo_replace_huellas_conserva_indice_anterior(self):
-        import persistencia as P
+        from transcripcion.base import persistencia as P
         self.S.R.guardar_huella(self.datos,'anterior','caso-anterior')
         with patch.object(P.os,'replace',side_effect=OSError('fallo ficticio')):
             with self.assertRaises(OSError):self.S.R.guardar_huella(self.datos,'nuevo','caso-nuevo')

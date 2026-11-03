@@ -21,7 +21,7 @@ Python, evaluación GPU y despliegue automático con drenaje/rollback probado.
 
 ## Listado
 
-`indice_casos.py` reutiliza metadatos por caso mientras coincidan tamaño y mtime de sus archivos;
+`transcripcion/casos/indice.py` reutiliza metadatos por caso mientras coincidan tamaño y mtime de sus archivos;
 incluye la firma global de las muestras de voz y la ruta del directorio de datos. Un cambio de
 médico, paciente, informe, marcas, borrador u omisiones invalida la entrada del caso. Los casos
 borrados se eliminan de la caché. Se inventarían archivos con `os.scandir` para aprovechar sus

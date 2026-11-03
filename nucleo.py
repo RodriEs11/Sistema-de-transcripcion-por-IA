@@ -24,7 +24,7 @@ import urllib.request
 from pathlib import Path
 
 from fase1_transcribir import normalizar, sin_acentos, datos_criticos
-import usuarios as U
+from transcripcion.acceso import usuarios as U
 
 AQUI = Path(__file__).resolve().parent
 CONOC = AQUI / "conocimiento"

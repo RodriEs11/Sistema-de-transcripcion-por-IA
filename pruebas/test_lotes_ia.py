@@ -8,8 +8,8 @@ from unittest.mock import patch
 from contextlib import ExitStack
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import lotes_ia as B
-import cache_transcripcion as C
+from transcripcion.procesamiento import lotes as B
+from transcripcion.procesamiento import cache_transcripcion as C
 RESPALDO = Path(__file__).resolve().parents[1]/"respaldo"
 RESPALDO.mkdir(exist_ok=True)
 
@@ -120,7 +120,7 @@ class TrabajadorTest(unittest.TestCase):
             if fallo:
                 etapa,caso=fallo
                 (raiz/'resultados'/etapa/f'{caso}.json').write_text('roto',encoding='utf-8')
-            import ajustes
+            from transcripcion import ajustes
             cfg=ajustes.para_pruebas(raiz,lote_max_audios=2,lote_max_segundos=180).cfg
             for nombre,valor in [('AQUI',raiz),('DATOS',datos),('COLA',cola),('CFG',cfg),('SIMULAR',not cache),('ESTADO',{}),('BORRADOS',set()),('PAUSAS',{}),('PAUSADO_S',{}),('REINICIO',{}),('TRABAJO',{}),('ENCOLADO',{})]:
                 pila.enter_context(patch.object(S,nombre,valor))

@@ -224,8 +224,10 @@ def ejecutar(origen, espera):
     raiz.mkdir()
     (raiz/'sistema').mkdir()
     (raiz/'audios').mkdir()
-    for nombre in ('fase1_transcribir.py', 'huecos.py', 'nucleo.py', 'registro.py', 'plataforma.py', 'persistencia.py', 'vocabulario.txt'):
+    for nombre in ('fase1_transcribir.py', 'huecos.py', 'nucleo.py', 'vocabulario.txt'):
         shutil.copy2(proyecto/nombre, raiz/'sistema'/nombre)
+    # paquete con registro, plataforma, persistencia y usuarios (nucleo los importa)
+    shutil.copytree(proyecto/'transcripcion', raiz/'sistema'/'transcripcion', ignore=shutil.ignore_patterns('__pycache__'))
     shutil.copytree(proyecto/'conocimiento.ejemplo', raiz/'sistema'/'conocimiento.ejemplo')
     for nombre in firmas:
         shutil.copy2(origen/'audios'/nombre, raiz/'audios'/nombre)

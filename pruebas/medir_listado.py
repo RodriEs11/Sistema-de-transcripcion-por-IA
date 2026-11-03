@@ -16,7 +16,7 @@ import time
 
 
 def medir(cantidades, repeticiones):
-    import ajustes
+    from transcripcion import ajustes
     import servidor as S
     aj = ajustes.cargar()           # configuracion.json de la copia (carpetas de la copia)
     S.configurar(aj)
@@ -73,6 +73,7 @@ def main():
         destino.mkdir()
         for fuente in raiz.glob("*.py"):
             shutil.copy2(fuente, destino / fuente.name)
+        shutil.copytree(raiz / "transcripcion", destino / "transcripcion", ignore=shutil.ignore_patterns("__pycache__"))
         shutil.copytree(raiz / "conocimiento.ejemplo", destino / "conocimiento.ejemplo")
         cfg = json.loads((raiz / "configuracion.ejemplo.json").read_text(encoding="utf-8"))
         cfg.update(carpeta_audios_nuevos="../Audios_nuevos", carpeta_informes="../Informes")

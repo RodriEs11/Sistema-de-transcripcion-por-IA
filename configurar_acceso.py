@@ -4,8 +4,8 @@ o configurar_acceso.sh (Linux)."""
 import getpass
 import sys
 
-import plataforma as P
-import registro as L
+from transcripcion.base import plataforma as P
+from transcripcion.base import registro as L
 import remoto as R
 
 try:

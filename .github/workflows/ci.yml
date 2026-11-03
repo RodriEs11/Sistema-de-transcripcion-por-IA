@@ -86,6 +86,7 @@ jobs:
           if-no-files-found: error
           path: |
             *.py
+            transcripcion/
             requirements.txt
             configuracion.ejemplo.json
             conocimiento.ejemplo/

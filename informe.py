@@ -20,9 +20,9 @@ import sys
 import time
 from pathlib import Path
 
-import ajustes
+from transcripcion import ajustes
 import nucleo as N
-import plataforma as P
+from transcripcion.base import plataforma as P
 from fase1_transcribir import cargar_modelo, transcribir, duracion
 
 try:

@@ -185,15 +185,15 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 ├── huecos.py                Detección de tramos no transcritos y segunda pasada
 ├── informe.py               Generación del Word (python-docx) y modo consola
 ├── aprender.py              Ejemplos aprendidos, historial y correcciones frecuentes
-├── paciente.py              Nombre del paciente para la lista (nunca va a la IA ni al informe)
 ├── importar_informes.py     Importa informes Word como referencias o plantillas
 ├── remoto.py                Túnel de Cloudflare, publicación en ntfy, llaves y sesiones
 ├── admin.py                 Permisos y lectura de registros para el panel
 ├── estadisticas.py          Métricas de calidad y tiempo de revisión
-├── registro.py              Consola con colores, archivos de log y actividad.csv
 ├── app_cliente.py           Manifiesto de actualización de la app del trabajo
 ├── configurar_acceso.py     Contraseña del acceso remoto y PC autorizadas
 ├── configurar_tunel.py      Elegir el túnel: Cloudflare o Microsoft Dev Tunnels
+├── transcripcion/           Paquete con los módulos ya reorganizados (ajustes, base, casos, procesamiento,
+│                            aprendizaje, acceso); ver docs/refactor.md
 ├── web/                     Interfaz de revisión, panel de administración y estadísticas
 ├── cliente_codigo/          Código fuente de la app de Windows (C#)
 ├── cliente/                 Carpeta de distribución de la app (solo el manual y el .config se versionan)
