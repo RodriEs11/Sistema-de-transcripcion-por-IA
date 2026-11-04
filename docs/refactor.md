@@ -99,7 +99,8 @@ Los nombres son orientativos: cada etapa puede ajustarlos y lo deja escrito acá
 | 4 | **Transcripción** | `fase1_transcribir.py` → `asr/whisper.py` y `texto/normalizacion.py`; `huecos.py` → `asr/huecos.py`. `fase1_transcribir.py` queda como herramienta de evaluación (pasa a `herramientas/` en la 2b) | Bajo | Servidor |
 | 5 | **Estado del servidor en objetos** | De `servidor.py`: `Casos` (`casos/repositorio.py`: archivos de cada caso, cachés, índice del listado) y `Procesamiento` (`procesamiento/estado.py`: etapas, cola, pausas, tiempos) como objetos creados en `configurar()`, sin las globales sueltas | **Alto** | Servidor |
 | 6a | **Servicios fuera de `servidor.py`** | Trabajador → `procesamiento/trabajador.py`; lista, caso abierto y borrado → `casos/`; voz → `voz/`; estado de la IA, reinicio y mensajes → `operacion/`; «Guardar Word» y Word → `informe/`. Cada uno recibe en su constructor los objetos que usa | **Alto** | Servidor |
-| 6b | **HTTP** | Tabla de rutas y handlers por área (casos, conocimiento, cliente, usuario, admin, páginas); páginas HTML fuera de las cadenas; `servidor.py` queda como entrada de pocas líneas | **Alto** | Servidor |
+| 6b | **Módulos de la raíz al paquete** | `remoto`, `admin` → `acceso/`; `mantenimiento`, `estadisticas`, `app_cliente` → `operacion/`; `aprender`, `correcciones` → `aprendizaje/`; `importar_informes` → `conocimiento/importar.py`. En la raíz quedan lanzadores de consola. Así el HTTP (6c) puede vivir en el paquete | Bajo | Servidor |
+| 6c | **HTTP** | Tabla de rutas y handlers por área (casos, conocimiento, cliente, usuario, admin, páginas); páginas HTML fuera de las cadenas; `servidor.py` queda como entrada de pocas líneas | **Alto** | Servidor |
 | 7 | **Página principal** | `web/index.html` → `css/` y módulos `js/` (api, lista, editor, audio y onda, marcas, atajos, usuario) | Medio | Servidor + App |
 | 8 | **App de escritorio** | `VentanaPrincipal.cs` en clases por responsabilidad (bandeja, compacto, puente con la página, actualizaciones) | Medio | App |
 | 9 | **Calidad continua** | Reglas de ruff y formato por módulo terminado, tipos y mypy en el paquete, cobertura en el CI | Nulo | — |
@@ -116,9 +117,10 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 | 2a | `refactor/2-paquete-base` · PR #15 · Servidor 2026.11.4 | Hecha (fusionada el 03/11) |
 | 3 | `refactor/3-nucleo` · PR #16 · Servidor 2026.11.5 | Hecha (fusionada el 03/11) |
 | 4 | `refactor/4-transcripcion` · PR #17 · Servidor 2026.11.6 | Hecha (fusionada el 03/11) |
-| 5 | `refactor/5-casos-procesamiento` · PR #18 · Servidor 2026.11.7 | En revisión |
-| 6a | `refactor/6a-servicios` (sobre la etapa 5) · Servidor 2026.11.8 | En revisión |
-| 2b, 6b–9 | — | Pendiente |
+| 5 | `refactor/5-casos-procesamiento` · PR #18 · Servidor 2026.11.7 | Hecha (fusionada el 03/11) |
+| 6a | `refactor/6a-servicios` · PR #20 · Servidor 2026.11.8 | En revisión |
+| 6b | `refactor/6b-raiz-al-paquete` (sobre la 6a) · Servidor 2026.11.9 | En revisión |
+| 2b, 6c–9 | — | Pendiente |
 
 ### Etapa 1: qué quedó
 
@@ -188,6 +190,33 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
   `!/transcripcion/conocimiento/` y `test_paquete.py` verifica que ningún archivo del paquete quede ignorado.
 - `fase1_transcribir` sigue en la raíz (los módulos nuevos lo importan): pasa al paquete en la etapa 4.
 
+### Etapa 6b: qué quedó
+
+La etapa 6 se partió en tres: el HTTP (ahora 6c) necesita usar `remoto`, `admin`, `estadisticas`… y el paquete no
+importa nada de la raíz. Primero se movieron esos módulos, sin cambiar su código (salvo `AQUI = RAIZ`):
+
+| Antes (raíz) | Ahora | Alias de siempre |
+|---|---|---|
+| `remoto.py`, `admin.py` | `transcripcion/acceso/` | `R`, `ADM` |
+| `mantenimiento.py`, `estadisticas.py`, `app_cliente.py` | `transcripcion/operacion/` | `M`, `EST`, `A` |
+| `aprender.py`, `correcciones.py` | `transcripcion/aprendizaje/` | `APRENDER` (`A` en las pruebas), `CORR` |
+| `importar_informes.py` | `transcripcion/conocimiento/importar.py` (`main(argv)` nuevo) | — |
+
+- En la raíz quedan `aprender.py` e `importar_informes.py` como **lanzadores de consola** (solo un
+  `if __name__ == "__main__":` que llama al paquete), para quien los corre a mano o los tiene en la documentación.
+  `test_paquete.py` verifica que no definan nada: así `patch.object(aprender, …)` sobre el lanzador falla en vez de
+  no reemplazar lo que usa el sistema.
+- Cada módulo movido ubica sus datos desde `RAIZ` (`acceso_remoto.json`, `sesiones.json`, `cliente/`,
+  `resultados/historial.csv`, `ejemplos/`, `referencias/`, `.git` para la versión del código): `test_paquete.py`
+  lo verifica archivo por archivo. `MOVIDOS` incluye los seis que ya no tienen lanzador.
+- `mantenimiento` sigue viendo el código cambiado del paquete (ya lo hacía desde la 2a) y la prueba previa al
+  reinicio compila la raíz y el paquete igual que antes.
+- Los servicios que recibían estos módulos en el constructor (`VistaCasos`, `Borrado`, `Operacion`, `Guardado`)
+  los siguen recibiendo: es la misma inyección de dependencias, y las pruebas pueden pasar dobles.
+- Usos actualizados: `servidor.py`, `informe.py`, `configurar_acceso.py`, `configurar_tunel.py`,
+  `mantenimiento_aprendizaje.py`, `verificar_versiones.py`, pruebas (`usuarios.cjs` arma el servidor con Python
+  embebido) y la documentación.
+
 ### Etapa 6a: qué quedó
 
 `servidor.py` bajó de ~2.910 a ~1.700 líneas. `configurar(ajustes)` arma los objetos en orden de dependencia, cada
@@ -211,7 +240,7 @@ GUARDADO.aprendizaje = APRENDIZAJE
   `informe.py` (hoja, párrafos, formato, `escribir_docx`) → `transcripcion/informe/word.py`; `texto_marcas` y
   `mensaje_amigable` → `transcripcion/base/formatos.py`; `SUFIJOS_CASO` → `casos/repositorio.py`.
 - Los módulos de la raíz que todavía usan algunos servicios (`remoto`, `mantenimiento`, `aprender`, `estadisticas`)
-  se les pasan en el constructor: el paquete sigue sin importar nada de la raíz. Pasan al paquete con la etapa 6b.
+  se les pasan en el constructor: el paquete sigue sin importar nada de la raíz. Pasaron al paquete en la etapa 6b.
 - Pruebas: parchean métodos de los objetos (`S.TRAB`, `S.VISTA`, `S.VOCES`, `S.IA`, `S.BORRADO`, `S.GUARDADO`) o, si
   el objeto lo crea `main()`, el método en la clase (`patch.object(Trabajador, "reanudar_cola")`). Un «reinicio» en una
   prueba es `S.configurar(aj)` otra vez (objetos nuevos con las mismas carpetas).
@@ -237,7 +266,7 @@ GUARDADO.aprendizaje = APRENDIZAJE
   `CASOS.…` / `PROC.…`.
 - Quedan en `servidor.py`, ya usando los objetos: el trabajador, `listar_casos`, `borrar_caso`, `reanudar_cola`, la
   voz, el reinicio y los mensajes, el túnel y el estado de la IA, y todo el HTTP. Salen en la etapa 6
-  (6a servicios, 6b HTTP): el trabajador depende de la voz, las marcas y la espera de la IA, que todavía están
+  (6a servicios, 6c HTTP): el trabajador depende de la voz, las marcas y la espera de la IA, que todavía están
   en `servidor.py`, y moverlo antes obligaba a pasarle el módulo entero.
 
 ### Etapa 4: qué quedó

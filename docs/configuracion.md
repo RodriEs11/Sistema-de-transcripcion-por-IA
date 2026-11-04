@@ -82,7 +82,7 @@ Notas de cómo dicta cada médico (estilo, frases preferidas, plantillas propias
 
 ### `correcciones_aprendidas.md`
 
-Generado por `aprender.py` en cada guardado. **No editar a mano.**
+Generado por `transcripcion/aprendizaje/aprender.py` en cada guardado. **No editar a mano.**
 
 ### `usuarios/<clave>/` (estilo de cada transcriptor)
 

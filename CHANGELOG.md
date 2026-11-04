@@ -9,6 +9,18 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [Servidor 2026.11.9] — 2026-11-03
+
+Etapa 6b del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles (contratos en
+verde sin regenerar; panel, estadísticas, correcciones y actualización de la app probados con un servidor simulado).
+
+### Cambiado
+- Los módulos de la raíz que usa el servidor pasaron al paquete: `remoto` y `admin` a `transcripcion/acceso/`;
+  `mantenimiento`, `estadisticas` y `app_cliente` a `transcripcion/operacion/`; `aprender` y `correcciones` a
+  `transcripcion/aprendizaje/`; `importar_informes` a `transcripcion/conocimiento/importar.py`. Los datos
+  (contraseñas, sesiones, historial, ejemplos, referencias) siguen en los mismos archivos de la carpeta del sistema.
+- `aprender.py` e `importar_informes.py` siguen en la raíz como lanzadores de consola: se usan igual que antes.
+
 ## [Servidor 2026.11.8] — 2026-11-03
 
 Etapa 6a del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles (contratos en

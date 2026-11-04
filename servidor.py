@@ -17,16 +17,16 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-import admin as ADM
-import correcciones as CORR
-import estadisticas as EST
-import aprender as APRENDER
-import app_cliente as A
+from transcripcion.acceso import admin as ADM
+from transcripcion.aprendizaje import correcciones as CORR
+from transcripcion.operacion import estadisticas as EST
+from transcripcion.aprendizaje import aprender as APRENDER
+from transcripcion.operacion import app_cliente as A
 from transcripcion.casos import borradores as BOR
 from transcripcion.procesamiento import cola as CP
 from transcripcion.base.persistencia import escribir_atomico
 from transcripcion.aprendizaje.pendiente import ColaAprendizaje
-import mantenimiento as M
+from transcripcion.operacion import mantenimiento as M
 from transcripcion.conocimiento import archivos as CON
 from transcripcion.conocimiento import medicos as MED
 from transcripcion.conocimiento import plantillas as PL
@@ -34,7 +34,7 @@ from transcripcion.informe import formato as FMT
 from transcripcion.casos import paciente as PAC
 from transcripcion.base import plataforma as P
 from transcripcion.base import registro as L
-import remoto as R
+from transcripcion.acceso import remoto as R
 from transcripcion.acceso import usuarios as U
 from transcripcion.voz import huellas as VOZ
 from transcripcion import ajustes
@@ -76,7 +76,7 @@ BORRADO = None # borrado de casos (transcripcion.casos.borrado)
 OPER = None   # reinicio programado y mensajes a las PC (transcripcion.operacion.reinicio)
 TRAB = None   # trabajador de la cola (transcripcion.procesamiento.trabajador)
 GUARDADO = None  # Guardar Word y aprender, vista previa (transcripcion.informe.guardado)
-VERSION = "2026.11.8"
+VERSION = "2026.11.9"
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
                  "/admin/correcciones": "correcciones.html", "/admin/medicos": "medicos.html"}
@@ -269,7 +269,7 @@ class H(BaseHTTPRequestHandler):
         """Rutas que no necesitan un transcriptor con sesión."""
         if ruta in self.LIBRES or (self.con_llave and ruta in self.SOLO_LLAVE):
             return True
-        # el panel de administración tiene su propio permiso (admin.py): así se crean los primeros usuarios
+        # el panel de administración tiene su propio permiso (acceso/admin.py): así se crean los primeros usuarios
         return ruta in PAGINAS_ADMIN or ruta.startswith("/api/admin/")
 
     def _autorizar(self, ruta):
@@ -726,7 +726,7 @@ class H(BaseHTTPRequestHandler):
                 if not arch.endswith(".docx"):
                     return self._json({"error": "Guardalo como .docx (en Word: Archivo → Guardar como → "
                                                 "Documento de Word) y volvé a intentar."}, 400)
-                from importar_informes import plantilla_desde_word
+                from transcripcion.conocimiento.importar import plantilla_desde_word
                 L.info("CONFIG", f"{self.pc} armó una plantilla desde el Word «{Path(arch).name}».")
                 return self._json(plantilla_desde_word(self._body()))
             if u.path == "/api/subir":
@@ -833,7 +833,7 @@ class H(BaseHTTPRequestHandler):
                     L.info("VOZ", f"{self.pc} quitó la muestra de voz de {CASOS.visible(c)} de «{viejo}».")
                 return self._json({"ok": bool(viejo)})
             if u.path == "/api/importar":
-                from importar_informes import importar
+                from transcripcion.conocimiento.importar import importar
                 ok, mal = importar()
                 L.ok("CONFIG", f"Importados {L.plural(len(ok), 'informe')} Word como referencia ({self.pc}).",
                      [f"No se pudieron leer: {', '.join(mal)}"] if mal else None)

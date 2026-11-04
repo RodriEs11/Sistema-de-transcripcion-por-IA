@@ -17,7 +17,7 @@ RAIZ = Path(__file__).resolve().parents[1]
 CODIGO = textwrap.dedent("""
     import json, sys
     from pathlib import Path
-    import mantenimiento as M
+    from transcripcion.operacion import mantenimiento as M
     import servidor
     M.empezar()
     cargados = set(M.CARGADO)
@@ -71,7 +71,7 @@ class CodigoCambiado(unittest.TestCase):
         self.assertIsNone(salida["ajeno"], "anotó un archivo que no es del sistema")
 
     def test_prueba_previa_compila_el_paquete(self):
-        codigo = "import mantenimiento as M; print('RESULTADO', repr(M.prueba_de_arranque()))"
+        codigo = "from transcripcion.operacion import mantenimiento as M; print('RESULTADO', repr(M.prueba_de_arranque()))"
         self.assertEqual(self.correr(codigo).rsplit("RESULTADO", 1)[-1].strip(), "None")
         p = self.sistema / "transcripcion" / "casos" / "paciente.py"
         p.write_text(p.read_text(encoding="utf-8") + "\ndef roto(:\n", encoding="utf-8")

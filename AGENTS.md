@@ -94,7 +94,7 @@ No dar por terminado un cambio funcional hasta completar su versión, documentac
   esa modalidad no confirma una distribución lista.
 - Revisar `git diff --check`, el diff y `git status`. Los binarios son distribución local,
   no archivos para Git. No incluir datos clínicos o secretos en commits ni salidas.
-- El manifiesto lo calcula `app_cliente.py`: no escribir huellas manualmente. Comprobar
+- El manifiesto lo calcula `transcripcion/operacion/app_cliente.py`: no escribir huellas manualmente. Comprobar
   que anuncia la nueva versión y que los archivos `.viejo`, `.nuevo` y `.fallida` quedan excluidos.
 - No cerrar la app ni reiniciar el servidor a ciegas: considerar trabajos en curso, audios
   pendientes y cambios sin guardar. El servidor recalcula el manifiesto sin reinicio;

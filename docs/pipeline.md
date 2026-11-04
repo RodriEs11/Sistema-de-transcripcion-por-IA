@@ -102,7 +102,7 @@ si cambian las reglas, los casos viejos se recalculan al abrirlos.
 Hay un control adicional de **palabras raras** (palabras deformadas por Whisper que la IA copió tal cual) que se
 activa recién con 150 informes revisados, para no generar falsas alarmas con un vocabulario de referencia chico.
 
-## 5. Aprendizaje (`aprender.py`)
+## 5. Aprendizaje (`transcripcion/aprendizaje/aprender.py`)
 
 Al guardar un informe:
 

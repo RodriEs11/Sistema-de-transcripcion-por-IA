@@ -182,18 +182,16 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 ├── servidor.py              Arranque (crea los objetos del paquete), servidor HTTP, API de la interfaz y panel
 ├── fase1_transcribir.py     Evaluación de Whisper sobre audios de ejemplo y prueba de la GPU (--verificar)
 ├── informe.py               Modo consola: audios -> Word sin la interfaz (el Word está en transcripcion/informe/word.py)
-├── aprender.py              Ejemplos aprendidos, historial y correcciones frecuentes
-├── importar_informes.py     Importa informes Word como referencias o plantillas
-├── remoto.py                Túnel de Cloudflare, publicación en ntfy, llaves y sesiones
-├── admin.py                 Permisos y lectura de registros para el panel
-├── estadisticas.py          Métricas de calidad y tiempo de revisión
-├── app_cliente.py           Manifiesto de actualización de la app del trabajo
+├── aprender.py              Modo consola: guarda como ejemplos los Word revisados (código en transcripcion/aprendizaje/)
+├── importar_informes.py     Modo consola: importa informes Word como referencias (código en transcripcion/conocimiento/)
 ├── configurar_acceso.py     Contraseña del acceso remoto y PC autorizadas
 ├── configurar_tunel.py      Elegir el túnel: Cloudflare o Microsoft Dev Tunnels
 ├── transcripcion/           Paquete con los módulos reorganizados: asr/ (Whisper y segunda pasada),
 │                            texto/ (normalización de números), ia/ (prompt, ejemplos, Ollama),
 │                            controles/ (marcas y avisos), conocimiento/ (plantillas y médicos), ajustes,
-│                            base, casos, procesamiento, aprendizaje, acceso; ver docs/refactor.md
+│                            base, casos, procesamiento, aprendizaje (aprender, correcciones),
+│                            acceso (remoto: túnel, llaves y sesiones; admin: permisos del panel),
+│                            operacion (mantenimiento, estadísticas, app_cliente); ver docs/refactor.md
 ├── web/                     Interfaz de revisión, panel de administración y estadísticas
 ├── cliente_codigo/          Código fuente de la app de Windows (C#)
 ├── cliente/                 Carpeta de distribución de la app (solo el manual y el .config se versionan)

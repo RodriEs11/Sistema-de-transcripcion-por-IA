@@ -13,7 +13,7 @@ import time
 
 from transcripcion.base import plataforma as P
 from transcripcion.base import registro as L
-import remoto as R
+from transcripcion.acceso import remoto as R
 
 # 2026-10-25 01:44:02  AVISO  TÚNEL     mensaje
 _LINEA = re.compile(r"^(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d)  (AVISO|ERROR)\s+(\S+)\s+(.*)$")
@@ -129,7 +129,7 @@ def origenes_validos(handler, puerto):
         return {"127.0.0.1", "localhost"}
     hosts = {_host(handler.headers.get("Host")), _host(handler.headers.get("X-Forwarded-Host"))}
     try:
-        import remoto as R
+        from transcripcion.acceso import remoto as R
         hosts.add(_host(R.URL_TUNEL.get("url")))
     except Exception:
         pass

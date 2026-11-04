@@ -27,7 +27,7 @@ flowchart TB
         NU["transcripcion/ia + controles<br/>prompt · Ollama · marcas"]
         OL[("Ollama<br/>gemma4:12b")]
         INF["informe.py<br/>python-docx"]
-        APR["aprender.py"]
+        APR["transcripcion/aprendizaje<br/>aprender"]
         REG["transcripcion/base/registro.py"]
         FS[("Disco local<br/>Informes · ejemplos · conocimiento")]
         HTTP --> COLA --> WH --> NU --> OL
@@ -69,13 +69,13 @@ en la raíz son los puntos de entrada y lo que todavía no se reorganizó.
 | `transcripcion/controles/` | `marcas` (marcas con su motivo, alineación con el dictado, HTML, palabras raras), `clinicos` (Bi-Rads, ACR, términos clave), `avisos` (datos omitidos, estudios sin plantilla), `orden` (orden de estudios) |
 | `transcripcion/informe/formato.py`, `transcripcion/texto/palabras.py` | Negritas del Word; palabras normalizadas para comparar textos |
 | `informe.py` | Lectura de la configuración para el modo consola (vía `ajustes`), párrafos con formato, Word (A4, Tahoma, negritas, centrado) y modo consola |
-| `aprender.py` | Ejemplos aprendidos, `historial.csv`, `correcciones_aprendidas.md` |
-| `importar_informes.py` | Convierte informes Word en referencias o en plantillas |
-| `remoto.py` | Túnel (`cloudflared`), publicación en ntfy, contraseñas PBKDF2, llaves por PC, sesiones y cookies |
-| `admin.py` | Permisos del panel y lectura de los registros |
-| `estadisticas.py` | Métricas de calidad y tiempo (solo lectura) |
+| `transcripcion/aprendizaje/aprender.py`, `correcciones.py` | `aprender`: ejemplos aprendidos, `historial.csv`, `correcciones_aprendidas.md` (lanzador de consola: `aprender.py`) · `correcciones`: cambios frecuentes IA → informe final para el panel |
+| `transcripcion/conocimiento/importar.py` | Convierte informes Word en referencias o en plantillas (lanzador de consola: `importar_informes.py`) |
+| `transcripcion/acceso/remoto.py` | Túnel (`cloudflared`), publicación en ntfy, contraseñas PBKDF2, llaves por PC, sesiones y cookies |
+| `transcripcion/acceso/admin.py` | Permisos del panel y lectura de los registros |
+| `transcripcion/operacion/estadisticas.py`, `mantenimiento.py` | Métricas de calidad y tiempo (solo lectura) · código cambiado sin tomar, versión de git, prueba previa al reinicio |
 | `transcripcion/voz/` | `huellas` (WeSpeaker ONNX, muestras por médico, detección y agrupamiento) y `servicio` (`VOCES`) ([voz.md](voz.md)) |
-| `app_cliente.py` | Manifiesto (SHA-256) de la carpeta `cliente\` para la actualización automática |
+| `transcripcion/operacion/app_cliente.py` | Manifiesto (SHA-256) de la carpeta `cliente\` para la actualización automática |
 
 La interfaz está en `web/` y no usa *frameworks* ni dependencias externas: `index.html` (revisión),
 `admin.html` (estado) y `estadisticas.html`.

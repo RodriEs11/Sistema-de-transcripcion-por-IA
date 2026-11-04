@@ -14,7 +14,7 @@ import urllib.request
 
 from transcripcion.base import plataforma as P
 from transcripcion.base import registro as L
-import remoto as R
+from transcripcion.acceso import remoto as R
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")

@@ -18,13 +18,13 @@ import statistics
 import threading
 import time
 from datetime import date, datetime, timedelta
-from pathlib import Path
 
+from transcripcion import RAIZ
 from transcripcion.conocimiento import plantillas as PL
 from transcripcion.aprendizaje import almacen as AL
 from transcripcion.base import registro as L
 
-AQUI = Path(__file__).resolve().parent
+AQUI = RAIZ          # carpeta del sistema (no la del paquete)
 HIST = AQUI / "resultados" / "historial.csv"
 EJ = AQUI / "ejemplos"
 SIN_MEDICO = "Sin especificar"

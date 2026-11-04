@@ -10,7 +10,8 @@ const codigo=`
 import json, sys, tempfile, threading
 from pathlib import Path
 from unittest.mock import patch
-import servidor as S, remoto as R
+import servidor as S
+from transcripcion.acceso import remoto as R
 from transcripcion.conocimiento import archivos as CON
 from transcripcion.conocimiento import medicos as MED
 from transcripcion import ajustes

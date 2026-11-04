@@ -22,9 +22,10 @@ import time
 import zlib
 from pathlib import Path
 
+from transcripcion import RAIZ
 from transcripcion.base import plataforma as P
 
-AQUI = Path(__file__).resolve().parent
+AQUI = RAIZ          # carpeta del sistema (no la del paquete)
 GIT = AQUI / ".git"
 CODIGO_REINICIO = 75          # el .bat vuelve a abrir el servidor cuando termina con este código
 MARCA_BAT = "REINICIO-DESDE-EL-PANEL"

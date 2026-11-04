@@ -74,7 +74,7 @@ class ImportarSinEfectos(unittest.TestCase):
         (RAIZ / "respaldo").mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(prefix="arranque_", dir=RAIZ / "respaldo") as tmp:
             sistema = _copiar(Path(tmp))
-            codigo = "import mantenimiento as M; print('RESULTADO', repr(M.prueba_de_arranque()))"
+            codigo = "from transcripcion.operacion import mantenimiento as M; print('RESULTADO', repr(M.prueba_de_arranque()))"
             env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1", PYTHONIOENCODING="utf-8")
 
             def probar():
