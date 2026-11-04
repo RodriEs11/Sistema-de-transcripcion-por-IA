@@ -1,9 +1,0 @@
-# transcripcion/http/ es código nuevo (etapa 6c): entra a las reglas más estrictas y a `ruff format`
-# (docs/refactor.md → «Calidad del código»). El resto del repositorio sigue con la configuración de pyproject.toml.
-extend = "../../pyproject.toml"
-
-[lint]
-extend-select = ["E", "W", "I", "B", "UP"]
-
-[lint.isort]
-known-first-party = ["transcripcion"]

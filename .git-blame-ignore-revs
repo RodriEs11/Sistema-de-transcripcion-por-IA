@@ -1,0 +1,5 @@
+# Commits que solo cambian el formato: `git blame` los saltea.
+# Configurar una vez: git config blame.ignoreRevsFile .git-blame-ignore-revs (GitHub lo usa solo).
+
+# Etapa 9: ruff format en todo transcripcion/ (el AST de cada archivo es el mismo antes y después)
+dee5c29ff2a095fcfa219e6ee999a19d03e97909

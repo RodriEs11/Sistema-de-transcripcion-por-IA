@@ -1,7 +1,8 @@
 """Publicación atómica de archivos en el mismo volumen, sin truncar el anterior."""
+
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 
 def escribir_atomico(ruta, contenido):

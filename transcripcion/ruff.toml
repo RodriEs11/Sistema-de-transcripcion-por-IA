@@ -1,0 +1,13 @@
+# transcripcion/ (el paquete del sistema) usa reglas más estrictas que el resto del repositorio y `ruff format`
+# (docs/refactor.md → «Calidad del código», etapa 9). Lo demás sigue con la configuración de pyproject.toml.
+extend = "../pyproject.toml"
+
+[lint]
+extend-select = ["E", "W", "I", "B", "UP"]
+
+[lint.isort]
+known-first-party = ["transcripcion"]
+
+[lint.per-file-ignores]
+# SISTEMA es el texto que se le manda a la IA tal cual: reacomodar sus líneas cambiaría el prompt (contrato del núcleo).
+"ia/prompt.py" = ["E501"]

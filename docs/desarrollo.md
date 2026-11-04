@@ -50,9 +50,15 @@ Dos pruebas fijan el comportamiento del sistema y son la red de seguridad del
 Un refactor no los cambia. Si un cambio funcional deliberado cambia el núcleo, regenerar y revisar el diff:
 `ACTUALIZAR_CONTRATOS=1 python -m unittest pruebas.test_contrato_nucleo`.
 
-Lint: `python -m ruff check .` (configuración en `pyproject.toml`, versión en `requirements-ci.txt`). Corre en el CI.
-`transcripcion/http/` tiene reglas más estrictas (`transcripcion/http/ruff.toml`) y formato automático: antes de
-subir un cambio ahí, `python -m ruff format transcripcion/http` (el CI corre `ruff format --check`).
+Calidad (el CI corre todo esto; versiones en `requirements-ci.txt`, detalle en
+[refactor.md → Calidad del código](refactor.md#calidad-del-código)):
+
+```bash
+python -m ruff format transcripcion      # formato del paquete (antes de subir un cambio ahí)
+python -m ruff check .                   # lint; transcripcion/ con reglas estrictas (transcripcion/ruff.toml)
+python -m mypy                           # tipos del paquete
+python -m coverage run -m unittest discover -s pruebas -p 'test_*.py' && python -m coverage report
+```
 
 ### Aislamiento de pruebas y rendimiento
 
@@ -208,7 +214,7 @@ actualizar tanto la versión del servidor como la de escritorio. Los cambios exc
 de documentación, pruebas o herramientas de desarrollo no requieren subir esas versiones.
 Al publicar, trasladar las notas entregadas de «Sin publicar» a las entradas fechadas correspondientes.
 
-- [ ] `python -m py_compile *.py` y `python -m ruff check .` sin errores.
+- [ ] `python -m ruff format transcripcion`, `python -m ruff check .` y `python -m mypy` sin errores; cobertura por encima del piso.
 - [ ] Contratos (`test_contrato_http`, `test_contrato_nucleo`) en verde sin regenerar, salvo cambio funcional deliberado.
 - [ ] `node pruebas/verificar_fuentes.cjs`: sintaxis y sin funciones repetidas en la página principal.
 - [ ] Probado en modo simulado (y en la PC real si toca Whisper, Ollama o Windows).

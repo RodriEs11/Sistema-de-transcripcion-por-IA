@@ -16,6 +16,7 @@ Archivos:
   voces/huellas.json                         muestras etiquetadas {"v":1, "muestras": {caso: {medico, h, ...}}}
   Informes/revision/datos/<caso>.voz.json    huella del caso y resultado de la detección (lo maneja servidor.py)
 """
+
 import hashlib
 import json
 import os
@@ -27,35 +28,37 @@ import numpy as np
 
 from transcripcion import RAIZ
 
-AQUI = RAIZ          # carpeta del sistema (modelos/ y voces/ quedan ahí, no en el paquete)
+AQUI = RAIZ  # carpeta del sistema (modelos/ y voces/ quedan ahí, no en el paquete)
 DIR_MODELOS = AQUI / "modelos"
 MODELO = DIR_MODELOS / "wespeaker_resnet34.onnx"
-URL_MODELO = ("https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/"
-              "wespeaker_en_voxceleb_resnet34_LM.onnx")
+URL_MODELO = (
+    "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/"
+    "wespeaker_en_voxceleb_resnet34_LM.onnx"
+)
 SHA_MODELO = "e9848563da86f263117134dfd7ad63c92355b37de492b55e325400c9d9c39012"
 DIR_VOCES = AQUI / "voces"
 HUELLAS = DIR_VOCES / "huellas.json"
-VERSION_HUELLA = "wespeaker-r34-1"     # si cambia el modelo o el cálculo, las huellas viejas no se mezclan
+VERSION_HUELLA = "wespeaker-r34-1"  # si cambia el modelo o el cálculo, las huellas viejas no se mezclan
 
 # Valores por defecto (se pueden cambiar en configuracion.json → "voces": {...}).
 # El parecido es el coseno entre huellas (1 = misma voz). Con este modelo, dos audios de la misma persona
 # suelen dar 0,65 a 0,90; dos personas distintas grabadas con el mismo equipo, 0,2 a 0,55. Por eso, además del
 # parecido, se exige que el primer médico le saque una ventaja clara al segundo.
 DEF = {
-    "umbral_seguro": 0.62,     # parecido mínimo para asignar el médico solo
-    "margen": 0.10,            # y tiene que superar al segundo médico por al menos esto
-    "umbral_dudoso": 0.45,     # por debajo: voz sin reconocer
-    "margen_propio": 0.15,     # y no puede parecerse mucho menos de lo que sus muestras se parecen entre sí
-    "min_muestras": 3,         # un médico con menos muestras nunca se asigna solo
-    "max_muestras": 40,        # se comparan las últimas N muestras de cada médico
-    "min_voz_s": 2.0,          # menos voz que esto: no se intenta
-    "max_voz_s": 120.0,        # más voz que esto no mejora la huella y tarda más
-    "agrupar": 0.65,           # parecido mínimo para juntar dos audios sin etiquetar en un grupo
+    "umbral_seguro": 0.62,  # parecido mínimo para asignar el médico solo
+    "margen": 0.10,  # y tiene que superar al segundo médico por al menos esto
+    "umbral_dudoso": 0.45,  # por debajo: voz sin reconocer
+    "margen_propio": 0.15,  # y no puede parecerse mucho menos de lo que sus muestras se parecen entre sí
+    "min_muestras": 3,  # un médico con menos muestras nunca se asigna solo
+    "max_muestras": 40,  # se comparan las últimas N muestras de cada médico
+    "min_voz_s": 2.0,  # menos voz que esto: no se intenta
+    "max_voz_s": 120.0,  # más voz que esto no mejora la huella y tarda más
+    "agrupar": 0.65,  # parecido mínimo para juntar dos audios sin etiquetar en un grupo
 }
 
 SR = 16000
-_LOCK = threading.RLock()        # huellas.json
-_SES_LOCK = threading.Lock()     # sesión de onnxruntime
+_LOCK = threading.RLock()  # huellas.json
+_SES_LOCK = threading.Lock()  # sesión de onnxruntime
 _SES = {"s": None}
 _DESCARGA = {"estado": "", "error": "", "lock": threading.Lock()}
 
@@ -124,6 +127,7 @@ def _sesion():
             if not modelo_listo():
                 raise SinModelo(_DESCARGA["error"] or "falta el modelo de voz")
             import onnxruntime as ort
+
             op = ort.SessionOptions()
             op.intra_op_num_threads = max(1, min(4, (os.cpu_count() or 2) // 2))
             op.log_severity_level = 3
@@ -163,14 +167,14 @@ def fbank(x):
     if _BANCO is None:
         _BANCO = _banco_mel()
         n = np.arange(400)
-        _VENTANA = (0.5 - 0.5 * np.cos(2 * np.pi * n / 399)) ** 0.85      # ventana "povey"
+        _VENTANA = (0.5 - 0.5 * np.cos(2 * np.pi * n / 399)) ** 0.85  # ventana "povey"
     x = np.asarray(x, dtype=np.float64)
     if len(x) < 400:
         return np.zeros((0, 80), dtype=np.float32)
     nf = 1 + (len(x) - 400) // 160
     idx = np.arange(400)[None, :] + 160 * np.arange(nf)[:, None]
     fr = x[idx]
-    fr = fr - fr.mean(axis=1, keepdims=True)                              # quita la componente continua
+    fr = fr - fr.mean(axis=1, keepdims=True)  # quita la componente continua
     fr = np.concatenate([fr[:, :1] - 0.97 * fr[:, :1], fr[:, 1:] - 0.97 * fr[:, :-1]], axis=1)  # preénfasis
     fr = fr * _VENTANA
     esp = np.abs(np.fft.rfft(fr, n=512, axis=1)) ** 2
@@ -187,7 +191,7 @@ def tramos_de_voz(palabras, total_s, pegar=0.6, borde=0.15):
         if a is None or b is None or b <= a:
             continue
         a, b = max(0.0, a - borde), min(total_s, b + borde)
-        if b <= a:                            # palabra fuera del audio
+        if b <= a:  # palabra fuera del audio
             continue
         if t and a - t[-1][1] <= pegar:
             t[-1][1] = max(t[-1][1], b)
@@ -198,7 +202,7 @@ def tramos_de_voz(palabras, total_s, pegar=0.6, borde=0.15):
 
 def _embedding(feats):
     ses = _sesion()
-    f = feats - feats.mean(axis=0, keepdims=True)                         # normalización por media (CMN)
+    f = feats - feats.mean(axis=0, keepdims=True)  # normalización por media (CMN)
     out = ses.run(None, {ses.get_inputs()[0].name: f[None, :, :].astype(np.float32)})[0][0]
     return np.asarray(out, dtype=np.float64)
 
@@ -222,7 +226,7 @@ def huella(audio, palabras=None, cfg=None):
         if seg >= p["max_voz_s"]:
             break
         b = min(b, a + p["max_voz_s"] - seg)
-        partes.append(audio[int(a * SR):int(b * SR)])
+        partes.append(audio[int(a * SR) : int(b * SR)])
         seg += b - a
     if seg < p["min_voz_s"]:
         return None, round(seg, 1)
@@ -230,9 +234,9 @@ def huella(audio, palabras=None, cfg=None):
     trozo = 20 * SR
     embs, pesos = [], []
     for i in range(0, len(voz), trozo):
-        z = voz[i:i + trozo]
-        if len(z) < 3 * SR and embs:          # el resto corto se suma al trozo anterior
-            z = voz[max(0, i - trozo):i + trozo]
+        z = voz[i : i + trozo]
+        if len(z) < 3 * SR and embs:  # el resto corto se suma al trozo anterior
+            z = voz[max(0, i - trozo) : i + trozo]
             embs.pop(), pesos.pop()
         feats = fbank(z)
         if len(feats) < 50:
@@ -247,6 +251,7 @@ def huella(audio, palabras=None, cfg=None):
 
 def huella_archivo(ruta, palabras=None, cfg=None):
     from transcripcion.asr.whisper import cargar_audio
+
     return huella(cargar_audio(ruta), palabras, cfg)
 
 
@@ -292,8 +297,14 @@ def agregar(caso, medico, h, fuente="guardado", seg=None):
         return None
     with _LOCK:
         d = _datos()
-        d["muestras"][caso] = {"medico": medico, "h": h, "fecha": time.time(), "fuente": fuente, "seg": seg,
-                               "modelo": VERSION_HUELLA}
+        d["muestras"][caso] = {
+            "medico": medico,
+            "h": h,
+            "fecha": time.time(),
+            "fuente": fuente,
+            "seg": seg,
+            "modelo": VERSION_HUELLA,
+        }
         _grabar(d)
         return sum(1 for m in d["muestras"].values() if m.get("medico") == medico)
 
@@ -314,8 +325,11 @@ def muestra(caso):
 
 def muestras(medico=None):
     """[(caso, muestra)] ordenadas de la más nueva a la más vieja."""
-    ms = [(c, m) for c, m in _datos()["muestras"].items()
-          if (medico is None or m.get("medico") == medico) and m.get("modelo", VERSION_HUELLA) == VERSION_HUELLA]
+    ms = [
+        (c, m)
+        for c, m in _datos()["muestras"].items()
+        if (medico is None or m.get("medico") == medico) and m.get("modelo", VERSION_HUELLA) == VERSION_HUELLA
+    ]
     ms.sort(key=lambda x: x[1].get("fecha") or 0, reverse=True)
     return ms
 
@@ -380,9 +394,15 @@ def detectar(h, excluir=None, cfg=None):
         return {"estado": "desconocido", "motivo": "todavía no hay muestras de voz de ningún médico"}
     med, s1, n1, tip = r[0]
     s2 = r[1][1] if len(r) > 1 else 0.0
-    d = {"medico": med, "puntaje": round(s1, 3), "muestras": n1, "tipico": round(tip, 3) if tip is not None else None,
-         "segundo": r[1][0] if len(r) > 1 else None, "puntaje2": round(s2, 3) if len(r) > 1 else None,
-         "ranking": [[m, round(s, 3)] for m, s, _, _ in r[:3]]}
+    d = {
+        "medico": med,
+        "puntaje": round(s1, 3),
+        "muestras": n1,
+        "tipico": round(tip, 3) if tip is not None else None,
+        "segundo": r[1][0] if len(r) > 1 else None,
+        "puntaje2": round(s2, 3) if len(r) > 1 else None,
+        "ranking": [[m, round(s, 3)] for m, s, _, _ in r[:3]],
+    }
     propio = tip is None or s1 >= tip - p["margen_propio"]
     if s1 >= p["umbral_seguro"] and s1 - s2 >= p["margen"] and n1 >= p["min_muestras"] and propio:
         d["estado"] = "seguro"
@@ -393,7 +413,9 @@ def detectar(h, excluir=None, cfg=None):
         elif s1 < p["umbral_seguro"]:
             d["motivo"] = "el parecido no alcanza para asignarlo solo"
         elif not propio:
-            d["motivo"] = f"se parece menos de lo habitual a las muestras de {med} (suelen parecerse {round(tip * 100)} %)"
+            d["motivo"] = (
+                f"se parece menos de lo habitual a las muestras de {med} (suelen parecerse {round(tip * 100)} %)"
+            )
         else:
             d["motivo"] = f"se parece casi igual a {d['segundo']}"
     else:

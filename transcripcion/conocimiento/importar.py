@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Importa informes ya terminados en Word (sin audio) como INFORMES DE REFERENCIA.
 La IA los usa para copiar el formato y las frases de ese tipo de estudio
@@ -7,24 +6,21 @@ La IA los usa para copiar el formato y las frases de ese tipo de estudio
   Carpeta de origen: Dataset\\Informes word   (o la que se pase como argumento)
   Destino:           sistema\\referencias\\NOMBRE.txt
 """
+
 import re
 import sys
 from pathlib import Path
 
 from transcripcion import RAIZ
 
-AQUI = RAIZ          # carpeta del sistema (no la del paquete)
+AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 ORIGEN = AQUI.parent / "Dataset" / "Informes word"
 DESTINO = AQUI / "referencias"
-
-try:
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except Exception:
-    pass
 
 
 def texto_docx(ruta):
     from docx import Document
+
     d = Document(str(ruta))
     lineas = [p.text.replace("​", "").replace("\xa0", " ").rstrip() for p in d.paragraphs]
     t = "\n".join(lineas)
@@ -42,9 +38,11 @@ def importar(origen=ORIGEN):
         try:
             t = texto_docx(f)
         except Exception:
-            mal.append(f.name); continue
+            mal.append(f.name)
+            continue
         if len(t) < 40:
-            mal.append(f.name); continue
+            mal.append(f.name)
+            continue
         (DESTINO / (f.stem + ".txt")).write_text(t + "\n", encoding="utf-8")
         ok.append(f.name)
     return ok, mal
@@ -62,29 +60,31 @@ def main(argv=None):
 def plantilla_desde_word(ruta_o_bytes):
     """Convierte una plantilla de Word (.docx) en una seccion de plantillas.md para revisar."""
     import io
+
     from docx import Document
+
     d = Document(io.BytesIO(ruta_o_bytes) if isinstance(ruta_o_bytes, (bytes, bytearray)) else str(ruta_o_bytes))
     ls = [p.text.replace("\u200b", "").replace("\xa0", " ").strip() for p in d.paragraphs]
-    ls = [l for l in ls]
+    ls = [linea for linea in ls]
     while ls and not ls[0]:
         ls.pop(0)
     if not ls:
         raise ValueError("El Word está vacío")
     titulo = ls[0]
     fijo, vinetas, despues = [], [], []
-    for l in ls[1:]:
-        if re.match(r"(?i)^lo saluda", l):
+    for linea in ls[1:]:
+        if re.match(r"(?i)^lo saluda", linea):
             break
-        if not l:
+        if not linea:
             continue
-        if l.startswith("-"):
-            vinetas.append(l)
+        if linea.startswith("-"):
+            vinetas.append(linea)
         elif not vinetas:
-            fijo.append(l)
-        elif len(l) < 30 and not l.endswith("."):
-            vinetas.append(l)                       # subtitulo (ej. "Tórax")
+            fijo.append(linea)
+        elif len(linea) < 30 and not linea.endswith("."):
+            vinetas.append(linea)  # subtitulo (ej. "Tórax")
         else:
-            despues.append(l)
+            despues.append(linea)
 
     def huecos(t):
         t = t.replace("@", "<dato>")

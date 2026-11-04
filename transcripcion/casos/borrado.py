@@ -2,11 +2,11 @@
 volver atrás si algo falla, y la coordinación con la cola (un caso en espera se saltea; uno en proceso no se borra).
 
 Viene de servidor.py (docs/refactor.md, etapa 6a). Lo crea servidor.configurar()."""
+
 import time
 
 from transcripcion.base import registro as L
 from transcripcion.casos.repositorio import EXT_AUDIO, LOCAL, SUFIJOS_CASO
-
 
 
 class Borrado:
@@ -63,26 +63,33 @@ class Borrado:
         motivo = self.puede_borrar(n, quien, remoto)
         if motivo:
             return motivo
-        hay = any(n == p.stem for p in self.casos.nuevos.iterdir() if p.suffix.lower() in EXT_AUDIO) \
-            or any((self.casos.datos / f"{n}{s}").exists() for s in SUFIJOS_CASO) or (self.informes / f'{n}.docx').exists()
+        hay = (
+            any(n == p.stem for p in self.casos.nuevos.iterdir() if p.suffix.lower() in EXT_AUDIO)
+            or any((self.casos.datos / f"{n}{s}").exists() for s in SUFIJOS_CASO)
+            or (self.informes / f"{n}.docx").exists()
+        )
         if not hay:
             if self.proc.duradera is not None and self.proc.duradera.obtener(n) is not None:
-                restos = [self.informes / f'{n}.docx.borrando'] + [self.casos.nuevos / f'{n}{e}.borrando' for e in EXT_AUDIO]
+                restos = [self.informes / f"{n}.docx.borrando"] + [
+                    self.casos.nuevos / f"{n}{e}.borrando" for e in EXT_AUDIO
+                ]
                 if any(p.exists() for p in restos):
-                    return 'Hay archivos apartados de un borrado interrumpido. Conserválos y revisá su recuperación.'
+                    return "Hay archivos apartados de un borrado interrumpido. Conserválos y revisá su recuperación."
                 with self.proc.lock:
-                    if self.proc.estado.get(n, {}).get('estado') in ('transcribiendo', 'generando'):
-                        return 'Se está procesando ahora: esperá a que termine para borrarlo.'
+                    if self.proc.estado.get(n, {}).get("estado") in ("transcribiendo", "generando"):
+                        return "Se está procesando ahora: esperá a que termine para borrarlo."
                     self.proc.duradera.preparar_borrado(n)
                     self.proc.borrados.add(n)
                 self.proc.duradera.cancelar_borrado(n)
-                with self.proc.lock: self.proc.estado.pop(n, None)
+                with self.proc.lock:
+                    self.proc.estado.pop(n, None)
                 with self.proc.pausa_cv:
-                    self.proc.pausas.pop(n, None); self.proc.pausa_cv.notify_all()
+                    self.proc.pausas.pop(n, None)
+                    self.proc.pausa_cv.notify_all()
                 self.proc.encolado.pop(n, None)
                 return None
             return "Ese informe ya no existe."
-        with self.proc.lock:      # que el trabajador no lo empiece justo ahora
+        with self.proc.lock:  # que el trabajador no lo empiece justo ahora
             if self.proc.estado.get(n, {}).get("estado") in ("transcribiendo", "generando"):
                 return "Se está procesando ahora: esperá a que termine para borrarlo."
             previo_duradero = self.proc.duradera.preparar_borrado(n) if self.proc.duradera is not None else None
@@ -90,8 +97,11 @@ class Borrado:
             previo = dict(self.proc.estado.get(n, {}))
         nombre_vis, estado = self.casos.visible(n), previo.get("estado")
         if estado in (None, "listo", "nuevo"):
-            estado = "revisado" if (self.casos.datos / f"{n}.final.txt").exists() else (
-                "para revisar" if (self.casos.datos / f"{n}.informe_ia.txt").exists() else "sin procesar")
+            estado = (
+                "revisado"
+                if (self.casos.datos / f"{n}.final.txt").exists()
+                else ("para revisar" if (self.casos.datos / f"{n}.informe_ia.txt").exists() else "sin procesar")
+            )
         # primero se apartan el Word y el audio: si alguno está abierto no se borra nada
         apartados = []
         try:
@@ -106,31 +116,33 @@ class Borrado:
                     t.replace(p)
                 except OSError:
                     pass
-            if self.proc.duradera is not None: self.proc.duradera.revertir_borrado(n, previo_duradero)
+            if self.proc.duradera is not None:
+                self.proc.duradera.revertir_borrado(n, previo_duradero)
             with self.proc.lock:
                 self.proc.borrados.discard(n)
             if previo.get("estado") in ("en cola", "en pausa"):  # pudo haber sido salteado durante el intento
                 self.proc.encolar(n, forzar=True)
             cual = "el Word" if str(getattr(ex, "filename", "")).lower().endswith(".docx") else "el audio"
             L.aviso("CASO", f"{quien} quiso borrar {nombre_vis}, pero {cual} está abierto en otro programa.")
-            return (f"No se pudo borrar: {cual} está abierto en otro programa. "
-                    f"Cerralo y volvé a intentar.")
+            return f"No se pudo borrar: {cual} está abierto en otro programa. Cerralo y volvé a intentar."
         for _, t in apartados:
             t.unlink(missing_ok=True)
         for s in SUFIJOS_CASO:
             (self.casos.datos / f"{n}{s}").unlink(missing_ok=True)
-        (self.informes / "revision" / f"{n}.html").unlink(missing_ok=True)      # revisión del modo consola
+        (self.informes / "revision" / f"{n}.html").unlink(missing_ok=True)  # revisión del modo consola
         self.remoto.quitar_huellas(self.casos.datos, n)
         self.remoto.BLOQUEOS.pop(n, None)
-        if self.proc.duradera is not None: self.proc.duradera.cancelar_borrado(n)
+        if self.proc.duradera is not None:
+            self.proc.duradera.cancelar_borrado(n)
         with self.proc.lock:
             self.proc.estado.pop(n, None)
-        with self.proc.pausa_cv:          # si estaba en pausa, el trabajador se despierta, ve que se borró y sigue con otro
+        with self.proc.pausa_cv:  # si estaba en pausa, el trabajador se despierta, ve que se borró y sigue con otro
             self.proc.pausas.pop(n, None)
             self.proc.pausa_cv.notify_all()
         for d in (self.proc.encolado, self.casos.duraciones, self.casos.estudios_cache):
             d.pop(n, None)
         L.estado(cola=self.proc.en_proceso())
-        L.info("CASO", f"{quien} borró {nombre_vis} ({estado}): audio, informe y Word. "
-                       f"Lo que aprendió la IA se conserva.")
+        L.info(
+            "CASO", f"{quien} borró {nombre_vis} ({estado}): audio, informe y Word. Lo que aprendió la IA se conserva."
+        )
         return None

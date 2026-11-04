@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 LO MÁS CORREGIDO (panel de administración, página "Correcciones").
 
@@ -11,17 +10,19 @@ Igual que correcciones_aprendidas.md (aprendizaje/aprender.py), no cuenta los ca
 no se generalizan) ni los muy largos (reescrituras de un párrafo). Los cambios solo de puntuación o
 mayúsculas se muestran si se pide.
 """
+
 import difflib
 import re
 import threading
 import time
 from datetime import date, datetime
+from typing import Any
 
 from transcripcion import RAIZ
 from transcripcion.conocimiento import archivos as CON
 from transcripcion.controles import marcas as MAR
 
-AQUI = RAIZ          # carpeta del sistema (no la del paquete)
+AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 EJ = AQUI / "ejemplos"
 REGLAS = CON.CONOC / "reglas_dictado.md"
 APRENDIDAS = CON.CONOC / "correcciones_aprendidas.md"
@@ -31,7 +32,7 @@ MAX_TOKENS = 12
 FIN = "\n"
 _CLAVE = re.compile(r"^(\d{8})_(\d{6})_(.+)\.informe\.txt$")
 _lock = threading.Lock()
-_CACHE = {"firma": None, "pares": []}
+_CACHE: dict[str, Any] = {"firma": None, "pares": []}
 
 
 def _norm(s):
@@ -48,7 +49,7 @@ def _tokens(texto):
     toks, lineas = [], texto.splitlines()
     for i, ln in enumerate(lineas):
         if i:
-            toks.append((FIN, i))         # el cambio de renglón también es una "palabra": separa los cambios
+            toks.append((FIN, i))  # el cambio de renglón también es una "palabra": separa los cambios
         for w in ln.split():
             toks.append((w, i))
     return toks, lineas
@@ -73,7 +74,7 @@ def _ejemplos():
         m = _CLAVE.match(nm)
         if not m:
             continue
-        clave = nm[:-len(".informe.txt")]
+        clave = nm[: -len(".informe.txt")]
         if f"{clave}.ia.txt" not in hay:
             continue
         try:
@@ -88,8 +89,11 @@ def _ejemplos():
 def _firma():
     try:
         st = EJ.stat()
-        return (st.st_mtime_ns, len(list(EJ.glob("*.informe.txt"))),
-                max((p.stat().st_mtime_ns for p in EJ.glob("*.informe.txt")), default=0))
+        return (
+            st.st_mtime_ns,
+            len(list(EJ.glob("*.informe.txt"))),
+            max((p.stat().st_mtime_ns for p in EJ.glob("*.informe.txt")), default=0),
+        )
     except OSError:
         return None
 
@@ -114,8 +118,8 @@ def _cambios_de(ia, final):
             continue
         pa, pb = [w for w in a[i1:i2] if w != FIN], [w for w in b[j1:j2] if w != FIN]
         if not pa and not pb:
-            continue                       # solo se agregó o sacó un renglón vacío
-        if pa and pb and pa[0].startswith("-") and pb[0].startswith("-"):     # la viñeta "-" pegada a la frase
+            continue  # solo se agregó o sacó un renglón vacío
+        if pa and pb and pa[0].startswith("-") and pb[0].startswith("-"):  # la viñeta "-" pegada a la frase
             pa, pb = [pa[0][1:]] + pa[1:], [pb[0][1:]] + pb[1:]
             pa, pb = [w for w in pa if w], [w for w in pb if w]
         op = "replace" if pa and pb else ("insert" if pb else "delete")
@@ -125,8 +129,18 @@ def _cambios_de(ia, final):
         forma = op == "replace" and _solo_forma(pa, pb)
         ctx_a = _contexto(ta, la, a, i1, i2)
         ctx_b = _contexto(tb, lb, b, j1, j2)
-        out.append({"tipo": op, "de": de, "a": a_, "ctx_ia": ctx_a, "ctx_final": ctx_b,
-                    "larga": larga, "numeros": numeros, "forma": forma})
+        out.append(
+            {
+                "tipo": op,
+                "de": de,
+                "a": a_,
+                "ctx_ia": ctx_a,
+                "ctx_final": ctx_b,
+                "larga": larga,
+                "numeros": numeros,
+                "forma": forma,
+            }
+        )
     return out
 
 
@@ -141,9 +155,17 @@ def _pares():
         ia, fin = _leer(EJ / f"{clave}.ia.txt"), _leer(EJ / f"{clave}.informe.txt")
         if ia is None or fin is None:
             continue
-        ia = "\n".join(l.rstrip() for l in MAR.texto_limpio(ia).splitlines())
-        pares.append({"clave": clave, "t": t, "caso": nombre, "medico": med, "cambios": _cambios_de(ia, fin),
-                      "palabras": len(fin.split())})
+        ia = "\n".join(linea.rstrip() for linea in MAR.texto_limpio(ia).splitlines())
+        pares.append(
+            {
+                "clave": clave,
+                "t": t,
+                "caso": nombre,
+                "medico": med,
+                "cambios": _cambios_de(ia, fin),
+                "palabras": len(fin.split()),
+            }
+        )
     with _lock:
         _CACHE.update(firma=firma, pares=pares)
     return pares
@@ -215,8 +237,18 @@ def calcular(dias=0, medico="", medico_actual=None, puntuacion=False, limite=80)
             if c["tipo"] == "replace" and not c["forma"] and de_n == a_n:
                 continue
             k = (c["tipo"], c["de"].strip(".,;:") if c["forma"] else de_n, c["a"].strip(".,;:") if c["forma"] else a_n)
-            g = grupos.setdefault(k, {"tipo": c["tipo"], "formas": {}, "informes": set(), "veces": 0,
-                                      "medicos": {}, "ultimo": 0, "ejemplos": []})
+            g = grupos.setdefault(
+                k,
+                {
+                    "tipo": c["tipo"],
+                    "formas": {},
+                    "informes": set(),
+                    "veces": 0,
+                    "medicos": {},
+                    "ultimo": 0,
+                    "ejemplos": [],
+                },
+            )
             g["veces"] += 1
             forma_txt = (c["de"].strip(".,;:"), c["a"].strip(".,;:"))
             g["formas"][forma_txt] = g["formas"].get(forma_txt, 0) + 1
@@ -225,30 +257,48 @@ def calcular(dias=0, medico="", medico_actual=None, puntuacion=False, limite=80)
                 g["medicos"][p["med"]] = g["medicos"].get(p["med"], 0) + 1
                 g["ultimo"] = max(g["ultimo"], p["t"])
                 if len(g["ejemplos"]) < 3:
-                    g["ejemplos"].append({"t": p["t"], "medico": p["med"], "ia": c["ctx_ia"][:240],
-                                          "final": c["ctx_final"][:240]})
+                    g["ejemplos"].append(
+                        {"t": p["t"], "medico": p["med"], "ia": c["ctx_ia"][:240], "final": c["ctx_final"][:240]}
+                    )
     reglas, aprendidas = _lineas_reglas(), _aprendidas()
     items = []
     for k, g in grupos.items():
         de, a = max(g["formas"].items(), key=lambda x: x[1])[0]
         tipo = g["tipo"]
-        items.append({"id": "|".join(k), "tipo": tipo, "de": de, "a": a, "informes": len(g["informes"]),
-                      "veces": g["veces"], "medicos": sorted(g["medicos"].items(), key=lambda x: -x[1]),
-                      "ultimo": g["ultimo"], "ejemplos": sorted(g["ejemplos"], key=lambda e: -e["t"]),
-                      "en_reglas": en_reglas(tipo, de, a, reglas),
-                      "aprendida": bool(de and a and f"«{de.lower()}»" in aprendidas and f"«{a.lower()}»" in aprendidas)
-                                   or bool(tipo != "replace" and f"«{(a or de).lower()}»" in aprendidas),
-                      "forma": tipo == "replace" and _norm(de) == _norm(a),
-                      "regla": sugerir_regla(tipo, de, a)})
+        items.append(
+            {
+                "id": "|".join(k),
+                "tipo": tipo,
+                "de": de,
+                "a": a,
+                "informes": len(g["informes"]),
+                "veces": g["veces"],
+                "medicos": sorted(g["medicos"].items(), key=lambda x: -x[1]),
+                "ultimo": g["ultimo"],
+                "ejemplos": sorted(g["ejemplos"], key=lambda e: -e["t"]),
+                "en_reglas": en_reglas(tipo, de, a, reglas),
+                "aprendida": bool(de and a and f"«{de.lower()}»" in aprendidas and f"«{a.lower()}»" in aprendidas)
+                or bool(tipo != "replace" and f"«{(a or de).lower()}»" in aprendidas),
+                "forma": tipo == "replace" and _norm(de) == _norm(a),
+                "regla": sugerir_regla(tipo, de, a),
+            }
+        )
     items.sort(key=lambda x: (-x["informes"], -x["veces"], -x["ultimo"], x["de"].lower()))
-    return {"ahora": time.time(), "dias": dias, "medico": medico, "puntuacion": puntuacion,
-            "total_ejemplos": len(pares), "informes": len(lista),
-            "palabras": sum(p["palabras"] for p in lista),
-            "medicos": sorted(medicos.items(), key=lambda x: (-x[1], x[0].lower())),
-            "items": items[:limite], "total_items": len(items),
-            "repetidos": sum(1 for i in items if i["informes"] >= 2),
-            "excluidos": {"largos": largas, "numeros": con_numeros, "forma": 0 if puntuacion else forma},
-            "primero": min((p["t"] for p in pares), default=None)}
+    return {
+        "ahora": time.time(),
+        "dias": dias,
+        "medico": medico,
+        "puntuacion": puntuacion,
+        "total_ejemplos": len(pares),
+        "informes": len(lista),
+        "palabras": sum(p["palabras"] for p in lista),
+        "medicos": sorted(medicos.items(), key=lambda x: (-x[1], x[0].lower())),
+        "items": items[:limite],
+        "total_items": len(items),
+        "repetidos": sum(1 for i in items if i["informes"] >= 2),
+        "excluidos": {"largos": largas, "numeros": con_numeros, "forma": 0 if puntuacion else forma},
+        "primero": min((p["t"] for p in pares), default=None),
+    }
 
 
 def agregar_regla(texto):

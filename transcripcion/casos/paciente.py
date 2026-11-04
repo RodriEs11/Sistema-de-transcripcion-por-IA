@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 NOMBRE DEL PACIENTE: el médico lo dice al principio del dictado
 ("Gómez Laura es una mamografía...", "Paciente Pérez Sánchez, en la ecografía...").
@@ -7,6 +6,7 @@ Se usa SOLO para mostrar en la lista de casos y en el título del caso: nunca va
 Si Whisper lo entendió mal se puede corregir desde la interfaz; la corrección se guarda en
 <caso>.paciente.json con "manual": true y ya no se vuelve a calcular.
 """
+
 import json
 import re
 import unicodedata
@@ -15,18 +15,23 @@ import unicodedata
 _INICIO = re.compile(
     r"^(?:(?:bueno|bien|ok|okey|y|este|eh|em|mm|ahora|ah[ií]|aqu[ií]|ac[aá]|listo|sigo|seguimos|vamos|otro|otra|siguiente)[\s,.:;]+)*"
     r"(?:(?:en\s+)?(?:el|la|los|las)?\s*(?:paciente|pacientes|pte)s?\b[\s,.:;]*(?:de(?:l)?\s+|es\s+|se\s+llama\s+)?)?",
-    re.I)
+    re.I,
+)
 _TRAS_PACIENTE = re.compile(r"\b(?:paciente|pacientes|pte)\b", re.I)
 
 # donde termina el nombre: verbos, artículos o el estudio
-_CORTE = set("""
+_CORTE = set(
+    """
 tiene tienen tenemos tenia tenía es son era emite presenta presentan realiza realizo realizó se le les
 con una un uno en el la los las al del para por que y-no informe informamos colocamos ponemos iniciamos
 rx rq rayos radiografia radiografía eco ecografia ecografía ecografía ecocardiograma mamografia mamografía mama mamas
 mammo mamo espinograma tomografia tomografía tac tc resonancia rm transvaginal trasvaginal doppler
 protocolo estudio estudios control placa placas centellograma densitometria densitometría pet
-""".split())
-_ESTUDIO = re.compile(r"(?:gra?f[ií]|cr[oa]f[ií]|^eco$|^mam(?:aria|as?|o|mo)$|^tomograf|^radiograf|^resonanc|^tra[n]?s?vag)")
+""".split()
+)
+_ESTUDIO = re.compile(
+    r"(?:gra?f[ií]|cr[oa]f[ií]|^eco$|^mam(?:aria|as?|o|mo)$|^tomograf|^radiograf|^resonanc|^tra[n]?s?vag)"
+)
 _CONECTOR = {"de", "del", "la", "las", "los", "y", "san", "santa", "da", "di", "van", "von"}
 _RELLENO = {"ella", "el", "él", "es", "a", "ver", "aca", "acá"}
 
@@ -48,26 +53,26 @@ def extraer(texto):
     t = " ".join(texto.split()[:25])
     m = _INICIO.match(t)
     dijo_paciente = bool(_TRAS_PACIENTE.search(m.group(0))) if m else False
-    resto = t[m.end():] if m else t
+    resto = t[m.end() :] if m else t
     toks = re.findall(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ'\-]+|[,.;:]", resto)
     nombre, coma = [], False
     for tk in toks:
         b = _sin_acentos(tk.lower())
         if tk in ",;:":
-            coma = coma or bool(nombre)                # "Castiñeira, Anoelias"
+            coma = coma or bool(nombre)  # "Castiñeira, Anoelias"
             continue
         if tk == ".":
             break
-        if _ESTUDIO.search(b) and nombre:               # "enocografía", "anecrofía" (Whisper)
+        if _ESTUDIO.search(b) and nombre:  # "enocografía", "anecrofía" (Whisper)
             break
-        if not nombre and b in _RELLENO:               # "Y ella es Ana María" (antes del corte: "es" corta)
+        if not nombre and b in _RELLENO:  # "Y ella es Ana María" (antes del corte: "es" corta)
             continue
-        if b in _CORTE and not (b in ("la", "y", "del") and nombre):    # "De la Fuente", "Blanco y Mediano"
+        if b in _CORTE and not (b in ("la", "y", "del") and nombre):  # "De la Fuente", "Blanco y Mediano"
             break
         nombre.append(tk)
         if len(nombre) > 5:
             return None
-    while nombre and nombre[-1].lower() in _CONECTOR:   # "Ruiz de" -> "Ruiz"
+    while nombre and nombre[-1].lower() in _CONECTOR:  # "Ruiz de" -> "Ruiz"
         nombre.pop()
     if not nombre:
         return None
@@ -106,8 +111,9 @@ def calcular(datos, n, forzar=False):
     if not d.exists():
         return None
     p = extraer(d.read_text(encoding="utf-8"))
-    (datos / f"{n}.paciente.json").write_text(json.dumps({"p": p, "manual": False}, ensure_ascii=False),
-                                              encoding="utf-8")
+    (datos / f"{n}.paciente.json").write_text(
+        json.dumps({"p": p, "manual": False}, ensure_ascii=False), encoding="utf-8"
+    )
     return p
 
 
@@ -117,8 +123,9 @@ def corregir(datos, n, nombre):
     if not nombre:
         (datos / f"{n}.paciente.json").unlink(missing_ok=True)
         return calcular(datos, n)
-    (datos / f"{n}.paciente.json").write_text(json.dumps({"p": nombre, "manual": True}, ensure_ascii=False),
-                                              encoding="utf-8")
+    (datos / f"{n}.paciente.json").write_text(
+        json.dumps({"p": nombre, "manual": True}, ensure_ascii=False), encoding="utf-8"
+    )
     return nombre
 
 

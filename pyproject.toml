@@ -14,3 +14,26 @@ select = ["E9", "F"]
 
 [tool.ruff.lint.per-file-ignores]
 "pruebas/contratos/calcular_nucleo.py" = ["E402"]
+
+[tool.coverage.run]
+# Cobertura de las pruebas sobre el paquete (etapa 9, docs/desarrollo.md). Mide el proceso de las pruebas: lo que corre
+# en otro proceso (el servidor del contrato HTTP, sobre una copia en respaldo/) no suma, así que el número es un piso.
+source = ["transcripcion"]
+concurrency = ["thread"]
+
+[tool.coverage.report]
+skip_empty = true
+precision = 1
+# Piso para el CI: no bajar de acá. Subirlo cuando se agreguen pruebas (hoy: 53,4 %).
+fail_under = 50
+
+[tool.mypy]
+# Tipos (etapa 9): `python -m mypy` revisa el paquete. Sin anotaciones obligatorias; transcripcion.http también revisa
+# el cuerpo de las funciones sin anotar. Ampliar módulo por módulo (docs/refactor.md → «Calidad del código»).
+python_version = "3.10"
+files = ["transcripcion"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["transcripcion.http.*"]
+check_untyped_defs = true

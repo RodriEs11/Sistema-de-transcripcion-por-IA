@@ -3,6 +3,7 @@ origen, médico, transcriptor, estilo, estudios, duración, tiempo de revisión,
 
 Viene de servidor.py (docs/refactor.md, etapa 5). El servidor crea un `Casos` en configurar(); una prueba arma
 el suyo con carpetas temporales: `Casos(datos, nuevos)`."""
+
 import json
 import os
 import re
@@ -19,19 +20,46 @@ from transcripcion.casos import borradores as BOR
 from transcripcion.casos.indice import IndiceCasos
 from transcripcion.conocimiento import plantillas as PL
 
-LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en la misma PC del servidor
+LOCAL = "Servidor"  # nombre con el que aparecen los casos subidos en la misma PC del servidor
 EXT_AUDIO = {".wav", ".mp3", ".m4a", ".ogg", ".flac", ".wma", ".aac", ".opus"}
 # Archivos que puede tener un caso en Informes/revision/datos (listado, firma del índice y borrado)
-SUFIJOS_CASO = (".procesamiento.json", ".transcripcion_cache.json", ".rendimiento.json", ".json", ".dictado.txt", ".informe_ia.txt", ".marcas.json", ".borrador.html", ".borrador.json", ".final.txt",
-                ".medico.txt", ".audio.txt", ".ejemplo.txt", ".onda.json", ".origen.txt", ".original.txt",
-                ".paciente.json", ".formato.json", ".omisiones_ok.json", ".revision.json", ".voz.json",
-                ".usuario.txt", ".estilo.txt")
+SUFIJOS_CASO = (
+    ".procesamiento.json",
+    ".transcripcion_cache.json",
+    ".rendimiento.json",
+    ".json",
+    ".dictado.txt",
+    ".informe_ia.txt",
+    ".marcas.json",
+    ".borrador.html",
+    ".borrador.json",
+    ".final.txt",
+    ".medico.txt",
+    ".audio.txt",
+    ".ejemplo.txt",
+    ".onda.json",
+    ".origen.txt",
+    ".original.txt",
+    ".paciente.json",
+    ".formato.json",
+    ".omisiones_ok.json",
+    ".revision.json",
+    ".voz.json",
+    ".usuario.txt",
+    ".estilo.txt",
+)
 
 
-REV_MAX_POR_PEDIDO = 600      # lo que puede juntar la página si se cortó la conexión un rato
+REV_MAX_POR_PEDIDO = 600  # lo que puede juntar la página si se cortó la conexión un rato
 
-COLOR_TIPO = {"numero": "rojo", "completar": "rojo", "dudoso": "amarillo", "bajaconf": "amarillo",
-              "verificar": "turq", "plantilla": "gris"}
+COLOR_TIPO = {
+    "numero": "rojo",
+    "completar": "rojo",
+    "dudoso": "amarillo",
+    "bajaconf": "amarillo",
+    "verificar": "turq",
+    "plantilla": "gris",
+}
 
 
 class Casos:
@@ -41,20 +69,21 @@ class Casos:
     def __init__(self, datos, nuevos):
         self.datos = datos
         self.nuevos = nuevos
-        self.indice = IndiceCasos()   # metadatos del listado, por firma de los archivos de cada caso
+        self.indice = IndiceCasos()  # metadatos del listado, por firma de los archivos de cada caso
         self.estudios_cache = {}  # nombre -> (firma del archivo, "Mamografía + Eco mamaria")
         self.duraciones = {}  # nombre -> duración del audio en segundos (cache)
         # ------------------------------------------------- tiempo de revisión
         # La página cuenta los segundos en que el caso está abierto y alguien lo está trabajando (teclado, mouse o audio
-        # sonando en el último minuto) y los manda con cada renovación del bloqueo, al cerrar y al guardar. Se acumulan acá,
-        # por caso, aunque se abra varias veces o desde otra PC. Al guardar se anotan en actividad.csv (columna revision_s).
+        # sonando en el último minuto) y los manda con cada renovación del bloqueo, al cerrar y al guardar. Se acumulan
+        # acá, por caso, aunque se abra varias veces o desde otra PC. Al guardar se anotan en actividad.csv
+        # (columna revision_s).
         self.rev_lock = threading.Lock()
         # ------------------------------------------------- médico reconocido por la voz (voces.py)
         # <caso>.voz.json = {"h": huella, "seg": segundos de voz, "det": resultado de la detección, "medico_por": quién
         # puso el médico del caso ("voz" = se reconoció solo, "usuaria" = se eligió al revisar, "pc" = el médico elegido
         # para los audios de esa PC, "" = sin médico), "medico_ia": con qué médico armó el informe la IA}.
-        # La muestra de voz de un médico se guarda en voces/huellas.json recién cuando se guarda el informe con ese médico
-        # (o cuando se etiqueta a mano desde «Agrupar voces»).
+        # La muestra de voz de un médico se guarda en voces/huellas.json recién cuando se guarda el informe con ese
+        # médico (o cuando se etiqueta a mano desde «Agrupar voces»).
         self.voz_cache = {}
         self.voz_lock = threading.Lock()
 
@@ -99,7 +128,7 @@ class Casos:
                 except (ValueError, OSError):
                     d = None
             if d is None:
-                return None         # no se guarda: se vuelve a intentar cuando esté transcrito
+                return None  # no se guarda: se vuelve a intentar cuando esté transcrito
             self.duraciones[n] = round(d, 1)
         return self.duraciones[n]
 
@@ -111,8 +140,14 @@ class Casos:
             return f"«{n}»"
 
     def datos_csv(self, n):
-        return {"caso": n, "audio_original": self.titulo_de(n), "pc": self.origen_de(n), "medico": self.medico_de(n),
-                "estudios": self.estudios_de(n), "usuario": U.nombre_de(self.usuario_de(n))}
+        return {
+            "caso": n,
+            "audio_original": self.titulo_de(n),
+            "pc": self.origen_de(n),
+            "medico": self.medico_de(n),
+            "estudios": self.estudios_de(n),
+            "usuario": U.nombre_de(self.usuario_de(n)),
+        }
 
     def sumar_revision(self, n, seg_, pc):
         try:
@@ -241,7 +276,7 @@ class Casos:
 
     def fecha_caso(self, n, audio, defecto):
         try:
-            return (audio if audio else self.datos / f'{n}.informe_ia.txt').stat().st_mtime
+            return (audio if audio else self.datos / f"{n}.informe_ia.txt").stat().st_mtime
         except OSError:
             return defecto
 
