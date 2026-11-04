@@ -148,12 +148,12 @@ Ver [protocolo, resultados y límites](comparacion-cpu-gpu.md). Ejecutar sus pru
 - **Python**: biblioteca estándar siempre que se pueda; las únicas dependencias son las de `requirements.txt`.
   Todo lo que se muestra o registra pasa por `transcripcion/base/registro.py` (`L.ok/info/aviso/error`), nunca `print`.
 - **Mensajes al usuario**: claros y sin jerga técnica (`mensaje_amigable`); el detalle técnico va al registro.
-- **`web/index.html` es un solo script**: dos `function` con el mismo nombre no dan error, la última pisa a la
-  primera. Antes de agregar funciones, verificar que no haya nombres repetidos (debe salir vacío):
-
-  ```bash
-  grep -oE "^\s*(async )?function [A-Za-z0-9_]+" web/index.html | sed -E 's/.*function //' | sort | uniq -d
-  ```
+- **El script de la página principal es uno solo**, aunque se escriba en partes (`web/js/principal/010-base.js`,
+  `020-lista.js`…): el servidor las une en orden de nombre y las envía como `/js/principal.js`. Las funciones son
+  globales: dos `function` con el mismo nombre en partes distintas no dan error, la última pisa a la primera.
+  `node pruebas/verificar_fuentes.cjs` lo detecta. Para agregar código: en la parte de su área; para un área nueva,
+  un archivo con un número intermedio (p. ej. `155-…js` entre médicos y voces). Los estilos, igual en
+  `web/css/principal/`. Las pruebas de Playwright con servidor propio arman esos archivos con `pruebas/web_pruebas.cjs`.
 
 - `admin.html` y `estadisticas.html` comparten estilos y utilidades copiados: si se cambia el aspecto de una, revisar la otra.
 - **App de Windows**: respetar las reglas de [compilacion.md](compilacion.md#métodos-prohibidos).
@@ -205,7 +205,7 @@ Al publicar, trasladar las notas entregadas de «Sin publicar» a las entradas f
 
 - [ ] `python -m py_compile *.py` y `python -m ruff check .` sin errores.
 - [ ] Contratos (`test_contrato_http`, `test_contrato_nucleo`) en verde sin regenerar, salvo cambio funcional deliberado.
-- [ ] Sin funciones repetidas en `web/index.html`.
+- [ ] `node pruebas/verificar_fuentes.cjs`: sintaxis y sin funciones repetidas en la página principal.
 - [ ] Probado en modo simulado (y en la PC real si toca Whisper, Ollama o Windows).
 - [ ] Si cambió la app: versión subida, API revisada contra .NET 4.8, autoprueba OK ([compilacion.md](compilacion.md)).
 - [ ] `git status` sin datos de pacientes, secretos ni binarios.

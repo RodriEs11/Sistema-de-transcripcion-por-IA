@@ -9,6 +9,18 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [Servidor 2026.11.11] — 2026-11-03
+
+Etapa 7 del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles: la página de
+revisión se ve y funciona igual (mismas capturas de la lista, de un caso abierto y de la vista previa). No requiere
+versión nueva de la app: el ejecutable no cambia.
+
+### Cambiado
+- Los estilos y el script de la página de revisión salieron de `web/index.html` a `web/css/principal/` y
+  `web/js/principal/`, en partes por área (lista, inicio, cargar audios, marcas, audio, atajos, borrador, médicos,
+  voces, plantillas, onda, configuración, Mi cuenta…). El servidor las une en orden y las envía como
+  `/css/principal.css` y `/js/principal.js`, un único script como antes.
+
 ## [Servidor 2026.11.10] — 2026-11-03
 
 Etapa 6c del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles: mismas rutas y

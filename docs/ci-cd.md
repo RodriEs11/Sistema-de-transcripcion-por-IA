@@ -89,7 +89,8 @@ su propio aislamiento y no inicia HTTP ni modelos.
 La comprobación de sintaxis Python debe enumerar archivos explícitamente (PowerShell no expande
 `*.py` para todos los ejecutables). Para JS verificar scripts externos y extraer los inline de
 HTML; `node --check index.html` no sustituye ese paso. La detección de duplicados debe cubrir
-el espacio global compartido entre `index.html` y `editor_word.js`, además de cada página.
+el espacio global compartido entre el script principal (`web/js/principal/`, unido) y `editor_word.js`, además de cada
+página. `pruebas/verificar_fuentes.cjs` revisa cada parte, el script unido y las funciones repetidas.
 
 ## Compilar una vez y promover el mismo artefacto
 

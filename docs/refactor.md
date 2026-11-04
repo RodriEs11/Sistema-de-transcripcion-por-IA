@@ -56,7 +56,7 @@ sistema/
 │   ├── acceso/                 túnel, sesiones, llaves por PC, usuarios, permisos del panel
 │   ├── operacion/              reinicio, mensajes a las PC, mantenimiento, estadísticas, GPU
 │   └── http/                   manejador, tabla de rutas, una función por ruta agrupadas por área
-├── web/                        index.html + css/ + js/ (módulos), admin, estadísticas…
+├── web/                        index.html + css/principal/ + js/principal/ (partes por área), admin, estadísticas…
 ├── scripts/                    configurar_acceso, configurar_tunel, mantenimiento_*, activación, rollback…
 ├── herramientas/               evaluación (fase 1/2/5), verificación de versiones y paquete, mediciones
 └── pruebas/                    unitarias por módulo + contratos (caja negra)
@@ -101,7 +101,7 @@ Los nombres son orientativos: cada etapa puede ajustarlos y lo deja escrito acá
 | 6a | **Servicios fuera de `servidor.py`** | Trabajador → `procesamiento/trabajador.py`; lista, caso abierto y borrado → `casos/`; voz → `voz/`; estado de la IA, reinicio y mensajes → `operacion/`; «Guardar Word» y Word → `informe/`. Cada uno recibe en su constructor los objetos que usa | **Alto** | Servidor |
 | 6b | **Módulos de la raíz al paquete** | `remoto`, `admin` → `acceso/`; `mantenimiento`, `estadisticas`, `app_cliente` → `operacion/`; `aprender`, `correcciones` → `aprendizaje/`; `importar_informes` → `conocimiento/importar.py`. En la raíz quedan lanzadores de consola. Así el HTTP (6c) puede vivir en el paquete | Bajo | Servidor |
 | 6c | **HTTP** | Tabla de rutas y handlers por área (casos, conocimiento, cliente, usuario, admin, páginas); páginas HTML fuera de las cadenas; `servidor.py` queda con el arranque | **Alto** | Servidor |
-| 7 | **Página principal** | `web/index.html` → `css/` y módulos `js/` (api, lista, editor, audio y onda, marcas, atajos, usuario) | Medio | Servidor + App |
+| 7 | **Página principal** | `web/index.html` → `css/principal/` y `js/principal/` en partes por área, que el servidor une en orden (un solo script, como antes) | Medio | Servidor (la App no cambia: ver «Etapa 7») |
 | 8 | **App de escritorio** | `VentanaPrincipal.cs` en clases por responsabilidad (bandeja, compacto, puente con la página, actualizaciones) | Medio | App |
 | 9 | **Calidad continua** | Reglas de ruff y formato por módulo terminado, tipos y mypy en el paquete, cobertura en el CI | Nulo | — |
 
@@ -118,10 +118,11 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 | 3 | `refactor/3-nucleo` · PR #16 · Servidor 2026.11.5 | Hecha (fusionada el 03/11) |
 | 4 | `refactor/4-transcripcion` · PR #17 · Servidor 2026.11.6 | Hecha (fusionada el 03/11) |
 | 5 | `refactor/5-casos-procesamiento` · PR #18 · Servidor 2026.11.7 | Hecha (fusionada el 03/11) |
-| 6a | `refactor/6a-servicios` · PR #20 · Servidor 2026.11.8 | En revisión |
-| 6b | `refactor/6b-raiz-al-paquete` (sobre la 6a) · PR #21 · Servidor 2026.11.9 | En revisión |
-| 6c | `refactor/6c-http` (sobre la 6b) · Servidor 2026.11.10 | En revisión |
-| 2b, 7–9 | — | Pendiente |
+| 6a | `refactor/6a-servicios` · PR #20 · Servidor 2026.11.8 | Hecha (fusionada el 03/11) |
+| 6b | `refactor/6b-raiz-al-paquete` · PR #21 · Servidor 2026.11.9 | Hecha (fusionada el 03/11) |
+| 6c | `refactor/6c-http` · PR #22 · Servidor 2026.11.10 | Hecha (fusionada el 03/11) |
+| 7 | `refactor/7-pagina-principal` · Servidor 2026.11.11 | En revisión |
+| 2b, 8, 9 | — | Pendiente |
 
 ### Etapa 1: qué quedó
 
@@ -190,6 +191,33 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 - `.gitignore` excluye `conocimiento/` por nombre en cualquier carpeta: se agregó la excepción
   `!/transcripcion/conocimiento/` y `test_paquete.py` verifica que ningún archivo del paquete quede ignorado.
 - `fase1_transcribir` sigue en la raíz (los módulos nuevos lo importan): pasa al paquete en la etapa 4.
+
+### Etapa 7: qué quedó
+
+`web/index.html` bajó de ~3.570 a ~370 líneas: queda el HTML. Los ~645 renglones de CSS pasaron a
+`web/css/principal/` (7 partes) y los ~2.555 de JavaScript a `web/js/principal/` (26 partes: `010-base.js`,
+`020-lista.js`, `030-preferencias-usuario.js`, … `220-onda.js`, `250-configuracion.js`, `260-mi-cuenta.js`), cortados
+en las secciones que ya tenía el script, sin cambiar una línea (cada parte empieza con un comentario de qué tiene).
+
+- **Un solo script, como antes.** El servidor une las partes en orden de nombre y las envía como `/js/principal.js`
+  (y `/css/principal.css`); `index.html` las carga en el mismo lugar donde estaban. Se descartó cargar 26 `<script>`
+  separados: en un único script todas las funciones existen antes de ejecutar el código de arranque (el de
+  `050-inicio.js`, `cargarLista()` y `cargarMiPc()`, puede llamar a funciones de partes posteriores), y con archivos
+  separados eso dependería del orden y de cuándo llega cada uno por el túnel. También se descartaron los módulos ES (`import`): la app del
+  trabajo y los `onclick` del HTML llaman a funciones globales (`window.ponerApp`, `salirDeSesion`…).
+- Verificado: las partes unidas dan el mismo árbol de sintaxis (AST) que el script original, y el CSS, el mismo texto
+  salvo los comentarios de cada parte. Con un servidor simulado de antes y de después, las capturas de la lista, de un
+  caso abierto y de la vista previa (F9) son idénticas píxel a píxel (salvo la hora del último audio), sin errores
+  en la consola.
+- Numeración con saltos de 10 para poder agregar una parte entre dos (`155-…js`). `verificar_fuentes.cjs` revisa cada
+  parte, el script unido y las funciones repetidas en todo el script. Las pruebas de Playwright con servidor propio
+  arman `/js/principal.js` y `/css/principal.css` igual que el servidor (`pruebas/web_pruebas.cjs`).
+- **Versión**: sube el servidor (rutas nuevas y la página se arma distinto). **La App no sube**: el ejecutable no
+  cambia y la página que muestra es la misma, así que una versión nueva solo obligaría a compilar y distribuir el
+  mismo programa a todas las PC. La regla de `AGENTS.md` (cambios de la página que se usan en la app = versión nueva
+  de la app) sigue valiendo para cambios funcionales; ahora cubre también `web/js/principal/` y `web/css/principal/`.
+- Queda para más adelante: cada parte sigue usando globales compartidas (`actual`, `casosCache`, `MI`…). Pasar a
+  módulos con dependencias explícitas es un trabajo aparte, conviene hacerlo área por área con pruebas de Playwright.
 
 ### Etapa 6c: qué quedó
 
