@@ -179,7 +179,7 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 ## Estructura del repositorio
 
 ```
-├── servidor.py              Arranque (crea los objetos del paquete), servidor HTTP, API de la interfaz y panel
+├── servidor.py              Arranque: crea los objetos del paquete, abre el puerto y los hilos (rutas en transcripcion/http/)
 ├── fase1_transcribir.py     Evaluación de Whisper sobre audios de ejemplo y prueba de la GPU (--verificar)
 ├── informe.py               Modo consola: audios -> Word sin la interfaz (el Word está en transcripcion/informe/word.py)
 ├── aprender.py              Modo consola: guarda como ejemplos los Word revisados (código en transcripcion/aprendizaje/)
@@ -191,8 +191,9 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 │                            controles/ (marcas y avisos), conocimiento/ (plantillas y médicos), ajustes,
 │                            base, casos, procesamiento, aprendizaje (aprender, correcciones),
 │                            acceso (remoto: túnel, llaves y sesiones; admin: permisos del panel),
-│                            operacion (mantenimiento, estadísticas, app_cliente); ver docs/refactor.md
-├── web/                     Interfaz de revisión, panel de administración y estadísticas
+│                            operacion (mantenimiento, estadísticas, app_cliente, gpu),
+│                            http (tabla de rutas y una función por ruta); ver docs/refactor.md
+├── web/                     Interfaz de revisión, panel de administración, estadísticas y plantillas/ (entrar, panel)
 ├── cliente_codigo/          Código fuente de la app de Windows (C#)
 ├── cliente/                 Carpeta de distribución de la app (solo el manual y el .config se versionan)
 ├── conocimiento.ejemplo/    Plantillas y reglas de ejemplo (ficticias)

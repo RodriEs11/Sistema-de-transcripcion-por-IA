@@ -51,12 +51,14 @@ Un refactor no los cambia. Si un cambio funcional deliberado cambia el núcleo, 
 `ACTUALIZAR_CONTRATOS=1 python -m unittest pruebas.test_contrato_nucleo`.
 
 Lint: `python -m ruff check .` (configuración en `pyproject.toml`, versión en `requirements-ci.txt`). Corre en el CI.
+`transcripcion/http/` tiene reglas más estrictas (`transcripcion/http/ruff.toml`) y formato automático: antes de
+subir un cambio ahí, `python -m ruff format transcripcion/http` (el CI corre `ruff format --check`).
 
 ### Aislamiento de pruebas y rendimiento
 
 `python -m unittest discover -s pruebas -p test_placa_video.py` verifica la lectura
-de GPU con temperaturas enteras/decimales, alertas y fallos de NVIDIA. Extrae la función
-mediante AST sin importar el servidor ni cargar configuración o datos de la instalación.
+de GPU con temperaturas enteras/decimales, alertas y fallos de NVIDIA (`transcripcion/operacion/gpu.py`, sin importar
+el servidor ni cargar configuración o datos de la instalación).
 
 Importar un módulo del sistema no lee la configuración ni crea carpetas
 (`pruebas/test_importar_sin_efectos.py`). Una prueba que usa el servidor lo configura con una carpeta
@@ -74,6 +76,12 @@ self.addCleanup(S.configurar, S.configurar(aj))    # configurar devuelve los aju
 carpetas: `ajustes.para_pruebas(base, carpeta_informes=…, carpeta_audios_nuevos=…)`. Para cambiar un comportamiento,
 parchear el método del objeto (`patch.object(S.CASOS, "ruta_audio", …)`), no reemplazar variables globales. Lo que
 no necesita el servidor se prueba armando los objetos directamente: `Procesamiento(Casos(datos, nuevos))`.
+
+Para probar rutas HTTP en el mismo proceso: después de `configurar`, `S.ThreadingHTTPServer(("127.0.0.1", 0), S.H)`
+(`S.H` es el manejador del sistema configurado) y `patch.object(S.SIS, "puerto", servidor.server_port)` para que el
+panel y los botones solo locales acepten ese puerto. Una ruta nueva se escribe como función `f(h, pedido)` en el
+módulo de su área de `transcripcion/http/`, se registra en `transcripcion/http/tabla.py` y se agrega a la lista de
+`pruebas/test_rutas.py`.
 
 Lo que se lee del conocimiento (plantillas, reglas, médicos) también debe apuntar a la carpeta temporal
 (`patch.object(CON, "CONOC", carpeta / "conocimiento")`, `patch.object(MED, "DIR_MED", …)` y

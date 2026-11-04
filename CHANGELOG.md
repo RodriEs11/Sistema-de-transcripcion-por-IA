@@ -9,6 +9,19 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [Servidor 2026.11.10] — 2026-11-03
+
+Etapa 6c del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles: mismas rutas y
+mismas respuestas (contratos en verde sin regenerar; un servidor simulado de antes y de después respondió igual a 36
+pedidos de la página, la app del trabajo y el panel).
+
+### Cambiado
+- Las rutas HTTP salieron de `servidor.py` a `transcripcion/http/`: una tabla (`tabla.py`) con cada ruta y la función
+  que la atiende, agrupadas por área (casos, edición, audios, app del trabajo, conocimiento, voces, usuario, panel,
+  acceso). `servidor.py` queda con el arranque (~310 líneas).
+- Las páginas de entrar y del panel desde el trabajo pasaron a `web/plantillas/`.
+- `transcripcion/http/` se revisa con reglas más estrictas de ruff y con `ruff format` en el CI.
+
 ## [Servidor 2026.11.9] — 2026-11-03
 
 Etapa 6b del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles (contratos en

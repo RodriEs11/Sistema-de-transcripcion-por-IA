@@ -264,7 +264,7 @@ class HttpTest(Base):
         self.http = S.ThreadingHTTPServer(("127.0.0.1", 0), S.H)
         self.addCleanup(self.http.server_close)
         self.port = self.http.server_port
-        p = patch.object(S, "PUERTO", self.port)
+        p = patch.object(S.SIS, "puerto", self.port)
         p.start()
         self.addCleanup(p.stop)
         hilo = threading.Thread(target=self.http.serve_forever, daemon=True)

@@ -112,7 +112,7 @@ class BorradoresHttpTest(unittest.TestCase):
         self.addCleanup(S.configurar, S.configurar(aj))      # casos y procesamiento con estas carpetas
         self.http = S.ThreadingHTTPServer(("127.0.0.1", 0), S.H)
         self.addCleanup(self.http.server_close)
-        self.puerto = patch.object(S, "PUERTO", self.http.server_port)
+        self.puerto = patch.object(S.SIS, "puerto", self.http.server_port)
         self.puerto.start()
         self.addCleanup(self.puerto.stop)
         hilo = threading.Thread(target=self.http.serve_forever, daemon=True)

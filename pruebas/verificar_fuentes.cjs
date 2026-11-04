@@ -1,5 +1,6 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 for(const archivo of fs.readdirSync('web')){
+  if(fs.statSync('web/'+archivo).isDirectory())continue;   // web/plantillas: páginas con marcadores {{…}}
   const texto=fs.readFileSync('web/'+archivo,'utf8');
   if(archivo.endsWith('.js'))new vm.Script(texto,{filename:archivo});
   if(archivo.endsWith('.html'))for(const script of texto.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi))new vm.Script(script[1],{filename:archivo});

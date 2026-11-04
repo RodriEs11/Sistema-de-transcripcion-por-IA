@@ -12,7 +12,8 @@ from unittest.mock import patch
 class RecepcionTest(unittest.TestCase):
     def setUp(self):
         import servidor as S
-        self.S = S
+        from transcripcion.http import audios as AU
+        self.S, self.AU = S, AU
         respaldo=Path(__file__).resolve().parents[1]/'respaldo'; respaldo.mkdir(exist_ok=True)
         tmp=tempfile.TemporaryDirectory(dir=respaldo); self.addCleanup(tmp.cleanup)
         self.base=Path(tmp.name); self.nuevos=self.base/'nuevos'; self.datos=self.base/'revision'/'datos'
@@ -24,32 +25,32 @@ class RecepcionTest(unittest.TestCase):
         self.huella=hashlib.sha256(self.audio).hexdigest()
         self.parches=ExitStack(); self.addCleanup(self.parches.close)
         self.encolar=self.parches.enter_context(patch.object(S.PROC,'encolar'))
-        self.parches.enter_context(patch.object(S,'anunciar_audio'))
+        self.parches.enter_context(patch.object(AU,'anunciar_audio'))
         self.parches.enter_context(patch.object(S.R,'medico_pc',return_value=''))
         self.parches.enter_context(patch.object(S.CASOS,'ruta_audio',side_effect=lambda n: next(self.nuevos.glob(n+'.wav'),None)))
         self.h=object.__new__(S.H); self.h.pc='PC-ficticia'
 
-    def recibir(self):return self.h._guardar_audio_nuevo('ficticio.wav',self.audio,self.huella)
+    def recibir(self):return self.AU.guardar_audio_nuevo(self.h,'ficticio.wav',self.audio,self.huella)
 
     def test_publicacion_solo_despues_de_metadatos(self):
-        escribir=self.S.escribir_atomico
+        escribir=self.AU.escribir_atomico
         def observar(ruta,contenido):
             ruta=Path(ruta)
             if ruta.suffix=='.wav':
                 self.assertTrue((self.datos/(ruta.stem+'.origen.txt')).exists())
                 self.assertFalse(ruta.exists())
             escribir(ruta,contenido)
-        with patch.object(self.S,'escribir_atomico',side_effect=observar): r,error=self.recibir()
+        with patch.object(self.AU,'escribir_atomico',side_effect=observar): r,error=self.recibir()
         self.assertIsNone(error); self.assertTrue(r['ok'])
         self.assertEqual((self.nuevos/(r['nombre']+'.wav')).read_bytes(),self.audio)
         self.assertEqual(self.S.R.buscar_huella(self.datos,self.huella),r['nombre'])
 
     def test_fallo_publicacion_no_confirma_ni_encola(self):
-        escribir=self.S.escribir_atomico
+        escribir=self.AU.escribir_atomico
         def fallar(ruta,contenido):
             if Path(ruta).suffix=='.wav': raise OSError('disco lleno ficticio')
             escribir(ruta,contenido)
-        with patch.object(self.S,'escribir_atomico',side_effect=fallar):
+        with patch.object(self.AU,'escribir_atomico',side_effect=fallar):
             with self.assertRaises(OSError):self.recibir()
         self.encolar.assert_not_called(); self.assertEqual(list(self.nuevos.iterdir()),[])
         self.assertIsNone(self.S.R.buscar_huella(self.datos,self.huella))

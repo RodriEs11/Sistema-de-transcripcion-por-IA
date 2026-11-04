@@ -35,6 +35,8 @@ jobs:
         run: |
           python -m ruff check .
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m ruff format --check transcripcion/http
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Python y versiones de fuentes
         shell: pwsh
         run: |

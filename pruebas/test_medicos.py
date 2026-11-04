@@ -25,10 +25,14 @@ class MedicosTest(unittest.TestCase):
         self.parche = patch.object(MED, "DIR_MED", Path(self.tmp.name) / "medicos")
         self.parche.start()
         self.addCleanup(self.parche.stop)
+        from transcripcion import ajustes
+        aj = ajustes.para_pruebas(Path(self.tmp.name))     # las rutas usan el sistema configurado (S.SIS)
+        ajustes.preparar_carpetas(aj)
+        self.addCleanup(S.configurar, S.configurar(aj))
         self.http = S.ThreadingHTTPServer(("127.0.0.1", 0), S.H)
         self.addCleanup(self.http.server_close)
         self.port = self.http.server_port
-        self.puerto = patch.object(S, "PUERTO", self.port)
+        self.puerto = patch.object(S.SIS, "puerto", self.port)
         self.puerto.start()
         self.addCleanup(self.puerto.stop)
         hilo = threading.Thread(target=self.http.serve_forever, daemon=True)
