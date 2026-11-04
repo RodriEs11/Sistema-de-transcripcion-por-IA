@@ -4,10 +4,7 @@ INTERFAZ WEB. Se abre con interfaz.bat o .sh (solo esta PC) o con iniciar_servid
 (esta PC + las PC del trabajo por un tunel: el rapido de Cloudflare o Microsoft Dev Tunnels).
 Todo se procesa en esta PC: las otras solo envian audios y muestran la pagina.
 """
-import contextlib
-import gc
 import hashlib
-import io
 import json
 import mimetypes
 import os
@@ -23,9 +20,8 @@ from pathlib import Path
 import admin as ADM
 import correcciones as CORR
 import estadisticas as EST
+import aprender as APRENDER
 import app_cliente as A
-from transcripcion.procesamiento import lotes as LOTES
-from transcripcion.procesamiento import cache_transcripcion as CACHE_ASR
 from transcripcion.casos import borradores as BOR
 from transcripcion.procesamiento import cola as CP
 from transcripcion.base.persistencia import escribir_atomico
@@ -34,24 +30,24 @@ import mantenimiento as M
 from transcripcion.conocimiento import archivos as CON
 from transcripcion.conocimiento import medicos as MED
 from transcripcion.conocimiento import plantillas as PL
-from transcripcion.controles import avisos as AV
-from transcripcion.controles import marcas as MAR
-from transcripcion.ia import ejemplos as EJEM
-from transcripcion.ia import ollama as OLL
-from transcripcion.ia import prompt as PR
 from transcripcion.informe import formato as FMT
-from transcripcion.texto.normalizacion import normalizar
 from transcripcion.casos import paciente as PAC
 from transcripcion.base import plataforma as P
 from transcripcion.base import registro as L
 import remoto as R
 from transcripcion.acceso import usuarios as U
-import voces as VOZ
+from transcripcion.voz import huellas as VOZ
 from transcripcion import ajustes
-from transcripcion.base.formatos import mmss, duracion_wav, pct_voz
-from informe import escribir_docx, parrafos_docx, pagina, aplicar_formato, texto_parrafo
+from transcripcion.base.formatos import duracion_wav, mensaje_amigable
 from transcripcion.casos.repositorio import Casos, EXT_AUDIO, LOCAL
-from transcripcion.procesamiento.estado import Procesamiento, Cancelado, EN_PROCESO
+from transcripcion.procesamiento.estado import Procesamiento, EN_PROCESO
+from transcripcion.procesamiento.trabajador import Trabajador
+from transcripcion.operacion.reinicio import Operacion
+from transcripcion.casos.borrado import Borrado
+from transcripcion.casos.vista import VistaCasos
+from transcripcion.voz.servicio import ServicioVoz
+from transcripcion.operacion.ia import EstadoIA
+from transcripcion.informe.guardado import Guardado
 
 AQUI = Path(__file__).resolve().parent
 WEB = AQUI / "web"
@@ -73,776 +69,23 @@ COLA_AL_REINICIAR = None
 APRENDIZAJE = None    # cola persistente de aprendizaje (se crea en configurar)
 CASOS = None          # archivos de los casos (transcripcion.casos.repositorio.Casos, se crea en configurar)
 PROC = None           # estado del procesamiento: etapas, cola, pausas (transcripcion.procesamiento.estado)
-VERSION = "2026.11.7"
+IA = None     # estado de Ollama (transcripcion.operacion.ia)
+VOCES = None  # reconocimiento por la voz (transcripcion.voz.servicio)
+VISTA = None  # lista y caso abierto para las pantallas (transcripcion.casos.vista)
+BORRADO = None # borrado de casos (transcripcion.casos.borrado)
+OPER = None   # reinicio programado y mensajes a las PC (transcripcion.operacion.reinicio)
+TRAB = None   # trabajador de la cola (transcripcion.procesamiento.trabajador)
+GUARDADO = None  # Guardar Word y aprender, vista previa (transcripcion.informe.guardado)
+VERSION = "2026.11.8"
 # páginas del panel de administración (solo en esta PC); cada una se abre en su pestaña del navegador
 PAGINAS_ADMIN = {"/admin": "admin.html", "/admin/estadisticas": "estadisticas.html",
                  "/admin/correcciones": "correcciones.html", "/admin/medicos": "medicos.html"}
 FIN_LOCK = threading.Lock()
 INICIO = time.time()
 TUNEL = {"modo": False, "http": None, "error": None}     # "modo": se abrió con iniciar_servidor.bat (--tunel)
-_IA_CACHE = {"t": 0, "ok": False}
 
 
-def ia_simulada():
-    """Pruebas: SIMULAR_SIN_IA=1 hace de cuenta que Ollama está cerrado hasta que exista el archivo _ia_vuelve."""
-    if os.environ.get("SIMULAR_SIN_IA") == "1" and not (AQUI / "_ia_vuelve").exists():
-        return "caida"
-    return "ok"
-
-
-def ia_lista():
-    if SIMULAR:
-        return ia_simulada() != "caida"
-    if time.time() - _IA_CACHE["t"] > 5:
-        _IA_CACHE.update(t=time.time(), ok=OLL.ollama_modelos() is not None)
-    return _IA_CACHE["ok"]
-
-
-def modelo_presente(mods):
-    m = CFG["modelo_ia"]
-    return any(x == m or x == f"{m}:latest" or x.startswith(m + "-") for x in mods)
-
-
-def estado_ia():
-    """'ok', 'caida' (Ollama no responde) o 'sin_modelo'."""
-    if SIMULAR:
-        return ia_simulada()
-    mods = OLL.ollama_modelos()
-    if mods is None:
-        return "caida"
-    return "ok" if modelo_presente(mods) else "sin_modelo"
-
-
-E_IA = {"e": "ok"}      # último estado de Ollama visto (para el encabezado)
 VISTO = {}              # PC del trabajo -> hora de su último pedido
-
-
-def vigilar_ia(previo):
-    """Cada 20 s mira si Ollama responde; avisa solo cuando cambia."""
-    while True:
-        time.sleep(20)
-        e = estado_ia()
-        E_IA["e"] = e
-        _IA_CACHE.update(t=time.time(), ok=e != "caida")
-        if e == previo:
-            continue
-        if e == "ok":
-            L.ok("IA", "Ollama responde de nuevo: la IA está lista.")
-        elif e == "caida":
-            L.aviso("IA", "Ollama dejó de responder. Abrí Ollama: sin él no se pueden generar informes "
-                          "(los audios que lleguen quedan con error y se pueden volver a procesar).")
-        else:
-            L.aviso("IA", f"Ollama está abierto pero no tiene el modelo {CFG['modelo_ia']}.")
-        L.estado(ia=e == "ok")
-        previo = e
-
-
-def texto_marcas(r):
-    partes = []
-    for k, uno, varios in (("rojo", "roja", "rojas"), ("amarillo", "amarilla", "amarillas"),
-                           ("turq", "turquesa", "turquesa"), ("gris", "gris", "grises")):
-        if r.get(k):
-            partes.append(f"{r[k]} {uno if r[k] == 1 else varios}")
-    return ("marcas: " + ", ".join(partes)) if partes else "sin marcas"
-
-
-def mensaje_amigable(ex):
-    m = str(ex)
-    if isinstance(ex, ConnectionRefusedError) or "Connection refused" in m or "urlopen error" in m \
-            or "10061" in m:
-        return "No se pudo conectar con Ollama. ¿Está abierto?"
-    if "out of memory" in m.lower() or "CUDA failed" in m:
-        return ("La placa de video se quedó sin memoria. Cerrá otros programas que la usen "
-                "y volvé a procesar el audio.")
-    if "timed out" in m.lower():
-        return "La IA tardó demasiado en responder."
-    if isinstance(ex, FileNotFoundError):
-        falta = Path(ex.filename).name if getattr(ex, "filename", None) else "un archivo"
-        return f"Falta el archivo «{falta}» (¿se borró o se movió?)."
-    if isinstance(ex, PermissionError):
-        return "Windows no dejó abrir un archivo: puede estar abierto en otro programa."
-    if isinstance(ex, (ValueError, KeyError, IndexError, TypeError, AttributeError)):
-        return f"Error interno ({type(ex).__name__}). El detalle quedó en la carpeta registros."
-    m = m or type(ex).__name__
-    return m if len(m) <= 160 else m[:157] + "…"
-
-
-def resumen_voz(n):
-    """Lo que la lista y la barra del caso muestran del reconocimiento de voz (sin la huella)."""
-    f = DATOS / f"{n}.voz.json"
-    try:
-        mt = f.stat().st_mtime_ns
-    except OSError:
-        return None
-    c = CASOS.voz_cache.get(n)
-    if not c or c[0] != mt:
-        v = CASOS.voz_de(n)
-        if not v:
-            return None
-        d = v.get("det") or {}
-        c = (mt, {"estado": d.get("estado"), "medico": d.get("medico"), "puntaje": d.get("puntaje"),
-                  "segundo": d.get("segundo"), "puntaje2": d.get("puntaje2"), "motivo": d.get("motivo"),
-                  "muestras": d.get("muestras"), "seg": v.get("seg"), "por": v.get("medico_por") or "",
-                  "medico_ia": v.get("medico_ia")})
-        CASOS.voz_cache[n] = c
-    r = dict(c[1])
-    m = VOZ.muestra(n)
-    r["muestra"] = m.get("medico") if m else None       # su voz ya cuenta como muestra de ese médico
-    return r
-
-
-def calcular_voz(n, a, palabras, al_procesar=True):
-    """Huella de voz del audio y detección del médico. Si el resultado es «seguro» y el caso no tiene médico
-    elegido, lo asigna. Nunca frena el procesamiento: si algo falla, se anota y el caso sigue sin médico."""
-    if not VOZ.modelo_listo():
-        if L.una_vez("voz_sin_modelo", 3600):
-            err = VOZ._DESCARGA.get("error")
-            L.aviso("VOZ", "El reconocimiento de voz todavía no está listo (falta el modelo"
-                           + (f": {err}" if err else ", se está bajando") + "). Este audio queda sin médico automático.")
-        return None
-    t0 = time.time()
-    try:
-        h, seg = VOZ.huella_archivo(a, palabras, CFG)
-    except Exception as ex:
-        L.aviso("VOZ", f"{CASOS.visible(n)}: no se pudo calcular la huella de voz ({mensaje_amigable(ex)}).", exc=True)
-        return None
-    det = VOZ.detectar(h, excluir=n, cfg=CFG)
-    with CASOS.voz_lock:
-        prev = CASOS.voz_de(n) or {}
-        med = CASOS.medico_de(n)
-        por = prev.get("medico_por") or ""
-        if med and por == "voz" and al_procesar:         # lo había puesto la voz: se vuelve a decidir
-            (DATOS / f"{n}.medico.txt").unlink(missing_ok=True)
-            med = ""
-        if med:
-            por = por or "pc"
-        elif det.get("estado") == "seguro":
-            (DATOS / f"{n}.medico.txt").write_text(det["medico"], encoding="utf-8")
-            por = "voz"
-        else:
-            por = ""
-        CASOS.guardar_voz(n, {"v": 1, "modelo": VOZ.VERSION_HUELLA, "h": h, "seg": seg, "det": det, "fecha": time.time(),
-                        "medico_por": por, "medico_ia": prev.get("medico_ia")})
-    e = det.get("estado")
-    if det.get("ranking"):
-        L.debug("VOZ", f"{CASOS.visible(n)}: huella en {L.seg(time.time() - t0)} con {seg} s de voz · "
-                       + ", ".join(f"{m} {pct_voz(p)}" for m, p in det["ranking"]))
-    if med and por != "voz":
-        L.info("VOZ", f"{CASOS.visible(n)}: médico ya elegido «{med}»" + (
-            f"; la voz se parece más a «{det['medico']}» ({pct_voz(det['puntaje'])})" if det.get("medico") and det["medico"] != med
-            else f"; la voz coincide ({pct_voz(det.get('puntaje'))})" if det.get("medico") == med else "") + ".")
-    elif e == "seguro":
-        L.ok("VOZ", f"{CASOS.visible(n)}: médico reconocido por la voz: «{det['medico']}» (parecido {pct_voz(det['puntaje'])}, "
-                    f"{L.plural(det['muestras'], 'muestra')}).")
-    elif e == "dudoso":
-        L.info("VOZ", f"{CASOS.visible(n)}: voz dudosa, ¿«{det['medico']}»? ({pct_voz(det['puntaje'])}; {det.get('motivo')}). "
-                      f"La IA usa la plantilla general; el médico se confirma al revisar.")
-    elif e == "corto":
-        L.info("VOZ", f"{CASOS.visible(n)}: muy poca voz ({seg} s) para reconocer al médico.")
-    else:
-        L.info("VOZ", f"{CASOS.visible(n)}: voz sin reconocer ({det.get('motivo')}). Elegí el médico al revisar: al "
-                      f"guardar, su voz queda registrada.")
-    return det
-
-
-def muestra_al_guardar(n):
-    """Al guardar el Word: la voz del caso pasa a ser muestra del médico elegido (o deja de serlo si se quitó)."""
-    v = CASOS.voz_de(n)
-    if not v or not v.get("h") or v.get("modelo") != VOZ.VERSION_HUELLA:
-        return v
-    med = CASOS.medico_de(n)
-    antes = VOZ.muestra(n)
-    if not med:
-        if antes:
-            VOZ.quitar(n)
-            L.info("VOZ", f"{CASOS.visible(n)} se guardó sin médico: su voz ya no cuenta como muestra de «{antes['medico']}».")
-        return v
-    k = VOZ.agregar(n, med, v["h"], "guardado", v.get("seg"))
-    if not antes or antes.get("medico") != med:
-        minimo = int(VOZ.parametros(CFG)["min_muestras"])
-        L.ok("VOZ", f"Voz de «{med}» registrada con {CASOS.visible(n)}: tiene {L.plural(k, 'muestra')}"
-                    + (" (desde ahora se puede reconocer solo)" if k == minimo else
-                       f" (con {minimo} se reconoce solo)" if k < minimo else "") + ".")
-    return v
-
-
-def actualizar_muestra(n, med):
-    """El médico de un caso ya guardado se cambió a mano: se corrige su muestra de voz al momento."""
-    v = CASOS.voz_de(n)
-    if not v or not v.get("h") or v.get("modelo") != VOZ.VERSION_HUELLA:
-        return
-    if med:
-        VOZ.agregar(n, med, v["h"], "guardado", v.get("seg"))
-    else:
-        VOZ.quitar(n)
-
-
-def casos_sin_etiquetar():
-    """Casos sin médico cuya huella de voz todavía no es muestra de nadie (para «Agrupar voces»). Los que ya
-    tienen médico no aparecen: su voz se registra sola al guardar el informe."""
-    out = []
-    with PROC.lock:
-        ocupados = {k for k, e in PROC.estado.items() if e.get("estado") in EN_PROCESO}
-    for f in DATOS.glob("*.voz.json"):
-        n = f.name[:-len(".voz.json")]
-        if n in ocupados or VOZ.muestra(n) or CASOS.medico_de(n):
-            continue
-        v = CASOS.voz_de(n)
-        if v and v.get("h") and v.get("modelo") == VOZ.VERSION_HUELLA:
-            out.append((n, v))
-    return out
-
-
-def ficha_caso(n):
-    return {"nombre": n, "titulo": CASOS.titulo_de(n), "paciente": PAC.de(DATOS, n), "medico": CASOS.medico_de(n),
-            "audio": CASOS.ruta_audio(n) is not None, "origen": CASOS.origen_de(n), "revisado": (DATOS / f"{n}.final.txt").exists(),
-            "fecha": (lambda a: a.stat().st_mtime if a else None)(CASOS.ruta_audio(n)), "dur": CASOS.duracion_de(n)}
-
-
-def grupos_de_voces():
-    items = casos_sin_etiquetar()
-    hs = {n: v["h"] for n, v in items}
-    grupos = []
-    for g in VOZ.agrupar(list(hs.items()), CFG):
-        det = VOZ.detectar(VOZ.centro([hs[x] for x in g]), cfg=CFG)
-        fichas = []
-        for x in g:
-            try:
-                fichas.append(dict(ficha_caso(x), voz=resumen_voz(x)))
-            except OSError:
-                pass
-        fichas.sort(key=lambda c: c.get("fecha") or 0, reverse=True)
-        grupos.append({"casos": fichas, "sugerencia": {k: det.get(k) for k in ("estado", "medico", "puntaje",
-                                                                               "segundo", "puntaje2")}})
-    return {"grupos": grupos, "total": len(items)}
-
-
-def hilo_voces():
-    """Al arrancar: baja el modelo de voz si falta y calcula la huella de los casos que todavía no la tienen
-    (sin cambiarles el médico). Los ya guardados con médico suman su voz como muestra."""
-    if not VOZ.modelo_listo():
-        L.info("VOZ", "Bajando el modelo de reconocimiento de voz (unos 26 MB, una sola vez)…")
-        if not VOZ.descargar_modelo():
-            L.aviso("VOZ", f"No se pudo bajar el modelo de reconocimiento de voz ({VOZ._DESCARGA['error']}). Se vuelve "
-                           f"a intentar al reiniciar el servidor; mientras tanto los audios quedan sin médico automático.")
-            return
-        L.ok("VOZ", "Modelo de reconocimiento de voz listo.")
-    hechos = sumadas = 0
-    for f in sorted(DATOS.glob("*.dictado.txt")):
-        n = f.name[:-len(".dictado.txt")]
-        v = CASOS.voz_de(n)
-        if v and v.get("modelo") == VOZ.VERSION_HUELLA:
-            continue
-        while PROC.trabajo.get("ocupado"):          # primero lo que está en la cola
-            time.sleep(5)
-        with PROC.lock:
-            if PROC.estado.get(n, {}).get("estado") in EN_PROCESO:
-                continue
-        a = CASOS.ruta_audio(n)
-        if a is None:
-            continue
-        try:
-            pal = json.loads((DATOS / f"{n}.json").read_text(encoding="utf-8")).get("palabras")
-            h, seg = VOZ.huella_archivo(a, pal, CFG)
-        except Exception:
-            L.debug("VOZ", f"No se pudo calcular la huella de voz de {CASOS.visible(n)}.", det=[repr(sys.exc_info()[1])])
-            continue
-        med = CASOS.medico_de(n)
-        with CASOS.voz_lock:
-            CASOS.guardar_voz(n, {"v": 1, "modelo": VOZ.VERSION_HUELLA, "h": h, "seg": seg,
-                            "det": VOZ.detectar(h, excluir=n, cfg=CFG), "fecha": time.time(),
-                            "medico_por": "pc" if med else "", "medico_ia": med or None})
-        hechos += 1
-        if h and med and (DATOS / f"{n}.final.txt").exists() and not VOZ.muestra(n):
-            VOZ.agregar(n, med, h, "revisado antes", seg)
-            sumadas += 1
-    if hechos:
-        L.ok("VOZ", f"Huella de voz calculada para {L.plural(hechos, 'caso anterior', 'casos anteriores')}"
-                    + (f"; {L.plural(sumadas, 'informe ya guardado', 'informes ya guardados')} con médico "
-                       f"{'sumó su voz' if sumadas == 1 else 'sumaron su voz'} a las muestras" if sumadas else "") + ".")
-
-
-
-
-def listar_casos(pc=LOCAL, remoto=False):
-    nombres = {p.stem: p for p in NUEVOS.iterdir() if p.suffix.lower() in EXT_AUDIO}
-    with PROC.lock:
-        for n, e in PROC.estado.items():
-            if e.get('estado') in EN_PROCESO + ('error',): nombres.setdefault(n, None)
-    for f in DATOS.glob("*.informe_ia.txt"):
-        nombres.setdefault(f.name[:-len(".informe_ia.txt")], None)
-    inventario = CASOS.indice.inventario(DATOS)
-    CASOS.indice.depurar(nombres)
-    try:
-        voz_st = VOZ.HUELLAS.stat()
-        firma_voz = (voz_st.st_size, voz_st.st_mtime_ns)
-    except FileNotFoundError:
-        firma_voz = None
-    casos = []
-    esp = PROC.esperas()
-    for n in nombres:
-        firma = (str(DATOS), tuple(inventario.get(n + sufijo) for sufijo in SUFIJOS_CASO), firma_voz)
-        def dato(campo, calcular):
-            return CASOS.indice.obtener((n, campo), firma, calcular)
-        with PROC.lock:
-            est = dict(PROC.estado.get(n, {}))
-        listo = (DATOS / f"{n}.informe_ia.txt").exists()
-        revisado = (DATOS / f"{n}.final.txt").exists()
-        if not est or est.get("estado") == "listo":
-            est = {"estado": "revisado" if revisado else ("listo" if listo else "nuevo"), "msg": ""}
-        marcas = avisos = None
-        mf = DATOS / f"{n}.marcas.json"
-        if listo and mf.exists():
-            try:
-                m = dato("marcas", lambda: json.loads(mf.read_text(encoding="utf-8")))
-                marcas = m.get("total")
-                if not revisado:
-                    avisos = dato("avisos", lambda: CASOS.resumen_avisos(n, m))
-            except (ValueError, OSError):
-                pass
-        a = CASOS.ruta_audio(n)
-        casos.append({"nombre": n, "estado": est["estado"], "msg": est.get("msg", ""), "marcas": marcas,
-                      "medico": dato("medico_de", lambda: CASOS.medico_de(n)), "origen": dato("origen_de", lambda: CASOS.origen_de(n)), "avisos": avisos, "bloqueado_por": R.bloqueado_por(n, pc),
-                      "titulo": dato("titulo_de", lambda: CASOS.titulo_de(n)), "espera": esp.get(n), "paciente": dato("paciente", lambda: PAC.de(DATOS, n)),
-                      "usuario": dato("usuario_de", lambda: CASOS.usuario_de(n)), "estilo": dato("estilo_de", lambda: CASOS.estilo_de(n)),
-                      "voz": dato("resumen_voz", lambda: resumen_voz(n)),
-                      "estudios": dato("estudios_de", lambda: CASOS.estudios_de(n)) if listo else None, "dur": dato("duracion_de", lambda: CASOS.duracion_de(n)),
-                      "revisado_en": CASOS.revisado_en(n) if revisado else None,
-                      "puede_borrar": not (remoto and (dato("origen_de", lambda: CASOS.origen_de(n)) != pc or pc == LOCAL))
-                                      and est["estado"] not in ("transcribiendo", "generando"),
-                      "puede_pausar": not remoto and est["estado"] == "transcribiendo" and n not in PROC.pausas,
-                      "puede_reanudar": not remoto and (est["estado"] == "en pausa" or n in PROC.pausas),
-                      "pausa_pedida": n in PROC.pausas and est["estado"] != "en pausa",
-                      "fecha": CASOS.fecha_caso(n, a, est.get('t', INICIO))})
-    casos.sort(key=lambda c: c["fecha"], reverse=True)
-    return casos
-
-
-def lineas_para_web(salida, dictado, palabras):
-    marcado = MAR.marcar(salida, dictado, palabras)
-    out = []
-    for ln in marcado:
-        texto = "".join(t for t, _, _ in ln["segs"])
-        segs = []
-        for t, tipo, mot in ln["segs"]:
-            seg = {"t": t}
-            if tipo:
-                seg.update(tipo=tipo, motivo=mot, seg=MAR.buscar_tiempo(t, palabras))
-            segs.append(seg)
-        out.append({"segs": segs, "linea": ln["linea"],
-                    "motivo": (ln.get("motivo") or MAR.MOTIVO_LINEA.get(ln["linea"])) if ln["linea"] else None,
-                    "titulo": ln["titulo"], "seg": MAR.buscar_tiempo(texto, palabras) if texto.strip() else None})
-    total = sum(1 for l in out if l["linea"]) + sum(1 for l in out for s in l["segs"] if s.get("tipo"))
-    return out, total
-
-
-VERSION_MARCAS = 2      # 2: motivos detallados ("Dictado: 12 / Informe: 2") e inicio/fin de los huecos
-
-
-def guardar_marcas(n, salida, dictado, palabras, huecos=None):
-    lineas, total = lineas_para_web(salida, dictado, palabras)
-    om = AV.omisiones(dictado, salida, palabras)
-    om += [{"dato": f"posible parte no transcrita {mmss(h['ini'])}–{mmss(h['fin'])}", "seg": h["ini"] + 0.5,
-            "hueco": True, "ini": h["ini"], "fin": h["fin"]} for h in (huecos or [])]
-    nuevos = AV.estudios_sin_plantilla(salida)
-    escribir_atomico(DATOS / f"{n}.marcas.json", json.dumps({"v": VERSION_MARCAS, "lineas": lineas, "omisiones": om, "estudios_nuevos": nuevos,
-                                                       "total": total + len(om)}, ensure_ascii=False))
-    return lineas, om
-
-
-def cargar_caso(nombre):
-    ia = DATOS / f"{nombre}.informe_ia.txt"
-    if not ia.exists():
-        return None
-    trans = json.loads((DATOS / f"{nombre}.json").read_text(encoding="utf-8"))
-    mf = DATOS / f"{nombre}.marcas.json"
-    m = json.loads(mf.read_text(encoding="utf-8")) if mf.exists() else {}
-    if m.get("v") == VERSION_MARCAS:
-        lineas, om = m["lineas"], m["omisiones"]
-    else:
-        lineas, om = guardar_marcas(nombre, ia.read_text(encoding="utf-8"), trans["texto"], trans["palabras"],
-                                    trans.get("huecos"))
-    borrador = BOR.leer(DATOS, nombre)
-    om_ok = borrador["omisiones_ok"]
-    fin = DATOS / f"{nombre}.final.txt"
-    # cada palabra con su forma normalizada ("veintitrés" -> "23"), para ubicar cada línea del informe en el dictado
-    palabras = [dict(w, n=re.sub(r"[^a-z0-9.]", "", normalizar(w["p"])).strip(".")) for w in trans["palabras"]]
-    return {"nombre": nombre, "dictado": trans["texto"], "palabras": palabras, "lineas": lineas,
-            "omisiones": om, "omisiones_ok": om_ok, "medico": CASOS.medico_de(nombre), "voz": resumen_voz(nombre),
-            "paciente": PAC.de(DATOS, nombre), "titulo": CASOS.titulo_de(nombre),
-            "estudios": CASOS.estudios_de(nombre), "dur": CASOS.duracion_de(nombre),
-            "estudios_nuevos": AV.estudios_sin_plantilla(ia.read_text(encoding="utf-8")),
-            "borrador": borrador["html"],
-            "borrador_revision": borrador.get("revision", 0),
-            "revisado": fin.exists(), "tiene_audio": CASOS.ruta_audio(nombre) is not None,
-            "estilo": _estilo_para_web(nombre)}
-
-
-def _estilo_para_web(n):
-    e = CASOS.estilo_de(n)
-    if e is None:
-        return None
-    return {"usuario": e, "nombre": U.nombre_de(e) if e else ""}
-
-
-def forma_de_onda(nombre, n=1600):
-    """Picos del audio en n tramos (0-100) para dibujar la forma de onda. Se guarda en .onda.json."""
-    a = CASOS.ruta_audio(nombre)
-    if a is None:
-        return None
-    st = a.stat()
-    firma = f"{st.st_size}-{int(st.st_mtime)}-{n}"
-    cache = DATOS / f"{nombre}.onda.json"
-    if cache.exists():
-        try:
-            d = json.loads(cache.read_text(encoding="utf-8"))
-            if d.get("firma") == firma:
-                return d
-        except ValueError:
-            pass
-    import numpy as np
-    from transcripcion.asr import whisper as W
-    x = np.abs(W.cargar_audio(a))
-    dur = len(x) / 16000.0
-    if not len(x):
-        return {"firma": firma, "dur": 0, "picos": []}
-    k = max(1, len(x) // n)
-    tramos = x[: (len(x) // k) * k].reshape(-1, k)
-    picos = tramos.max(axis=1)
-    ref = float(np.percentile(picos, 98)) or 1.0
-    picos = np.clip(picos / ref, 0, 1) ** 0.7
-    d = {"firma": firma, "dur": round(dur, 3), "picos": [int(round(v * 100)) for v in picos]}
-    cache.write_text(json.dumps(d), encoding="utf-8")
-    return d
-
-
-# -------------------------------------------------------- procesamiento
-ARCHIVOS_RESULTADO = ('.json', '.dictado.txt', '.informe_ia.txt', '.marcas.json')
-
-
-def firma_audio(ruta):
-    s = ruta.stat()
-    return [str(ruta.resolve()), s.st_size, s.st_mtime_ns]
-
-
-def hash_resultado(ruta):
-    h = hashlib.sha256()
-    with ruta.open('rb') as f:
-        for bloque in iter(lambda: f.read(65536), b''): h.update(bloque)
-    return h.hexdigest()
-
-
-def resultado_confirmado(n):
-    if PROC.duradera is None: return False
-    fila = PROC.duradera.obtener(n)
-    if not fila or fila['estado'] not in CP.ACTIVOS: return False
-    try:
-        d = json.loads((DATOS / f'{n}.procesamiento.json').read_text(encoding='utf-8'))
-        a = CASOS.ruta_audio(n)
-        return (d['v'] == 1 and d['token'] == fila['token'] and a is not None and d['audio'] == firma_audio(a)
-                and set(d['archivos']) == set(ARCHIVOS_RESULTADO)
-                and all(hash_resultado(DATOS / (n+s)) == d['archivos'][s] for s in ARCHIVOS_RESULTADO))
-    except (OSError, ValueError, KeyError, TypeError): return False
-
-
-def confirmar_resultado(n, firma):
-    if PROC.duradera is None: return
-    fila = PROC.duradera.obtener(n)
-    if fila is None: raise CP.ErrorCola('No existe la tarea que produjo el resultado.')
-    if firma != firma_audio(CASOS.ruta_audio(n)): raise OSError('El audio cambió durante el procesamiento.')
-    d = {'v': 1, 'token': fila['token'], 'audio': firma,
-         'archivos': {s: hash_resultado(DATOS / (n+s)) for s in ARCHIVOS_RESULTADO}}
-    escribir_atomico(DATOS / f'{n}.procesamiento.json', json.dumps(d, ensure_ascii=False))
-
-
-def trabajador():
-    whisper = None
-    while True:
-        lote = [PROC.cola.get()]
-        while REINICIO.get("detener"):      # reinicio en camino: no empieza nada nuevo (queda en la cola)
-            time.sleep(0.5)
-        lote = LOTES.formar(PROC.cola, lote[0], CFG, CASOS.duracion_de)
-        lote_desde = time.perf_counter()
-        PROC.trabajo.update(ocupado=True, desde=time.time())
-        trans, info = {}, {}
-        etapa = "WHISPER"
-        fallo_persistencia = False
-        if len(lote) > 1:
-            L.info("WHISPER", f"Procesando {len(lote)} audios juntos: primero se transcriben todos y "
-                              f"después la IA arma los informes.")
-        try:
-            # 1) Whisper para todo el lote
-            lote = [n for n in lote if n not in PROC.borrados]
-            for n in lote:
-                try:
-                    if n in PROC.borrados:
-                        continue
-                    if PROC.sincronizar_terminal(n):
-                        continue
-                    if resultado_confirmado(n):
-                        PROC.poner_estado(n, 'listo')
-                        continue
-                    PROC.punto_de_pausa(n)  # una pausa recuperada no necesita cargar modelos
-                    a = CASOS.ruta_audio(n)
-                    if a is None:
-                        PROC.poner_estado(n, "error", "No encuentro el audio")
-                        L.error("AUDIO", f"{CASOS.visible(n)}: no encuentro el archivo de audio (¿se borró o se movió?).")
-                        L.actividad("error", **CASOS.datos_csv(n), detalle="No encuentro el audio")
-                        continue
-                    if not PROC.empezar(n, "transcribiendo", "Transcribiendo el audio…"):
-                        continue
-                    inicio_caso = time.perf_counter()
-                    firma_entrada = firma_audio(a) if PROC.duradera is not None else None
-                    t0 = inicio_caso
-                    recuperadas = 0
-                    carga_whisper = 0.0
-                    cache_usada = False
-                    firma_asr = None
-                    PROC.pausado_s[n] = 0
-                    try:
-                        if not SIMULAR and CFG.get("reusar_transcripcion", True) is True:
-                            from importlib.metadata import version, PackageNotFoundError
-                            try:
-                                version_whisper = version('faster-whisper') + '/' + version('ctranslate2')
-                            except PackageNotFoundError:
-                                version_whisper = 'desconocida'
-                            from transcripcion.asr import huecos as H, whisper as W
-                            try:
-                                # el código que produce la transcripción también firma la caché
-                                firma_asr = CACHE_ASR.firma(a, {'modelo': CFG['modelo_whisper'],
-                                    'dispositivo': CFG.get('dispositivo_whisper','cuda'), 'faster_whisper': version_whisper},
-                                    [Path(W.__file__), Path(H.__file__), W.VOCAB_DEF])
-                                previa = CACHE_ASR.leer(DATOS/f'{n}.transcripcion_cache.json', firma_asr)
-                                if previa is not None:
-                                    trans[n] = previa
-                                    cache_usada = True
-                            except OSError:
-                                L.aviso('WHISPER', 'No se pudo leer la caché; se transcribe de nuevo.', exc=True)
-                        if cache_usada:
-                            L.debug('WHISPER', 'Se reutiliza una transcripción verificada por contenido y parámetros.')
-                        elif SIMULAR:
-                            of = DATOS / f"{n}.original.txt"
-                            fuente = Path(of.read_text(encoding="utf-8").strip()).stem if of.exists() else n
-                            trans[n] = json.loads((AQUI / "resultados" / "fase1" / "json" / f"{fuente}.json")
-                                                  .read_text(encoding="utf-8"))["con_vocab"]
-                            trans[n]["huecos"] = json.loads(os.environ.get("SIMULAR_HUECOS", "[]"))
-                            dem, paso = float(os.environ.get("SIMULAR_DEMORA", "0")), 0.25
-                            for k in range(int(dem / paso)):      # tramos simulados (para probar la pausa)
-                                time.sleep(paso)
-                                PROC.avance(n, "Transcribiendo el audio")((k + 1) * paso * 10, dem * 10)
-                        else:
-                            if whisper is None:
-                                OLL.liberar_ia(CFG["modelo_ia"])
-                                carga_desde = time.perf_counter()
-                                from transcripcion.asr import whisper as W
-                                PROC.poner_estado(n, "transcribiendo", "Cargando Whisper…")
-                                L.info("WHISPER", f"Cargando Whisper {CFG['modelo_whisper']} " + ("en la placa de video…" if CFG.get("dispositivo_whisper", "cuda") == "cuda" else "en el procesador (más lento)…"))
-                                tc = time.time()
-                                with contextlib.redirect_stdout(L.SalidaAlRegistro("WHISPER")):
-                                    whisper = W.cargar_modelo(CFG["modelo_whisper"], CFG.get("dispositivo_whisper", "cuda"))
-                                carga_whisper = time.perf_counter() - carga_desde
-                                L.ok("WHISPER", f"Whisper cargado en {L.seg(time.time() - tc)}.")
-                                PROC.poner_estado(n, "transcribiendo", "Transcribiendo el audio…")
-                                t0 = time.perf_counter()
-                            from transcripcion.asr import huecos as H, whisper as W
-                            prompt = W.leer_vocabulario(W.VOCAB_DEF)
-                            PROC.punto_de_pausa(n)           # se pidió la pausa mientras se cargaba Whisper
-                            t = W.transcribir(whisper, a, prompt, al_avanzar=PROC.avance(n, "Transcribiendo el audio"))
-                            PROC.poner_estado(n, "transcribiendo", "Revisando partes que Whisper pudo saltear…")
-                            pal, pend = H.reparar(whisper, W.cargar_audio(a), t["palabras"], prompt,
-                                                  al_avanzar=PROC.avance(n, "Revisando partes que Whisper pudo saltear"))
-                            recuperadas = max(0, len(pal) - len(t["palabras"]))
-                            trans[n] = {"texto": H.texto_de(pal), "palabras": pal, "huecos": pend}
-                        PROC.punto_de_pausa(n)           # una pausa pedida justo al final se cumple acá
-                    except Cancelado:
-                        PROC.pausado_s.pop(n, None)
-                        trans.pop(n, None)
-                        L.info("WHISPER", f"Se dejó de transcribir {CASOS.visible(n)}: se borró mientras estaba en pausa.")
-                        continue
-                    if firma_asr is not None and not cache_usada:
-                        try:
-                            CACHE_ASR.guardar(DATOS/f'{n}.transcripcion_cache.json', firma_asr, trans[n])
-                        except OSError:
-                            L.aviso('WHISPER', 'No se pudo conservar la caché; el informe continúa.', exc=True)
-                    escribir_atomico(DATOS / f"{n}.json", json.dumps(trans[n], ensure_ascii=False, indent=1))
-                    escribir_atomico(DATOS / f"{n}.dictado.txt", trans[n]["texto"])
-                    PAC.calcular(DATOS, n, forzar=True)      # nombre del paciente para la lista (no va al informe)
-                    escribir_atomico(DATOS / f"{n}.audio.txt", str(a.resolve()))
-                    calcular_voz(n, a, trans[n]["palabras"])     # médico por la voz (antes de la IA)
-                    dur = duracion_wav(ruta=a)
-                    if dur is None and trans[n]["palabras"]:
-                        dur = trans[n]["palabras"][-1].get("fin")
-                    info[n] = {"dur": dur, "whisper": time.perf_counter() - t0 - PROC.pausado_s.pop(n, 0),
-                               "palabras": len(trans[n]["palabras"]), "cache_asr": cache_usada, "carga_whisper_s": carga_whisper, "inicio_caso": inicio_caso, 'firma_audio': firma_entrada}
-                    partes = [f"audio {L.mmss(dur)}" if dur else None, L.plural(info[n]["palabras"], "palabra")]
-                    if recuperadas:
-                        partes.append(f"la segunda pasada recuperó {L.plural(recuperadas, 'palabra')}")
-                    L.ok("WHISPER", f"{CASOS.visible(n)} transcrito en {L.seg(info[n]['whisper'])} · "
-                                    + " · ".join(x for x in partes if x))
-                    for h in trans[n].get("huecos") or []:
-                        L.aviso("WHISPER", f"{CASOS.visible(n)}: posible parte no transcrita entre {mmss(h['ini'])} y "
-                                           f"{mmss(h['fin'])}. Revisarla escuchando.")
-                    PROC.poner_estado(n, "en cola", "Esperando a la IA…")
-                except CP.ErrorCola:
-                    raise
-                except Exception as ex:
-                    trans.pop(n, None)
-                    info.pop(n, None)
-                    PROC.pausado_s.pop(n, None)
-                    PROC.poner_estado(n, 'error', mensaje_amigable(ex))
-                    L.error('WHISPER', 'Falló un audio; se continúa con los demás del lote.', exc=True)
-                    L.actividad('error', **CASOS.datos_csv(n), detalle='WHISPER: ' + mensaje_amigable(ex))
-            if whisper is not None:      # liberar la placa para la IA
-                del whisper
-                whisper = None
-                gc.collect()
-                L.debug("WHISPER", "Whisper liberado de la placa de video.")
-            # 2) IA
-            etapa = "IA"
-            banco = EJEM.cargar_banco() if trans else []
-            for n in trans:
-                try:
-                    if n in PROC.borrados:
-                        continue
-                    PROC.punto_de_pausa(n)
-                    esperar_ia(n, list(trans))
-                    if not PROC.empezar(n, "generando", "La IA está armando el informe…"):
-                        continue
-                    t0 = time.perf_counter()
-                    tokens = ""
-                    metricas_ia = {}
-                    dic = trans[n]["texto"]
-                    usu = CASOS.usuario_de(n) or None
-                    if SIMULAR:
-                        of = DATOS / f"{n}.original.txt"
-                        fuente = Path(of.read_text(encoding="utf-8").strip()).stem if of.exists() else n
-                        salida = (AQUI / "resultados" / "fase2" / "gemma4_12b" / f"{fuente}.json")
-                        salida = json.loads(salida.read_text(encoding="utf-8"))["salida"]
-                        time.sleep(float(os.environ.get("SIMULAR_DEMORA", "0")))
-                    else:
-                        med = CASOS.medico_de(n) or None
-                        # sin médico confirmado (voz dudosa o sin reconocer): plantilla general, sin estilos de médico
-                        sin_est = not med and resumen_voz(n) is not None
-                        ej = EJEM.elegir_ejemplos(dic, banco, k=CFG["ejemplos_por_informe"], excluir=n, medico=med,
-                                               usuario=usu)
-                        salida, _, t_in, t_out = OLL.llamar_ia(CFG["modelo_ia"], PR.armar_mensajes(dic, ej, med, sin_estilos=sin_est, usuario=usu), metricas=metricas_ia)
-                        tokens = f"{t_in or '?'} tokens de entrada, {t_out or '?'} de salida"
-                    escribir_atomico(DATOS / f"{n}.informe_ia.txt", salida)
-                    escribir_atomico(DATOS / f"{n}.estilo.txt", usu or "")
-                    CASOS.anotar_voz(n, medico_ia=CASOS.medico_de(n) or "")
-                    for viejo in (f"{n}.marcas.json", f"{n}.borrador.html", f"{n}.borrador.json", f"{n}.final.txt", f"{n}.formato.json"):
-                        (DATOS / viejo).unlink(missing_ok=True)
-                    (DATOS / f"{n}.omisiones_ok.json").unlink(missing_ok=True)
-                    lineas, om = guardar_marcas(n, salida, dic, trans[n]["palabras"], trans[n].get("huecos"))
-                    confirmar_resultado(n, info[n]['firma_audio'])
-                    PROC.poner_estado(n, "listo")
-                    ia_s = time.perf_counter() - t0
-                    try:
-                        escribir_atomico(DATOS/f'{n}.rendimiento.json', json.dumps({
-                            'v': 1, 'lote_audios': len(lote), 'lote_hasta_listo_s': time.perf_counter()-lote_desde,
-                            'cache_asr': info[n]['cache_asr'], 'carga_whisper_s': info[n]['carga_whisper_s'],
-                            'desde_inicio_caso_s': time.perf_counter()-info[n]['inicio_caso'],
-                            'desde_encolado_s': max(0,time.time()-PROC.encolado[n]) if n in PROC.encolado else None,
-                            'whisper_s': info[n]['whisper'], 'ia_s': ia_s, 'ollama': metricas_ia}))
-                    except OSError:
-                        L.aviso('IA', 'No se pudieron conservar las métricas de rendimiento.', exc=True)
-                    if not SIMULAR:
-                        PROC.anotar_tiempo(info[n]["dur"], None if info[n]["cache_asr"] else info[n]["whisper"], ia_s)
-                    r = CASOS.resumen_avisos(n, {"lineas": lineas, "omisiones": om})
-                    nuevos = AV.estudios_sin_plantilla(salida)
-                    L.contar("generados")
-                    med = CASOS.medico_de(n)
-                    vz = resumen_voz(n) or {}
-                    det = []
-                    if r["faltan"]:
-                        det.append("Dictado pero no está en el informe: " + ", ".join(r["faltan"]))
-                    if tokens:
-                        L.debug("IA", f"{CASOS.visible(n)}: {tokens}")
-                    L.ok("IA", f"{CASOS.visible(n)} informe listo en {L.seg(ia_s)}"
-                               + (f" · {med}" + (" (por la voz)" if vz.get("por") == "voz" else "") if med
-                                  else " · sin médico (plantilla general)" if vz else " · sin médico elegido")
-                               + f" · {texto_marcas(r)}", det)
-                    for e in nuevos:
-                        L.aviso("IA", f"{CASOS.visible(n)}: estudio sin plantilla «{e}». Conviene crearla desde Plantillas.")
-                    L.actividad("generado", **CASOS.datos_csv(n), duracion_audio_s=info.get(n, {}).get("dur"),
-                                whisper_s=None if info[n]["cache_asr"] else info[n]["whisper"], ia_s=ia_s,
-                                palabras_dictado=info.get(n, {}).get("palabras"),
-                                marcas_rojas=r["rojo"], marcas_amarillas=r["amarillo"], marcas_turquesa=r["turq"],
-                                marcas_grises=r["gris"], datos_faltantes=" ".join(r["faltan"]),
-                                partes_no_transcritas=" ".join(r["huecos"]), estudios_sin_plantilla=" | ".join(nuevos),
-                                **campos_voz(vz))
-                except CP.ErrorCola:
-                    raise
-                except Exception as ex:
-                    PROC.poner_estado(n, 'error', mensaje_amigable(ex))
-                    L.error('IA', 'Falló un informe; se continúa con los demás del lote.', exc=True)
-                    L.actividad('error', **CASOS.datos_csv(n), detalle='IA: ' + mensaje_amigable(ex))
-        except CP.ErrorCola:
-            fallo_persistencia = True
-            L.error('COLA', 'No se pudo confirmar la cola. Se conservan las tareas y se reintentará.', exc=True)
-            with PROC.lock:
-                pendientes = [n for n in lote if n not in PROC.borrados and PROC.estado.get(n, {}).get('estado') not in ('listo', 'error')]
-                for n in pendientes: PROC.estado[n] = {'estado': 'en cola', 'msg': 'Esperando recuperar el almacenamiento', 't': time.time()}
-            for n in pendientes: PROC.cola.put(n)
-        except Exception as ex:
-            msg = mensaje_amigable(ex)
-            afectados = [n for n in lote if PROC.estado.get(n, {}).get("estado") not in ("listo", "error")
-                         and n not in PROC.borrados]
-            L.error(etapa, f"No se pudo procesar {', '.join(CASOS.visible(n) for n in afectados) or 'el lote'}: {msg}",
-                    exc=True)
-            for n in afectados:
-                try:
-                    PROC.poner_estado(n, "error", msg)
-                except CP.ErrorCola:
-                    fallo_persistencia = True
-                    PROC.cola.put(n)
-                L.actividad("error", **CASOS.datos_csv(n), detalle=f"{etapa}: {msg}")
-        finally:
-            if whisper is not None:
-                del whisper
-                whisper = None
-                gc.collect()
-            PROC.trabajo.update(ocupado=False, esperando_ia=False)
-        if fallo_persistencia: time.sleep(5)
-        if not PROC.en_proceso() and PROC.cola.empty():
-            L.debug("SERVIDOR", "Cola vacía.")
-
-
-def campos_voz(vz):
-    """Columnas del reconocimiento de voz para actividad.csv."""
-    if not vz:
-        return {}
-    return {"medico_voz": vz.get("medico") or "", "voz_estado": vz.get("estado") or "",
-            "voz_puntaje": round(vz["puntaje"] * 100, 1) if vz.get("puntaje") is not None else None}
-
-
-def esperar_ia(n, lote):
-    """Si Ollama está cerrado (o sin el modelo), el audio ya transcrito espera en la cola en vez de
-    terminar con error: se sigue solo cuando la IA vuelve. Revisa cada 5 s."""
-    avisado = False
-    while True:
-        if n in PROC.borrados:
-            return  # el trabajador lo saltea; no esperar a Ollama por un caso eliminado
-        e = estado_ia()
-        if e == "ok":
-            PROC.trabajo["esperando_ia"] = False
-            if avisado:
-                L.ok("IA", f"La IA volvió: sigo con {CASOS.visible(n)}.")
-            return
-        PROC.trabajo["esperando_ia"] = True       # se puede reiniciar el servidor sin esperar (se retoma al volver)
-        E_IA["e"] = e
-        _IA_CACHE.update(t=time.time(), ok=e != "caida")
-        motivo = "Ollama no responde" if e == "caida" else f"falta el modelo {CFG['modelo_ia']}"
-        for x in lote:
-            if x in PROC.borrados:
-                continue
-            if PROC.estado.get(x, {}).get("estado") == "en cola" and not PROC.estado[x].get("msg", "").startswith("Esperando a la IA ("):
-                PROC.poner_estado(x, "en cola", f"Esperando a la IA ({motivo})…")
-        if not avisado:
-            L.aviso("IA", f"{CASOS.visible(n)} ya está transcrito, pero {motivo}: queda esperando en la cola y se "
-                          f"termina solo cuando la IA esté lista.")
-            avisado = True
-        time.sleep(5)
 
 
 def origen_local(h):
@@ -873,7 +116,7 @@ def cola_en_vivo():
                       "puede_pausar": e.get("estado") == "transcribiendo" and n not in PROC.pausas,
                       "pausa_pedida": n in PROC.pausas and e.get("estado") != "en pausa"})
     return {"items": items, "eta_total": max((i["eta"] or 0 for i in items), default=0), "errores": errores,
-            "pausada": bool(REINICIO.get("detener")), "en_pausa": bool(PROC.trabajo.get("en_pausa")),
+            "pausada": bool(OPER.reinicio.get("detener")), "en_pausa": bool(PROC.trabajo.get("en_pausa")),
             "tiempos": {"whisper_x": round(PROC.tiempos["whisper_x"], 3), "ia": round(PROC.tiempos["ia"], 1), "n": PROC.tiempos["n"]}}
 
 
@@ -911,450 +154,25 @@ def abrir_tunel():
         L.debug("TÚNEL", f"Puerto propio del túnel abierto: 127.0.0.1:{PUERTO_TUNEL}")
     R.escribir_conexion_cliente()
     R.iniciar_tunel(PUERTO, PUERTO_TUNEL)
-REINICIO = {}       # reinicio programado desde el panel: id, cuando, estado (programado|esperando|reiniciando)...
-MENSAJE = {}        # cartel en la pantalla de todas las PC: id, texto, tipo, desde, hasta, por, reinicio
-_MSJ_LOCK = threading.Lock()
-_REI_LOCK = threading.Lock()
-TEXTO_REINICIO = ("Guardá lo que estés haciendo. El informe abierto se guarda solo; en un minuto el sistema "
-                  "vuelve y la pantalla se reconecta sola.")
-
-
-def poner_mensaje(texto, minutos=0, tipo="info", por=None, reinicio=False):
-    ahora = time.time()
-    with _MSJ_LOCK:
-        MENSAJE.clear()
-        MENSAJE.update(id=f"{int(ahora * 1000):x}", texto=texto, tipo=tipo, desde=ahora,
-                       hasta=ahora + minutos * 60 if minutos else None, por=por or LOCAL, reinicio=reinicio)
-
-
-def quitar_mensaje(solo_reinicio=False):
-    with _MSJ_LOCK:
-        if not MENSAJE or (solo_reinicio and not MENSAJE.get("reinicio")):
-            return False
-        MENSAJE.clear()
-        return True
-
-
-def mensaje_actual():
-    with _MSJ_LOCK:
-        if MENSAJE.get("hasta") and time.time() > MENSAJE["hasta"]:
-            MENSAJE.clear()
-        return dict(MENSAJE) if MENSAJE else None
-
-
-def mensaje_para_pcs():
-    """Lo que ven las páginas de informes (va en /api/casos)."""
-    m = mensaje_actual()
-    if not m:
-        return None
-    out = {"id": m["id"], "texto": m["texto"], "tipo": m["tipo"], "ahora": time.time(), "reinicio": None}
-    if m.get("reinicio"):
-        with _REI_LOCK:
-            if REINICIO:
-                out["reinicio"] = {"cuando": REINICIO.get("cuando"), "estado": REINICIO.get("estado")}
-                out["id"] = f"{m['id']}-{REINICIO.get('estado')}"     # cambia de etapa: se vuelve a mostrar
-    return out
-
-
-def estado_reinicio():
-    with _REI_LOCK:
-        if not REINICIO:
-            return None
-        r = {k: REINICIO.get(k) for k in ("cuando", "estado", "por", "avisar", "pedido")}
-    r["procesando"] = [CASOS.titulo_de(n) for n in PROC.en_estado("transcribiendo") + PROC.en_estado("generando")]
-    r["en_cola"] = len(PROC.cola_pendiente())
-    return r
-
-
-def programar_reinicio(seg, avisar, texto, quien):
-    """Programa el reinicio: avisa a las PC (si se pide), espera el tiempo elegido y además que no haya nada
-    a medio procesar; antes prueba que el código nuevo arranque. Devuelve (respuesta, código)."""
-    quien_txt = quien or LOCAL
-    if REINICIO.get("estado") == "reiniciando":
-        return {"error": "El servidor ya se está reiniciando."}, 409
-    ok, motivo = M.soporta_reinicio(TUNEL["modo"])
-    if not ok:
-        return {"error": motivo}, 409
-    try:
-        seg = max(0, min(int(seg or 0), 3600))
-    except (TypeError, ValueError):
-        seg = 0
-    texto = " ".join(str(texto or "").split())[:300] or TEXTO_REINICIO
-    t0 = time.time()
-    err = M.prueba_de_arranque()
-    if err:
-        L.aviso("SERVIDOR", f"Reinicio pedido desde el panel ({quien_txt}) cancelado: el código de la carpeta tiene "
-                            f"un error y el servidor no volvería a abrir.", det=err.splitlines()[-6:])
-        return {"error": "No se reinicia: el código que está en la carpeta tiene un error y el servidor no volvería "
-                         "a abrir. Corregilo y probá de nuevo.", "detalle": err}, 409
-    with _REI_LOCK:
-        if REINICIO.get("estado") == "reiniciando":
-            return {"error": "El servidor ya se está reiniciando."}, 409
-        rid = f"{int(time.time() * 1000):x}"
-        REINICIO.clear()
-        REINICIO.update(id=rid, cuando=time.time() + seg, pedido=time.time(), por=quien_txt, estado="programado",
-                        detener=False, forzar=False, avisar=bool(avisar))
-    if avisar:
-        poner_mensaje(texto, tipo="aviso", por=quien, reinicio=True)
-    else:
-        quitar_mensaje(solo_reinicio=True)
-    threading.Thread(target=_hilo_reinicio, args=(rid,), daemon=True, name="reinicio").start()
-    cambios = ", ".join(c["archivo"] for c in M.cambios_sin_tomar()) or "sin cambios en el código"
-    L.info("SERVIDOR", f"Reinicio del servidor programado desde el panel ({quien_txt}) "
-                       + (f"para dentro de {L.seg(seg)}" if seg else "para ahora")
-                       + (", con aviso a las PC" if avisar else "") + f". Toma: {cambios}. "
-                       f"(el código nuevo se probó en {L.seg(time.time() - t0)})")
-    if seg:
-        msg = f"Reinicio programado: en {mmss(seg)} (y cuando termine lo que se esté procesando)."
-    else:
-        msg = "Reiniciando en cuanto termine lo que se esté procesando…"
-    return {"ok": True, "msg": msg + (" Se avisó a las PC." if avisar else "")}, 200
-
-
-def cancelar_reinicio(quien):
-    with _REI_LOCK:
-        if not REINICIO:
-            return {"error": "No hay ningún reinicio programado."}, 409
-        if REINICIO.get("estado") == "reiniciando":
-            return {"error": "Ya se está reiniciando: no se puede cancelar."}, 409
-        REINICIO.clear()
-    avisadas = quitar_mensaje(solo_reinicio=True)
-    L.info("SERVIDOR", f"Reinicio del servidor cancelado desde el panel ({quien or LOCAL}).")
-    return {"ok": True, "msg": "Reinicio cancelado." + (" Se quitó el aviso de las PC." if avisadas else "")}, 200
-
-
-def reiniciar_ya(quien):
-    """Durante la espera: reiniciar sin esperar a que termine lo que se está procesando (se retoma al volver)."""
-    with _REI_LOCK:
-        if not REINICIO:
-            return {"error": "No hay ningún reinicio programado."}, 409
-        if REINICIO.get("estado") == "reiniciando":
-            return {"error": "Ya se está reiniciando."}, 409
-        REINICIO.update(forzar=True, cuando=min(REINICIO["cuando"], time.time()))
-    L.aviso("SERVIDOR", f"Reinicio sin esperar pedido desde el panel ({quien or LOCAL}): lo que se estaba procesando "
-                        f"se vuelve a procesar al volver.")
-    return {"ok": True, "msg": "Reiniciando ahora…"}, 200
-
-
-def _hilo_reinicio(rid):
-    avisado = False
-    while True:
-        time.sleep(0.5)
-        with _REI_LOCK:
-            if REINICIO.get("id") != rid:
-                return                       # cancelado o vuelto a programar
-            if time.time() < REINICIO["cuando"]:
-                continue
-            REINICIO["detener"] = True       # el trabajador no empieza nada nuevo
-            ocupado = PROC.trabajo["ocupado"] and not PROC.trabajo["esperando_ia"] and not PROC.trabajo.get("en_pausa")
-            if ocupado and not REINICIO.get("forzar"):
-                REINICIO["estado"] = "esperando"
-                if not avisado:
-                    avisado = True
-                    proc = ", ".join(f"«{CASOS.titulo_de(n)}»" for n in PROC.en_estado("transcribiendo") + PROC.en_estado("generando"))
-                    L.info("SERVIDOR", "Reinicio: espero a que termine lo que se está procesando"
-                                       + (f" ({proc})" if proc else "") + ".")
-                continue
-            REINICIO["estado"] = "reiniciando"
-        _reiniciar_ahora()
-        return
-
-
-def _reiniciar_ahora():
-    por = REINICIO.get("por") or LOCAL
-    FIN_LOCK.acquire(timeout=60)             # que no quede un «Guardar Word» a medias (no se suelta: se cierra)
-    pend = PROC.cola_pendiente()
-    pausados = [n for n in pend if PROC.estado.get(n, {}).get("estado") == "en pausa"]
-    pend = [n for n in pend if n not in pausados]
-    for n in pausados:
-        L.aviso("SERVIDOR", f"{CASOS.visible(n)} estaba en pausa: " + ('se conserva la pausa; usá Reanudar al volver.' if PROC.duradera is not None
-                else 'queda sin procesar (botón Procesar en la lista cuando quieras).'))
-    if PROC.duradera is None:
-        try:
-            escribir_atomico(COLA_AL_REINICIAR, json.dumps({"t": time.time(), "nombres": pend}, ensure_ascii=False))
-        except OSError:
-            L.error("SERVIDOR", "No se pudo anotar la cola antes de reiniciar.", exc=True)
-    L.aviso("SERVIDOR", f"Reiniciando el servidor (pedido desde el panel, {por}) para tomar los cambios"
-                        + (f"; {L.plural(len(pend), 'audio')} de la cola se retoman al volver." if pend else ".")
-                        + " Las PC del trabajo se reconectan solas.")
-    time.sleep(1.5)                          # que las páginas alcancen a ver «reiniciando»
-    SRV["salida"] = M.CODIGO_REINICIO
-
-    def _vigia():                            # si el cierre se traba, salir igual para que el .bat lo vuelva a abrir
-        time.sleep(30)
-        L.aviso("SERVIDOR", "El cierre para reiniciar se demoró más de 30 s: salgo igual para volver a abrir.")
-        _salir_para_reiniciar()
-    threading.Thread(target=_vigia, daemon=True, name="vigia-reinicio").start()
-    if SRV["http"]:
-        SRV["http"].shutdown()
-
-
-def _salir_para_reiniciar():
-    """Termina el proceso con el código de reinicio sin pasar por el cierre normal de Python.
-    Con Whisper (CUDA/ctranslate2) y ONNX cargados, ese cierre en Windows puede colgarse o terminar con
-    otro código, y entonces el .bat no lo vuelve a abrir."""
-    for f in (sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__):
-        try:
-            f.flush()
-        except Exception:
-            pass
-    os._exit(M.CODIGO_REINICIO)
-
-
-def reanudar_cola():
-    """Inicialización exclusiva antes de arrancar trabajadores o atender HTTP."""
-    if PROC.duradera is not None: raise CP.ErrorCola('La cola ya se inicializó en este proceso.')
-    cola = CP.ColaProcesamiento(DATOS.parent / 'cola_procesamiento.sqlite3')
-    try:
-        cola.importar_legacy(COLA_AL_REINICIAR, CASOS.ruta_audio)
-        PROC.duradera = cola
-        # Ventana publicación de audio -> alta de tarea, y migración de instalaciones anteriores.
-        # Nunca adoptar un caso revisado o con borrador, ni reactivar un registro terminal.
-        for a in sorted(NUEVOS.iterdir(), key=lambda p: (p.stat().st_mtime_ns, p.name)):
-            n = a.stem
-            if a.is_file() and a.suffix.lower() in EXT_AUDIO and cola.obtener(n) is None:
-                if not revision_conservada(n) and not (DATOS / f'{n}.informe_ia.txt').exists():
-                    cola.solicitar(n)
-        for fila in cola.filas():
-            n, e = fila['nombre'], fila['estado']
-            if e in ('listo', 'cancelado'): continue
-            if e == 'borrando':
-                PROC.borrados.add(n)
-                PROC.estado[n] = {'estado': 'error', 'msg': 'Borrado interrumpido: revisar recuperación antes de procesar.', 't': time.time()}
-                continue
-            if e == 'error':
-                PROC.estado[n] = {'estado': 'error', 'msg': 'El procesamiento falló. Reintentá cuando se haya resuelto el problema.', 't': time.time()}
-                continue
-            if resultado_confirmado(n):
-                PROC.poner_estado(n, 'listo')
-                continue
-            if revision_conservada(n):
-                PROC.poner_estado(n, 'error', 'Se conservó una revisión. Revisá el caso antes de volver a procesar.')
-                continue
-            if CASOS.ruta_audio(n) is None:
-                PROC.poner_estado(n, 'error', 'No encuentro el audio pendiente. Conservamos su registro para recuperación.')
-                continue
-            cola.cambiar(n, 'en cola')
-            PROC.encolado[n] = fila['encolado']
-            if fila['pausado']:
-                PROC.pausas[n] = {'pedida': time.time(), 'desde': time.time(), 'por': 'recuperación tras caída'}
-            PROC.estado[n] = {'estado': 'en pausa' if fila['pausado'] else 'en cola',
-                         'msg': 'Pausa conservada tras caída' if fila['pausado'] else 'Recuperado tras caída', 't': time.time()}
-            PROC.cola.put(n)
-        L.info('COLA', 'Cola persistente recuperada; las pausas se conservan.')
-    except BaseException:
-        PROC.duradera = None
-        cola.cerrar()
-        raise
-
-
-def revision_conservada(n):
-    return (any((DATOS / (n+s)).exists() for s in ('.final.txt', '.borrador.json', '.borrador.html', '.formato.json'))
-            or (INFORMES / f'{n}.docx').exists())
-
-
-def estado_mantenimiento():
-    ok, motivo = M.soporta_reinicio(TUNEL["modo"])
-    return {"cambios": M.cambios_sin_tomar(), "git": M.info_git(), "git_inicio": M.git_al_arrancar(),
-            "reiniciable": ok, "motivo_no": motivo, "bat": M.bat_del_modo(TUNEL["modo"]).name,
-            "reinicio": estado_reinicio(), "mensaje": mensaje_actual()}
 
 
 # ---------------------------------------------------------------- borrar
 # Archivos de un caso en la carpeta datos. Lista explícita: un caso «tmp9177» no debe llevarse
 # los de otro llamado «tmp9177.tmp».
-SUFIJOS_CASO = (".procesamiento.json", ".transcripcion_cache.json", ".rendimiento.json", ".json", ".dictado.txt", ".informe_ia.txt", ".marcas.json", ".borrador.html", ".borrador.json", ".final.txt",
-                ".medico.txt", ".audio.txt", ".ejemplo.txt", ".onda.json", ".origen.txt", ".original.txt",
-                ".paciente.json", ".formato.json", ".omisiones_ok.json", ".revision.json", ".voz.json",
-                ".usuario.txt", ".estilo.txt")
-
-
-def puede_borrar(n, pc, remoto):
-    """None si se puede borrar; si no, el motivo. Las PC del trabajo solo borran lo que enviaron ellas."""
-    if remoto and (CASOS.origen_de(n) != pc or pc == LOCAL):
-        return "Solo se pueden borrar los informes que llegaron desde esta PC."
-    with PROC.lock:
-        e = PROC.estado.get(n, {}).get("estado")
-    if e in ("transcribiendo", "generando"):
-        return "Se está procesando ahora: esperá a que termine para borrarlo."
-    otro = R.bloqueado_por(n, pc)
-    if otro:
-        return f"Lo está revisando {otro}."
-    return None
-
-
-def _archivos_audio(n):
-    """Audios del caso que se pueden borrar: solo los que están en la carpeta de audios nuevos (un audio
-    procesado desde el modo consola puede estar en cualquier carpeta de la usuaria: ese no se toca)."""
-    base = NUEVOS.resolve()
-    out = [NUEVOS / f"{n}{e}" for e in EXT_AUDIO if (NUEVOS / f"{n}{e}").exists()]
-    a = CASOS.ruta_audio(n)
-    if a is not None and a.resolve().parent == base and a not in out:
-        out.append(a)
-    return out
-
-
-def _apartar(p):
-    """Renombra el archivo para borrarlo (falla si está abierto, p. ej. el Word). Reintenta un poco por si
-    justo se estaba leyendo el audio."""
-    tmp = p.with_name(p.name + ".borrando")
-    for i in range(6):
-        try:
-            p.replace(tmp)
-            return tmp
-        except FileNotFoundError:
-            return None
-        except PermissionError:
-            if i == 5:
-                raise
-            time.sleep(0.25)
-
-
-def borrar_caso(n, quien=LOCAL, remoto=False):
-    """Borra el caso: audio, archivos de revisión y Word. Lo aprendido (ejemplos, historial, correcciones)
-    se conserva. Devuelve None si salió bien o el motivo por el que no se borró."""
-    motivo = puede_borrar(n, quien, remoto)
-    if motivo:
-        return motivo
-    hay = any(n == p.stem for p in NUEVOS.iterdir() if p.suffix.lower() in EXT_AUDIO) \
-        or any((DATOS / f"{n}{s}").exists() for s in SUFIJOS_CASO) or (INFORMES / f'{n}.docx').exists()
-    if not hay:
-        if PROC.duradera is not None and PROC.duradera.obtener(n) is not None:
-            restos = [INFORMES / f'{n}.docx.borrando'] + [NUEVOS / f'{n}{e}.borrando' for e in EXT_AUDIO]
-            if any(p.exists() for p in restos):
-                return 'Hay archivos apartados de un borrado interrumpido. Conserválos y revisá su recuperación.'
-            with PROC.lock:
-                if PROC.estado.get(n, {}).get('estado') in ('transcribiendo', 'generando'):
-                    return 'Se está procesando ahora: esperá a que termine para borrarlo.'
-                PROC.duradera.preparar_borrado(n)
-                PROC.borrados.add(n)
-            PROC.duradera.cancelar_borrado(n)
-            with PROC.lock: PROC.estado.pop(n, None)
-            with PROC.pausa_cv:
-                PROC.pausas.pop(n, None); PROC.pausa_cv.notify_all()
-            PROC.encolado.pop(n, None)
-            return None
-        return "Ese informe ya no existe."
-    with PROC.lock:      # que el trabajador no lo empiece justo ahora
-        if PROC.estado.get(n, {}).get("estado") in ("transcribiendo", "generando"):
-            return "Se está procesando ahora: esperá a que termine para borrarlo."
-        previo_duradero = PROC.duradera.preparar_borrado(n) if PROC.duradera is not None else None
-        PROC.borrados.add(n)
-        previo = dict(PROC.estado.get(n, {}))
-    nombre_vis, estado = CASOS.visible(n), previo.get("estado")
-    if estado in (None, "listo", "nuevo"):
-        estado = "revisado" if (DATOS / f"{n}.final.txt").exists() else (
-            "para revisar" if (DATOS / f"{n}.informe_ia.txt").exists() else "sin procesar")
-    # primero se apartan el Word y el audio: si alguno está abierto no se borra nada
-    apartados = []
-    try:
-        for p in [INFORMES / f"{n}.docx"] + _archivos_audio(n):
-            if p.exists():
-                t = _apartar(p)
-                if t:
-                    apartados.append((p, t))
-    except PermissionError as ex:
-        for p, t in apartados:
-            try:
-                t.replace(p)
-            except OSError:
-                pass
-        if PROC.duradera is not None: PROC.duradera.revertir_borrado(n, previo_duradero)
-        with PROC.lock:
-            PROC.borrados.discard(n)
-        if previo.get("estado") in ("en cola", "en pausa"):  # pudo haber sido salteado durante el intento
-            PROC.encolar(n, forzar=True)
-        cual = "el Word" if str(getattr(ex, "filename", "")).lower().endswith(".docx") else "el audio"
-        L.aviso("CASO", f"{quien} quiso borrar {nombre_vis}, pero {cual} está abierto en otro programa.")
-        return (f"No se pudo borrar: {cual} está abierto en otro programa. "
-                f"Cerralo y volvé a intentar.")
-    for _, t in apartados:
-        t.unlink(missing_ok=True)
-    for s in SUFIJOS_CASO:
-        (DATOS / f"{n}{s}").unlink(missing_ok=True)
-    (INFORMES / "revision" / f"{n}.html").unlink(missing_ok=True)      # revisión del modo consola
-    R.quitar_huellas(DATOS, n)
-    R.BLOQUEOS.pop(n, None)
-    if PROC.duradera is not None: PROC.duradera.cancelar_borrado(n)
-    with PROC.lock:
-        PROC.estado.pop(n, None)
-    with PROC.pausa_cv:          # si estaba en pausa, el trabajador se despierta, ve que se borró y sigue con otro
-        PROC.pausas.pop(n, None)
-        PROC.pausa_cv.notify_all()
-    for d in (PROC.encolado, CASOS.duraciones, CASOS.estudios_cache):
-        d.pop(n, None)
-    L.estado(cola=PROC.en_proceso())
-    L.info("CASO", f"{quien} borró {nombre_vis} ({estado}): audio, informe y Word. "
-                   f"Lo que aprendió la IA se conserva.")
-    return None
-
-
-# ------------------------------------------------------------- finalizar
-def finalizar(nombre, texto, quien=LOCAL, usuario=None):
-    with FIN_LOCK:      # solo publicación Word + final + tarea duradera; aprendizaje fuera de este lock
-        return _finalizar(nombre, texto, quien, usuario)
-
-
-def texto_a_marcado(texto):
-    """Texto del editor -> (texto final limpio, líneas como las recibe el Word)."""
-    lineas = [l.rstrip() for l in texto.replace("\r", "").split("\n")]
-    while lineas and not lineas[0].strip():
-        lineas.pop(0)
-    final = "\n".join(lineas).strip()
-    return final, [{"segs": [(l, None, None)], "linea": None, "titulo": PL.es_titulo(l)} for l in final.split("\n")]
 
 
 FMT_LOCK = threading.Lock()
-
-
-def vista_previa(texto, nombre=None, usuario=None):
-    """Párrafos exactamente como quedan en el Word (mismo código que escribir_docx) + la hoja.
-    b / a0 = negrita y alineación normales; a / r = con el formato elegido a mano (si hay).
-    usuario: con el formato del Word propio del transcriptor."""
-    _, marcado = texto_a_marcado(texto)
-    CFG = U.cfg_de(globals()["CFG"], usuario)
-    pars = parrafos_docx(marcado, CFG)
-    if nombre:
-        aplicar_formato(pars, CASOS.formato_de(nombre))
-    pars = [None if p is None else {"t": texto_parrafo(p), "b": p["negrita"], "a0": p["alin_def"],
-                                    "a": p["alin"], "r": p.get("runs")}
-            for p in pars]
-    return {"parrafos": pars, "pagina": pagina(CFG), "fuente": CFG["fuente"], "tamano": CFG["tamano_fuente"],
-            "encabezado": int(CFG["lineas_vacias_para_encabezado"])}
-
-
-def aplicar_aprendizaje(tarea):
-    from aprender import registrar_ejemplo, anotar_procesado
-    registrar_ejemplo(tarea["nombre"], tarea["dictado"], tarea["ia"], tarea["final"],
-                      tarea["clave"], medico=tarea["medico"], recalcular=False, fecha=tarea["fecha"],
-                      usuario=tarea.get("usuario"))
-    docx = Path(tarea["docx"])
-    if docx.exists() and docx.stat().st_mtime_ns == tarea["mtime_ns"]:
-        anotar_procesado(docx, tarea["clave"])
-    n = tarea["nombre"]
-    fin = DATOS / f"{n}.final.txt"
-    if fin.exists() and fin.read_text(encoding="utf-8") == tarea["final"] and CASOS.medico_de(n) == (tarea["medico"] or ""):
-        try:
-            muestra_al_guardar(n)
-        except Exception:
-            L.aviso("VOZ", "No se pudo registrar la muestra de voz del informe guardado.", exc=True)
-    EST.invalidar()
-
-
-def analizar_aprendizaje():
-    from aprender import analizar_correcciones
-    analizar_correcciones()
 
 
 def configurar(aj):
     """Toma los ajustes (de ajustes.cargar() en main, o de ajustes.para_pruebas en una prueba).
     No crea carpetas ni arranca hilos: eso lo hace main(). Devuelve los ajustes anteriores, para que una
     prueba los restaure con configurar(anteriores); configurar(None) deja todo sin configurar."""
-    global AJUSTES, CFG, NUEVOS, INFORMES, DATOS, PUERTO, PUERTO_TUNEL, SIMULAR, COLA_AL_REINICIAR, APRENDIZAJE, CASOS, PROC
+    global AJUSTES, CFG, NUEVOS, INFORMES, DATOS, PUERTO, PUERTO_TUNEL, SIMULAR, COLA_AL_REINICIAR, APRENDIZAJE, CASOS, PROC, IA, VOCES, VISTA, BORRADO, OPER, TRAB, GUARDADO
     anteriores = AJUSTES
     AJUSTES = aj
     if aj is None:
-        CFG = NUEVOS = INFORMES = DATOS = PUERTO = PUERTO_TUNEL = COLA_AL_REINICIAR = APRENDIZAJE = CASOS = PROC = None
+        CFG = NUEVOS = INFORMES = DATOS = PUERTO = PUERTO_TUNEL = COLA_AL_REINICIAR = APRENDIZAJE = CASOS = PROC = IA = VOCES = VISTA = BORRADO = OPER = TRAB = GUARDADO = None
         SIMULAR = False
         return anteriores
     CFG = aj.cfg
@@ -1363,42 +181,16 @@ def configurar(aj):
     COLA_AL_REINICIAR = INFORMES / "revision" / "cola_al_reiniciar.json"
     CASOS = Casos(DATOS, NUEVOS)
     PROC = Procesamiento(CASOS)
-    APRENDIZAJE = ColaAprendizaje(DATOS / "_aprendizaje", aplicar_aprendizaje, analizar_aprendizaje)
+    IA = EstadoIA(CFG, SIMULAR, AQUI, CASOS, PROC)
+    VOCES = ServicioVoz(CFG, CASOS, PROC)
+    VISTA = VistaCasos(CASOS, PROC, VOCES, INICIO, R)
+    BORRADO = Borrado(CASOS, PROC, INFORMES, R)
+    OPER = Operacion(CASOS, PROC, COLA_AL_REINICIAR, TUNEL, SRV, FIN_LOCK, M)
+    TRAB = Trabajador(CFG, SIMULAR, AQUI, INFORMES, COLA_AL_REINICIAR, CASOS, PROC, IA, VOCES, VISTA, OPER)
+    GUARDADO = Guardado(CFG, INFORMES, CASOS, VOCES, FIN_LOCK, APRENDER, EST)
+    APRENDIZAJE = ColaAprendizaje(DATOS / "_aprendizaje", GUARDADO.aplicar_aprendizaje, GUARDADO.analizar_aprendizaje)
+    GUARDADO.aprendizaje = APRENDIZAJE   # la cola llama a métodos de GUARDADO; GUARDADO le encola tareas
     return anteriores
-
-
-def _finalizar(nombre, texto, quien=LOCAL, usuario=None):
-    from aprender import pct_corregido
-    final, marcado = texto_a_marcado(texto)
-    ia = (DATOS / f"{nombre}.informe_ia.txt").read_text(encoding="utf-8")
-    dic = (DATOS / f"{nombre}.dictado.txt").read_text(encoding="utf-8")
-    pc = pct_corregido("\n".join(l.rstrip() for l in MAR.texto_limpio(ia).splitlines()), final)
-    fin_f = DATOS / f"{nombre}.final.txt"
-    ya_guardado = fin_f.exists()
-    reg = DATOS / f"{nombre}.ejemplo.txt"
-    clave = reg.read_text(encoding="utf-8").strip() if reg.exists() else time.strftime("%Y%m%d_%H%M%S_") + nombre
-    documento = io.BytesIO()
-    escribir_docx(marcado, documento, U.cfg_de(CFG, usuario), CASOS.formato_de(nombre))
-    docx = INFORMES / f"{nombre}.docx"
-    escribir_atomico(docx, documento.getvalue())
-    escribir_atomico(reg, clave)
-    escribir_atomico(fin_f, final)
-    APRENDIZAJE.agregar({"nombre": nombre, "dictado": dic, "ia": ia, "final": final,
-                        "clave": clave, "medico": CASOS.medico_de(nombre) or None, "docx": str(docx), "usuario": usuario,
-                        "mtime_ns": docx.stat().st_mtime_ns, "fecha": time.strftime("%Y-%m-%d %H:%M")})
-    L.contar("guardados")
-    vz = resumen_voz(nombre)
-    rev = CASOS.revision_de(nombre)
-    por = f"{U.nombre_de(usuario)} ({quien})" if usuario else quien
-    L.ok("INFORME", f"{CASOS.visible(nombre)} {'guardado de nuevo' if ya_guardado else 'guardado'} por {por} · "
-                    f"{f'{pc * 100:.1f}'.replace('.', ',')}% corregido"
-                    + (f" · revisión {mmss(rev)}" if rev else "") + f" · Word {docx.name} · aprendizaje pendiente")
-    # el transcriptor que guarda (no necesariamente el del caso): por eso se pisa el «usuario» de datos_csv
-    L.actividad("guardado", **{**CASOS.datos_csv(nombre), "usuario": U.nombre_de(usuario) if usuario else ""},
-                porcentaje_corregido=pc * 100, palabras_informe=len(final.split()), revision_s=rev,
-                detalle=("guardado de nuevo" if ya_guardado else "guardado") + f" desde {quien}", **campos_voz(vz))
-    EST.invalidar()
-    return {"docx": str(docx), "pct": round(pc * 100, 1), "aprendizaje": "pendiente"}
 
 
 # ------------------------------------------------------------------ HTTP
@@ -1698,13 +490,13 @@ class H(BaseHTTPRequestHandler):
                         "plantillas_propias": [n for n, _ in PL.secciones_de_usuario(self.usuario)],
                         "medicos_propios": MED.medicos_con_notas_propias(self.usuario)})
         elif u.path == "/api/cliente/estado":
-            instantanea = listar_casos(self.pc)
+            instantanea = VISTA.listar_casos(self.pc)
             casos = [{"nombre": c["nombre"], "titulo": c["titulo"], "estado": c["estado"], "marcas": c["marcas"],
                       "paciente": c["paciente"]}
                      for c in instantanea if c["origen"] == self.pc][:40]
             cola = sum(1 for c in instantanea if c["estado"] in ("en cola", "transcribiendo", "generando"))
             A.anotar_version(self.pc, self.headers.get("User-Agent"))
-            self._json({"ok": True, "pc": self.pc, "ia": ia_lista(), "cola": cola, "casos": casos,
+            self._json({"ok": True, "pc": self.pc, "ia": IA.ia_lista(), "cola": cola, "casos": casos,
                         "version": VERSION, "app": A.resumen()})
         elif u.path == "/api/cliente/actualizacion":
             # lista de archivos de la app con sus huellas: la app baja solo los que cambiaron
@@ -1726,10 +518,10 @@ class H(BaseHTTPRequestHandler):
             nom = re.sub(r'[\\/:*?"<>|]+', "", f"{pac} - {CASOS.titulo_de(n)}" if pac else CASOS.titulo_de(n)).strip()
             self._enviar_archivo(p, descarga=f"{nom or n}.docx")
         elif u.path == "/api/casos":
-            ok = ia_lista()
-            self._json({"casos": listar_casos(self.pc, self.remoto), "ollama": ok, "pc": self.pc,
-                        "ia_estado": "caida" if not ok else ("sin_modelo" if E_IA["e"] == "sin_modelo" else "ok"),
-                        "modelo": CFG["modelo_ia"], "mensaje": mensaje_para_pcs(),
+            ok = IA.ia_lista()
+            self._json({"casos": VISTA.listar_casos(self.pc, self.remoto), "ollama": ok, "pc": self.pc,
+                        "ia_estado": "caida" if not ok else ("sin_modelo" if IA.ultimo["e"] == "sin_modelo" else "ok"),
+                        "modelo": CFG["modelo_ia"], "mensaje": OPER.mensaje_para_pcs(),
                         "pausa": bool(PROC.trabajo.get("en_pausa"))})
         elif u.path == "/api/formato":
             cfg = U.cfg_de(CFG, self.usuario)
@@ -1753,7 +545,7 @@ class H(BaseHTTPRequestHandler):
             rv = VOZ.resumen()
             self._json({"modelo": VOZ.estado_modelo(), "error": VOZ._DESCARGA.get("error") or "",
                         "parametros": VOZ.parametros(CFG), "medicos": rv,
-                        "sin_etiquetar": len(casos_sin_etiquetar())})
+                        "sin_etiquetar": len(VOCES.casos_sin_etiquetar())})
         elif u.path == "/api/voces/muestras":
             med = q.get("medico", [""])[0]
             out = []
@@ -1767,13 +559,13 @@ class H(BaseHTTPRequestHandler):
                 out.append(f)
             self._json({"muestras": out})
         elif u.path == "/api/voces/agrupar":
-            self._json(grupos_de_voces())
+            self._json(VOCES.grupos_de_voces())
         elif u.path == "/api/plantillas":
             self._json({"secciones": PL.secciones_con_origen(self.usuario), "con_usuario": bool(self.usuario)})
         elif u.path == "/api/caso":
             n = q.get("nombre", [""])[0]
             try:
-                c = cargar_caso(n) if self._nombre_valido(n) else None
+                c = VISTA.cargar_caso(n) if self._nombre_valido(n) else None
             except (BOR.Corrupto, OSError):
                 L.error('CASO', 'No se pudo leer el borrador guardado.', exc=True)
                 return self._json({'error': 'No se pudo leer el borrador guardado. Conservá sus archivos y solicitá recuperación.'}, 503)
@@ -1781,7 +573,7 @@ class H(BaseHTTPRequestHandler):
         elif u.path == "/api/onda":
             n = q.get("nombre", [""])[0]
             try:
-                d = forma_de_onda(n) if self._nombre_valido(n) else None
+                d = VISTA.forma_de_onda(n) if self._nombre_valido(n) else None
             except Exception:
                 L.error("CASO", f"No pude dibujar la forma de onda de {CASOS.visible(n)}.", exc=True)
                 d = None
@@ -1958,7 +750,7 @@ class H(BaseHTTPRequestHandler):
             datos = json.loads(self._body(20 * 1024 * 1024) or b"{}")
             if u.path == "/api/vista_previa":
                 nv = datos.get("nombre") or None
-                return self._json(vista_previa(str(datos.get("texto", "")),
+                return self._json(GUARDADO.vista_previa(str(datos.get("texto", "")),
                                                nv if nv and self._nombre_valido(nv) else None, self.usuario))
             if u.path == "/api/admin/entrar":
                 return self._panel_entrar(datos)
@@ -2081,7 +873,7 @@ class H(BaseHTTPRequestHandler):
                     if not self._nombre_valido(x):
                         mal.append({"nombre": x, "error": "nombre inválido"})
                         continue
-                    err = borrar_caso(x, self.pc, self.remoto)
+                    err = BORRADO.borrar_caso(x, self.pc, self.remoto)
                     (mal.append({"nombre": x, "error": err}) if err else ok.append(x))
                 if len(ok) > 1:
                     L.ok("CASO", f"{self.pc} borró {L.plural(len(ok), 'informe')}"
@@ -2144,9 +936,9 @@ class H(BaseHTTPRequestHandler):
                     f.unlink(missing_ok=True)
                 CASOS.anotar_voz(n, medico_por="usuaria" if med else "")
                 if (DATOS / f"{n}.final.txt").exists():
-                    actualizar_muestra(n, med)       # ya guardado: la muestra de voz se corrige al momento
+                    VOCES.actualizar_muestra(n, med)       # ya guardado: la muestra de voz se corrige al momento
                 L.info("CASO", f"{CASOS.visible(n)}: médico cambiado a {med or 'ninguno'} ({self.pc}).")
-                vz = resumen_voz(n) or {}
+                vz = VOCES.resumen_voz(n) or {}
                 return self._json({"ok": True, "voz": vz,
                                    "regenerar": bool(vz) and (vz.get("medico_ia") or "") != med
                                    and not (DATOS / f"{n}.final.txt").exists()})
@@ -2205,7 +997,7 @@ class H(BaseHTTPRequestHandler):
                 return self._json({"ok": True})
             if u.path == "/api/finalizar":
                 CASOS.sumar_revision(n, datos.get("rev"), self.pc)
-                return self._json(finalizar(n, datos.get("texto", ""), self.pc, self.usuario))
+                return self._json(GUARDADO.finalizar(n, datos.get("texto", ""), self.pc, self.usuario))
             if u.path == "/api/abrir":
                 p = INFORMES / f"{n}.docx"
                 if p.exists() and not self.remoto:
@@ -2314,7 +1106,7 @@ def estado_tunel():
 def estado_admin():
     ahora = time.time()
     try:
-        cs = listar_casos()
+        cs = VISTA.listar_casos()
     except Exception:
         cs = []
     k = {e: sum(1 for c in cs if c["estado"] == e) for e in ("listo", "nuevo", "error", "revisado")}
@@ -2344,7 +1136,7 @@ def estado_admin():
         "servidor": {"version": VERSION, "desde": INICIO, "simulado": SIMULAR, "url": f"http://127.0.0.1:{PUERTO}",
                      "registros": str(L.CARPETA),
                      "sistema": P.NOMBRE, "puede_abrir": P.puede_abrir()},
-        "ia": {"estado": E_IA["e"], "modelo": CFG["modelo_ia"],
+        "ia": {"estado": IA.ultimo["e"], "modelo": CFG["modelo_ia"],
                "trabajando": f"armando el informe de «{CASOS.titulo_de(gen[0])}»" if gen else None},
         "whisper": {"modelo": CFG["modelo_whisper"],
                     "trabajando": f"transcribiendo «{CASOS.titulo_de(tr[0])}»" if tr else None},
@@ -2358,7 +1150,7 @@ def estado_admin():
         "app": {"version": oficial, "archivos": len(man.get("archivos", []))},
         "pcs": pcs,
         "registro": ADM.ultimos_eventos(),
-        "mantenimiento": estado_mantenimiento(),
+        "mantenimiento": OPER.estado_mantenimiento(),
         "cola": cola_en_vivo(),
         "abiertos": casos_abiertos(),
     }
@@ -2532,11 +1324,11 @@ def accion_admin(accion, d, quien=None):
         L.info("ACCESO", f"Sesiones del panel de administración cerradas desde esta PC: {n}.")
         return {"ok": True, "msg": f"{_cerradas(n)} del panel." if n else "No había sesiones abiertas."}, 200
     if accion == "reinicio":
-        return programar_reinicio(d.get("en"), d.get("avisar", True), d.get("texto"), quien)
+        return OPER.programar_reinicio(d.get("en"), d.get("avisar", True), d.get("texto"), quien)
     if accion == "reinicio/cancelar":
-        return cancelar_reinicio(quien)
+        return OPER.cancelar_reinicio(quien)
     if accion == "reinicio/ya":
-        return reiniciar_ya(quien)
+        return OPER.reiniciar_ya(quien)
     if accion == "mensaje":
         texto = " ".join(str(d.get("texto", "")).split())
         if not texto:
@@ -2548,15 +1340,15 @@ def accion_admin(accion, d, quien=None):
         except (TypeError, ValueError):
             minutos = 0
         tipo = "aviso" if d.get("tipo") == "aviso" else "info"
-        if REINICIO and REINICIO.get("avisar"):
+        if OPER.reinicio and OPER.reinicio.get("avisar"):
             return {"error": "Hay un reinicio programado con su aviso en pantalla: cancelalo o esperá a que termine."}, 409
-        poner_mensaje(texto, minutos, tipo, por=quien)
+        OPER.poner_mensaje(texto, minutos, tipo, por=quien)
         L.info("SERVIDOR", f"Mensaje para las PC {desde}" + (f" (por {minutos} min)" if minutos else "") + f": «{texto}»")
         return {"ok": True, "msg": "Mensaje publicado: aparece en todas las PC en unos segundos."}, 200
     if accion == "mensaje/quitar":
-        if REINICIO and MENSAJE.get("reinicio"):
+        if OPER.reinicio and OPER.mensaje.get("reinicio"):
             return {"error": "Ese aviso es del reinicio programado: para quitarlo, cancelá el reinicio."}, 409
-        if not quitar_mensaje():
+        if not OPER.quitar_mensaje():
             return {"error": "No hay ningún mensaje en pantalla."}, 409
         L.info("SERVIDOR", f"Mensaje para las PC quitado {desde}.")
         return {"ok": True, "msg": "Mensaje quitado."}, 200
@@ -2747,7 +1539,7 @@ def filas_encabezado(url, tunel):
     ahora = time.time()
     if ahora - _PANEL["casos_t"] > 3:
         try:
-            cs = listar_casos()
+            cs = VISTA.listar_casos()
             _PANEL["casos"] = {k: sum(1 for x in cs if x["estado"] == k) for k in ("listo", "nuevo", "error")}
         except Exception:
             pass
@@ -2787,7 +1579,7 @@ def filas_encabezado(url, tunel):
             filas.append(("App del trabajo", t, None))
     # IA y Whisper
     gen = PROC.en_estado("generando")
-    e = E_IA["e"]
+    e = IA.ultimo["e"]
     if e == "caida":
         filas.append(("IA", "Ollama no responde: abrilo para poder generar informes", "error"))
     elif e == "sin_modelo":
@@ -2842,7 +1634,7 @@ def main():
     SRV["http"] = srv
     R.cargar_sesiones()
     try:
-        reanudar_cola()
+        TRAB.reanudar_cola()
     except Exception:
         L.error('COLA', 'No se pudo recuperar la cola. No se inicia procesamiento ni se aceptan audios; conservá la base y los archivos.', exc=True)
         srv.server_close()
@@ -2851,18 +1643,18 @@ def main():
     url = f"http://127.0.0.1:{PUERTO}"
     tunel = "--tunel" in sys.argv
     TUNEL["modo"] = tunel
-    e_ia = estado_ia()
-    E_IA["e"] = e_ia
-    _IA_CACHE.update(t=time.time(), ok=e_ia != "caida")
+    e_ia = IA.estado_ia()
+    IA.ultimo["e"] = e_ia
+    IA.cache.update(t=time.time(), ok=e_ia != "caida")
     L.encabezado("TRANSCRIPCIÓN DE INFORMES  ·  SERVIDOR", f"versión {VERSION}",
                  lambda: filas_encabezado(url, tunel),
                  "Eventos · no cierres esta ventana · Ctrl+C apaga · historial completo en registros")
     L.estado(ia=e_ia == "ok", cola=0)
     PROC.cargar_tiempos()
     APRENDIZAJE.iniciar()
-    threading.Thread(target=trabajador, daemon=True, name="procesamiento").start()
-    threading.Thread(target=vigilar_ia, args=(e_ia,), daemon=True, name="vigilancia-ia").start()
-    threading.Thread(target=hilo_voces, daemon=True, name="voces").start()
+    threading.Thread(target=TRAB.trabajador, daemon=True, name="procesamiento").start()
+    threading.Thread(target=IA.vigilar_ia, args=(e_ia,), daemon=True, name="vigilancia-ia").start()
+    threading.Thread(target=VOCES.hilo_voces, daemon=True, name="voces").start()
     g = M.git_al_arrancar() or {}
     L.ok("SERVIDOR", f"Servidor iniciado en {url}" + ("" if e_ia == "ok" else " (sin IA hasta que se abra Ollama)")
          + (f" · código {g['commit']}" + (f" + {L.plural(len(g['sucios']), 'cambio')} sin commitear" if g.get("sucios") else "")
@@ -2900,7 +1692,7 @@ def main():
     h = L.HOY
     if SRV["salida"] == M.CODIGO_REINICIO:
         L.info("SERVIDOR", "Servidor cerrado para reiniciarse: se vuelve a abrir solo en esta misma ventana.")
-        _salir_para_reiniciar()
+        OPER._salir_para_reiniciar()
     L.info("SERVIDOR", f"Servidor apagado. Hoy: {L.plural(h['recibidos'], 'audio recibido', 'audios recibidos')}, "
                        f"{L.plural(h['generados'], 'informe generado', 'informes generados')}, "
                        f"{L.plural(h['guardados'], 'guardado')}, {L.plural(h['errores'], 'error', 'errores')}.")

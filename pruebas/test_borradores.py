@@ -153,7 +153,7 @@ class BorradoresHttpTest(unittest.TestCase):
         (self.carpeta / 'caso-ficticio.borrador.json').write_text('{}',encoding='utf-8')
         estado, d = self.pedir({'html':'No reemplazar'})
         self.assertEqual(estado,503); self.assertNotIn('ok',d)
-        with patch.object(self.S,'cargar_caso',side_effect=B.Corrupto('Fallo ficticio')):
+        with patch.object(self.S.VISTA,'cargar_caso',side_effect=B.Corrupto('Fallo ficticio')):
             c = http.client.HTTPConnection('127.0.0.1',self.http.server_port,timeout=5)
             try:
                 c.request('GET','/api/caso?nombre=caso-ficticio'); r=c.getresponse()

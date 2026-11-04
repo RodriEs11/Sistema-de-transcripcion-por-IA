@@ -74,8 +74,8 @@ class WordTest(unittest.TestCase):
             (datos/'ficticio.informe_ia.txt').write_text('Informe ficticio.', encoding='utf-8')
             (datos/'ficticio.dictado.txt').write_text('Dictado ficticio.', encoding='utf-8')
             cola = ColaAprendizaje(datos/'_aprendizaje', lambda d: None, lambda: None)
-            with patch.object(S,'APRENDIZAJE',cola), patch.object(S,'resumen_voz',return_value=None), patch.object(S.CASOS,'datos_csv',return_value={}), patch.object(S.L,'actividad'), patch.object(A,'registrar_ejemplo',side_effect=AssertionError('No debe ejecutarse en el guardado')):
-                r = S.finalizar('ficticio', 'Informe final ficticio.')
+            with patch.object(S.GUARDADO,'aprendizaje',cola), patch.object(S.VOCES,'resumen_voz',return_value=None), patch.object(S.CASOS,'datos_csv',return_value={}), patch.object(S.L,'actividad'), patch.object(A,'registrar_ejemplo',side_effect=AssertionError('No debe ejecutarse en el guardado')):
+                r = S.GUARDADO.finalizar('ficticio', 'Informe final ficticio.')
                 self.assertEqual(r['aprendizaje'],'pendiente')
                 self.assertIn('Informe final ficticio.', [p.text for p in Document(r['docx']).paragraphs])
                 self.assertTrue((datos/'_aprendizaje/ficticio.json').exists())
@@ -83,7 +83,7 @@ class WordTest(unittest.TestCase):
                 contenido = Path(r['docx']).read_bytes()
                 with patch('transcripcion.base.persistencia.os.replace',side_effect=PermissionError('Word abierto ficticio')):
                     with self.assertRaises(PermissionError):
-                        S.finalizar('ficticio', 'No confirmado')
+                        S.GUARDADO.finalizar('ficticio', 'No confirmado')
                 self.assertEqual(Path(r['docx']).read_bytes(), contenido)
                 # El trabajador puede quedar ocupado sin retener el lock de finalización.
                 entro = threading.Event(); salir = threading.Event()
@@ -93,7 +93,7 @@ class WordTest(unittest.TestCase):
                 hilo = threading.Thread(target=cola.procesar); hilo.start()
                 try:
                     self.assertTrue(entro.wait(5))
-                    nuevo = S.finalizar('ficticio', 'Nueva versión ficticia.')
+                    nuevo = S.GUARDADO.finalizar('ficticio', 'Nueva versión ficticia.')
                     self.assertFalse(salir.is_set())
                     self.assertEqual(nuevo['aprendizaje'], 'pendiente')
                 finally:

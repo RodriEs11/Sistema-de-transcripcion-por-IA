@@ -23,7 +23,8 @@ from transcripcion.ia.prompt import armar_mensajes   # noqa: E402
 from transcripcion.ia.ejemplos import elegir_ejemplos   # noqa: E402
 from transcripcion.conocimiento.plantillas import categorias   # noqa: E402
 from transcripcion.conocimiento.archivos import preparar_conocimiento   # noqa: E402
-from informe import config, parrafos_docx   # noqa: E402
+from informe import config   # noqa: E402
+from transcripcion.informe.word import parrafos_docx   # noqa: E402
 
 
 def preparar():

@@ -22,11 +22,12 @@ import os
 import threading
 import time
 import urllib.request
-from pathlib import Path
 
 import numpy as np
 
-AQUI = Path(__file__).resolve().parent
+from transcripcion import RAIZ
+
+AQUI = RAIZ          # carpeta del sistema (modelos/ y voces/ quedan ahí, no en el paquete)
 DIR_MODELOS = AQUI / "modelos"
 MODELO = DIR_MODELOS / "wespeaker_resnet34.onnx"
 URL_MODELO = ("https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/"

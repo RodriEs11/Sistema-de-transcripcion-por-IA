@@ -12,10 +12,11 @@ import transcripcion  # noqa: E402
 from transcripcion import ajustes  # noqa: E402
 from transcripcion.acceso import usuarios  # noqa: E402
 from transcripcion.base import plataforma, registro  # noqa: E402
+from transcripcion.voz import huellas  # noqa: E402
 
 MOVIDOS = ("plataforma", "persistencia", "registro", "ajustes", "borradores", "paciente", "indice_casos",
            "cola_procesamiento", "lotes_ia", "cache_transcripcion", "almacen_aprendizaje", "aprendizaje_pendiente",
-           "usuarios", "nucleo", "huecos")
+           "usuarios", "nucleo", "huecos", "voces")
 
 
 class Paquete(unittest.TestCase):
@@ -24,12 +25,14 @@ class Paquete(unittest.TestCase):
         self.assertTrue((transcripcion.RAIZ / "servidor.py").exists())
 
     def test_datos_de_la_instalacion_en_la_raiz(self):
-        for modulo in (plataforma, registro, usuarios, ajustes):
+        for modulo in (plataforma, registro, usuarios, ajustes, huellas):
             with self.subTest(modulo=modulo.__name__):
                 self.assertEqual(modulo.AQUI, RAIZ)
         self.assertEqual(registro.CARPETA, RAIZ / "registros")
         self.assertEqual(usuarios.ARCH, RAIZ / "usuarios.json")
         self.assertEqual(usuarios.CARPETA, RAIZ / "conocimiento" / "usuarios")
+        self.assertEqual(huellas.DIR_MODELOS, RAIZ / "modelos")
+        self.assertEqual(huellas.DIR_VOCES, RAIZ / "voces")
 
     def test_ningun_modulo_del_paquete_se_ubica_por_su_propia_carpeta(self):
         """Path(__file__).parent dentro del paquete apuntaría a transcripcion/…, no a la instalación."""

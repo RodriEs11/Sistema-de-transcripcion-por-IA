@@ -42,12 +42,12 @@ def medir(cantidades, repeticiones):
                 (S.DATOS / f"{nombre}.{extension}").write_text(contenido, encoding="utf-8")
         creados = cantidad
         inicio = time.perf_counter()
-        casos = S.listar_casos("PC-Prueba")
+        casos = S.VISTA.listar_casos("PC-Prueba")
         primera = (time.perf_counter() - inicio) * 1000
         muestras = []
         for _ in range(repeticiones):
             inicio = time.perf_counter()
-            casos = S.listar_casos("PC-Prueba")
+            casos = S.VISTA.listar_casos("PC-Prueba")
             muestras.append((time.perf_counter() - inicio) * 1000)
         assert len(casos) == cantidad
         resultados.append({"casos": cantidad, "primera_ms": round(primera, 1),

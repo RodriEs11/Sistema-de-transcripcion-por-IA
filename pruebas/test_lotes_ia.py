@@ -11,6 +11,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from transcripcion.procesamiento import lotes as B
 from transcripcion.procesamiento import cache_transcripcion as C
 from transcripcion.ia import ejemplos as EJEM
+from transcripcion.ia import prompt as PR
+from transcripcion.controles import avisos as AV
+from transcripcion.casos import paciente as PAC
 from transcripcion.base import registro as L
 from transcripcion.ia import ollama as OLL
 RESPALDO = Path(__file__).resolve().parents[1]/"respaldo"
@@ -49,11 +52,12 @@ class LotesTest(unittest.TestCase):
             self.assertEqual(q.qsize(),2)
 
     def test_caso_borrado_no_retiene_espera_de_ia(self):
-        import servidor as S
+        from transcripcion.operacion.ia import EstadoIA
         from transcripcion.procesamiento.estado import Procesamiento
         proc=Procesamiento(None);proc.borrados.add('ficticio')
-        with patch.object(S,'PROC',proc), patch.object(S,'estado_ia') as consultar:
-            S.esperar_ia('ficticio',['ficticio'])
+        ia=EstadoIA({'modelo_ia':'ficticio'},False,RESPALDO.parent,None,proc)
+        with patch.object(ia,'estado_ia') as consultar:
+            ia.esperar_ia('ficticio',['ficticio'])
             consultar.assert_not_called()
 
     def test_cache_invalida_contenido_parametros_y_codigo(self):
@@ -129,8 +133,7 @@ class TrabajadorTest(unittest.TestCase):
                 (raiz/'resultados'/etapa/f'{caso}.json').write_text('roto',encoding='utf-8')
             pila.callback(S.configurar,S.configurar(aj))      # casos y procesamiento nuevos
             S.PROC.cola=cola
-            for nombre,valor in [('AQUI',raiz),('SIMULAR',not cache),('REINICIO',{})]:
-                pila.enter_context(patch.object(S,nombre,valor))
+            S.TRAB.raiz=raiz;S.TRAB.simular=not cache      # resultados simulados en la carpeta de la prueba
             pila.enter_context(patch.dict('os.environ',{'SIMULAR_DEMORA':'0'}))
             eventos=[]
             original=S.PROC.empezar;estado=S.PROC.poner_estado
@@ -143,18 +146,19 @@ class TrabajadorTest(unittest.TestCase):
             pila.enter_context(patch.object(S.PROC,'anotar_tiempo',side_effect=lambda *a:None))
             for nombre,valor in [('ruta_audio',lambda n:raiz/f'{n}.wav'),('duracion_de',lambda n:30),('anotar_voz',lambda *a,**kw:None),('datos_csv',lambda n:{}),('resumen_avisos',lambda *a:{'faltan':[],'rojo':0,'amarillo':0,'turq':0,'gris':0,'huecos':[]})]:
                 pila.enter_context(patch.object(S.CASOS,nombre,side_effect=valor))
-            for nombre,valor in [('duracion_wav',lambda **kw:30),('esperar_ia',lambda *a:None),('calcular_voz',lambda *a:None),('resumen_voz',lambda n:None),('guardar_marcas',lambda *a:([],[]))]:
-                pila.enter_context(patch.object(S,nombre,side_effect=valor))
-            pila.enter_context(patch.object(S.PAC,'calcular'))
+            from transcripcion.procesamiento import trabajador as T
+            for obj,nombre,valor in [(T,'duracion_wav',lambda **kw:30),(S.IA,'esperar_ia',lambda *a:None),(S.VOCES,'calcular_voz',lambda *a:None),(S.VOCES,'resumen_voz',lambda n:None),(S.VISTA,'guardar_marcas',lambda *a:([],[]))]:
+                pila.enter_context(patch.object(obj,nombre,side_effect=valor))
+            pila.enter_context(patch.object(PAC,'calcular'))
             pila.enter_context(patch.object(S.L,'actividad'))
             pila.enter_context(patch.object(S.L,'error'))
-            pila.enter_context(patch.object(S.EJEM,'cargar_banco',return_value=[]))
-            pila.enter_context(patch.object(S.AV,'estudios_sin_plantilla',return_value=[]))
-            liberar=pila.enter_context(patch.object(S.OLL,'liberar_ia'))
+            pila.enter_context(patch.object(EJEM,'cargar_banco',return_value=[]))
+            pila.enter_context(patch.object(AV,'estudios_sin_plantilla',return_value=[]))
+            liberar=pila.enter_context(patch.object(OLL,'liberar_ia'))
             if cache:
                 if cache is True:
-                    pila.enter_context(patch.object(S.CACHE_ASR,'firma',return_value={'ficticia':True}))
-                    pila.enter_context(patch.object(S.CACHE_ASR,'leer',return_value=trans))
+                    pila.enter_context(patch.object(C,'firma',return_value={'ficticia':True}))
+                    pila.enter_context(patch.object(C,'leer',return_value=trans))
                 else:
                     from transcripcion.asr import whisper as F
                     from transcripcion.asr import huecos as H
@@ -163,17 +167,17 @@ class TrabajadorTest(unittest.TestCase):
                     pila.enter_context(patch.object(F,'cargar_audio',return_value=[]))
                     pila.enter_context(patch.object(H,'reparar',return_value=([],[])))
                     pila.enter_context(patch.object(H,'texto_de',return_value='Dictado ficticio'))
-                pila.enter_context(patch.object(S.EJEM,'elegir_ejemplos',return_value=[]))
-                pila.enter_context(patch.object(S.PR,'armar_mensajes',return_value=[]))
-                pila.enter_context(patch.object(S.OLL,'llamar_ia',return_value=('Informe ficticio.',0,10,20)))
+                pila.enter_context(patch.object(EJEM,'elegir_ejemplos',return_value=[]))
+                pila.enter_context(patch.object(PR,'armar_mensajes',return_value=[]))
+                pila.enter_context(patch.object(OLL,'llamar_ia',return_value=('Informe ficticio.',0,10,20)))
             with self.assertRaises(FinTrabajador):
-                S.trabajador()
+                S.TRAB.trabajador()
             if cache == 'fria':
                 self.assertEqual(asr.call_count,3)
                 cargas=cargar.call_count;descargas=liberar.call_count
                 for n in ['uno','dos','tres']:cola.put(n)
                 with self.assertRaises(FinTrabajador):
-                    S.trabajador()
+                    S.TRAB.trabajador()
                 self.assertEqual(asr.call_count,3)
                 self.assertEqual(cargar.call_count,cargas)
                 self.assertEqual(liberar.call_count,descargas)

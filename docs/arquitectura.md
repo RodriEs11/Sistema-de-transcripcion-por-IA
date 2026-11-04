@@ -56,7 +56,11 @@ en la raíz son los puntos de entrada y lo que todavía no se reorganizó.
 | `transcripcion/procesamiento/` | `cola` (cola SQLite duradera), `lotes` (lotes FIFO de IA), `cache_transcripcion` (reutilizar Whisper) |
 | `transcripcion/aprendizaje/` | `almacen` (correcciones e historial en SQLite), `pendiente` (cola persistente de aprendizaje) |
 | `transcripcion/acceso/` | `usuarios` (transcriptores, contraseñas y estilo propio) |
-| `servidor.py` | Servidor HTTP (`ThreadingHTTPServer`), rutas de la API, cola y trabajador, bloqueos de casos, borrado, panel de administración |
+| `servidor.py` | Arranque (`configurar` crea los objetos de abajo y `main` los hilos), servidor HTTP y rutas de la API, panel de administración, túnel. El resto está en los objetos del paquete |
+| `transcripcion/procesamiento/trabajador.py` | `Trabajador` (`TRAB`): lotes de la cola, Whisper + segunda pasada, voz, IA, marcas; recuperación de la cola duradera al arrancar y resultados ya completos |
+| `transcripcion/casos/vista.py`, `borrado.py` | `VistaCasos` (`VISTA`): lista, caso abierto, marcas para la web, forma de onda · `Borrado` (`BORRADO`): permisos y borrado recuperable |
+| `transcripcion/operacion/ia.py`, `reinicio.py` | `EstadoIA` (`IA`): Ollama responde/tiene el modelo, vigilancia, espera del trabajador · `Operacion` (`OPER`): reinicio programado y mensajes a las PC |
+| `transcripcion/informe/guardado.py`, `word.py` | `Guardado` (`GUARDADO`): «Guardar Word y aprender» y vista previa · `word`: párrafos, formato y escritura del .docx |
 | `transcripcion/asr/` | `whisper` (bibliotecas de CUDA, carga del modelo, lectura de WAV propia, vocabulario como prompt, transcripción con tiempos por palabra), `huecos` (regiones con voz y sin palabras, segunda pasada) |
 | `transcripcion/texto/normalizacion.py` | Números en palabras a cifras, horas, niveles vertebrales, sin acentos y datos críticos |
 | `fase1_transcribir.py` | Herramienta: evaluación de Whisper sobre audios de ejemplo (reporte HTML) y `--verificar` (lo usan los instaladores) |
@@ -70,7 +74,7 @@ en la raíz son los puntos de entrada y lo que todavía no se reorganizó.
 | `remoto.py` | Túnel (`cloudflared`), publicación en ntfy, contraseñas PBKDF2, llaves por PC, sesiones y cookies |
 | `admin.py` | Permisos del panel y lectura de los registros |
 | `estadisticas.py` | Métricas de calidad y tiempo (solo lectura) |
-| `voces.py` | Huella de voz (WeSpeaker ONNX), muestras por médico, detección y agrupamiento ([voz.md](voz.md)) |
+| `transcripcion/voz/` | `huellas` (WeSpeaker ONNX, muestras por médico, detección y agrupamiento) y `servicio` (`VOCES`) ([voz.md](voz.md)) |
 | `app_cliente.py` | Manifiesto (SHA-256) de la carpeta `cliente\` para la actualización automática |
 
 La interfaz está en `web/` y no usa *frameworks* ni dependencias externas: `index.html` (revisión),

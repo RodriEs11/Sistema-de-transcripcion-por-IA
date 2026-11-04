@@ -21,6 +21,11 @@ from transcripcion.conocimiento import plantillas as PL
 
 LOCAL = "Servidor"    # nombre con el que aparecen los casos subidos en la misma PC del servidor
 EXT_AUDIO = {".wav", ".mp3", ".m4a", ".ogg", ".flac", ".wma", ".aac", ".opus"}
+# Archivos que puede tener un caso en Informes/revision/datos (listado, firma del índice y borrado)
+SUFIJOS_CASO = (".procesamiento.json", ".transcripcion_cache.json", ".rendimiento.json", ".json", ".dictado.txt", ".informe_ia.txt", ".marcas.json", ".borrador.html", ".borrador.json", ".final.txt",
+                ".medico.txt", ".audio.txt", ".ejemplo.txt", ".onda.json", ".origen.txt", ".original.txt",
+                ".paciente.json", ".formato.json", ".omisiones_ok.json", ".revision.json", ".voz.json",
+                ".usuario.txt", ".estilo.txt")
 
 
 REV_MAX_POR_PEDIDO = 600      # lo que puede juntar la página si se cortó la conexión un rato
