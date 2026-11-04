@@ -1,0 +1,132 @@
+/* Mi cuenta, reglas propias, cartel del panel, avisos, borrar informes, audios en espera y modo compacto. */
+/* Configuración → Mi cuenta */
+.cuenta-sec{padding:14px 0;border-bottom:1px solid var(--bd)}
+.cuenta-sec:last-child{border-bottom:0}
+.cuenta-cab{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+.cuenta-cab > div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cuenta-cab b{font-weight:600;font-size:13.8px}
+.cuenta-cab small{color:var(--mu);font-size:12.3px;line-height:1.4}
+.cuenta-cab > button{flex:none}
+.cuenta-sec:last-child .cuenta-cab{margin-bottom:0}
+.cuenta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;margin:0}
+.cuenta-grid.tres{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cuenta-grid label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:var(--mu);min-width:0}
+.cuenta-grid input,.cuenta-grid select{width:100%;box-sizing:border-box;padding:6px 9px;font-weight:400;font-size:13.5px;color:var(--tx);background:var(--bg)}
+.cuenta-pie{grid-column:1/-1;display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.cuenta-pie .cfg-msj{flex:1;min-width:0}
+.cuenta-alerta{margin:12px 0 2px;padding:8px 11px;border:1px solid var(--rojo);border-radius:8px;font-size:12.8px;color:var(--tx);background:var(--panel)}
+.cuenta-alerta[hidden]{display:none}
+.reglas-lista{list-style:none;margin:0;padding:0;border:1px solid var(--bd);border-radius:8px;max-height:280px;overflow:auto}
+.reglas-lista li{display:flex;align-items:flex-start;gap:8px;padding:7px 8px 7px 11px;border-bottom:1px solid var(--bd);font-size:13px}
+.reglas-lista li:last-child{border-bottom:0}
+.reglas-lista li > span{flex:1;min-width:0;overflow-wrap:anywhere;line-height:1.45;padding-top:2px}
+.reglas-lista li > span::before{content:"•";color:var(--mu);margin-right:7px}
+.reglas-lista li.vacio{color:var(--mu);justify-content:center;padding:14px}
+.reglas-lista li.vacio > span::before{content:none}
+.reglas-lista li button{flex:none}
+.cfg-msj{font-size:12.5px;min-height:1em}.cfg-msj.mal{color:var(--rojo)}
+.cuenta-sec > .cfg-msj{display:block;margin-top:6px}
+/* ventana para añadir o editar reglas */
+#reglasDlg{position:fixed;inset:0;z-index:18;background:rgba(0,0,0,.38);display:grid;place-items:center;padding:16px}
+#reglasDlg[hidden]{display:none}
+#reglasDlg .caja{background:var(--panel);border:1px solid var(--bd2);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.28);padding:20px 22px 16px;width:min(560px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column}
+#reglasDlg h2{font-size:16px;margin:0 0 6px}
+#reglasDlg p{margin:0 0 10px;color:var(--mu);font-size:13px;line-height:1.45}
+#rdFilas{display:flex;flex-direction:column;gap:7px;overflow:auto;min-height:0;padding:2px}
+.rd-fila{display:flex;gap:6px;align-items:center}
+.rd-fila input{flex:1;min-width:0;padding:7px 10px;font-size:13.5px;background:var(--bg)}
+.rd-fila button{flex:none;width:32px;padding:6px 0}
+#reglasDlg .botones{display:flex;align-items:center;gap:8px;margin-top:14px}
+#reglasDlg .botones .sep{flex:1}
+@media (max-width:760px){.cuenta-grid,.cuenta-grid.tres{grid-template-columns:1fr}}
+#nuevoEst{display:none;margin:0 0 12px;padding:10px 12px;border:1px solid var(--aviso);border-radius:8px;background:var(--panel);font-size:13px}
+#nuevoEst b{color:var(--aviso)}
+@media (max-width:1000px){.vista .fila2{grid-template-columns:1fr;gap:16px}}
+#avisos{display:none;margin:0 0 12px;padding:10px 12px;border:1px solid var(--err);border-radius:8px;background:var(--panel);font-size:13px}
+#avisos b{color:var(--err)}
+#avisos .chip{display:inline-flex;align-items:center;gap:4px;margin:4px 6px 0 0;padding:2px 4px 2px 9px;border-radius:12px;background:var(--rojo);font-variant-numeric:tabular-nums}
+#avisos .chip button{border:0;background:transparent;padding:0 5px;font-size:12px;line-height:1.4}
+#avisos .chip button:hover{background:rgba(0,0,0,.08)}
+#dictado .rec{text-decoration:underline dotted var(--turq) 2px;text-underline-offset:3px}
+.ayuda{font-size:12px;color:var(--mu);padding:8px 14px;border-top:1px solid var(--bd)}
+/* cartel del panel de administración (mensaje a las PC o aviso de reinicio): arriba a la derecha, también en modo compacto */
+.msj-admin{position:fixed;top:10px;right:10px;z-index:14;width:min(400px,calc(100vw - 20px));display:flex;gap:10px;align-items:flex-start;
+  background:var(--panel);color:var(--tx);border:1px solid var(--ac);border-left-width:4px;border-radius:10px;padding:10px 12px;
+  box-shadow:0 8px 28px rgba(0,0,0,.18);font-size:13px;line-height:1.4}
+.msj-admin[hidden]{display:none}
+.msj-admin.aviso{border-color:var(--aviso)}
+.msj-admin .msj-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;overflow-wrap:anywhere}
+.msj-admin .msj-txt b{font-size:13.5px}
+.msj-admin .msj-cuando{font-weight:600;color:var(--aviso)}
+.msj-admin .msj-cuando b{font-variant-numeric:tabular-nums}
+.msj-admin .msj-ico{flex:none;width:22px;height:22px;color:var(--ac)}
+.msj-admin.aviso .msj-ico{color:var(--aviso)}
+.msj-admin .msj-ico svg{width:22px;height:22px}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:9px;box-shadow:var(--sombra);display:none;gap:10px;align-items:center;z-index:9;max-width:90vw}
+#toast button{background:transparent;color:inherit;border-color:currentColor}
+@media (max-width:1000px){.app{grid-template-columns:1fr;height:auto}aside{max-height:40vh;border-right:0;border-bottom:1px solid var(--bd)}
+  .cols{grid-template-columns:1fr;gap:16px;overflow:visible}.hoja{padding:22px 18px}main{min-height:60vh}
+  .divisor{display:none}}
+/* ---------- botones de icono (tema, compacto) */
+.ico{padding:4px 6px;line-height:0;color:var(--mu);background:transparent;border-color:transparent}
+.ico:hover{color:var(--tx);border-color:var(--bd2);background:var(--panel)}
+.ico svg{width:16px;height:16px;display:block}
+.marca .ico:first-of-type{margin-left:2px}
+.ico svg.solo-tema-claro,.ico svg.solo-tema-oscuro{display:none}
+:root[data-tema-efectivo=dark] .ico svg.solo-tema-oscuro,:root[data-tema-efectivo=light] .ico svg.solo-tema-claro{display:block}
+/* ---------- resumen de avisos en la lista */
+#casos .av{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11.5px;color:var(--mu);align-items:center}
+#casos .av .c{display:inline-flex;align-items:center;gap:3px;font-variant-numeric:tabular-nums}
+#casos .av .c i{width:9px;height:9px;border-radius:3px;display:inline-block}
+#casos .av .txt{display:none;width:100%}
+#casos .av .txt b{color:var(--err);font-weight:600}
+/* ---------- borrar informes */
+#casos .der{display:flex;align-items:center;gap:4px;justify-self:end}
+#casos .borrar{width:22px;height:22px;padding:0;display:inline-grid;place-items:center;border-color:transparent;background:transparent;color:var(--mu);border-radius:6px;visibility:hidden}
+#casos li:hover .borrar,#casos li.sel .borrar,#casos .borrar:focus-visible{visibility:visible}
+#casos .borrar:hover,#casos .borrar:focus-visible{color:var(--err);border-color:var(--err);background:var(--panel)}
+#casos .borrar svg,.limpiar svg,#bBorrarCaso svg{width:14px;height:14px;display:block}
+.limpiar{margin:-4px 12px 4px;display:flex;justify-content:flex-end}
+.limpiar button{display:inline-flex;align-items:center;gap:5px;border-color:transparent;background:transparent;color:var(--mu);font-size:12px;padding:2px 6px}
+.limpiar button:hover{color:var(--err);border-color:var(--err);background:var(--panel)}
+#bBorrarCaso{display:inline-flex;align-items:center;gap:5px}
+#bBorrarCaso:hover{color:var(--err);border-color:var(--err)}
+.limpiar[hidden],#bBorrarCaso[hidden]{display:none}
+button.peligro{background:var(--err);border-color:var(--err);color:var(--hoja);font-weight:600}
+button.peligro:hover{filter:brightness(1.08);border-color:var(--err)}
+#confirma{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.38);display:none;place-items:center;padding:16px}
+#confirma.abierto{display:grid}
+#confirma .caja{background:var(--panel);border:1px solid var(--bd2);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.28);padding:20px 22px 16px;width:min(430px,100%)}
+#confirma h2{font-size:16px;margin:0 0 10px;line-height:1.3;overflow-wrap:anywhere}
+#confirma p{margin:0 0 8px;color:var(--mu);font-size:13.5px;line-height:1.45}
+#confirma p b{color:var(--tx)}
+#confirma p.cf-pend{color:var(--tx);background:var(--amarillo);border-radius:7px;padding:7px 10px}
+#confirma ul{margin:0 0 8px;padding-left:18px;font-size:13px;max-height:150px;overflow:auto}
+#confirma .botones{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+#confirma .caja{animation:cfEntra .14s ease-out}
+@keyframes cfEntra{from{opacity:0;transform:translateY(6px) scale(.98)}}
+#confirma label.cf-campo{display:block;margin:4px 0 0}
+#confirma label.cf-campo[hidden],#cfOtro[hidden]{display:none}
+#confirma label.cf-campo span{display:block;font-size:12.5px;color:var(--mu);margin-bottom:4px}
+#cfInput{width:100%;padding:8px 10px;border-radius:8px;background:var(--hoja);font-size:14px}
+#cfInput:focus{outline:2px solid var(--ac);outline-offset:-1px;border-color:var(--ac)}
+#cfInput[aria-invalid=true]{border-color:var(--err);outline-color:var(--err)}
+#cfAviso{min-height:18px;margin:6px 0 0;font-size:12.5px;color:var(--mu)}
+#cfAviso.mal{color:var(--err)}
+#confirma[hidden]{display:none!important}
+/* ---------- audios esperando conexión para enviarse (solo en el navegador; en la app los guarda la app) */
+.espera-envio{margin:0 12px 10px;padding:8px 11px;border-radius:9px;font-size:12.5px;line-height:1.4;border:1px solid var(--aviso);background:var(--panel)}
+.espera-envio b{display:block;color:var(--aviso);font-size:13px;margin-bottom:2px}
+.espera-envio[hidden]{display:none}
+/* ---------- modo compacto: solo la cola y los avisos */
+body.compacto .app{grid-template-columns:1fr}
+body.compacto main,body.compacto .drop,body.compacto .selmed,body.compacto .pie,body.compacto .divisor{display:none!important}
+body.compacto aside{border-right:0;height:100vh;max-height:none}
+body.compacto .marca{padding:10px 12px 8px}
+body.compacto .tabs{margin:0 10px 8px}
+body.compacto #casos{padding:0 6px 10px}
+body.compacto #casos li{border:1px solid var(--bd);margin-bottom:5px;background:var(--hoja)}
+body.compacto #casos li:hover{border-color:var(--ac)}
+body.compacto #casos .av .txt{display:block}
+#bCompacto .agr{display:none}
+body.compacto #bCompacto .agr{display:block}body.compacto #bCompacto .cmp{display:none}
