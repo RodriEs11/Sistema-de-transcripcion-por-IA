@@ -102,7 +102,7 @@ Los nombres son orientativos: cada etapa puede ajustarlos y lo deja escrito acá
 | 6b | **Módulos de la raíz al paquete** | `remoto`, `admin` → `acceso/`; `mantenimiento`, `estadisticas`, `app_cliente` → `operacion/`; `aprender`, `correcciones` → `aprendizaje/`; `importar_informes` → `conocimiento/importar.py`. En la raíz quedan lanzadores de consola. Así el HTTP (6c) puede vivir en el paquete | Bajo | Servidor |
 | 6c | **HTTP** | Tabla de rutas y handlers por área (casos, conocimiento, cliente, usuario, admin, páginas); páginas HTML fuera de las cadenas; `servidor.py` queda con el arranque | **Alto** | Servidor |
 | 7 | **Página principal** | `web/index.html` → `css/principal/` y `js/principal/` en partes por área, que el servidor une en orden (un solo script, como antes) | Medio | Servidor + App |
-| 8 | **App de escritorio** | `VentanaPrincipal.cs` en clases por responsabilidad (bandeja, compacto, puente con la página, actualizaciones) | Medio | App |
+| 8 | **App de escritorio** | `VentanaPrincipal.cs` partida por responsabilidad (partial class: barra, conexión, página, puente, bandeja, compacto, actualización…); `RelojUi` a su archivo | Bajo (IL idéntico) | App |
 | 9 | **Calidad continua** | Reglas de ruff y formato por módulo terminado, tipos y mypy en el paquete, cobertura en el CI | Nulo | — |
 
 Orden recomendado: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8, con la 9 en paralelo. Las etapas 3 y 4 son buenas
@@ -122,7 +122,9 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 | 6b | `refactor/6b-raiz-al-paquete` · PR #21 · Servidor 2026.11.9 | Hecha (fusionada el 03/11) |
 | 6c | `refactor/6c-http` · PR #22 · Servidor 2026.11.10 | Hecha (fusionada el 03/11) |
 | 7 | `refactor/7-pagina-principal` · PR #23 · Servidor 2026.11.11 · App 1.25 | Hecha (fusionada el 03/11) |
-| 2b, 8, 9 | — | Pendiente |
+| App 1.25 | `version/app-1.25` · PR #24 | En revisión |
+| 8 | `refactor/8-ventana-principal` (sobre la App 1.25) · App 1.25 | En revisión |
+| 2b, 9 | — | Pendiente |
 
 ### Etapa 1: qué quedó
 
@@ -191,6 +193,34 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 - `.gitignore` excluye `conocimiento/` por nombre en cualquier carpeta: se agregó la excepción
   `!/transcripcion/conocimiento/` y `test_paquete.py` verifica que ningún archivo del paquete quede ignorado.
 - `fase1_transcribir` sigue en la raíz (los módulos nuevos lo importan): pasa al paquete en la etapa 4.
+
+### Etapa 8: qué quedó
+
+`VentanaPrincipal.cs` (~1.500 líneas) quedó en ~190: los campos, el arranque oculto y el constructor. El resto se
+movió, sin cambiar líneas, a archivos de la misma clase (`partial class`), uno por sección de las que ya tenía:
+
+| Archivo | Qué tiene |
+|---|---|
+| `VentanaPrincipal.Barra.cs` | Barra de estado propia: punto, textos, botones, menú Opciones |
+| `VentanaPrincipal.Conexion.cs` | Consulta de estado al Servidor cada 10 s, casos listos |
+| `VentanaPrincipal.Web.cs` | WebView2: iniciar, cartel propio si la página no carga, reintentar, entrar, abrir en Edge |
+| `VentanaPrincipal.Puente.cs` | Mensajes con la página: `MensajeDeLaPantalla` (lo que pide la página), `AnunciarApp`, `EjecutarEnWeb` |
+| `VentanaPrincipal.Aviso.cs`, `.Bandeja.cs`, `.Actualizacion.cs`, `.Compacto.cs` | Aviso abajo a la derecha; ícono junto al reloj; actualización automática; modo compacto y sus íconos |
+| `VentanaPrincipal.Audios.cs`, `.Autocorreccion.cs`, `.Tema.cs`, `.Configuracion.cs`, `.Acciones.cs` | Audios desde la pantalla; autocorrección de Word; tema; configuración; acciones del menú |
+| `RelojUi.cs` | El reloj que funciona con la ventana escondida (era otra clase dentro del mismo archivo) |
+
+- **Mismo programa**: se compiló con Mono antes y después (misma versión) y el IL es el mismo instrucción por
+  instrucción; solo cambian los nombres que inventa el compilador para lambdas y `async`. La comparación quedó como
+  herramienta: `pruebas/comparar_il.py` (ver `docs/compilacion.md`). El CI compila en Windows con `dotnet build`.
+- Los campos con valor inicial quedan todos en `VentanaPrincipal.cs`: entre archivos de una partial class, C# no
+  garantiza en qué orden se inicializan.
+- La única reubicación fuera de las secciones: `MensajeDeLaPantalla` (estaba en la sección de autocorrección) y
+  `AnunciarApp`/`EjecutarEnWeb` (en la de audios) pasaron a `Puente`, que es lo que son.
+- **Por qué partial y no clases separadas**: casi todos los métodos usan los mismos controles (barra, `web`,
+  `bandeja`, estado de conexión). Sacar, por ejemplo, la bandeja a una clase propia obliga a definir eventos y
+  referencias cruzadas, y eso necesita probar la app en Windows (WebView2 no corre en Linux). Queda como siguiente
+  paso cuando se toque cada área por un cambio funcional; ahora cada área ya está aislada en su archivo.
+- Versión: va en la App 1.25 (la misma entrega que la etapa 7, todavía sin publicar); el servidor no cambia.
 
 ### Etapa 7: qué quedó
 

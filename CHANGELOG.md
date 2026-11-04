@@ -11,12 +11,16 @@ ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
 ## [App 1.25] — 2026-11-03
 
-Acompaña al Servidor 2026.11.11 (etapa 7 del [refactor por etapas](docs/refactor.md)).
+Acompaña al Servidor 2026.11.11 (etapas 7 y 8 del [refactor por etapas](docs/refactor.md)).
 
 ### Cambiado
 - La página que muestra la app (revisión) tiene sus estilos y su programa en `web/css/principal/` y
   `web/js/principal/`, separados por tema. Se ve y funciona igual; la versión nueva sigue la regla de que todo cambio
-  de la página que usa la app lleva versión de la app. El código C# no cambió.
+  de la página que usa la app lleva versión de la app.
+- El código de la ventana principal (`VentanaPrincipal.cs`, ~1.500 líneas) quedó partido por responsabilidad en
+  `VentanaPrincipal.<Parte>.cs` (barra, conexión, página, mensajes con la página, aviso, ícono junto al reloj,
+  actualización, modo compacto, audios, autocorrección, tema, configuración, acciones) y `RelojUi.cs`. Mismo
+  programa: la compilación de antes y la de después tienen el mismo IL (etapa 8 del refactor).
 
 ## [Servidor 2026.11.11] — 2026-11-03
 

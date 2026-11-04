@@ -2,8 +2,8 @@ TRANSCRIPCIÓN · aplicación para las PC del trabajo (info-01, info-02, info-03
 =============================================================================
 
 Versión actual: 1.25 (2026-11-03).
-1.25 / Servidor 2026.11.11: misma pantalla y mismo funcionamiento; la página se reorganizó por dentro (estilos y
-programa en archivos separados por tema). No hace falta hacer nada distinto.
+1.25 / Servidor 2026.11.11: misma pantalla y mismo funcionamiento; la página y el programa de la app se reorganizaron
+por dentro (archivos separados por tema). No hace falta hacer nada distinto.
 1.24 / Servidor 2026.11.2: si el Servidor se cae o se reinicia (o cambia la dirección del túnel), al volver la
 pantalla sigue con la misma persona: no se piden de nuevo usuario y contraseña.
 Servidor 2026.11.1 (2026-11-02): cada transcriptor entra con su usuario y su contraseña y la IA arma los informes con su
