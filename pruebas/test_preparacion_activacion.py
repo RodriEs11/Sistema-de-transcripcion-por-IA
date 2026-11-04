@@ -8,6 +8,7 @@ import sys
 import tempfile
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 import preparar_activacion as P
 import rollback_datos as R
 from verificar_paquete import verificar

@@ -21,7 +21,11 @@ from transcripcion.operacion import app_cliente, estadisticas, mantenimiento  # 
 MOVIDOS = ("plataforma", "persistencia", "registro", "ajustes", "borradores", "paciente", "indice_casos",
            "cola_procesamiento", "lotes_ia", "cache_transcripcion", "almacen_aprendizaje", "aprendizaje_pendiente",
            "usuarios", "nucleo", "huecos", "voces", "remoto", "admin", "app_cliente", "estadisticas", "mantenimiento",
-           "correcciones")
+           "correcciones",
+           # etapa 2b: scripts de operación en scripts/ y herramientas de desarrollo en herramientas/
+           "configurar_acceso", "configurar_tunel", "mantenimiento_aprendizaje", "mantenimiento_cola",
+           "preparar_activacion", "rollback_datos", "verificar_paquete", "crear_entorno_pruebas", "fase1_transcribir",
+           "verificar_versiones")
 # Siguen en la raíz solo como lanzadores de consola: el código está en el paquete (etapa 6b).
 LANZADORES = {"aprender": "transcripcion.aprendizaje.aprender", "importar_informes": "transcripcion.conocimiento.importar"}
 
@@ -79,6 +83,25 @@ class Paquete(unittest.TestCase):
             with self.subTest(modulo=nombre):
                 self.assertFalse((RAIZ / f"{nombre}.py").exists(), f"{nombre}.py volvió a la raíz")
 
+
+    def test_en_la_raiz_solo_quedan_los_puntos_de_entrada(self):
+        """servidor.py (lo abren los .bat), informe.py (modo consola) y los lanzadores; lo demás va a su carpeta."""
+        self.assertEqual(sorted(p.name for p in RAIZ.glob("*.py")),
+                         ["aprender.py", "importar_informes.py", "informe.py", "servidor.py"])
+
+    def test_scripts_y_herramientas_encuentran_el_paquete_solos(self):
+        """Se ejecutan como `python scripts/x.py`: los que importan transcripcion al cargarse agregan antes la carpeta
+        del sistema a sys.path (RAIZ = parents[1])."""
+        import ast
+        for carpeta in ("scripts", "herramientas"):
+            for p in sorted((RAIZ / carpeta).glob("*.py")):
+                texto = p.read_text(encoding="utf-8")
+                arriba = [n for n in ast.parse(texto).body if isinstance(n, ast.ImportFrom)]
+                if any((n.module or "").startswith("transcripcion") for n in arriba):
+                    with self.subTest(archivo=f"{carpeta}/{p.name}"):
+                        self.assertRegex(texto, r"sys\.path\.insert\(0, ?str\((RAIZ|Path\(__file__\)\.resolve\(\)\.parents\[1\])\)\)")
+                        if "sys.path.insert(0, str(RAIZ))" in texto:
+                            self.assertIn("RAIZ = Path(__file__).resolve().parents[1]", texto)
 
     def test_lanzadores_de_la_raiz_solo_delegan(self):
         """Un lanzador no define nada: `patch.object(aprender, …)` sobre el de la raíz fallaría en vez de no

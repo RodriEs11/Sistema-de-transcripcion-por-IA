@@ -130,7 +130,7 @@ with c.transaccion() as db:
     def test_respaldo_por_cli_no_toma_propietario_ni_detiene_la_cola(self):
         self.cola.solicitar('ficticio')
         destino=self.base/'copia.sqlite3'
-        r=subprocess.run([sys.executable,'mantenimiento_cola.py','--base',str(self.ruta),'--respaldar',str(destino)],capture_output=True,timeout=15,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+        r=subprocess.run([sys.executable,str(Path(__file__).resolve().parents[1]/'scripts'/'mantenimiento_cola.py'),'--base',str(self.ruta),'--respaldar',str(destino)],capture_output=True,timeout=15,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
         self.assertEqual(r.returncode,0,r.stderr.decode(errors='replace'))
         self.assertTrue(self.cola.cambiar('ficticio','generando'))
         with closing(sqlite3.connect(destino)) as db:self.assertEqual(db.execute('SELECT estado FROM tareas').fetchone()[0],'en cola')
