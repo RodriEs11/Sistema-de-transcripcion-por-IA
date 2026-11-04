@@ -17,11 +17,6 @@ AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 ORIGEN = AQUI.parent / "Dataset" / "Informes word"
 DESTINO = AQUI / "referencias"
 
-try:
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except Exception:
-    pass
-
 
 def texto_docx(ruta):
     from docx import Document

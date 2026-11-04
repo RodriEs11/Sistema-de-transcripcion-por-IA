@@ -27,6 +27,7 @@ import textwrap
 import threading
 import time
 from pathlib import Path
+from typing import Any
 
 from transcripcion import RAIZ
 
@@ -288,7 +289,7 @@ def error(area, msg, det=None, exc=False):
     contar("errores")
 
 
-_VISTOS = {}
+_VISTOS: dict[Any, float] = {}
 
 
 def una_vez(clave, seg=600):
@@ -495,7 +496,7 @@ def cerrar_encabezado():
 
 
 # ------------------------------------------------------ título de la ventana
-_TITULO = {}
+_TITULO: dict[str, Any] = {}
 _ULTIMO = None
 
 
@@ -584,7 +585,7 @@ def _num(v):
     return "" if v is None else str(v)
 
 
-_PENDIENTES = []  # filas que no se pudieron anotar porque el CSV estaba abierto en Excel
+_PENDIENTES: list[Any] = []  # filas que no se pudieron anotar porque el CSV estaba abierto en Excel
 
 
 def _migrar_columnas(f):

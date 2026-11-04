@@ -7,6 +7,7 @@ Viene de nucleo.py (docs/refactor.md, etapa 3).
 import difflib
 import re
 import time
+from typing import Any
 
 from transcripcion.acceso import usuarios as U
 from transcripcion.conocimiento import archivos as CON
@@ -441,7 +442,7 @@ def estudios_del_informe(texto):
     return " + ".join(vistos[:3]) + (f" + {len(vistos) - 3} más" if len(vistos) > 3 else "")
 
 
-_FIJAS = {"mt": None, "exactas": set(), "prefijos": ()}
+_FIJAS: dict[str, Any] = {"mt": None, "exactas": set(), "prefijos": ()}
 
 
 def es_linea_fija(linea):

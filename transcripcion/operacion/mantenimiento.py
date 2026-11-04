@@ -21,6 +21,7 @@ import threading
 import time
 import zlib
 from pathlib import Path
+from typing import Any
 
 from transcripcion import RAIZ
 from transcripcion.base import plataforma as P
@@ -33,10 +34,12 @@ EXTRA = ("configuracion.json",)  # se lee solo al arrancar
 _SIN_VENTANA = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 _lock = threading.Lock()
-CARGADO = {}  # "servidor.py", "transcripcion/base/registro.py" -> {"hash", "t"}: versión que usa el servidor
-_LOCALES = {}  # módulo del sistema -> archivo ("transcripcion.base.registro" -> "transcripcion/base/registro.py")
+# "servidor.py", "transcripcion/base/registro.py" -> {"hash", "t"}: versión que usa el servidor
+CARGADO: dict[str, dict[str, Any]] = {}
+# módulo del sistema -> archivo ("transcripcion.base.registro" -> "transcripcion/base/registro.py")
+_LOCALES: dict[str, str] = {}
 PAQUETE = "transcripcion"  # paquete con los módulos del sistema (docs/refactor.md)
-_HASH = {}  # ruta -> ((tamaño, mtime), hash): no volver a leer archivos que no cambiaron
+_HASH: dict[Any, Any] = {}  # ruta -> ((tamaño, mtime), hash): no volver a leer archivos que no cambiaron
 _ARRANQUE = {"titulo": None, "git": None, "t": None}
 _CACHE_GIT = {"t": 0, "v": None}
 

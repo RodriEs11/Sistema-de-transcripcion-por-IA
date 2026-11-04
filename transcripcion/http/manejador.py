@@ -12,6 +12,7 @@ import re
 import time
 import urllib.parse
 from http.server import BaseHTTPRequestHandler
+from typing import Any
 
 from transcripcion.acceso import remoto as R
 from transcripcion.acceso import usuarios as U
@@ -27,7 +28,12 @@ from transcripcion.procesamiento import cola as CP
 
 
 class Manejador(BaseHTTPRequestHandler):
-    sis = None  # Sistema (transcripcion.http.sistema); lo pone Manejador.para()
+    sis: Any = None  # Sistema (transcripcion.http.sistema); lo pone Manejador.para()
+    # Los pone _autorizar() en cada pedido (solo anotados: sin valor de clase, getattr(self, "pc", …) sigue igual)
+    pc: Any
+    usuario: Any
+    remoto: bool
+    con_llave: bool
     rutas = RUTAS
 
     @classmethod

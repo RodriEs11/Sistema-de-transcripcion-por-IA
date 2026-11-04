@@ -16,6 +16,7 @@ import re
 import threading
 import time
 from datetime import date, datetime
+from typing import Any
 
 from transcripcion import RAIZ
 from transcripcion.conocimiento import archivos as CON
@@ -31,7 +32,7 @@ MAX_TOKENS = 12
 FIN = "\n"
 _CLAVE = re.compile(r"^(\d{8})_(\d{6})_(.+)\.informe\.txt$")
 _lock = threading.Lock()
-_CACHE = {"firma": None, "pares": []}
+_CACHE: dict[str, Any] = {"firma": None, "pares": []}
 
 
 def _norm(s):

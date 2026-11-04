@@ -10,6 +10,7 @@ El estado completo lo arma servidor.py (que tiene la cola, la IA, etc.).
 import re
 import threading
 import time
+from typing import Any
 
 from transcripcion.acceso import remoto as R
 from transcripcion.base import plataforma as P
@@ -21,7 +22,7 @@ _CABECERA = re.compile(r"^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d  ")
 _DET = " " * 31 + "· "
 _TB = "    | "
 _MAX_LEER = 3 * 1024 * 1024  # del final de cada archivo alcanza
-_CACHE = {}  # ruta -> (firma, eventos)
+_CACHE: dict[str, Any] = {}  # ruta -> (firma, eventos)
 _lock = threading.Lock()
 
 

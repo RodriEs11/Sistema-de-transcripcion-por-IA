@@ -16,7 +16,6 @@ import difflib
 import hashlib
 import json
 import re
-import sys
 import time
 from pathlib import Path
 
@@ -24,11 +23,6 @@ from transcripcion import RAIZ
 from transcripcion.aprendizaje import almacen as AL
 from transcripcion.base.persistencia import escribir_atomico
 from transcripcion.controles import marcas as MAR
-
-try:
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except Exception:
-    pass
 
 AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 EJ = AQUI / "ejemplos"

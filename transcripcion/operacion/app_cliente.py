@@ -26,7 +26,7 @@ CARPETA = AQUI / "cliente"
 FIJOS = {"transcripcion.exe", "transcripcion.exe.config", "leeme.txt", "conexion.json"}
 _lock = threading.Lock()
 _CACHE = {"firma": None, "t": 0, "man": None}
-VERSION_PC = {}  # pc -> version de la app que usa (segun su User-Agent)
+VERSION_PC: dict[str, str] = {}  # pc -> version de la app que usa (segun su User-Agent)
 _UA = re.compile(r"Transcripcion/([0-9][0-9.]{0,15})")
 
 

@@ -9,6 +9,7 @@ import os
 import threading
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 from transcripcion import RAIZ
 from transcripcion.conocimiento import plantillas as PL
@@ -93,7 +94,7 @@ def elegir_referencias(dictado, k=2, medico=None):
 
 # ---------------------------------------------------------- banco de ejemplos
 _BANCO_LOCK = threading.Lock()
-_BANCO_CACHE = {"firma": None, "banco": []}
+_BANCO_CACHE: dict[str, Any] = {"firma": None, "banco": []}
 
 
 def cargar_banco(dir_fase1=None, dir_audios=None, dir_extra=None):

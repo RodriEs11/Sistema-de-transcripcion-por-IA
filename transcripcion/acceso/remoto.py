@@ -28,6 +28,7 @@ import threading
 import time
 import urllib.request
 from pathlib import Path
+from typing import Any
 
 from transcripcion import RAIZ
 from transcripcion.acceso import usuarios as U
@@ -50,16 +51,17 @@ ACTIVO_SEG = 5 * 60  # «usuario activo» de una PC: su página consultó en los
 BLOQUEO_SEG = 45
 _lock = threading.RLock()
 
-SESIONES = {}  # huella del sid -> {"pc", "exp", "usuario", "local", "ult"}
-CODIGOS = {}  # codigo -> {"pc", "exp"}
-BLOQUEOS = {}  # nombre de caso -> {"pc", "t" (última señal), "desde" (cuándo lo abrió)}
-LIBERADOS = {}  # nombre de caso -> {"pc", "t"}: casos que el panel le sacó a una PC
+SESIONES: dict[str, Any] = {}  # huella del sid -> {"pc", "exp", "usuario", "local", "ult"}
+CODIGOS: dict[str, Any] = {}  # codigo -> {"pc", "exp"}
+BLOQUEOS: dict[str, Any] = {}  # nombre de caso -> {"pc", "t" (última señal), "desde" (cuándo lo abrió)}
+LIBERADOS: dict[str, Any] = {}  # nombre de caso -> {"pc", "t"}: casos que el panel le sacó a una PC
 LIBERADO_SEG = 15 * 60
-FALLOS = {}  # ip -> [tiempos de intentos fallidos]   (para el panel: "admin:<pc>" -> [...])
-ADMIN_SES = {}  # token -> {"pc", "ip", "desde", "ult", "exp"}: panel de administración abierto desde una PC del trabajo
+FALLOS: dict[str, Any] = {}  # ip -> [tiempos de intentos fallidos]   (para el panel: "admin:<pc>" -> [...])
+# token -> {"pc", "ip", "desde", "ult", "exp"}: panel de administración abierto desde una PC del trabajo
+ADMIN_SES: dict[str, Any] = {}
 ADMIN_MAX_SEG = 8 * 3600  # una sesión del panel dura como mucho 8 horas
 ADMIN_INACTIVA_SEG = 30 * 60  # y se cierra sola tras 30 minutos sin usarla
-URL_TUNEL = {
+URL_TUNEL: dict[str, Any] = {
     "url": None,
     "desde": None,
     "proceso": None,
@@ -75,7 +77,8 @@ URL_TUNEL = {
     "url_publicada": None,
 }
 _PEDIDO = {"reinicio": False, "despertar": False, "cerrando": False}
-ULTIMA_GRABADA = {}  # pc -> cuándo se guardó por última vez su última conexión (para no escribir en cada pedido)
+# pc -> cuándo se guardó por última vez su última conexión (para no escribir en cada pedido)
+ULTIMA_GRABADA: dict[str, Any] = {}
 
 
 # ---------------------------------------------------------------- datos

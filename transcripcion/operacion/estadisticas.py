@@ -18,6 +18,7 @@ import statistics
 import threading
 import time
 from datetime import date, datetime, timedelta
+from typing import Any
 
 from transcripcion import RAIZ
 from transcripcion.aprendizaje import almacen as AL
@@ -30,7 +31,7 @@ EJ = AQUI / "ejemplos"
 SIN_MEDICO = "Sin especificar"
 SIN_ESTUDIO = "Sin estudio reconocido"
 LOCAL = "Servidor"
-_CACHE = {"firma": None, "t": 0, "informes": [], "generados": []}
+_CACHE: dict[str, Any] = {"firma": None, "t": 0, "informes": [], "generados": []}
 _lock = threading.Lock()
 _CLAVE_EJ = re.compile(r"^(\d{8}_\d{6})_(.+)\.informe\.txt$")
 _PC_EN_NOMBRE = re.compile(r"^(.+?)_\d{8}-\d{6}_")
