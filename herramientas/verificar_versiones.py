@@ -1,10 +1,12 @@
 """Comprueba la coherencia de una entrega sin modificar archivos ni iniciar la app."""
 import argparse
 import re
+import sys
 from pathlib import Path
 
 
-RAIZ = Path(__file__).resolve().parent
+RAIZ = Path(__file__).resolve().parents[1]     # carpeta del sistema (este archivo está en herramientas/)
+sys.path.insert(0, str(RAIZ))                  # para importar transcripcion
 
 
 def comprobar(raiz=RAIZ, sin_binario=False):

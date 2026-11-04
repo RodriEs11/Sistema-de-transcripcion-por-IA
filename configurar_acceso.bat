@@ -7,4 +7,4 @@ if not exist ".venv\Scripts\python.exe" (
   pause
   exit /b 1
 )
-".venv\Scripts\python.exe" configurar_acceso.py
+".venv\Scripts\python.exe" scripts\configurar_acceso.py

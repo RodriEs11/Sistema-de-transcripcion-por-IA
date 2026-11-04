@@ -1,6 +1,6 @@
 """Benchmark opt-in de GPU con voz sintética, daemon separado y vigilancia de producción.
 
-python pruebas/validar_gpu_real.py --ejecutar
+python herramientas/validar_gpu_real.py --ejecutar
 Sin esa opción solo explica el alcance; no carga modelos. Windows/.venv del servidor.
 """
 import argparse

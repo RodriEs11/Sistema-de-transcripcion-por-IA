@@ -2,9 +2,9 @@
 
 Uso (desde la carpeta sistema de la instalación en uso):
 
-    python crear_entorno_pruebas.py                     # rama experimental en ..\\sistema_pruebas
-    python crear_entorno_pruebas.py --rama exp/mi-idea  # otra rama
-    python crear_entorno_pruebas.py --destino D:\\pruebas --puerto 8875
+    python scripts/crear_entorno_pruebas.py                     # rama experimental en ..\\sistema_pruebas
+    python scripts/crear_entorno_pruebas.py --rama exp/mi-idea  # otra rama
+    python scripts/crear_entorno_pruebas.py --destino D:\\pruebas --puerto 8875
 
 Qué hace:
 - Clona el repositorio en otra carpeta (un repositorio independiente, no un worktree) y deja
@@ -24,7 +24,7 @@ Qué hace:
 
 En un entorno ya creado, para preparar solo la app (desde la carpeta del entorno de pruebas):
 
-    python crear_entorno_pruebas.py --preparar-app
+    python scripts/crear_entorno_pruebas.py --preparar-app
 """
 import argparse
 import json
@@ -34,7 +34,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-AQUI = Path(__file__).resolve().parent
+AQUI = Path(__file__).resolve().parents[1]     # carpeta del sistema (este script está en scripts/)
 MARCA = ".entorno_pruebas"
 PUERTO_PRODUCCION = 8765
 COPIAR = ("conocimiento", "modelos")          # se copian si existen; el resto se crea vacío o desde ejemplos

@@ -7,5 +7,5 @@ if not exist ".venv\Scripts\python.exe" (
   pause
   exit /b 1
 )
-".venv\Scripts\python.exe" configurar_tunel.py
+".venv\Scripts\python.exe" scripts\configurar_tunel.py
 pause

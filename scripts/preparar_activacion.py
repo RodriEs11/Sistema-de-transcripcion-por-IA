@@ -1,5 +1,6 @@
 """Prepara respaldos y artefactos; nunca publica, reinicia, migra o modifica datos de origen."""
 import argparse
+import sys
 import hashlib
 import json
 import os
@@ -9,6 +10,9 @@ import sqlite3
 import subprocess
 import time
 import urllib.request
+
+RAIZ = Path(__file__).resolve().parents[1]     # carpeta del sistema (este script está en scripts/)
+sys.path.insert(0, str(RAIZ))                  # para importar transcripcion
 
 SIN_VENTANA = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
 
@@ -266,9 +270,9 @@ if __name__=='__main__':
     if not a.preparar:p.print_help()
     else:
         if not all((a.salida,a.candidato,a.cliente_local)):p.error('Faltan salida, candidato o cliente local')
-        try:preparar(Path(__file__).parent,a.salida,a.candidato,a.cliente_local,a.piloto)
+        try:preparar(Path(__file__).resolve().parents[1],a.salida,a.candidato,a.cliente_local,a.piloto)
         except Exception as ex:
-            if a.salida.resolve().is_relative_to(Path(__file__).resolve().parent/'respaldo') and a.salida.is_dir():
+            if a.salida.resolve().is_relative_to(Path(__file__).resolve().parents[1]/'respaldo') and a.salida.is_dir():
                 guardar(a.salida/'preparacion_fallida.json',{'tipo':type(ex).__name__,'completa':False})
             p.exit(1,'Preparación incompleta; revisar archivos privados. No se activó la entrega.\n')
         print(f'Preparación guardada en {a.salida.resolve()}; activación bloqueada hasta completar la ventana.')

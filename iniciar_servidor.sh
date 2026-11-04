@@ -7,7 +7,7 @@ titulo "Transcripción - SERVIDOR (no cerrar)"
 falta_instalar
 if [ ! -f acceso_remoto.json ]; then
   echo "Falta la contraseña del acceso remoto."
-  "$PY" configurar_acceso.py
+  "$PY" scripts/configurar_acceso.py
 fi
 asegurar_cloudflared || exit 1
 "$PY" -c "import docx" 2>/dev/null || "$PY" -m pip install -q python-docx

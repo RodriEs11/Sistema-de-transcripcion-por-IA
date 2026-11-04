@@ -7,7 +7,7 @@ $python = Join-Path $raiz '.venv/Scripts/python.exe'
 if (-not (Test-Path -LiteralPath $python)) {
     $python = (Get-Command python -ErrorAction Stop).Source
 }
-& $python (Join-Path $raiz 'verificar_versiones.py') --sin-binario
+& $python (Join-Path $raiz 'herramientas\verificar_versiones.py') --sin-binario
 if ($LASTEXITCODE -ne 0) { throw 'Versiones o documentación incoherentes; no se compila ni publica.' }
 $cliente = Join-Path $raiz 'cliente'
 $sello = Get-Date -Format 'yyyyMMdd_HHmmss_fff'
@@ -84,5 +84,5 @@ try {
 }
 Write-Output "App $version distribuida en $destino. Las PC se actualizarán cuando estén libres."
 Write-Output "Candidato e informe conservados en $trabajo."
-& $python (Join-Path $raiz 'verificar_versiones.py')
+& $python (Join-Path $raiz 'herramientas\verificar_versiones.py')
 if ($LASTEXITCODE -ne 0) { throw 'Falló la verificación final de la distribución; revisar antes de dar por terminada la entrega.' }

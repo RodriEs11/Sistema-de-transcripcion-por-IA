@@ -1,6 +1,6 @@
 """Compara dos compilaciones de la app de escritorio a nivel IL (reorganizaciones sin cambios de comportamiento).
 
-Uso:  python pruebas/comparar_il.py antes.exe despues.exe
+Uso:  python herramientas/comparar_il.py antes.exe despues.exe
 Necesita `ikdasm` (Mono). Desensambla los dos ejecutables y compara el multiconjunto de líneas de IL normalizadas:
 números de instrucción, nombres que inventa el compilador (lambdas, máquinas de estado de async: `<Metodo>c__async1A`)
 y atributos con esos nombres codificados. Si mover métodos entre archivos (partial class) o cambiarlos de orden no

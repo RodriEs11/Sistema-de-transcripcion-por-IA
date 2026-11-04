@@ -41,6 +41,6 @@ if errorlevel 1 ( echo [ERROR] Fallo la instalacion de librerias. & pause & exit
 echo.
 echo Descargando el modelo (~3 GB, solo la primera vez) y probando la GPU...
 set PYTHONIOENCODING=utf-8
-python fase1_transcribir.py --verificar
+python herramientas\fase1_transcribir.py --verificar
 echo.
 pause

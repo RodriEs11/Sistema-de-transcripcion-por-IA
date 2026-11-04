@@ -3,6 +3,7 @@
 reinicio) o Microsoft Dev Tunnels (con una cuenta de Microsoft o GitHub, la dirección es siempre la misma).
 Se abre con configurar_tunel.bat (Windows) o configurar_tunel.sh (Linux). El cambio se toma al reiniciar
 el servidor."""
+from pathlib import Path
 import os
 import re
 import secrets
@@ -11,6 +12,9 @@ import subprocess
 import sys
 import time
 import urllib.request
+
+RAIZ = Path(__file__).resolve().parents[1]     # carpeta del sistema (este archivo está en scripts/)
+sys.path.insert(0, str(RAIZ))                  # para importar transcripcion
 
 from transcripcion.base import plataforma as P
 from transcripcion.base import registro as L
