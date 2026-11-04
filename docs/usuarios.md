@@ -114,7 +114,7 @@ los ejemplos generales o la hicieron dos fuentes distintas; si la repite uno sol
 ## Probar
 
 ```bat
-python crear_entorno_pruebas.py --rama exp/estilos-por-transcriptor --destino ..\pruebas_usuarios --puerto 8875
+python scripts/crear_entorno_pruebas.py --rama exp/estilos-por-transcriptor --destino ..\pruebas_usuarios --puerto 8875
 ```
 En el entorno de pruebas no hay `usuarios.json`: el sistema arranca como antes. Crear transcriptores desde el panel
 (`http://127.0.0.1:8875/admin`) y entrar con cada uno en navegadores distintos.
@@ -131,7 +131,7 @@ preferencias y salir).
 El primer transcriptor cambia todo el sistema de una vez: desde ese momento todas las PC piden usuario. Por eso:
 
 1. **Código, sin transcriptores.** Respaldo (`respaldo\respaldo_AAAAMMDD_HHMMSS_antes_de_usuarios\`, que incluya
-   `usuarios.json` y `sesiones.json` si ya existen: `preparar_activacion.py` los copia) y una etiqueta en git del
+   `usuarios.json` y `sesiones.json` si ya existen: `scripts/preparar_activacion.py` los copia) y una etiqueta en git del
    commit actual. `git pull` en `sistema\`, reiniciar el servidor desde el panel y compilar la App 1.23
    (`cliente_codigo\compilar.ps1`). Sin transcriptores todo funciona como antes, también con la App 1.22.
 2. **Esperar a que todas las PC muestren 1.23** en el panel. La 1.22 sigue andando con el Servidor 2026.11.1, pero

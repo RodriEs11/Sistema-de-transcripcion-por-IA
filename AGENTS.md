@@ -45,7 +45,7 @@ Guía completa: `docs/experimentos.md`.
 - En `exp/` y `experimental` no subir `Programa.VERSION` ni `VERSION` del servidor: la versión
   se asigna al promover. No distribuir a las PC del trabajo binarios compilados desde esas ramas.
 - No cambiar de rama en la instalación en uso para probar. Usar una copia creada con
-  `python crear_entorno_pruebas.py` (otra carpeta, otro puerto, sin túnel, IA simulada por defecto).
+  `python scripts/crear_entorno_pruebas.py` (otra carpeta, otro puerto, sin túnel, IA simulada por defecto).
   La IA real de esa copia comparte GPU y Ollama con producción: solo sin trabajo en curso.
 
 ## Versiones: parte obligatoria del trabajo
@@ -90,7 +90,7 @@ No dar por terminado un cambio funcional hasta completar su versión, documentac
   Compila a una carpeta temporal, verifica versión y ejecuta `--autoprueba` antes de sustituir
   `cliente/Transcripcion.exe`. Conserva el ejecutable anterior para recuperación.
   Para Linux usar el flujo Mono de `docs/compilacion.md` y su autoprueba.
-- Ejecutar `python verificar_versiones.py` en esta instalación. Verifica código, documentación,
+- Ejecutar `python herramientas/verificar_versiones.py` en esta instalación. Verifica código, documentación,
   ejecutable y manifiesto. En un checkout sin binarios usar explícitamente `--sin-binario`;
   esa modalidad no confirma una distribución lista.
 - Revisar `git diff --check`, el diff y `git status`. Los binarios son distribución local,

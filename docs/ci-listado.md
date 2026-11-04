@@ -38,7 +38,7 @@ tamaño y mtime pueden no invalidarlo; las escrituras normales de la aplicación
 
 ## Medición y comprobación
 
-`python pruebas/medir_listado.py`, cinco repeticiones tras la primera lectura, datos ficticios:
+`python herramientas/medir_listado.py`, cinco repeticiones tras la primera lectura, datos ficticios:
 
 | Casos | Mediana anterior registrada | Mediana con índice | Máximo con índice |
 |---:|---:|---:|---:|

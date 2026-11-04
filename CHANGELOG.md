@@ -9,6 +9,14 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## Instalación — 2026-11-03 (scripts y herramientas)
+- Etapa 2b del [refactor por etapas](docs/refactor.md): los scripts de operación pasaron a `scripts/`
+  (`configurar_acceso`, `configurar_tunel`, mantenimiento de la cola y del aprendizaje, activación, rollback,
+  `crear_entorno_pruebas`) y las herramientas de desarrollo a `herramientas/` (`fase1_transcribir`,
+  `verificar_versiones`, mediciones, GPU, `comparar_il`). Los `.bat`/`.sh` siguen con el mismo nombre y en el mismo
+  lugar. Desde consola: `python scripts/mantenimiento_cola.py …`, `python herramientas/verificar_versiones.py`.
+  Sin cambios de versión: no cambia lo que corre en el servidor ni en la app.
+
 ## [App 1.25] — 2026-11-03
 
 Acompaña al Servidor 2026.11.11 (etapas 7 y 8 del [refactor por etapas](docs/refactor.md)).

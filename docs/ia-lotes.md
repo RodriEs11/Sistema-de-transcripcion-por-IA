@@ -39,7 +39,7 @@ FIFO, pausas y la verificación de resultados completos antes de repetir inferen
 Por caso se puede conservar `NOMBRE.transcripcion_cache.json` (formato v1), con texto, palabras,
 huecos y firma de entrada. La firma incluye SHA-256 de los bytes del audio, modelo/dispositivo,
 versiones de faster-whisper/CTranslate2 y hashes de `transcripcion/asr/whisper.py`, `transcripcion/asr/huecos.py` y el vocabulario (hasta el Servidor
-2026.11.5, de `fase1_transcribir.py` y `huecos.py`: al actualizar, cada caso vuelve a pasar una vez por Whisper si se regenera).
+2026.11.5, de `herramientas/fase1_transcribir.py` y `huecos.py`: al actualizar, cada caso vuelve a pasar una vez por Whisper si se regenera).
 Un archivo corrupto, formato distinto o firma diferente provoca transcripción nueva. La firma
 no incluye parámetros del LLM porque la salida de IA **no se reutiliza**: plantillas, médico,
 ejemplos y reglas se vuelven a aplicar al regenerar el informe.

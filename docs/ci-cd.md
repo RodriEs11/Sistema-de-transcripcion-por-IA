@@ -69,11 +69,11 @@ En un checkout de ensayo con dependencias instaladas y configuración de ejemplo
 
 ```powershell
 python -m unittest discover -s pruebas -p 'test_*.py' -v
-python verificar_versiones.py --sin-binario
+python herramientas/verificar_versiones.py --sin-binario
 node pruebas/editor_word.cjs
 node pruebas/revision_word.cjs
 node pruebas/medicos.cjs
-python pruebas/medir_listado.py --casos 100 1000 --repeticiones 5
+python herramientas/medir_listado.py --casos 100 1000 --repeticiones 5
 ```
 
 Los scripts del navegador usan `PLAYWRIGHT_MODULE` opcional y `BROWSER_CHANNEL` (por defecto
@@ -108,7 +108,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File cliente_codigo/compilar.ps1 
 Ese comando valida un candidato sin distribuirlo. El flujo futuro de promoción debe instalar
 **ese candidato probado**, sin recompilarlo; el script actual sin `-SoloCompilar` compila de nuevo
 y distribuye, por lo que necesita un paso adicional de promoción para ese flujo futuro.
-Después de instalar en staging/servidor, ejecutar `python verificar_versiones.py` sin omitir binario.
+Después de instalar en staging/servidor, ejecutar `python herramientas/verificar_versiones.py` sin omitir binario.
 El manifiesto siempre lo calcula `transcripcion/operacion/app_cliente.py`, nunca se escriben hashes manualmente.
 
 Guardar metadatos de release: commit, versiones, locks, compilador, resultados de pruebas,

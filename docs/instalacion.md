@@ -25,7 +25,7 @@ ollama pull gemma4:12b
 `instalar.bat`:
 1. Busca Python (3.12, 3.11, 3.13 o 3.10) y crea el entorno virtual `.venv`.
 2. Instala `requirements.txt`: `faster-whisper`, `av<16`, las bibliotecas CUDA (`nvidia-cublas-cu12`, `nvidia-cudnn-cu12` 9.x) y `python-docx`.
-3. Descarga Whisper large-v3 (~3 GB) y prueba la GPU (`python fase1_transcribir.py --verificar`).
+3. Descarga Whisper large-v3 (~3 GB) y prueba la GPU (`python herramientas/fase1_transcribir.py --verificar`).
 
 > `av` queda fijado en `<16` porque PyAV 16 es incompatible con faster-whisper; además el WAV se lee con código propio.
 

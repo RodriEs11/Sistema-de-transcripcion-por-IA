@@ -132,11 +132,11 @@ controlador rechaza el estado, no detener producción para forzarlo. No abrir ot
 procesos Python para consultar el progreso mientras corre; usar su propia salida.
 
 ```powershell
-.venv/Scripts/python.exe pruebas/validar_gpu_real.py --ejecutar
+.venv/Scripts/python.exe herramientas/validar_gpu_real.py --ejecutar
 # Solo si se interrumpió una carpeta sintética y la ventana vuelve a estar libre:
-.venv/Scripts/python.exe pruebas/validar_gpu_real.py --ejecutar --reanudar respaldo/gpu_real_FECHA_HORA
+.venv/Scripts/python.exe herramientas/validar_gpu_real.py --ejecutar --reanudar respaldo/gpu_real_FECHA_HORA
 # Después de terminar:
-.venv/Scripts/python.exe pruebas/resumir_gpu_real.py respaldo/gpu_real_FECHA_HORA/resultados.json --salida respaldo/gpu_real_FECHA_HORA/resumen.json
+.venv/Scripts/python.exe herramientas/resumir_gpu_real.py respaldo/gpu_real_FECHA_HORA/resultados.json --salida respaldo/gpu_real_FECHA_HORA/resumen.json
 .venv/Scripts/python.exe -m unittest discover -s pruebas -p test_validacion_gpu.py -v
 ```
 

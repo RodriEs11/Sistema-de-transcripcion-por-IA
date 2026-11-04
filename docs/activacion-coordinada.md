@@ -128,12 +128,12 @@ tareas son datos sensibles aunque no sean el cuerpo de un informe.
 
 ## Preparación y comprobación sin activar
 
-La herramienta `preparar_activacion.py` exige una carpeta nueva, vacía y con ACL protegida
+La herramienta `scripts/preparar_activacion.py` exige una carpeta nueva, vacía y con ACL protegida
 bajo `respaldo/`. Por defecto muestra ayuda. Con `--preparar` solo copia, audita y empaqueta;
 no tiene una opción para aplicar la actualización. No importa el servidor sobre datos reales.
 
 ```powershell
-.venv/Scripts/python.exe -B verificar_paquete.py respaldo/activacion_20261029_230255
+.venv/Scripts/python.exe -B scripts/verificar_paquete.py respaldo/activacion_20261029_230255
 .venv/Scripts/python.exe -B respaldo/activacion_20261029_230255/entrega/candidato/sistema/verificar_versiones.py
 .venv/Scripts/python.exe -B respaldo/activacion_20261029_230255/entrega/rollback/sistema/verificar_versiones.py
 ```
@@ -213,7 +213,7 @@ conservar una copia reciente, resolver/drenar tareas, pausas, errores y aprendiz
 código y preparar una copia compatible:
 
 ```powershell
-.venv/Scripts/python.exe rollback_datos.py --origen RUTA_COPIA_RECIENTE --salida RUTA_COPIA_COMPATIBLE_NUEVA
+.venv/Scripts/python.exe scripts/rollback_datos.py --origen RUTA_COPIA_RECIENTE --salida RUTA_COPIA_COMPATIBLE_NUEVA
 ```
 
 `RUTA_COPIA_RECIENTE` tiene el formato de `privado/`: `informes/revision/datos`, `resultados`,

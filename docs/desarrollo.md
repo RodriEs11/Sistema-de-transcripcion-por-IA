@@ -92,7 +92,7 @@ Usar datos ficticios; no apuntar las pruebas HTTP o de carga al servidor en uso.
 `PLAYWRIGHT_MODULE`, `BROWSER_CHANNEL` y, para `medicos.cjs`, `PYTHON`; este último necesita
 crear previamente `respaldo/` en el checkout de ensayo.
 
-El microbenchmark `python pruebas/medir_listado.py` prepara automáticamente una copia aislada
+El microbenchmark `python herramientas/medir_listado.py` prepara automáticamente una copia aislada
 y mide el listado con 100 y 1.000 casos ficticios. No ejecuta HTTP ni IA y no reemplaza pruebas
 de carga simultánea, navegador o GPU. Consultar [resultados y límites](auditoria-rendimiento-2026-10-29.md)
 y [puertas CI/CD](ci-cd.md) antes de interpretar sus resultados.
@@ -110,7 +110,7 @@ Ver [cola persistente, migración y respaldo en vivo](cola-servidor.md). No inic
 ni ejecutar la migración sobre la instalación en uso para probarla.
 
 `test_preparacion_activacion.py` prueba copia verificada, backup SQLite e integridad del paquete,
-además de rollback de borradores/historial únicamente en copias ficticias. `preparar_activacion.py`
+además de rollback de borradores/historial únicamente en copias ficticias. `scripts/preparar_activacion.py`
 no tiene una acción de despliegue. Ver [activación coordinada y criterios de ventana](activacion-coordinada.md).
 
 Las pruebas `editor_word.cjs` y `revision_word.cjs` también verifican la paginación parcial,
@@ -121,21 +121,21 @@ Ver [mediciones y límites del editor/audio](editor-audio.md).
 cola recuperable, versiones concurrentes e idempotencia del historial. Ver [Word y aprendizaje](word-aprendizaje.md).
 
 `test_almacen_aprendizaje.py` comprueba migración CSV, idempotencia, rollback, reglas incrementales,
-reconciliación y estadísticas. `python pruebas/medir_aprendizaje.py` mide escrituras indexadas
+reconciliación y estadísticas. `python herramientas/medir_aprendizaje.py` mide escrituras indexadas
 en bases ficticias de 100/1.000/10.000 informes bajo `respaldo/`, sin importar el servidor.
 
 `test_lotes_ia.py` prueba el trabajador completo con colas finitas, ASR/Ollama simulados, caché
 fría/caliente, límites FIFO, aislamiento de fallos, banco y perfiles de ejemplos. No carga GPU.
 Ver [condiciones de validación real de IA](ia-lotes.md).
 
-`pruebas/validar_gpu_real.py --ejecutar` realiza una campaña manual con voz sintética,
+`herramientas/validar_gpu_real.py --ejecutar` realiza una campaña manual con voz sintética,
 daemon Ollama separado y cancelación conservadora ante trabajo de producción. Sin esa
-opción no carga modelos. `resumir_gpu_real.py` valida/agrega campañas completas y
+opción no carga modelos. `herramientas/resumir_gpu_real.py` valida/agrega campañas completas y
 `test_validacion_gpu.py` prueba guardas y métricas sin GPU. No ejecutar otros Python
 durante la medición: la vigilancia los considera trabajo ajeno. Ver [resultados RTX 3080,
 protocolo y límites](validacion-gpu.md). El benchmark real no corre automáticamente en CI.
 
-`pruebas/comparar_cpu_gpu.py --ejecutar --corpus respaldo/gpu_real_FECHA_HORA`
+`herramientas/comparar_cpu_gpu.py --ejecutar --corpus respaldo/gpu_real_FECHA_HORA`
 compara el camino actual de lotes GPU con Whisper GPU/Gemma CPU en paralelo,
 usando únicamente el corpus sintético verificado. Mantiene el servidor en uso,
 espera la liberación natural de sus modelos y cancela el ensayo ante actividad.
@@ -156,6 +156,11 @@ Ver [protocolo, resultados y límites](comparacion-cpu-gpu.md). Ejecutar sus pru
   `web/css/principal/`. Las pruebas de Playwright con servidor propio arman esos archivos con `pruebas/web_pruebas.cjs`.
 
 - `admin.html` y `estadisticas.html` comparten estilos y utilidades copiados: si se cambia el aspecto de una, revisar la otra.
+- **Dónde va cada archivo**: lo que corre el servidor, en el paquete `transcripcion/`; scripts para operar la
+  instalación, en `scripts/`; herramientas de desarrollo, evaluación y medición, en `herramientas/`; pruebas, en
+  `pruebas/`. En la raíz solo `servidor.py`, `informe.py` y los lanzadores. Un script de `scripts/` o `herramientas/`
+  que importa `transcripcion` empieza con `RAIZ = Path(__file__).resolve().parents[1]` y
+  `sys.path.insert(0, str(RAIZ))` (`test_paquete.py` lo verifica).
 - **App de Windows**: respetar las reglas de [compilacion.md](compilacion.md#métodos-prohibidos).
 - **Respaldos locales**: antes de modificar archivos en la instalación en uso, copiarlos a
   `respaldo/respaldo_AAAAMMDD_antes_de_<cambio>/` (no versionado).
@@ -169,7 +174,7 @@ a `main`. Crear ramas por tarea y abrir una PR contra la principal, conservando 
 commits existentes y los artefactos de producción fuera de Git.
 
 Las pruebas que quizá no lleguen a la versión final van en ramas `exp/<tema>` sobre la rama
-permanente `experimental`, y se ejecutan en una copia aislada creada con `crear_entorno_pruebas.py`
+permanente `experimental`, y se ejecutan en una copia aislada creada con `scripts/crear_entorno_pruebas.py`
 (otro puerto, sin túnel, carpetas propias). Ver [ramas experimentales y entorno de pruebas](experimentos.md).
 
 Se usa [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/) en español:
@@ -210,7 +215,7 @@ Al publicar, trasladar las notas entregadas de «Sin publicar» a las entradas f
 - [ ] Si cambió la app: versión subida, API revisada contra .NET 4.8, autoprueba OK ([compilacion.md](compilacion.md)).
 - [ ] `git status` sin datos de pacientes, secretos ni binarios.
 - [ ] CHANGELOG actualizado.
-- [ ] `python verificar_versiones.py` sin errores; compilación y autoprueba del ejecutable si cambió la app.
+- [ ] `python herramientas/verificar_versiones.py` sin errores; compilación y autoprueba del ejecutable si cambió la app.
 - [ ] Distinguir archivos publicados de procesos reiniciados y PC efectivamente actualizadas.
 
 ## Lecciones aprendidas
