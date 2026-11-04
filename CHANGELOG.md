@@ -9,6 +9,16 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [Servidor 2026.11.12] — 2026-11-03
+
+Etapa 9 del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles (contratos, suite y
+pruebas de navegador en verde sin regenerar).
+
+### Cambiado
+- Todo el paquete `transcripcion/` tiene formato automático (`ruff format`) y reglas de calidad más estrictas
+  (imports ordenados, nombres claros, líneas largas partidas, funciones en lugar de lambdas asignadas).
+- El CI revisa también los tipos (mypy) y la cobertura de las pruebas, con un piso que no puede bajar.
+
 ## Instalación — 2026-11-03 (scripts y herramientas)
 - Etapa 2b del [refactor por etapas](docs/refactor.md): los scripts de operación pasaron a `scripts/`
   (`configurar_acceso`, `configurar_tunel`, mantenimiento de la cola y del aprendizaje, activación, rollback,

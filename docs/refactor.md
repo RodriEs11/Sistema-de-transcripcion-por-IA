@@ -103,7 +103,7 @@ Los nombres son orientativos: cada etapa puede ajustarlos y lo deja escrito acá
 | 6c | **HTTP** | Tabla de rutas y handlers por área (casos, conocimiento, cliente, usuario, admin, páginas); páginas HTML fuera de las cadenas; `servidor.py` queda con el arranque | **Alto** | Servidor |
 | 7 | **Página principal** | `web/index.html` → `css/principal/` y `js/principal/` en partes por área, que el servidor une en orden (un solo script, como antes) | Medio | Servidor + App |
 | 8 | **App de escritorio** | `VentanaPrincipal.cs` partida por responsabilidad (partial class: barra, conexión, página, puente, bandeja, compacto, actualización…); `RelojUi` a su archivo | Bajo (IL idéntico) | App |
-| 9 | **Calidad continua** | Reglas de ruff y formato por módulo terminado, tipos y mypy en el paquete, cobertura en el CI | Nulo | — |
+| 9 | **Calidad continua** | Reglas estrictas de ruff y `ruff format` en todo `transcripcion/`, mypy en el paquete, cobertura de las pruebas con piso en el CI | Bajo (AST verificado) | Servidor |
 
 Orden recomendado: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8, con la 9 en paralelo. Las etapas 3 y 4 son buenas
 para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5 y 6, que son el corazón.
@@ -124,8 +124,8 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 | 7 | `refactor/7-pagina-principal` · PR #23 · Servidor 2026.11.11 · App 1.25 | Hecha (fusionada el 03/11) |
 | App 1.25 | `version/app-1.25` · PR #24 | Hecha (fusionada el 03/11) |
 | 8 | `refactor/8-ventana-principal` · PR #25 · App 1.25 | Hecha (fusionada el 03/11) |
-| 2b | `refactor/2b-scripts-herramientas` · sin versión nueva | En revisión |
-| 9 | — | Pendiente |
+| 2b | `refactor/2b-scripts-herramientas` · PR #26 · sin versión nueva | Hecha (fusionada el 03/11) |
+| 9 | `calidad/9-ruff-cobertura` · Servidor 2026.11.12 | En revisión |
 
 ### Etapa 1: qué quedó
 
@@ -194,6 +194,22 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 - `.gitignore` excluye `conocimiento/` por nombre en cualquier carpeta: se agregó la excepción
   `!/transcripcion/conocimiento/` y `test_paquete.py` verifica que ningún archivo del paquete quede ignorado.
 - `fase1_transcribir` sigue en la raíz (los módulos nuevos lo importan): pasa al paquete en la etapa 4.
+
+### Etapa 9: qué quedó
+
+- **Formato**: `ruff format` en todo `transcripcion/`, en un commit solo de formato (el AST de cada archivo es el mismo
+  antes y después) que `git blame` saltea (`.git-blame-ignore-revs`; en local: `git config blame.ignoreRevsFile
+  .git-blame-ignore-revs`).
+- **Reglas estrictas en todo el paquete** (`transcripcion/ruff.toml`, antes solo `transcripcion/http/`): imports
+  ordenados; variables `l` → `linea`/`renglon` (renombradas por función y verificadas comparando el AST); lambdas
+  asignadas → funciones; líneas largas partidas sin cambiar el texto de los SQL ni de los mensajes. El texto del
+  prompt de la IA (`ia/prompt.py`) no se reacomoda: cambiaría lo que se le manda a la IA.
+- **Tipos**: mypy sin errores en el paquete, con anotaciones en las colecciones de módulo que no podía inferir.
+- **Cobertura**: medida en el CI con piso (ver «Calidad del código»).
+- De paso: `aprendizaje/aprender.py` y `conocimiento/importar.py` ya no reconfiguran `sys.stdout` al importarse (lo
+  pendiente de la etapa 1); lo hacen sus lanzadores de la raíz.
+- Sube el servidor (2026.11.12) porque cambió código que corre en él, aunque no su comportamiento: contratos, suite y
+  pruebas de navegador en verde sin regenerar nada.
 
 ### Etapa 2b: qué quedó
 
@@ -442,13 +458,27 @@ Para sumar un caso: agregarlo a `casos_nucleo.json` y regenerar (el diff del PR 
 
 ## Calidad del código
 
-- `pyproject.toml` → `[tool.ruff]`. Hoy: solo errores reales (`E9`, `F`: sintaxis, nombres sin definir,
-  imports y variables sin usar). Corre en el CI (`python -m ruff check .`, versión fijada en `requirements-ci.txt`).
-- No se reformatea todo de una vez (serían miles de líneas cambiadas sin valor y conflictos con todo lo abierto).
-  Cada módulo que se crea o termina de refactorizar en el paquete entra a reglas más estrictas
-  (`E`, `W`, `I`, `B`, `UP`) y a `ruff format`, con un `ruff.toml` en su carpeta que extiende `pyproject.toml`
-  y su línea `ruff format --check` en el CI. Hoy: `transcripcion/http/` (etapa 6c).
-- `B023` (funciones definidas en un bucle que usan la variable del bucle): revisados los 21 casos en la etapa 5
-  (`listar_casos`, `controles/clinicos.py`, `pruebas/resumir_gpu_real.py`). En todos la función se usa en la misma
-  vuelta del bucle (se pasa a `partir()` o a `IndiceCasos.obtener()`, que la llaman enseguida), así que no hay error.
-  La regla queda desactivada; si se activa, marcar esos casos con `# noqa: B023` y el motivo.
+Desde la etapa 9 el CI corre, además de las pruebas:
+
+| Qué | Dónde se configura | Comando |
+|---|---|---|
+| ruff, errores reales en todo el repositorio (`E9`, `F`) | `pyproject.toml` → `[tool.ruff]` | `python -m ruff check .` |
+| ruff estricto (`E`, `W`, `I`, `B`, `UP`) en el paquete | `transcripcion/ruff.toml` (extiende `pyproject.toml`) | (el mismo `ruff check .`) |
+| Formato del paquete | `transcripcion/ruff.toml` | `python -m ruff format --check transcripcion` |
+| Tipos (mypy) en el paquete; `transcripcion.http` también revisa funciones sin anotar | `pyproject.toml` → `[tool.mypy]` | `python -m mypy` |
+| Cobertura de las pruebas sobre el paquete, con piso | `pyproject.toml` → `[tool.coverage]` (`fail_under`) | `python -m coverage run -m unittest discover -s pruebas -p 'test_*.py'` y `python -m coverage report` |
+
+Las versiones de ruff, mypy y coverage están fijas en `requirements-ci.txt`.
+
+- **Qué sigue con reglas mínimas**: `servidor.py`, `informe.py`, `scripts/`, `herramientas/` y `pruebas/`. Para sumar uno,
+  formatearlo en un commit aparte (y agregarlo a `.git-blame-ignore-revs`), corregir lo que marque ruff con las reglas
+  estrictas y extender la configuración (un `ruff.toml` en su carpeta o `extend-select` por archivo).
+- **mypy**: sin anotaciones obligatorias. Siguiente paso: `check_untyped_defs` en más módulos (hoy solo
+  `transcripcion.http`), empezando por los que tienen menos avisos.
+- **Cobertura**: 53,4 % del paquete (piso del CI: 50 %). Es un piso: no cuenta lo que corre en otro proceso (el servidor
+  del contrato HTTP corre sobre una copia en `respaldo/`). Lo menos cubierto: `asr/` (Whisper, solo con GPU), `voz/`,
+  `aprendizaje/correcciones.py`, `conocimiento/importar.py`, `http/panel_acciones.py`, `operacion/reinicio.py`.
+  Subir `fail_under` cuando se agreguen pruebas.
+- `B023` (funciones definidas en un bucle que usan la variable del bucle): los casos de `casos/vista.py` y
+  `controles/clinicos.py` están marcados con `# noqa: B023` y un comentario: la función se usa en la misma vuelta del
+  bucle (se pasa a `partir()` o a `IndiceCasos.obtener()`, que la llaman enseguida).
