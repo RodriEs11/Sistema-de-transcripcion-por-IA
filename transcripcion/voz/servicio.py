@@ -131,13 +131,15 @@ class ServicioVoz:
         elif e == "seguro":
             L.ok(
                 "VOZ",
-                f"{self.casos.visible(n)}: médico reconocido por la voz: «{det['medico']}» (parecido {pct_voz(det['puntaje'])}, "
+                f"{self.casos.visible(n)}: médico reconocido por la voz: «{det['medico']}» "
+                f"(parecido {pct_voz(det['puntaje'])}, "
                 f"{L.plural(det['muestras'], 'muestra')}).",
             )
         elif e == "dudoso":
             L.info(
                 "VOZ",
-                f"{self.casos.visible(n)}: voz dudosa, ¿«{det['medico']}»? ({pct_voz(det['puntaje'])}; {det.get('motivo')}). "
+                f"{self.casos.visible(n)}: voz dudosa, ¿«{det['medico']}»? "
+                f"({pct_voz(det['puntaje'])}; {det.get('motivo')}). "
                 f"La IA usa la plantilla general; el médico se confirma al revisar.",
             )
         elif e == "corto":
@@ -162,7 +164,8 @@ class ServicioVoz:
                 VOZ.quitar(n)
                 L.info(
                     "VOZ",
-                    f"{self.casos.visible(n)} se guardó sin médico: su voz ya no cuenta como muestra de «{antes['medico']}».",
+                    f"{self.casos.visible(n)} se guardó sin médico: su voz ya no cuenta como muestra de "
+                    f"«{antes['medico']}».",
                 )
             return v
         k = VOZ.agregar(n, med, v["h"], "guardado", v.get("seg"))

@@ -4,32 +4,33 @@ Viene de nucleo.py (docs/refactor.md, etapa 3).
 """
 
 import re
-from transcripcion.texto.normalizacion import sin_acentos, datos_criticos
+
 from transcripcion.conocimiento import plantillas as PL
 from transcripcion.controles import marcas as MAR
 from transcripcion.informe import formato as FMT
+from transcripcion.texto.normalizacion import datos_criticos, sin_acentos
 
 
 def estudios_sin_plantilla(informe):
     """Titulos del informe que no corresponden a ninguna plantilla conocida."""
     conocidos = PL.titulos_conocidos()
-    ls = [l.strip() for l in MAR.texto_limpio(informe).splitlines()]
+    ls = [linea.strip() for linea in MAR.texto_limpio(informe).splitlines()]
     out = []
-    for i, l in enumerate(ls):
-        low = sin_acentos(l.lower())
+    for i, linea in enumerate(ls):
+        low = sin_acentos(linea.lower())
         if (
-            not l
-            or l.startswith("-")
-            or l.endswith((".", ":"))
+            not linea
+            or linea.startswith("-")
+            or linea.endswith((".", ":"))
             or low.startswith(MAR.LINEAS_FIJAS + ("categorizacion", "nota"))
         ):
             continue
-        if PL.es_linea_fija(l) or l.rstrip(":") in FMT.NEGRITA_EXACTAS:
+        if PL.es_linea_fija(linea) or linea.rstrip(":") in FMT.NEGRITA_EXACTAS:
             continue  # texto fijo o subtitulo (Tórax / Abdomen / Pelvis)
         rodeada = (i == 0 or not ls[i - 1]) and (i + 1 >= len(ls) or not ls[i + 1])
-        if not (PL.es_titulo(l) or rodeada):
+        if not (PL.es_titulo(linea) or rodeada):
             continue
-        clave = PL.clave_titulo(l)
+        clave = PL.clave_titulo(linea)
         if not clave or (
             low.startswith("rx ") and "rx osteoarticular" in " ".join(n.lower() for n, _ in PL.todas_las_secciones())
         ):
@@ -44,7 +45,7 @@ def estudios_sin_plantilla(informe):
             and (len(clave.split()) == 1 or len(k.split()) == 1 or clave.split()[1][:4] == k.split()[1][:4])
             for k in conocidos
         ):
-            out.append(l)
+            out.append(linea)
     return out
 
 

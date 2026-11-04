@@ -4,6 +4,7 @@ Viene de nucleo.py (docs/refactor.md, etapa 3).
 """
 
 import re
+
 from transcripcion.texto.normalizacion import sin_acentos
 
 

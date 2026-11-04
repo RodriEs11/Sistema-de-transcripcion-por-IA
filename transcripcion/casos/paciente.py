@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 NOMBRE DEL PACIENTE: el médico lo dice al principio del dictado
 ("Gómez Laura es una mamografía...", "Paciente Pérez Sánchez, en la ecografía...").

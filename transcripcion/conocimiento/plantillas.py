@@ -7,9 +7,10 @@ Viene de nucleo.py (docs/refactor.md, etapa 3).
 import difflib
 import re
 import time
-from transcripcion.texto.normalizacion import sin_acentos
+
 from transcripcion.acceso import usuarios as U
 from transcripcion.conocimiento import archivos as CON
+from transcripcion.texto.normalizacion import sin_acentos
 
 
 def texto_todas_las_plantillas():
@@ -38,10 +39,10 @@ def _firma_plantillas():
 def frases_de_plantilla():
     """Viñetas fijas de las plantillas (sin huecos <...> ni alternativas |)."""
     out = set()
-    for l in texto_todas_las_plantillas().splitlines():
-        l = l.strip()
-        if l.startswith("-") and "<" not in l and "|" not in l and "/  -" not in l:
-            out.add(l)
+    for linea in texto_todas_las_plantillas().splitlines():
+        linea = linea.strip()
+        if linea.startswith("-") and "<" not in linea and "|" not in linea and "/  -" not in linea:
+            out.add(linea)
     return out
 
 
@@ -277,9 +278,9 @@ def titulos_conocidos():
     tit = set()
     for nombre, cuerpo in todas_las_secciones():
         tit.add(clave_titulo(nombre))
-        for l in cuerpo.splitlines():
-            if l.strip().upper().startswith("TITULO:"):
-                for alt in re.split(r"\||;", l.split(":", 1)[1]):
+        for linea in cuerpo.splitlines():
+            if linea.strip().upper().startswith("TITULO:"):
+                for alt in re.split(r"\||;", linea.split(":", 1)[1]):
                     tit.add(clave_titulo(alt))
     tit.discard("")
     return tit
@@ -322,7 +323,7 @@ def plantillas_relevantes(dictado, medico=None, sin_estilos=False, usuario=None)
     elegidas = []
     for nombre, cuerpo in secs:
         if d:
-            tit = " ".join(l for l in cuerpo.splitlines() if l.strip().upper().startswith("TITULO"))
+            tit = " ".join(linea for linea in cuerpo.splitlines() if linea.strip().upper().startswith("TITULO"))
             c = {x for x in categorias(_base(nombre) + " " + tit) if not x.startswith("pl:")} | {
                 x for x in categorias(_base(nombre).split("(")[0]) if x.startswith("pl:")
             }
@@ -380,11 +381,11 @@ PALABRAS_ESTUDIO = {
 
 def es_titulo(linea):
     """Titulo de un estudio: 'RX de Tórax (frente)', 'Ecografía Abdominal', 'TC de Tórax'..."""
-    l = linea.strip()
-    if not l or l.startswith("-") or l.endswith((".", ":")) or len(l) > 110:
+    renglon = linea.strip()
+    if not renglon or renglon.startswith("-") or renglon.endswith((".", ":")) or len(renglon) > 110:
         return False
-    w = re.findall(r"[a-z]+", sin_acentos(l.lower()))
-    return bool(w) and (w[0] in PALABRAS_ESTUDIO or clave_titulo(l) in titulos_conocidos())
+    w = re.findall(r"[a-z]+", sin_acentos(renglon.lower()))
+    return bool(w) and (w[0] in PALABRAS_ESTUDIO or clave_titulo(renglon) in titulos_conocidos())
 
 
 _SOBRA_TITULO = re.compile(
@@ -430,9 +431,9 @@ def estudio_corto(titulo):
 def estudios_del_informe(texto):
     """'Mamografía + Eco mamaria' con los estudios del informe, en orden y sin repetir."""
     vistos = []
-    for l in (texto or "").splitlines():
-        if es_titulo(l):
-            k = estudio_corto(l)
+    for linea in (texto or "").splitlines():
+        if es_titulo(linea):
+            k = estudio_corto(linea)
             if k and k not in vistos:
                 vistos.append(k)
     if not vistos:
@@ -449,25 +450,25 @@ def es_linea_fija(linea):
     if _FIJAS["mt"] != mt:
         ex, pre = set(), []
         en_bloque = False
-        for l in texto_todas_las_plantillas().splitlines():
-            l = l.strip()
-            up = sin_acentos(l.upper())
+        for renglon in texto_todas_las_plantillas().splitlines():
+            renglon = renglon.strip()
+            up = sin_acentos(renglon.upper())
             if up.startswith("TEXTO FIJO"):
                 en_bloque = True
                 continue
-            if l.startswith("## ") or up.startswith(
+            if renglon.startswith("## ") or up.startswith(
                 ("PROTOCOLO NORMAL", "FRASES", "NOTAS", "VARIANTE", "COMO ELEGIR", "CIERRE", "TITULO")
             ):
                 en_bloque = False
                 continue
-            if not en_bloque or not l or l.startswith(("-", "#", "<")) or len(l) < 15:
+            if not en_bloque or not renglon or renglon.startswith(("-", "#", "<")) or len(renglon) < 15:
                 continue
-            if "<" in l:
-                p = l.split("<")[0].strip()
+            if "<" in renglon:
+                p = renglon.split("<")[0].strip()
                 if len(p) >= 15:
                     pre.append(p.lower())
             else:
-                ex.add(l.lower())
+                ex.add(renglon.lower())
         _FIJAS.update(mt=mt, exactas=ex, prefijos=tuple(pre))
-    l = linea.strip().lower()
-    return l in _FIJAS["exactas"] or l.startswith(_FIJAS["prefijos"]) if l else False
+    renglon = linea.strip().lower()
+    return renglon in _FIJAS["exactas"] or renglon.startswith(_FIJAS["prefijos"]) if renglon else False

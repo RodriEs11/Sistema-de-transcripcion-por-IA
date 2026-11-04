@@ -74,15 +74,16 @@ class Casos:
         self.duraciones = {}  # nombre -> duración del audio en segundos (cache)
         # ------------------------------------------------- tiempo de revisión
         # La página cuenta los segundos en que el caso está abierto y alguien lo está trabajando (teclado, mouse o audio
-        # sonando en el último minuto) y los manda con cada renovación del bloqueo, al cerrar y al guardar. Se acumulan acá,
-        # por caso, aunque se abra varias veces o desde otra PC. Al guardar se anotan en actividad.csv (columna revision_s).
+        # sonando en el último minuto) y los manda con cada renovación del bloqueo, al cerrar y al guardar. Se acumulan
+        # acá, por caso, aunque se abra varias veces o desde otra PC. Al guardar se anotan en actividad.csv
+        # (columna revision_s).
         self.rev_lock = threading.Lock()
         # ------------------------------------------------- médico reconocido por la voz (voces.py)
         # <caso>.voz.json = {"h": huella, "seg": segundos de voz, "det": resultado de la detección, "medico_por": quién
         # puso el médico del caso ("voz" = se reconoció solo, "usuaria" = se eligió al revisar, "pc" = el médico elegido
         # para los audios de esa PC, "" = sin médico), "medico_ia": con qué médico armó el informe la IA}.
-        # La muestra de voz de un médico se guarda en voces/huellas.json recién cuando se guarda el informe con ese médico
-        # (o cuando se etiqueta a mano desde «Agrupar voces»).
+        # La muestra de voz de un médico se guarda en voces/huellas.json recién cuando se guarda el informe con ese
+        # médico (o cuando se etiqueta a mano desde «Agrupar voces»).
         self.voz_cache = {}
         self.voz_lock = threading.Lock()
 

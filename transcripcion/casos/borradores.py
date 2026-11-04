@@ -2,9 +2,9 @@
 
 import json
 import os
-from pathlib import Path
 import tempfile
 import threading
+from pathlib import Path
 
 _lock = threading.RLock()
 

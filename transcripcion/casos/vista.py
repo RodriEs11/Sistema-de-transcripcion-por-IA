@@ -18,7 +18,6 @@ from transcripcion.procesamiento.estado import EN_PROCESO
 from transcripcion.texto.normalizacion import normalizar
 from transcripcion.voz import huellas as VOZ
 
-
 VERSION_MARCAS = 2  # 2: motivos detallados ("Dictado: 12 / Informe: 2") e inicio/fin de los huecos
 
 
@@ -53,8 +52,10 @@ class VistaCasos:
         for n in nombres:
             firma = (str(self.casos.datos), tuple(inventario.get(n + sufijo) for sufijo in SUFIJOS_CASO), firma_voz)
 
+            # B023 revisado: dato() y sus lambdas se llaman en esta misma vuelta (IndiceCasos.obtener las usa
+            # enseguida), nunca después, así que siempre ven el `n` y la `firma` de este caso (docs/refactor.md).
             def dato(campo, calcular):
-                return self.casos.indice.obtener((n, campo), firma, calcular)
+                return self.casos.indice.obtener((n, campo), firma, calcular)  # noqa: B023
 
             with self.proc.lock:
                 est = dict(self.proc.estado.get(n, {}))
@@ -66,10 +67,10 @@ class VistaCasos:
             mf = self.casos.datos / f"{n}.marcas.json"
             if listo and mf.exists():
                 try:
-                    m = dato("marcas", lambda: json.loads(mf.read_text(encoding="utf-8")))
+                    m = dato("marcas", lambda: json.loads(mf.read_text(encoding="utf-8")))  # noqa: B023
                     marcas = m.get("total")
                     if not revisado:
-                        avisos = dato("avisos", lambda: self.casos.resumen_avisos(n, m))
+                        avisos = dato("avisos", lambda: self.casos.resumen_avisos(n, m))  # noqa: B023
                 except (ValueError, OSError):
                     pass
             a = self.casos.ruta_audio(n)
@@ -79,21 +80,21 @@ class VistaCasos:
                     "estado": est["estado"],
                     "msg": est.get("msg", ""),
                     "marcas": marcas,
-                    "medico": dato("medico_de", lambda: self.casos.medico_de(n)),
-                    "origen": dato("origen_de", lambda: self.casos.origen_de(n)),
+                    "medico": dato("medico_de", lambda: self.casos.medico_de(n)),  # noqa: B023
+                    "origen": dato("origen_de", lambda: self.casos.origen_de(n)),  # noqa: B023
                     "avisos": avisos,
                     "bloqueado_por": self.remoto.bloqueado_por(n, pc),
-                    "titulo": dato("titulo_de", lambda: self.casos.titulo_de(n)),
+                    "titulo": dato("titulo_de", lambda: self.casos.titulo_de(n)),  # noqa: B023
                     "espera": esp.get(n),
-                    "paciente": dato("paciente", lambda: PAC.de(self.casos.datos, n)),
-                    "usuario": dato("usuario_de", lambda: self.casos.usuario_de(n)),
-                    "estilo": dato("estilo_de", lambda: self.casos.estilo_de(n)),
-                    "voz": dato("resumen_voz", lambda: self.voces.resumen_voz(n)),
-                    "estudios": dato("estudios_de", lambda: self.casos.estudios_de(n)) if listo else None,
-                    "dur": dato("duracion_de", lambda: self.casos.duracion_de(n)),
+                    "paciente": dato("paciente", lambda: PAC.de(self.casos.datos, n)),  # noqa: B023
+                    "usuario": dato("usuario_de", lambda: self.casos.usuario_de(n)),  # noqa: B023
+                    "estilo": dato("estilo_de", lambda: self.casos.estilo_de(n)),  # noqa: B023
+                    "voz": dato("resumen_voz", lambda: self.voces.resumen_voz(n)),  # noqa: B023
+                    "estudios": dato("estudios_de", lambda: self.casos.estudios_de(n)) if listo else None,  # noqa: B023
+                    "dur": dato("duracion_de", lambda: self.casos.duracion_de(n)),  # noqa: B023
                     "revisado_en": self.casos.revisado_en(n) if revisado else None,
                     "puede_borrar": not (
-                        remoto and (dato("origen_de", lambda: self.casos.origen_de(n)) != pc or pc == LOCAL)
+                        remoto and (dato("origen_de", lambda: self.casos.origen_de(n)) != pc or pc == LOCAL)  # noqa: B023
                     )
                     and est["estado"] not in ("transcribiendo", "generando"),
                     "puede_pausar": not remoto and est["estado"] == "transcribiendo" and n not in self.proc.pausas,
@@ -125,7 +126,9 @@ class VistaCasos:
                     "seg": MAR.buscar_tiempo(texto, palabras) if texto.strip() else None,
                 }
             )
-        total = sum(1 for l in out if l["linea"]) + sum(1 for l in out for s in l["segs"] if s.get("tipo"))
+        total = sum(1 for linea in out if linea["linea"]) + sum(
+            1 for linea in out for s in linea["segs"] if s.get("tipo")
+        )
         return out, total
 
     def guardar_marcas(self, n, salida, dictado, palabras, huecos=None):
@@ -218,6 +221,7 @@ class VistaCasos:
             except ValueError:
                 pass
         import numpy as np
+
         from transcripcion.asr import whisper as W
 
         x = np.abs(W.cargar_audio(a))

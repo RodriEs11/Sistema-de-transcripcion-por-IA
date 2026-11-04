@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 ESTADÍSTICAS para el panel de administración (pestaña "Estadísticas").
 
@@ -21,9 +20,9 @@ import time
 from datetime import date, datetime, timedelta
 
 from transcripcion import RAIZ
-from transcripcion.conocimiento import plantillas as PL
 from transcripcion.aprendizaje import almacen as AL
 from transcripcion.base import registro as L
+from transcripcion.conocimiento import plantillas as PL
 
 AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 HIST = AQUI / "resultados" / "historial.csv"

@@ -14,7 +14,6 @@ from transcripcion.base.formatos import mmss
 from transcripcion.base.persistencia import escribir_atomico
 from transcripcion.casos.repositorio import LOCAL
 
-
 TEXTO_REINICIO = (
     "Guardá lo que estés haciendo. El informe abierto se guarda solo; en un minuto el sistema "
     "vuelve y la pantalla se reconecta sola."
@@ -34,7 +33,8 @@ class Operacion:
         self.srv = srv
         self.fin_lock = fin_lock
         self.mantenimiento = mantenimiento  # módulo mantenimiento: prueba del código nuevo, git, código de reinicio
-        self.reinicio = {}  # reinicio programado desde el panel: id, cuando, estado (programado|esperando|reiniciando)...
+        # reinicio programado desde el panel: id, cuando, estado (programado|esperando|reiniciando)...
+        self.reinicio = {}
         self.mensaje = {}  # cartel en la pantalla de todas las PC: id, texto, tipo, desde, hasta, por, reinicio
         self.msj_lock = threading.Lock()
         self.rei_lock = threading.Lock()

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 LO MÁS CORREGIDO (panel de administración, página "Correcciones").
 
@@ -155,7 +154,7 @@ def _pares():
         ia, fin = _leer(EJ / f"{clave}.ia.txt"), _leer(EJ / f"{clave}.informe.txt")
         if ia is None or fin is None:
             continue
-        ia = "\n".join(l.rstrip() for l in MAR.texto_limpio(ia).splitlines())
+        ia = "\n".join(linea.rstrip() for linea in MAR.texto_limpio(ia).splitlines())
         pares.append(
             {
                 "clave": clave,

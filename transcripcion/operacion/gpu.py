@@ -22,7 +22,10 @@ def placa_de_video():
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
         nombre, usada, total, uso, temp = [x.strip() for x in r.stdout.strip().splitlines()[0].split(",")]
-        gb = lambda m: f"{int(m) / 1024:.1f}".replace(".", ",")
+
+        def gb(m):
+            return f"{int(m) / 1024:.1f}".replace(".", ",")
+
         nombre = nombre.replace("NVIDIA ", "").replace("GeForce ", "")
         # Algunos drivers informan la temperatura con decimales (p. ej. 51.12).
         tono = "aviso" if float(temp) >= 85 or int(usada) >= 0.97 * int(total) else None

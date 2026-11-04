@@ -5,10 +5,10 @@ Viene de nucleo.py (docs/refactor.md, etapa 3).
 
 import re
 import threading
-from transcripcion.texto.normalizacion import sin_acentos
+
 from transcripcion.acceso import usuarios as U
 from transcripcion.conocimiento import archivos as CON
-
+from transcripcion.texto.normalizacion import sin_acentos
 
 # ----------------------------------------------------------------- medicos
 DIR_MED = CON.CONOC / "medicos"

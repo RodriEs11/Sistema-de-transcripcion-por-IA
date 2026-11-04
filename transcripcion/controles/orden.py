@@ -3,9 +3,8 @@
 Viene de nucleo.py (docs/refactor.md, etapa 3).
 """
 
-from transcripcion.texto.normalizacion import sin_acentos
 from transcripcion.conocimiento import plantillas as PL
-
+from transcripcion.texto.normalizacion import sin_acentos
 
 # ---------------------------------------------------- orden de los estudios
 ORDEN_MAMA = (("mamograf", 0), ("ecografia mamaria", 1), ("ginecolog", 3), ("transvaginal", 3), ("tiroid", 4))
@@ -27,16 +26,16 @@ def ordenar_estudios(texto):
     while ls and (not ls[-1].strip() or sin_acentos(ls[-1].strip().lower()).startswith("lo salud")):
         cierre.insert(0, ls.pop())
     bloques, pre, cat = [], [], None
-    for l in ls:
-        if sin_acentos(l.strip().lower()).startswith("categorizacion"):
-            cat = l.strip()
+    for linea in ls:
+        if sin_acentos(linea.strip().lower()).startswith("categorizacion"):
+            cat = linea.strip()
             continue
-        if PL.es_titulo(l):
-            bloques.append([l])
+        if PL.es_titulo(linea):
+            bloques.append([linea])
         elif bloques:
-            bloques[-1].append(l)
+            bloques[-1].append(linea)
         else:
-            pre.append(l)
+            pre.append(linea)
     rangos = [_rango(b[0]) for b in bloques]
     if len(bloques) < 2 or None in rangos or rangos == sorted(rangos) and cat is None:
         return texto  # nada que ordenar (o no son estudios mamarios)

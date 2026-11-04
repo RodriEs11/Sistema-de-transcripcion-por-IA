@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 REGISTRO DEL SERVIDOR: lo que se ve en la ventana negra y lo que queda guardado.
 
@@ -28,6 +27,7 @@ import textwrap
 import threading
 import time
 from pathlib import Path
+
 from transcripcion import RAIZ
 
 AQUI = RAIZ  # carpeta del sistema (no la del paquete)
@@ -601,16 +601,16 @@ def _migrar_columnas(f):
         w = csv.writer(fh, delimiter=";")
         w.writerow(COLUMNAS)
         for r in filas[1:]:
-            d = dict(zip(viejas, r))
+            d = dict(zip(viejas, r, strict=False))  # una fila puede tener menos columnas que el encabezado
             w.writerow([d.get(k, "") for k in COLUMNAS])
     try:
         os.replace(tmp, f)
-    except OSError:
+    except OSError as ex:
         try:
             tmp.unlink()
         except OSError:
             pass
-        raise PermissionError("actividad.csv abierto")
+        raise PermissionError("actividad.csv abierto") from ex
     return [k for k in COLUMNAS if k not in viejas]
 
 

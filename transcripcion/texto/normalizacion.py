@@ -135,7 +135,9 @@ def normalizar(texto):
 def datos_criticos(texto, es_informe=False):
     """Medidas, numeros y codigos (H12, L5-S1, C3...) de un texto."""
     if es_informe:  # se ignora el parrafo tecnico fijo de la mamografia
-        texto = "\n".join(l for l in texto.splitlines() if not l.strip().lower().startswith("hemos obtenido"))
+        texto = "\n".join(
+            linea for linea in texto.splitlines() if not linea.strip().lower().startswith("hemos obtenido")
+        )
     t = normalizar(texto)
     codigos = set(re.findall(r"\b[hcdlst]\d{1,2}(?:[cdls]\d{1,2})?\b", t))
     nums = set(re.findall(r"(?<![a-z0-9.])\d+(?:\.\d+)?", t))

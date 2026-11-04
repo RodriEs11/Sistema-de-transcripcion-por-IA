@@ -6,8 +6,8 @@ Viene de nucleo.py (docs/refactor.md, etapa 3).
 
 import difflib
 import re
-from transcripcion.texto.normalizacion import sin_acentos
 
+from transcripcion.texto.normalizacion import sin_acentos
 
 # ------------------------------------------------- controles clinicos extra
 # Terminos que cambian el sentido clinico: si la IA los escribe tienen que haberse
@@ -152,11 +152,12 @@ def controles_clinicos(salida, nd, formas=None):
                 if acr
                 else "No encontré la categoría ACR en el dictado"
             )
+            # B023 revisado: partir() llama a estas lambdas enseguida, en esta vuelta (docs/refactor.md).
             ln["segs"] = partir(
                 ln["segs"],
                 r"\bACR:?\s*([ABCD])\b",
                 "numero",
-                lambda m: dict_acr + (" / " if acr else " · ") + f"Informe: ACR {m.group(1)}",
+                lambda m: dict_acr + (" / " if acr else " · ") + f"Informe: ACR {m.group(1)}",  # noqa: B023
                 lambda m: m.group(1).lower() not in acr,
             )
         # descripciones decisivas cerca de las medidas del hallazgo
@@ -177,22 +178,24 @@ def controles_clinicos(salida, nd, formas=None):
         orden = [w for w in dict.fromkeys(orden) if w]
         ventana = set(orden)
 
+        # B023 revisado: falta() y motivo() se pasan a partir() en esta misma vuelta y se usan enseguida
+        # (docs/refactor.md).
         def falta(m):
             w = sin_acentos(m.group(0).lower())
             raiz = next((r for r in TERMINOS_CLAVE if w.startswith(r)), None)
             if not raiz:
                 return False
-            if any(v.startswith(raiz) for v in ventana):
+            if any(v.startswith(raiz) for v in ventana):  # noqa: B023
                 return False
-            if any(x in v for x in VARIANTES_WHISPER.get(raiz, ()) for v in ventana):
+            if any(x in v for x in VARIANTES_WHISPER.get(raiz, ()) for v in ventana):  # noqa: B023
                 return False
-            return not difflib.get_close_matches(w, list(ventana), n=1, cutoff=0.7)
+            return not difflib.get_close_matches(w, list(ventana), n=1, cutoff=0.7)  # noqa: B023
 
         def motivo(m):
             w = sin_acentos(m.group(0).lower())
             raiz = next((r for r in TERMINOS_CLAVE if w.startswith(r)), "")
             fam = {r for f in FAMILIAS if raiz in f for r in f} - {raiz}
-            otros = [formas.get(v, v) for v in orden if any(v.startswith(r) for r in fam)]
+            otros = [formas.get(v, v) for v in orden if any(v.startswith(r) for r in fam)]  # noqa: B023
             txt = f"Informe: «{m.group(0)}» · no se dictó junto a este hallazgo"
             if otros:
                 txt += ". Cerca se dictó: " + ", ".join(dict.fromkeys(otros[:4]))

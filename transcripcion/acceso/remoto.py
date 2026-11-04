@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 ACCESO REMOTO: lo que necesita el servidor para que las PC del trabajo (info-01, info-02...)
 se conecten por un tunel: el rapido de Cloudflare o Microsoft Dev Tunnels (se elige con configurar_tunel).
@@ -6,8 +5,8 @@ se conecten por un tunel: el rapido de Cloudflare o Microsoft Dev Tunnels (se el
 - Contrasena del sistema (se guarda solo su "huella" PBKDF2, nunca la contrasena). Cuando hay transcriptores
   creados (usuarios.py) ya no sirve para entrar: cada uno entra con su usuario y su contrasena.
 - Una llave por PC: se crea al vincular la PC y se puede anular.
-- Sesiones de la interfaz (cookie hasta cerrar la app, 12 h como mucho, con el transcriptor que entro) y codigos de un solo uso para que la app entre sin
-  volver a pedir la contrasena.
+- Sesiones de la interfaz (cookie hasta cerrar la app, 12 h como mucho, con el transcriptor que entro) y codigos de
+  un solo uso para que la app entre sin volver a pedir la contrasena.
 - Bloqueo de casos: un caso abierto en una PC no se puede abrir en otra.
 - Medico elegido por PC.
 - Tunel: arranca cloudflared (direccion *.trycloudflare.com, cambia en cada reinicio) o devtunnel
@@ -31,9 +30,9 @@ import urllib.request
 from pathlib import Path
 
 from transcripcion import RAIZ
+from transcripcion.acceso import usuarios as U
 from transcripcion.base import plataforma as P
 from transcripcion.base import registro as L
-from transcripcion.acceso import usuarios as U
 from transcripcion.base.persistencia import escribir_atomico
 
 AQUI = RAIZ  # carpeta del sistema (no la del paquete)

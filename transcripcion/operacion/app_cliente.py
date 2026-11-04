@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 ACTUALIZACION DE LA APP DEL TRABAJO (Transcripcion.exe)
 

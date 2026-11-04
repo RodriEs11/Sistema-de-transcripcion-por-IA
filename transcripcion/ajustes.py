@@ -9,13 +9,13 @@ El arranque hace, en este orden:
 Una prueba arma los suyos con `ajustes.para_pruebas(carpeta)`, que no toca la instalación.
 """
 
-from dataclasses import dataclass, field
 import json
 import os
+from dataclasses import dataclass, field
 from pathlib import Path
 
-from transcripcion.base import plataforma as P
 from transcripcion import RAIZ
+from transcripcion.base import plataforma as P
 
 AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 

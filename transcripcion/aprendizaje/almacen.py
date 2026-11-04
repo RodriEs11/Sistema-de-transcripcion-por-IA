@@ -1,10 +1,11 @@
 """Índices SQLite locales: historial por día/caso y contribuciones de correcciones por ejemplo."""
 
 import csv
-from contextlib import contextmanager
 import io
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
+
 from transcripcion.base.persistencia import escribir_atomico
 
 
@@ -25,7 +26,8 @@ def abrir(historial):
         if version == 0:
             for sql in (
                 "CREATE TABLE meta (k TEXT PRIMARY KEY, v TEXT NOT NULL)",
-                "CREATE TABLE historial (dia TEXT, informe TEXT, fecha TEXT, palabras INTEGER, porcentaje_corregido TEXT, PRIMARY KEY(dia,informe))",
+                "CREATE TABLE historial (dia TEXT, informe TEXT, fecha TEXT, palabras INTEGER, "
+                "porcentaje_corregido TEXT, PRIMARY KEY(dia,informe))",
                 "CREATE INDEX historial_fecha ON historial(fecha,informe)",
                 "CREATE TABLE ejemplos (clave TEXT PRIMARY KEY, firma TEXT NOT NULL)",
                 "CREATE TABLE contribuciones (clave TEXT, op TEXT, de TEXT, a TEXT, PRIMARY KEY(clave,op,de,a))",

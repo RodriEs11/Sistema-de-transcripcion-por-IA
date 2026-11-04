@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Lo que cambia entre Windows y Linux, en un solo lugar.
 
 - nombres de los scripts para abrir el servidor (.bat en Windows, .sh en Linux);
@@ -13,6 +12,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+
 from transcripcion import RAIZ
 
 AQUI = RAIZ  # carpeta del sistema (no la del paquete)

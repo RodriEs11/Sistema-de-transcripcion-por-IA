@@ -9,8 +9,8 @@ import os
 import sys
 import wave
 from pathlib import Path
-from transcripcion import RAIZ
 
+from transcripcion import RAIZ
 
 VOCAB_DEF = RAIZ / "vocabulario.txt"  # vocabulario médico para el prompt de Whisper
 
@@ -78,9 +78,9 @@ def leer_vocabulario(ruta):
     if not ruta or not Path(ruta).exists():
         return None
     terms = [
-        l.strip()
-        for l in Path(ruta).read_text(encoding="utf-8-sig").splitlines()
-        if l.strip() and not l.strip().startswith("#")
+        linea.strip()
+        for linea in Path(ruta).read_text(encoding="utf-8-sig").splitlines()
+        if linea.strip() and not linea.strip().startswith("#")
     ]
     return "Informe médico de diagnóstico por imágenes: " + ", ".join(terms) + "."
 

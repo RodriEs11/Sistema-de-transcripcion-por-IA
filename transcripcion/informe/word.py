@@ -6,8 +6,8 @@ Viene de informe.py (docs/refactor.md, etapa 6a).
 
 import re
 import time
-from transcripcion.informe import formato as FMT
 
+from transcripcion.informe import formato as FMT
 
 # ------------------------------------------------------------------- Word
 COLORES = None
@@ -131,7 +131,8 @@ def aplicar_formato(pars, formato):
 
 def escribir_docx(marcado, destino, cfg, formato=None):
     from docx import Document
-    from docx.enum.text import WD_COLOR_INDEX as C, WD_ALIGN_PARAGRAPH as A
+    from docx.enum.text import WD_ALIGN_PARAGRAPH as A
+    from docx.enum.text import WD_COLOR_INDEX as C
     from docx.oxml.ns import qn
     from docx.shared import Cm, Pt, RGBColor
 

@@ -7,7 +7,6 @@ Viene de nucleo.py (docs/refactor.md, etapa 3).
 
 from transcripcion import RAIZ
 
-
 AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 CONOC = AQUI / "conocimiento"
 

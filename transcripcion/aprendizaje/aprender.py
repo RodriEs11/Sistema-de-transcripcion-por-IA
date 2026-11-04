@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 APRENDIZAJE: convierte tus informes revisados en ejemplos para la IA.
 
@@ -9,22 +8,22 @@ Como funciona:
      el dictado + tu version final. La IA los usa para los informes siguientes.
   Un Word que todavia tiene resaltados se considera "sin revisar" y se ignora.
 
-Ademas lleva un historial indexado (resultados\\historial.sqlite3; importa el CSV anterior) con el % de palabras que tuviste
-que corregir en cada informe, para ver si el sistema mejora con el tiempo.
+Ademas lleva un historial indexado (resultados\\historial.sqlite3; importa el CSV anterior) con el % de palabras que
+tuviste que corregir en cada informe, para ver si el sistema mejora con el tiempo.
 """
 
 import difflib
+import hashlib
 import json
 import re
 import sys
 import time
-import hashlib
 from pathlib import Path
 
 from transcripcion import RAIZ
-from transcripcion.controles import marcas as MAR
-from transcripcion.base.persistencia import escribir_atomico
 from transcripcion.aprendizaje import almacen as AL
+from transcripcion.base.persistencia import escribir_atomico
+from transcripcion.controles import marcas as MAR
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -80,7 +79,7 @@ def registrar_ejemplo(
         escribir_atomico(EJ / f"{clave}.usuario.txt", usuario)
     else:
         (EJ / f"{clave}.usuario.txt").unlink(missing_ok=True)
-    ia_sin_espacios = "\n".join(l.rstrip() for l in MAR.texto_limpio(ia).splitlines())
+    ia_sin_espacios = "\n".join(linea.rstrip() for linea in MAR.texto_limpio(ia).splitlines())
     pc = pct_corregido(ia_sin_espacios, final)
     fecha = fecha or time.strftime("%Y-%m-%d %H:%M")
     with AL.abrir(HIST) as c:
@@ -156,7 +155,10 @@ def repartir_correcciones(fuentes, minimo=2):
         else:
             ((u, m),) = cnt.items()
             propias.setdefault(u, []).append((m, k))
-    orden = lambda x: (x[0], x[1][0], x[1][1], x[1][2])
+
+    def orden(x):
+        return (x[0], x[1][0], x[1][1], x[1][2])
+
     generales.sort(key=orden, reverse=True)
     for v in propias.values():
         v.sort(key=orden, reverse=True)
@@ -251,7 +253,7 @@ def aprender(cfg, silencioso=False):
         if registro.get("mtime") == mt:
             continue
         ia = MAR.texto_limpio(ia_f.read_text(encoding="utf-8"))
-        titulo = next((l for l in ia.splitlines() if l.strip()), "")
+        titulo = next((linea for linea in ia.splitlines() if linea.strip()), "")
         try:
             final, resaltado = leer_docx(docx, titulo, int(cfg["lineas_vacias_para_encabezado"]))
         except Exception:

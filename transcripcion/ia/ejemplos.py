@@ -6,14 +6,14 @@ Viene de nucleo.py (docs/refactor.md, etapa 3).
 
 import json
 import os
-from functools import lru_cache
 import threading
+from functools import lru_cache
 from pathlib import Path
-from transcripcion.texto.normalizacion import sin_acentos
+
 from transcripcion import RAIZ
 from transcripcion.conocimiento import plantillas as PL
 from transcripcion.texto import palabras as PAL
-
+from transcripcion.texto.normalizacion import sin_acentos
 
 AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 

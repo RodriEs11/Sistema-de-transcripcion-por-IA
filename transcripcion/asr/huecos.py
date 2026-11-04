@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Deteccion y reparacion de fragmentos que Whisper no transcribio.
 
@@ -45,7 +44,10 @@ def regiones_sospechosas(audio, palabras, gap_min=1.0, palabra_max=1.4, voz_min=
     if not palabras or len(audio) < SR:
         return []
     e = energia(audio)
-    t = lambda s: int(s / VENT)
+
+    def t(s):
+        return int(s / VENT)
+
     # umbral de voz: relativo a la energia tipica durante las palabras
     hablado = np.concatenate([e[t(w["ini"]) : max(t(w["ini"]) + 1, t(w["fin"]))] for w in palabras]) if palabras else e
     umbral = max(np.percentile(hablado, 50) * 0.35, np.percentile(e, 20) * 2.0)

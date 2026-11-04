@@ -10,7 +10,6 @@ from transcripcion.conocimiento import medicos as MED
 from transcripcion.conocimiento import plantillas as PL
 from transcripcion.ia import ejemplos as EJEM
 
-
 # ------------------------------------------------------------------ prompt
 SISTEMA = """Sos un asistente de transcripción médica de un servicio de diagnóstico por imágenes de Argentina.
 Recibís el DICTADO de un médico (texto generado por un reconocedor de voz, con errores) y escribís el INFORME FINAL
@@ -39,7 +38,9 @@ FORMATO:
 
 
 def reglas_de(usuario=None):
-    """reglas_dictado.md general + las reglas propias del transcriptor (se suman; si se contradicen, valen las suyas)."""
+    """reglas_dictado.md general + las reglas propias del transcriptor.
+
+    Se suman; si se contradicen, valen las suyas."""
     reglas = CON.leer("reglas_dictado.md")
     propias = U.leer_archivo(usuario, "reglas_dictado.md").strip() if usuario else ""
     if propias:

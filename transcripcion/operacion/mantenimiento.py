@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 MANTENIMIENTO (panel de administración, tarjeta "Mantenimiento").
 

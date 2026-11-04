@@ -10,8 +10,8 @@ import re
 import time
 import urllib.error
 import urllib.request
-from transcripcion.controles import orden as ORD
 
+from transcripcion.controles import orden as ORD
 
 OLLAMA = "http://localhost:11434"
 

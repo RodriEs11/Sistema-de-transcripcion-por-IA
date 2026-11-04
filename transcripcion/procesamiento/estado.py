@@ -14,7 +14,6 @@ from transcripcion.base import registro as L
 from transcripcion.base.formatos import mmss
 from transcripcion.procesamiento import cola as CP
 
-
 EN_PROCESO = ("en cola", "transcribiendo", "en pausa", "generando")
 
 
@@ -39,7 +38,8 @@ class Procesamiento:
         self.pausas = {}  # nombre -> {"pedida": t, "por": dónde se pidió, "desde": t en que quedó detenida}
         self.pausa_cv = threading.Condition()
         self.pausado_s = {}  # nombre -> segundos que estuvo en pausa (no cuentan como tiempo de Whisper)
-        # Tiempos de referencia para estimar cuánto falta. Arrancan con los de actividad.csv y se ajustan con cada informe.
+        # Tiempos de referencia para estimar cuánto falta. Arrancan con los de actividad.csv y se ajustan con cada
+        # informe.
         self.tiempos = {"whisper_x": 0.15, "ia": 25.0, "n": 0}
         self.trabajo = {"ocupado": False, "esperando_ia": False, "desde": None, "en_pausa": None}
         self.encolar_lock = threading.Lock()
@@ -112,7 +112,10 @@ class Procesamiento:
             ][-30:]
         except (OSError, csv.Error, UnicodeDecodeError):
             return
-        num = lambda v: float(v.replace(",", ".")) if v else None
+
+        def num(v):
+            return float(v.replace(",", ".")) if v else None
+
         for r in filas:
             try:
                 self.anotar_tiempo(num(r.get("duracion_audio_s")), num(r.get("whisper_s")), num(r.get("ia_s")))

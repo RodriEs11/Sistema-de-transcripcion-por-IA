@@ -26,7 +26,6 @@ from transcripcion.procesamiento import cola as CP
 from transcripcion.procesamiento import lotes as LOTES
 from transcripcion.procesamiento.estado import Cancelado
 
-
 # -------------------------------------------------------- procesamiento
 ARCHIVOS_RESULTADO = (".json", ".dictado.txt", ".informe_ia.txt", ".marcas.json")
 
@@ -148,13 +147,14 @@ class Trabajador:
                         self.proc.pausado_s[n] = 0
                         try:
                             if not self.simular and self.cfg.get("reusar_transcripcion", True) is True:
-                                from importlib.metadata import version, PackageNotFoundError
+                                from importlib.metadata import PackageNotFoundError, version
 
                                 try:
                                     version_whisper = version("faster-whisper") + "/" + version("ctranslate2")
                                 except PackageNotFoundError:
                                     version_whisper = "desconocida"
-                                from transcripcion.asr import huecos as H, whisper as W
+                                from transcripcion.asr import huecos as H
+                                from transcripcion.asr import whisper as W
 
                                 try:
                                     # el código que produce la transcripción también firma la caché
@@ -217,7 +217,8 @@ class Trabajador:
                                     L.ok("WHISPER", f"Whisper cargado en {L.seg(time.time() - tc)}.")
                                     self.proc.poner_estado(n, "transcribiendo", "Transcribiendo el audio…")
                                     t0 = time.perf_counter()
-                                from transcripcion.asr import huecos as H, whisper as W
+                                from transcripcion.asr import huecos as H
+                                from transcripcion.asr import whisper as W
 
                                 prompt = W.leer_vocabulario(W.VOCAB_DEF)
                                 self.proc.punto_de_pausa(n)  # se pidió la pausa mientras se cargaba Whisper
@@ -326,7 +327,8 @@ class Trabajador:
                             time.sleep(float(os.environ.get("SIMULAR_DEMORA", "0")))
                         else:
                             med = self.casos.medico_de(n) or None
-                            # sin médico confirmado (voz dudosa o sin reconocer): plantilla general, sin estilos de médico
+                            # sin médico confirmado (voz dudosa o sin reconocer):
+                            # plantilla general, sin estilos de médico
                             sin_est = not med and self.voces.resumen_voz(n) is not None
                             ej = EJEM.elegir_ejemplos(
                                 dic, banco, k=self.cfg["ejemplos_por_informe"], excluir=n, medico=med, usuario=usu
@@ -407,7 +409,8 @@ class Trabajador:
                         for e in nuevos:
                             L.aviso(
                                 "IA",
-                                f"{self.casos.visible(n)}: estudio sin plantilla «{e}». Conviene crearla desde Plantillas.",
+                                f"{self.casos.visible(n)}: estudio sin plantilla «{e}». "
+                                "Conviene crearla desde Plantillas.",
                             )
                         L.actividad(
                             "generado",

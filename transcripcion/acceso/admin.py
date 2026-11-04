@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 PANEL DE ADMINISTRACIÓN (http://127.0.0.1:8765/admin, solo en la PC del servidor).
 
@@ -12,9 +11,9 @@ import re
 import threading
 import time
 
+from transcripcion.acceso import remoto as R
 from transcripcion.base import plataforma as P
 from transcripcion.base import registro as L
-from transcripcion.acceso import remoto as R
 
 # 2026-10-25 01:44:02  AVISO  TÚNEL     mensaje
 _LINEA = re.compile(r"^(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d)  (AVISO|ERROR)\s+(\S+)\s+(.*)$")

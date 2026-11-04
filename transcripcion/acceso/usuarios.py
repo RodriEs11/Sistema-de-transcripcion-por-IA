@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 TRANSCRIPTORES: cada persona entra con su usuario y su contraseña, y tiene su propio estilo.
 
@@ -24,8 +23,8 @@ import threading
 import time
 import unicodedata
 
-from transcripcion.base.persistencia import escribir_atomico
 from transcripcion import RAIZ
+from transcripcion.base.persistencia import escribir_atomico
 
 AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 ARCH = AQUI / "usuarios.json"

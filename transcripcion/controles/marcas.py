@@ -17,12 +17,12 @@ Viene de nucleo.py (docs/refactor.md, etapa 3).
 import difflib
 import html
 import re
-from transcripcion.texto.normalizacion import normalizar, sin_acentos, datos_criticos
+
 from transcripcion.conocimiento import plantillas as PL
 from transcripcion.controles import clinicos as CLI
 from transcripcion.ia import ejemplos as EJEM
 from transcripcion.texto import palabras as PAL
-
+from transcripcion.texto.normalizacion import datos_criticos, normalizar, sin_acentos
 
 # ----------------------------------------------------------- marcas
 NUM_RE = re.compile(r"(?<![A-Za-z0-9.,])(\d+(?:[.,]\d+)?)")
@@ -237,14 +237,14 @@ def palabras_no_dictadas(linea, vocab):
     return out
 
 
-def motivo_linea(tipo, l, vocab, norm_dict, es_tit=False):
+def motivo_linea(tipo, linea, vocab, norm_dict, es_tit=False):
     if es_tit:
-        return f"No reconozco «{l.strip()}» en el dictado: confirmá que es el estudio que se dictó"
+        return f"No reconozco «{linea.strip()}» en el dictado: confirmá que es el estudio que se dictó"
     if tipo == "plantilla":
         if re.search(r"protocol", norm_dict):
             return "Frase de plantilla, no dictada (el médico dijo «protocolo…»): confirmá que corresponde"
         return "Frase de plantilla que el médico no dictó: confirmá que corresponde"
-    faltan = palabras_no_dictadas(l, vocab)
+    faltan = palabras_no_dictadas(linea, vocab)
     if faltan:
         return "No encontré en el dictado: " + ", ".join(faltan[:5]) + ". Verificá que esta línea corresponda"
     return MOTIVO_LINEA["verificar"]
@@ -267,8 +267,8 @@ def marcar(informe, dictado, palabras_whisper=None):
     salida = []
     for linea in informe.splitlines():
         segs = []
-        l = linea.rstrip()
-        if re.match(r"(?i)^-\s*(es un |un )?protocolo( normal)?\.?$", l.strip()):
+        renglon = linea.rstrip()
+        if re.match(r"(?i)^-\s*(es un |un )?protocolo( normal)?\.?$", renglon.strip()):
             salida.append(
                 {
                     "segs": [
@@ -284,11 +284,11 @@ def marcar(informe, dictado, palabras_whisper=None):
                 }
             )
             continue
-        low = sin_acentos(l.lower()).strip()
-        fija = low.startswith(LINEAS_FIJAS) or not l.strip() or PL.es_linea_fija(l)
-        es_titulo_l = PL.es_titulo(l)
+        low = sin_acentos(renglon.lower()).strip()
+        fija = low.startswith(LINEAS_FIJAS) or not renglon.strip() or PL.es_linea_fija(renglon)
+        es_titulo_l = PL.es_titulo(renglon)
         # 1) marcas de la IA
-        partes = re.split(r"(\[\[.*?\]\])", l)
+        partes = re.split(r"(\[\[.*?\]\])", renglon)
         for p in partes:
             m = re.match(r"\[\[(COMPLETAR:?|\?)\s*(.*?)\]\]$", p, flags=re.S)
             if m:
@@ -326,7 +326,7 @@ def marcar(informe, dictado, palabras_whisper=None):
                 else:
                     ok = key in nums_dict
                 if not ok:
-                    segs.append((tok, "numero", motivo_numero(tok, l, toks)))
+                    segs.append((tok, "numero", motivo_numero(tok, renglon, toks)))
                 elif key in bajos:
                     segs.append(
                         (
@@ -345,15 +345,15 @@ def marcar(informe, dictado, palabras_whisper=None):
         tipo_linea = motivo_l = None
         if es_titulo_l and not fija:
             # el tipo de estudio del titulo tiene que poder reconocerse en el dictado
-            sin_rotulos = " ".join(p for p in PAL.palabras_norm(l) if p not in IGNORAR_TITULO)
+            sin_rotulos = " ".join(p for p in PAL.palabras_norm(renglon) if p not in IGNORAR_TITULO)
             if sin_rotulos and soporte(sin_rotulos, vocab) < 0.5:
                 tipo_linea = "verificar"
-                motivo_l = motivo_linea(tipo_linea, l, vocab, norm_dict, es_tit=True)
-        elif l.startswith("-") and not fija:
-            sop = soporte(re.sub(r"\[\[.*?\]\]", "", l), vocab)
+                motivo_l = motivo_linea(tipo_linea, renglon, vocab, norm_dict, es_tit=True)
+        elif renglon.startswith("-") and not fija:
+            sop = soporte(re.sub(r"\[\[.*?\]\]", "", renglon), vocab)
             if sop < 0.5:
-                tipo_linea = "plantilla" if l in plantilla else "verificar"
-                motivo_l = motivo_linea(tipo_linea, l, vocab, norm_dict)
+                tipo_linea = "plantilla" if renglon in plantilla else "verificar"
+                motivo_l = motivo_linea(tipo_linea, renglon, vocab, norm_dict)
         salida.append({"segs": segs, "linea": tipo_linea, "motivo": motivo_l, "titulo": bool(es_titulo_l and not fija)})
     CLI.controles_clinicos(salida, norm_dict, formas_originales(dictado))
     control_palabras_raras(salida)

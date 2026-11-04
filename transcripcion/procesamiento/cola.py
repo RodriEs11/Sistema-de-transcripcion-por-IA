@@ -1,14 +1,14 @@
 """Registro SQLite de tareas GPU. No importa el servidor ni carga modelos."""
 
-from contextlib import contextmanager
 import json
 import os
-from pathlib import Path
 import sqlite3
 import tempfile
 import threading
 import time
 import uuid
+from contextlib import contextmanager
+from pathlib import Path
 
 ACTIVOS = ("en cola", "transcribiendo", "generando", "en pausa")
 ESTADOS = ACTIVOS + ("listo", "error", "borrando", "cancelado")
@@ -59,7 +59,10 @@ class ColaProcesamiento:
                     ).fetchone():
                         raise ErrorCola("Base ajena sin versión; no se reemplaza.")
                     db.execute(
-                        "CREATE TABLE tareas (orden INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL UNIQUE, token TEXT NOT NULL, estado TEXT NOT NULL CHECK(estado IN ('en cola','transcribiendo','generando','en pausa','listo','error','borrando','cancelado')), pausado INTEGER NOT NULL DEFAULT 0 CHECK(pausado IN (0,1)), encolado REAL NOT NULL)"
+                        "CREATE TABLE tareas (orden INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL UNIQUE, "
+                        "token TEXT NOT NULL, estado TEXT NOT NULL CHECK(estado IN ('en cola','transcribiendo',"
+                        "'generando','en pausa','listo','error','borrando','cancelado')), "
+                        "pausado INTEGER NOT NULL DEFAULT 0 CHECK(pausado IN (0,1)), encolado REAL NOT NULL)"
                     )
                     db.execute("CREATE INDEX tareas_estado_orden ON tareas(estado,orden)")
                     db.execute("CREATE TABLE meta (clave TEXT PRIMARY KEY, valor TEXT NOT NULL)")
@@ -101,7 +104,8 @@ class ColaProcesamiento:
             return [
                 dict(r)
                 for r in self.db.execute(
-                    "SELECT * FROM tareas WHERE estado IN ('en cola','transcribiendo','generando','en pausa','error','borrando') ORDER BY orden"
+                    "SELECT * FROM tareas WHERE estado IN "
+                    "('en cola','transcribiendo','generando','en pausa','error','borrando') ORDER BY orden"
                 )
             ]
 

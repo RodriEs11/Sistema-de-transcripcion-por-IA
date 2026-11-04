@@ -20,8 +20,8 @@ from transcripcion.informe.word import aplicar_formato, escribir_docx, pagina, p
 class Guardado:
     """Usa `casos` (archivos), `voces` (muestra de voz al guardar), `informes` (carpeta de los Word) y `fin_lock` (un
     guardado a la vez). `aprendizaje` es la cola persistente (se asigna después de crearla, porque sus funciones
-    son métodos de este objeto) y `aprender` el módulo que registra ejemplos y correcciones. `estadisticas` es el módulo de
-    estadísticas (se invalida su caché al guardar)."""
+    son métodos de este objeto) y `aprender` el módulo que registra ejemplos y correcciones. `estadisticas` es el
+    módulo de estadísticas (se invalida su caché al guardar)."""
 
     def __init__(self, cfg, informes, casos, voces, fin_lock, aprender, estadisticas):
         self.cfg = cfg
@@ -43,7 +43,7 @@ class Guardado:
         final, marcado = self.texto_a_marcado(texto)
         ia = (self.casos.datos / f"{nombre}.informe_ia.txt").read_text(encoding="utf-8")
         dic = (self.casos.datos / f"{nombre}.dictado.txt").read_text(encoding="utf-8")
-        pc = pct_corregido("\n".join(l.rstrip() for l in MAR.texto_limpio(ia).splitlines()), final)
+        pc = pct_corregido("\n".join(linea.rstrip() for linea in MAR.texto_limpio(ia).splitlines()), final)
         fin_f = self.casos.datos / f"{nombre}.final.txt"
         ya_guardado = fin_f.exists()
         reg = self.casos.datos / f"{nombre}.ejemplo.txt"
@@ -94,11 +94,13 @@ class Guardado:
 
     def texto_a_marcado(self, texto):
         """Texto del editor -> (texto final limpio, líneas como las recibe el Word)."""
-        lineas = [l.rstrip() for l in texto.replace("\r", "").split("\n")]
+        lineas = [linea.rstrip() for linea in texto.replace("\r", "").split("\n")]
         while lineas and not lineas[0].strip():
             lineas.pop(0)
         final = "\n".join(lineas).strip()
-        return final, [{"segs": [(l, None, None)], "linea": None, "titulo": PL.es_titulo(l)} for l in final.split("\n")]
+        return final, [
+            {"segs": [(linea, None, None)], "linea": None, "titulo": PL.es_titulo(linea)} for linea in final.split("\n")
+        ]
 
     def vista_previa(self, texto, nombre=None, usuario=None):
         """Párrafos exactamente como quedan en el Word (mismo código que escribir_docx) + la hoja.
