@@ -30,19 +30,23 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           New-Item -ItemType Directory -Force respaldo | Out-Null
           "PYTHON=$((Get-Command python).Source)" >> $env:GITHUB_ENV
-      - name: Lint (ruff)
+      - name: Lint, formato y tipos (ruff, mypy)
         shell: pwsh
         run: |
           python -m ruff check .
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -m ruff format --check transcripcion
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m mypy
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Python y versiones de fuentes
         shell: pwsh
         run: |
           node pruebas/verificar_fuentes.cjs
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          python -m unittest discover -s pruebas -p 'test_*.py' -v
+          python -m coverage run -m unittest discover -s pruebas -p 'test_*.py' -v
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m coverage report
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python herramientas/verificar_versiones.py --sin-binario
           if ($LASTEXITCODE) { exit $LASTEXITCODE }

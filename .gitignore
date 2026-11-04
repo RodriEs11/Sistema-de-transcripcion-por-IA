@@ -111,3 +111,8 @@ pruebas/*.png
 voces/
 # modelo de voz (se baja solo la primera vez)
 modelos/
+
+# Cobertura de las pruebas (python -m coverage run …)
+.coverage
+.coverage.*
+htmlcov/

@@ -5,3 +5,7 @@ lxml==6.0.2
 typing_extensions==4.15.0
 # Lint (pyproject.toml → [tool.ruff]); misma versión en local y en el CI.
 ruff==0.16.9
+# Cobertura de las pruebas (pyproject.toml → [tool.coverage]).
+coverage==7.17.1
+# Tipos (pyproject.toml → [tool.mypy]).
+mypy==2.4.1
