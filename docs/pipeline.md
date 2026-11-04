@@ -132,11 +132,11 @@ correctos (≈ 10 s por informe) contra 29 % de Qwen 3.5 9B.
   historial con audios nuevos (página de estadísticas).
 - Las autocorrecciones del médico dentro del dictado ("hora 2… hora 12") no siempre se detectan; solo se notan escuchando.
 
-`fase1_transcribir.py` también funciona como herramienta de evaluación de Whisper:
+`herramientas/fase1_transcribir.py` también funciona como herramienta de evaluación de Whisper:
 
 ```bat
-python fase1_transcribir.py --audios <carpeta> --salida resultados\fase1   :: reporte HTML con y sin vocabulario
-python fase1_transcribir.py --verificar                                    :: prueba rápida de la GPU
+python herramientas/fase1_transcribir.py --audios <carpeta> --salida resultados\fase1   :: reporte HTML con y sin vocabulario
+python herramientas/fase1_transcribir.py --verificar                                    :: prueba rápida de la GPU
 ```
 
 El aprendizaje del servidor candidato se procesa en segundo plano. Ver [migración y mantenimiento](aprendizaje-incremental.md).

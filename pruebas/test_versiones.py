@@ -6,8 +6,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from verificar_versiones import RAIZ, comprobar
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "herramientas"))
+from verificar_versiones import RAIZ, comprobar  # noqa: E402
 
 
 class VersionesTest(unittest.TestCase):

@@ -1,4 +1,5 @@
 """Preparar compatibilidad de datos en una copia nueva; nunca restaurar sobre producción."""
+import sys
 import argparse
 import csv
 import json
@@ -7,6 +8,9 @@ from pathlib import Path
 import shutil
 import sqlite3
 from contextlib import closing
+RAIZ = Path(__file__).resolve().parents[1]     # carpeta del sistema (este archivo está en scripts/)
+sys.path.insert(0, str(RAIZ))                  # para importar transcripcion
+
 from transcripcion.casos import borradores as B
 
 

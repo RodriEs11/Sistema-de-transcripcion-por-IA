@@ -98,6 +98,7 @@ class AlmacenTest(unittest.TestCase):
             self.assertEqual(len(E._informes(actual)),2)
 
     def test_mantenimiento_exporta_y_respalda_sin_sobrescribir(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
         import mantenimiento_aprendizaje as M
         self.registrar('uno')
         exportado=self.raiz/'salida.csv';copia=self.raiz/'copia.sqlite3'

@@ -109,7 +109,7 @@ con las escrituras; no es una copia manual del archivo mientras cambia.
 Desde `sistema/`, con una carpeta de destino existente y un nombre nuevo:
 
 ```powershell
-.venv/Scripts/python.exe mantenimiento_cola.py --base Informes/revision/cola_procesamiento.sqlite3 --respaldar respaldo/cola_procesamiento.sqlite3-copia-20261029
+.venv/Scripts/python.exe scripts/mantenimiento_cola.py --base Informes/revision/cola_procesamiento.sqlite3 --respaldar respaldo/cola_procesamiento.sqlite3-copia-20261029
 ```
 
 El temporal y destino deben estar en un volumen que permita enlaces físicos (NTFS/ext4);

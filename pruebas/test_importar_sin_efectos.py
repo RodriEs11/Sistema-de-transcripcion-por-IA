@@ -18,6 +18,11 @@ import unittest
 RAIZ = Path(__file__).resolve().parents[1]
 
 
+# scripts/ y herramientas/ no son paquetes: cada archivo se importa desde su carpeta, como cuando se ejecuta
+# (`python scripts/x.py`), y él mismo agrega la carpeta del sistema a sys.path para encontrar transcripcion.
+CARPETAS_DE_SCRIPTS = ("scripts", "herramientas")
+
+
 def _copiar(destino):
     sistema = destino / "sistema"
     sistema.mkdir()
@@ -30,6 +35,8 @@ def _copiar(destino):
         shutil.copy2(RAIZ / nombre, sistema / nombre)
     for carpeta in ("web", "conocimiento.ejemplo"):
         shutil.copytree(RAIZ / carpeta, sistema / carpeta)
+    for carpeta in CARPETAS_DE_SCRIPTS:
+        shutil.copytree(RAIZ / carpeta, sistema / carpeta, ignore=shutil.ignore_patterns("__pycache__"))
     return sistema
 
 
@@ -39,6 +46,8 @@ def _modulos(sistema):
         rel = p.relative_to(sistema)
         if len(rel.parts) > 1 and (sistema / rel.parts[0] / "__init__.py").exists():
             mods.append(".".join(rel.with_suffix("").parts).removesuffix(".__init__"))
+    for carpeta in CARPETAS_DE_SCRIPTS:
+        mods += [f"{carpeta}/{p.stem}" for p in sorted((sistema / carpeta).glob("*.py"))]
     return mods
 
 
@@ -53,16 +62,18 @@ class ImportarSinEfectos(unittest.TestCase):
             base = Path(tmp)
             sistema = _copiar(base)
             locales = set(_modulos(sistema))
+            nombres = {m.rsplit("/", 1)[-1].split(".")[0] for m in locales}
             env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1", PYTHONIOENCODING="utf-8")
             for mod in sorted(locales):
                 with self.subTest(modulo=mod):
                     antes = _inventario(base)
-                    r = subprocess.run([sys.executable, "-c", f"import {mod}"], cwd=sistema, env=env,
+                    carpeta, _, nombre = mod.rpartition("/")
+                    r = subprocess.run([sys.executable, "-c", f"import {nombre}"], cwd=sistema / carpeta, env=env,
                                        capture_output=True, text=True, encoding="utf-8", errors="replace",
                                        timeout=120)
                     if r.returncode and "ModuleNotFoundError" in r.stderr:
                         falta = r.stderr.rsplit("No module named", 1)[-1].strip(" '\"\n").split(".")[0]
-                        if falta not in locales:
+                        if falta not in nombres:
                             self.skipTest(f"{mod}: falta la dependencia externa {falta} en este entorno")
                     self.assertEqual(r.returncode, 0, r.stderr[-2000:])
                     nuevos = sorted(_inventario(base) - antes)

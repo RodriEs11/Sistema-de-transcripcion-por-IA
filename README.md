@@ -180,12 +180,14 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 
 ```
 ├── servidor.py              Arranque: crea los objetos del paquete, abre el puerto y los hilos (rutas en transcripcion/http/)
-├── fase1_transcribir.py     Evaluación de Whisper sobre audios de ejemplo y prueba de la GPU (--verificar)
 ├── informe.py               Modo consola: audios -> Word sin la interfaz (el Word está en transcripcion/informe/word.py)
 ├── aprender.py              Modo consola: guarda como ejemplos los Word revisados (código en transcripcion/aprendizaje/)
 ├── importar_informes.py     Modo consola: importa informes Word como referencias (código en transcripcion/conocimiento/)
-├── configurar_acceso.py     Contraseña del acceso remoto y PC autorizadas
-├── configurar_tunel.py      Elegir el túnel: Cloudflare o Microsoft Dev Tunnels
+├── scripts/                 Operación de la instalación: configurar_acceso y configurar_tunel (los abren sus .bat/.sh),
+│                            mantenimiento de la cola y del aprendizaje, activación (preparar, verificar el paquete,
+│                            rollback de datos) y crear_entorno_pruebas
+├── herramientas/            Desarrollo y evaluación: fase1_transcribir (Whisper; --verificar lo usan los instaladores),
+│                            verificar_versiones, mediciones (listado, aprendizaje), GPU real y CPU/GPU, comparar_il
 ├── transcripcion/           Paquete con los módulos reorganizados: asr/ (Whisper y segunda pasada),
 │                            texto/ (normalización de números), ia/ (prompt, ejemplos, Ollama),
 │                            controles/ (marcas y avisos), conocimiento/ (plantillas y médicos), ajustes,
@@ -203,6 +205,7 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 ├── requirements.txt
 ├── *.bat                    Instalación y arranque en Windows
 ├── *.sh, linux/             Instalación, arranque y servicio en Linux
+├── pruebas/                 Pruebas automáticas (python -m unittest discover -s pruebas) y de navegador (*.cjs)
 └── docs/                    Documentación técnica
 ```
 

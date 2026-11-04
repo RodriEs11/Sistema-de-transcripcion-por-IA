@@ -1,7 +1,11 @@
 """Exportación/reconciliación explícita del aprendizaje; no se ejecuta al iniciar el servidor."""
+import sys
 import argparse
 import sqlite3
 from pathlib import Path
+RAIZ = Path(__file__).resolve().parents[1]     # carpeta del sistema (este archivo está en scripts/)
+sys.path.insert(0, str(RAIZ))                  # para importar transcripcion
+
 from transcripcion.aprendizaje import aprender as A
 from transcripcion.aprendizaje import almacen as AL
 from transcripcion.base import registro as L

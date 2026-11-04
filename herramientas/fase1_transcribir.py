@@ -5,8 +5,8 @@ salvo la primera descarga del modelo) y arma un reporte que compara lo que
 dicto el medico con el informe final que escribiste.
 
 Uso (desde fase1_transcribir.bat):
-    python fase1_transcribir.py              -> procesa todo y genera el reporte
-    python fase1_transcribir.py --verificar  -> solo prueba que la GPU funcione
+    python herramientas/fase1_transcribir.py              -> procesa todo y genera el reporte
+    python herramientas/fase1_transcribir.py --verificar  -> solo prueba que la GPU funcione
 Opciones utiles:
     --modelo large-v3-turbo   (mas rapido, un poco menos preciso)
     --device cpu              (si la GPU da error)
@@ -20,11 +20,14 @@ import sys
 import time
 from pathlib import Path
 
+RAIZ = Path(__file__).resolve().parents[1]     # carpeta del sistema (este archivo está en herramientas/)
+sys.path.insert(0, str(RAIZ))                  # para importar transcripcion
+
 from transcripcion.asr.whisper import (VOCAB_DEF, cargar_modelo, leer_vocabulario,
                                        transcribir, duracion)
 from transcripcion.texto.normalizacion import datos_criticos
 
-AQUI = Path(__file__).resolve().parent
+AQUI = RAIZ
 AUDIOS_DEF = AQUI.parent / "Dataset" / "Audios_Transcripcion"
 SALIDA_DEF = AQUI / "resultados" / "fase1"
 
@@ -212,7 +215,7 @@ def main():
             print("\n[ERROR] No se pudo usar el modelo:", e)
             if a.device == "cuda":
                 print("Sugerencias: actualizá el driver de NVIDIA y volvé a correr " + ("instalar.bat" if os.name == "nt" else "instalar.sh") + ".\n"
-                      "Como alternativa podés probar con:  " + ("fase1_transcribir.bat" if os.name == "nt" else "python fase1_transcribir.py") + " --device cpu")
+                      "Como alternativa podés probar con:  " + ("python herramientas\\fase1_transcribir.py" if os.name == "nt" else "python herramientas/fase1_transcribir.py") + " --device cpu")
             sys.exit(1)
 
     prompt = leer_vocabulario(a.vocabulario)

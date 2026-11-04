@@ -24,7 +24,7 @@ Tampoco `dev`/`develop`: dan a entender que todo lo que entra termina en producc
    `exp/actualizar-main` o directo si no hay conflictos) para que no se aleje.
 3. **Sin versiones nuevas en la rama experimental.** No se tocan `Programa.VERSION` ni `VERSION`
    de `servidor.py`: la versión se asigna al promover. Así nunca se publica un número que después
-   no existe en `main`, y `verificar_versiones.py` sigue pasando.
+   no existe en `main`, y `herramientas/verificar_versiones.py` sigue pasando.
 4. **Nunca se distribuye la app compilada desde `experimental`** a las PC del trabajo: el servidor
    de pruebas usa otro puerto y no abre túnel, así que ninguna PC del trabajo se actualiza desde él.
 5. Commits con Conventional Commits igual que siempre (`feat(editor): probar …`). Los mismos cuidados:
@@ -41,11 +41,11 @@ cambiar de rama ahí**. Para probar, se crea una copia separada:
 
 ```bat
 cd "E:\Desktop\Transcripcion con claude\sistema"
-python crear_entorno_pruebas.py                       :: rama experimental en ..\sistema_pruebas
-python crear_entorno_pruebas.py --rama exp/mi-idea --destino ..\pruebas_mi_idea --puerto 8875
+python scripts/crear_entorno_pruebas.py                       :: rama experimental en ..\sistema_pruebas
+python scripts/crear_entorno_pruebas.py --rama exp/mi-idea --destino ..\pruebas_mi_idea --puerto 8875
 ```
 
-`crear_entorno_pruebas.py` solo **lee** la instalación en uso. La copia:
+`scripts/crear_entorno_pruebas.py` solo **lee** la instalación en uso. La copia:
 
 | | Instalación en uso | Entorno de pruebas |
 |---|---|---|
@@ -73,9 +73,9 @@ El modo simulado necesita datos ficticios con la estructura descrita en [desarro
 El entorno de pruebas no tiene túnel, así que las PC del trabajo no lo ven: la app de prueba se usa en la misma PC
 del servidor, contra `http://127.0.0.1:<puerto>`.
 
-1. `crear_entorno_pruebas.py` deja en `sistema_pruebas\cliente\` las bibliotecas de WebView2 de producción (nunca el
+1. `scripts/crear_entorno_pruebas.py` deja en `sistema_pruebas\cliente\` las bibliotecas de WebView2 de producción (nunca el
    `.exe` ni `conexion.json`) y el archivo **`perfil_pruebas.txt`**. En un entorno creado antes de esto:
-   `python crear_entorno_pruebas.py --preparar-app` desde `sistema_pruebas`.
+   `python scripts/crear_entorno_pruebas.py --preparar-app` desde `sistema_pruebas`.
 2. Compilar ahí: `powershell -NoProfile -ExecutionPolicy Bypass -File cliente_codigo\compilar.ps1`. Queda
    `sistema_pruebas\cliente\Transcripcion.exe`; la carpeta `cliente` de producción no se toca.
 3. Abrirlo, elegir «Escribí la dirección del Servidor» y poner `http://127.0.0.1:<puerto>`.

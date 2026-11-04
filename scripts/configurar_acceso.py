@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 """Contraseña del acceso remoto y PC del trabajo autorizadas. Se abre con configurar_acceso.bat (Windows)
 o configurar_acceso.sh (Linux)."""
+from pathlib import Path
 import getpass
 import sys
+
+RAIZ = Path(__file__).resolve().parents[1]     # carpeta del sistema (este archivo está en scripts/)
+sys.path.insert(0, str(RAIZ))                  # para importar transcripcion
 
 from transcripcion.base import plataforma as P
 from transcripcion.base import registro as L

@@ -1,6 +1,10 @@
 """Respaldo consistente de la cola sin iniciar el servidor ni tomar su lock de propietario."""
+import sys
 import argparse
 from pathlib import Path
+RAIZ = Path(__file__).resolve().parents[1]     # carpeta del sistema (este archivo está en scripts/)
+sys.path.insert(0, str(RAIZ))                  # para importar transcripcion
+
 from transcripcion.procesamiento.cola import respaldar
 
 

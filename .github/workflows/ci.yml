@@ -44,7 +44,7 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -m unittest discover -s pruebas -p 'test_*.py' -v
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          python verificar_versiones.py --sin-binario
+          python herramientas/verificar_versiones.py --sin-binario
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           git diff --check
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
@@ -77,7 +77,7 @@ jobs:
           Copy-Item cliente_codigo/bin/Release/net48/* cliente -Recurse -Force
           powershell -NoProfile -ExecutionPolicy Bypass -File cliente_codigo/compilar.ps1
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          python verificar_versiones.py
+          python herramientas/verificar_versiones.py
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Publicar candidato probado
         if: github.event_name == 'workflow_dispatch'
@@ -89,6 +89,8 @@ jobs:
           path: |
             *.py
             transcripcion/
+            scripts/
+            herramientas/
             requirements.txt
             configuracion.ejemplo.json
             conocimiento.ejemplo/

@@ -58,7 +58,7 @@ producción y la liberación de los puertos propios.
 Desde `sistema/`, con ventana libre y el corpus sintético previo disponible:
 
 ```powershell
-.venv/Scripts/python.exe pruebas/comparar_cpu_gpu.py --ejecutar --corpus respaldo/gpu_real_20261029_213721
+.venv/Scripts/python.exe herramientas/comparar_cpu_gpu.py --ejecutar --corpus respaldo/gpu_real_20261029_213721
 ```
 
 Sin `--ejecutar` solo muestra ayuda. No tiene modo de reanudación: una campaña

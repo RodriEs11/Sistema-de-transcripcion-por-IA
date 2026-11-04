@@ -3,4 +3,4 @@
 cd "$(dirname "$(readlink -f "$0")")" || exit 1
 source linux/comun.sh
 falta_instalar
-exec "$PY" configurar_tunel.py
+exec "$PY" scripts/configurar_tunel.py

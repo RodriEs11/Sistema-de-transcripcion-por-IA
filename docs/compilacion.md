@@ -23,7 +23,7 @@ Desde `sistema/`:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File cliente_codigo/compilar.ps1
-python verificar_versiones.py
+python herramientas/verificar_versiones.py
 ```
 
 El script usa el compilador de .NET Framework de Windows y las DLL que ya están en `cliente/`.
@@ -80,7 +80,7 @@ Otras reglas:
 
 0. **Reorganizaciones sin cambios de comportamiento** (mover métodos entre archivos de una *partial class*, cambiar
    su orden): compilar antes y después con la misma versión y comparar el IL con
-   `python pruebas/comparar_il.py antes.exe despues.exe` (necesita `ikdasm`, de Mono). Tiene que decir «IL
+   `python herramientas/comparar_il.py antes.exe despues.exe` (necesita `ikdasm`, de Mono). Tiene que decir «IL
    equivalente». Los campos con valor inicial quedan todos en `VentanaPrincipal.cs`: entre archivos de una partial
    class, C# no garantiza el orden de inicialización.
 1. **Referencias**: con [Mono.Cecil](https://github.com/jbevain/cecil) listar los métodos externos que usa el `.exe`
@@ -104,7 +104,7 @@ en la interfaz de revisión que carga del servidor. Mantener sincronizados los t
    `Transcripcion.exe.viejo-X.Y` (el manifiesto ignora esos archivos).
 5. No hace falta reiniciar el servidor: el manifiesto se recalcula solo. Cada PC se actualiza cuando no se usa.
 
-6. Ejecutar `python verificar_versiones.py`: debe confirmar app, servidor, CHANGELOG, LEEME,
+6. Ejecutar `python herramientas/verificar_versiones.py`: debe confirmar app, servidor, CHANGELOG, LEEME,
    versión del ejecutable y manifiesto. En un checkout sin distribución, `--sin-binario` verifica
    únicamente las fuentes; no reemplaza la validación del ejecutable.
 

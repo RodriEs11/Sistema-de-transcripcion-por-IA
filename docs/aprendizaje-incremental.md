@@ -61,9 +61,9 @@ una transacción conjunta; un fallo entre ellas se resuelve al reintentar la tar
 Desde `sistema/`, con destinos nuevos bajo `respaldo/`:
 
 ```powershell
-.venv/Scripts/python.exe mantenimiento_aprendizaje.py --exportar respaldo/historial_exportado.csv
-.venv/Scripts/python.exe mantenimiento_aprendizaje.py --respaldar respaldo/historial_copia.sqlite3
-.venv/Scripts/python.exe mantenimiento_aprendizaje.py --reconciliar
+.venv/Scripts/python.exe scripts/mantenimiento_aprendizaje.py --exportar respaldo/historial_exportado.csv
+.venv/Scripts/python.exe scripts/mantenimiento_aprendizaje.py --respaldar respaldo/historial_copia.sqlite3
+.venv/Scripts/python.exe scripts/mantenimiento_aprendizaje.py --reconciliar
 ```
 
 Los dos primeros comandos rechazan destinos existentes. La exportación conserva columnas,
@@ -85,7 +85,7 @@ reintentos sin duplicados, reemplazo y retirada de aportes, rollback, reconcilia
 y borrar ejemplos, exclusión de números/puntuación, índice de selección y lectura del panel.
 Una prueba prohíbe recorrer directorios o repetir el diff al reintentar un ejemplo idéntico.
 
-`python pruebas/medir_aprendizaje.py` crea bases ficticias aisladas y mide siete transacciones
+`python herramientas/medir_aprendizaje.py` crea bases ficticias aisladas y mide siete transacciones
 de actualización de un informe y sus aportes, incluida la consulta top 40:
 
 | Informes | Mediana | Máximo |

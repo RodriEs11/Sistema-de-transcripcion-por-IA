@@ -26,7 +26,7 @@ case "${1:-}" in
     if [ -n "$ARGS" ]; then
       if [ ! -f acceso_remoto.json ]; then
         echo "Falta la contraseña del acceso remoto."
-        "$PY" configurar_acceso.py
+        "$PY" scripts/configurar_acceso.py
       fi
       asegurar_cloudflared || exit 1
     fi

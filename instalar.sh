@@ -123,7 +123,7 @@ if [ "$DISP" != ninguno ]; then
   echo
   echo "Descargando el modelo de Whisper (~3 GB, solo la primera vez) y probándolo..."
   preparar_cuda
-  if ! "$PY" fase1_transcribir.py --verificar --device "$DISP"; then
+  if ! "$PY" herramientas/fase1_transcribir.py --verificar --device "$DISP"; then
     PENDIENTE+=("que Whisper funcione (ver el error de arriba)")
   fi
 fi

@@ -58,7 +58,7 @@ sistema/
 │   └── http/                   manejador, tabla de rutas, una función por ruta agrupadas por área
 ├── web/                        index.html + css/principal/ + js/principal/ (partes por área), admin, estadísticas…
 ├── scripts/                    configurar_acceso, configurar_tunel, mantenimiento_*, activación, rollback…
-├── herramientas/               evaluación (fase 1/2/5), verificación de versiones y paquete, mediciones
+├── herramientas/               evaluación (fase 1), verificación de versiones, mediciones, GPU, comparar_il
 └── pruebas/                    unitarias por módulo + contratos (caja negra)
 ```
 
@@ -94,7 +94,7 @@ Los nombres son orientativos: cada etapa puede ajustarlos y lo deja escrito acá
 | 0 | **Red de seguridad** | Contratos HTTP y del núcleo, ruff mínimo en el CI, este plan y el ADR 0001 | Nulo (solo pruebas y docs) | — |
 | 1 | **Ajustes y arranque sin efectos** | `ajustes.py` (pasa a `transcripcion/` en la etapa 2); `servidor.py` y `nucleo.py` dejan de leer config y crear carpetas al importarse (todo pasa al arranque); prueba «importar no escribe nada» | Medio | Servidor |
 | 2a | **Paquete con los módulos base** | Crear `transcripcion/` y mover los módulos que ya son independientes (plataforma, persistencia, registro, ajustes, borradores, paciente, índice, cola, lotes, caché, almacén y cola de aprendizaje, usuarios). Adaptar `mantenimiento.py` (detección de código cambiado y prueba previa al reinicio), las herramientas que copian el código y el CI | Medio (muchos imports) | Servidor |
-| 2b | **Scripts y herramientas** | Scripts de mantenimiento y activación a `scripts/`, herramientas de desarrollo y evaluación a `herramientas/`, dejando lanzadores en la raíz para lo que se usa desde un `.bat` o desde la documentación | Bajo | — |
+| 2b | **Scripts y herramientas** | Scripts de operación a `scripts/` y herramientas de desarrollo y evaluación a `herramientas/`; los `.bat`/`.sh`, el CI y la documentación los llaman en su carpeta | Bajo | — |
 | 3 | **Núcleo** | `nucleo.py` → `conocimiento/` (archivos, plantillas, médicos), `ia/` (ollama, ejemplos, prompt) y `controles/` (marcas, clínicos, avisos, orden). Guardia: contrato del núcleo | Bajo | Servidor |
 | 4 | **Transcripción** | `fase1_transcribir.py` → `asr/whisper.py` y `texto/normalizacion.py`; `huecos.py` → `asr/huecos.py`. `fase1_transcribir.py` queda como herramienta de evaluación (pasa a `herramientas/` en la 2b) | Bajo | Servidor |
 | 5 | **Estado del servidor en objetos** | De `servidor.py`: `Casos` (`casos/repositorio.py`: archivos de cada caso, cachés, índice del listado) y `Procesamiento` (`procesamiento/estado.py`: etapas, cola, pausas, tiempos) como objetos creados en `configurar()`, sin las globales sueltas | **Alto** | Servidor |
@@ -122,9 +122,10 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 | 6b | `refactor/6b-raiz-al-paquete` · PR #21 · Servidor 2026.11.9 | Hecha (fusionada el 03/11) |
 | 6c | `refactor/6c-http` · PR #22 · Servidor 2026.11.10 | Hecha (fusionada el 03/11) |
 | 7 | `refactor/7-pagina-principal` · PR #23 · Servidor 2026.11.11 · App 1.25 | Hecha (fusionada el 03/11) |
-| App 1.25 | `version/app-1.25` · PR #24 | En revisión |
-| 8 | `refactor/8-ventana-principal` (sobre la App 1.25) · App 1.25 | En revisión |
-| 2b, 9 | — | Pendiente |
+| App 1.25 | `version/app-1.25` · PR #24 | Hecha (fusionada el 03/11) |
+| 8 | `refactor/8-ventana-principal` · PR #25 · App 1.25 | Hecha (fusionada el 03/11) |
+| 2b | `refactor/2b-scripts-herramientas` · sin versión nueva | En revisión |
+| 9 | — | Pendiente |
 
 ### Etapa 1: qué quedó
 
@@ -193,6 +194,35 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 - `.gitignore` excluye `conocimiento/` por nombre en cualquier carpeta: se agregó la excepción
   `!/transcripcion/conocimiento/` y `test_paquete.py` verifica que ningún archivo del paquete quede ignorado.
 - `fase1_transcribir` sigue en la raíz (los módulos nuevos lo importan): pasa al paquete en la etapa 4.
+
+### Etapa 2b: qué quedó
+
+En la raíz quedan solo los puntos de entrada: `servidor.py` (lo abren los `.bat`/`.sh`), `informe.py` (modo
+consola) y los lanzadores `aprender.py` e `importar_informes.py`. `test_paquete.py` lo verifica.
+
+| Carpeta | Archivos |
+|---|---|
+| `scripts/` (operación de la instalación) | `configurar_acceso`, `configurar_tunel`, `mantenimiento_cola`, `mantenimiento_aprendizaje`, `preparar_activacion`, `verificar_paquete`, `rollback_datos`, `crear_entorno_pruebas` |
+| `herramientas/` (desarrollo y evaluación) | `fase1_transcribir`, `verificar_versiones` y, desde `pruebas/`, `medir_listado`, `medir_aprendizaje`, `validar_gpu_real`, `resumir_gpu_real`, `comparar_cpu_gpu`, `comparar_il` |
+
+- **Sin lanzadores en la raíz** (el plan los preveía): los únicos que llaman a estos archivos son nuestros `.bat`/`.sh`,
+  el CI, `compilar.ps1` y la documentación, y todos se actualizaron en el mismo PR. `configurar_acceso.bat`,
+  `configurar_tunel.bat`, `instalar.bat` (y sus `.sh`, `iniciar_servidor.sh`, `servicio.sh`) siguen en la raíz con el
+  mismo nombre; solo cambia la ruta del `.py` adentro. `iniciar_servidor.bat` no se tocó (Windows lo lee mientras
+  corre el servidor).
+- Se ejecutan igual que antes, con la carpeta: `python scripts/mantenimiento_cola.py …`,
+  `python herramientas/verificar_versiones.py`. No son paquetes (sin `__init__.py`): cada uno que importa
+  `transcripcion` agrega la carpeta del sistema a `sys.path` al empezar (`RAIZ = Path(__file__).resolve().parents[1]`);
+  los que ubicaban la instalación por su propia carpeta (`crear_entorno_pruebas`, `preparar_activacion`,
+  `verificar_versiones`, `fase1_transcribir`) ahora usan esa `RAIZ`. Los que venían de `pruebas/` ya usaban
+  `parents[1]` y no cambiaron.
+- `test_importar_sin_efectos.py` ahora también importa cada archivo de `scripts/` y `herramientas/` desde su carpeta
+  (como al ejecutarlo): comprueba que encuentren el paquete solos y que importarlos no escriba nada.
+- El artefacto del CI incluye `scripts/` y `herramientas/` (`instalar.bat` usa `herramientas/fase1_transcribir.py`).
+- Sin versión nueva: no cambia código que corre en el servidor ni en la app. Al actualizar la instalación con
+  `git pull` no hace falta reiniciar.
+- De paso: la sugerencia de `fase1_transcribir` cuando falla la GPU nombraba un `fase1_transcribir.bat` que no existe;
+  ahora dice `python herramientas\fase1_transcribir.py --device cpu`.
 
 ### Etapa 8: qué quedó
 

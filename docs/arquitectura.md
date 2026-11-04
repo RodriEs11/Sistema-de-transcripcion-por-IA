@@ -64,7 +64,7 @@ en la raíz son los puntos de entrada y lo que todavía no se reorganizó.
 | `transcripcion/informe/guardado.py`, `word.py` | `Guardado` (`GUARDADO`): «Guardar Word y aprender» y vista previa · `word`: párrafos, formato y escritura del .docx |
 | `transcripcion/asr/` | `whisper` (bibliotecas de CUDA, carga del modelo, lectura de WAV propia, vocabulario como prompt, transcripción con tiempos por palabra), `huecos` (regiones con voz y sin palabras, segunda pasada) |
 | `transcripcion/texto/normalizacion.py` | Números en palabras a cifras, horas, niveles vertebrales, sin acentos y datos críticos |
-| `fase1_transcribir.py` | Herramienta: evaluación de Whisper sobre audios de ejemplo (reporte HTML) y `--verificar` (lo usan los instaladores) |
+| `herramientas/fase1_transcribir.py` | Herramienta: evaluación de Whisper sobre audios de ejemplo (reporte HTML) y `--verificar` (lo usan los instaladores) |
 | `transcripcion/conocimiento/` | `archivos` (carpeta `conocimiento/`, `CONOC`, `preparar_conocimiento`), `plantillas` (secciones generales y propias, categorías, títulos, texto fijo, plantillas relevantes para un dictado), `medicos` (notas generales y propias) |
 | `transcripcion/ia/` | `prompt` (instrucciones y armado de mensajes), `ejemplos` (banco, selección few-shot, referencias), `ollama` (cliente de Ollama, orden de estudios aplicado a la salida, liberar la GPU) |
 | `transcripcion/controles/` | `marcas` (marcas con su motivo, alineación con el dictado, HTML, palabras raras), `clinicos` (Bi-Rads, ACR, términos clave), `avisos` (datos omitidos, estudios sin plantilla), `orden` (orden de estudios) |

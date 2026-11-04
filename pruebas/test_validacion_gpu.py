@@ -7,6 +7,9 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "herramientas"))
 import validar_gpu_real as G
 from resumir_gpu_real import ORDEN, resumir
 
