@@ -216,6 +216,9 @@ en las secciones que ya tenía el script, sin cambiar una línea (cada parte emp
   cambia y la página que muestra es la misma, así que una versión nueva solo obligaría a compilar y distribuir el
   mismo programa a todas las PC. La regla de `AGENTS.md` (cambios de la página que se usan en la app = versión nueva
   de la app) sigue valiendo para cambios funcionales; ahora cubre también `web/js/principal/` y `web/css/principal/`.
+- **Activación**: después del `git pull` la página no carga hasta reiniciar el servidor (`index.html` ya pide
+  `/js/principal.js` y el servidor viejo no tiene esa ruta). Reiniciar desde el panel enseguida, en un momento sin
+  trabajo; el panel no cambia.
 - Queda para más adelante: cada parte sigue usando globales compartidas (`actual`, `casosCache`, `MI`…). Pasar a
   módulos con dependencias explícitas es un trabajo aparte, conviene hacerlo área por área con pruebas de Playwright.
 
