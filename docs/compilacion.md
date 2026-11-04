@@ -78,6 +78,11 @@ Otras reglas:
 
 ## Verificación
 
+0. **Reorganizaciones sin cambios de comportamiento** (mover métodos entre archivos de una *partial class*, cambiar
+   su orden): compilar antes y después con la misma versión y comparar el IL con
+   `python pruebas/comparar_il.py antes.exe despues.exe` (necesita `ikdasm`, de Mono). Tiene que decir «IL
+   equivalente». Los campos con valor inicial quedan todos en `VentanaPrincipal.cs`: entre archivos de una partial
+   class, C# no garantiza el orden de inicialización.
 1. **Referencias**: con [Mono.Cecil](https://github.com/jbevain/cecil) listar los métodos externos que usa el `.exe`
    y compararlos con la versión anterior; revisar cada método nuevo contra la API de .NET Framework 4.8. Todas las
    referencias de ensamblado deben ser `4.0.0.0`.

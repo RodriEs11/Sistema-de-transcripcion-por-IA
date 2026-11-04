@@ -80,7 +80,8 @@ C# para .NET Framework 4.8 con Windows Forms y WebView2. Archivos:
 | Archivo | Responsabilidad |
 |---|---|
 | `Programa.cs` | Punto de entrada, instancia única, configuración (`%LOCALAPPDATA%\Transcripcion\config.json`), versión y argumentos (`--autoprueba`, `--actualizada`, `--oculta`) |
-| `VentanaPrincipal.cs` | Ventana, barra de estado, WebView2, modo compacto, menú Opciones, ícono de bandeja, mensajes con la página |
+| `VentanaPrincipal.cs` y `VentanaPrincipal.<Parte>.cs` | Ventana principal, partida en una *partial class*: campos y constructor; `Barra` (barra de estado, menú Opciones), `Conexion`, `Web` (WebView2), `Puente` (mensajes con la página), `Aviso`, `Bandeja` (ícono junto al reloj), `Actualizacion`, `Compacto`, `Audios`, `Autocorreccion`, `Tema`, `Configuracion`, `Acciones` |
+| `RelojUi.cs` | Reloj que avisa a la ventana aunque esté escondida (arranque con Windows) |
 | `VentanaVincular.cs` | Primer uso: nombre de PC y contraseña |
 | `Servidor.cs` | Cliente HTTP, descubrimiento por ntfy, normalización de la dirección |
 | `Audios.cs` | Vigilancia de `%TEMP%\*.wav` y cola cifrada de envío |
