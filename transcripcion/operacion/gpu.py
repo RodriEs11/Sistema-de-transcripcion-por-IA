@@ -1,4 +1,5 @@
 """Placa de video (NVIDIA): memoria, carga y temperatura para el panel y la consola del servidor."""
+
 import time
 
 _CACHE = {"t": 0, "v": None}
@@ -8,9 +9,18 @@ def placa_de_video():
     """(texto, tono) con memoria en uso, carga y temperatura de la placa, o None."""
     try:
         import subprocess
-        r = subprocess.run(["nvidia-smi", "--query-gpu=name,memory.used,memory.total,utilization.gpu,temperature.gpu",
-                            "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=4,
-                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+
+        r = subprocess.run(
+            [
+                "nvidia-smi",
+                "--query-gpu=name,memory.used,memory.total,utilization.gpu,temperature.gpu",
+                "--format=csv,noheader,nounits",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=4,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
         nombre, usada, total, uso, temp = [x.strip() for x in r.stdout.strip().splitlines()[0].split(",")]
         gb = lambda m: f"{int(m) / 1024:.1f}".replace(".", ",")
         nombre = nombre.replace("NVIDIA ", "").replace("GeForce ", "")

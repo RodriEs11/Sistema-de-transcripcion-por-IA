@@ -2,6 +2,7 @@
 (dictado, informe y marcas para la web) y la forma de onda del audio.
 
 Viene de servidor.py (docs/refactor.md, etapa 6a). Lo crea servidor.configurar()."""
+
 import json
 import re
 
@@ -18,7 +19,7 @@ from transcripcion.texto.normalizacion import normalizar
 from transcripcion.voz import huellas as VOZ
 
 
-VERSION_MARCAS = 2      # 2: motivos detallados ("Dictado: 12 / Informe: 2") e inicio/fin de los huecos
+VERSION_MARCAS = 2  # 2: motivos detallados ("Dictado: 12 / Informe: 2") e inicio/fin de los huecos
 
 
 class VistaCasos:
@@ -30,15 +31,16 @@ class VistaCasos:
         self.proc = proc
         self.voces = voces
         self.inicio = inicio
-        self.remoto = remoto      # acceso remoto: quién tiene abierto cada caso (bloqueado_por)
+        self.remoto = remoto  # acceso remoto: quién tiene abierto cada caso (bloqueado_por)
 
     def listar_casos(self, pc=LOCAL, remoto=False):
         nombres = {p.stem: p for p in self.casos.nuevos.iterdir() if p.suffix.lower() in EXT_AUDIO}
         with self.proc.lock:
             for n, e in self.proc.estado.items():
-                if e.get('estado') in EN_PROCESO + ('error',): nombres.setdefault(n, None)
+                if e.get("estado") in EN_PROCESO + ("error",):
+                    nombres.setdefault(n, None)
         for f in self.casos.datos.glob("*.informe_ia.txt"):
-            nombres.setdefault(f.name[:-len(".informe_ia.txt")], None)
+            nombres.setdefault(f.name[: -len(".informe_ia.txt")], None)
         inventario = self.casos.indice.inventario(self.casos.datos)
         self.casos.indice.depurar(nombres)
         try:
@@ -50,8 +52,10 @@ class VistaCasos:
         esp = self.proc.esperas()
         for n in nombres:
             firma = (str(self.casos.datos), tuple(inventario.get(n + sufijo) for sufijo in SUFIJOS_CASO), firma_voz)
+
             def dato(campo, calcular):
                 return self.casos.indice.obtener((n, campo), firma, calcular)
+
             with self.proc.lock:
                 est = dict(self.proc.estado.get(n, {}))
             listo = (self.casos.datos / f"{n}.informe_ia.txt").exists()
@@ -69,19 +73,35 @@ class VistaCasos:
                 except (ValueError, OSError):
                     pass
             a = self.casos.ruta_audio(n)
-            casos.append({"nombre": n, "estado": est["estado"], "msg": est.get("msg", ""), "marcas": marcas,
-                          "medico": dato("medico_de", lambda: self.casos.medico_de(n)), "origen": dato("origen_de", lambda: self.casos.origen_de(n)), "avisos": avisos, "bloqueado_por": self.remoto.bloqueado_por(n, pc),
-                          "titulo": dato("titulo_de", lambda: self.casos.titulo_de(n)), "espera": esp.get(n), "paciente": dato("paciente", lambda: PAC.de(self.casos.datos, n)),
-                          "usuario": dato("usuario_de", lambda: self.casos.usuario_de(n)), "estilo": dato("estilo_de", lambda: self.casos.estilo_de(n)),
-                          "voz": dato("resumen_voz", lambda: self.voces.resumen_voz(n)),
-                          "estudios": dato("estudios_de", lambda: self.casos.estudios_de(n)) if listo else None, "dur": dato("duracion_de", lambda: self.casos.duracion_de(n)),
-                          "revisado_en": self.casos.revisado_en(n) if revisado else None,
-                          "puede_borrar": not (remoto and (dato("origen_de", lambda: self.casos.origen_de(n)) != pc or pc == LOCAL))
-                                          and est["estado"] not in ("transcribiendo", "generando"),
-                          "puede_pausar": not remoto and est["estado"] == "transcribiendo" and n not in self.proc.pausas,
-                          "puede_reanudar": not remoto and (est["estado"] == "en pausa" or n in self.proc.pausas),
-                          "pausa_pedida": n in self.proc.pausas and est["estado"] != "en pausa",
-                          "fecha": self.casos.fecha_caso(n, a, est.get('t', self.inicio))})
+            casos.append(
+                {
+                    "nombre": n,
+                    "estado": est["estado"],
+                    "msg": est.get("msg", ""),
+                    "marcas": marcas,
+                    "medico": dato("medico_de", lambda: self.casos.medico_de(n)),
+                    "origen": dato("origen_de", lambda: self.casos.origen_de(n)),
+                    "avisos": avisos,
+                    "bloqueado_por": self.remoto.bloqueado_por(n, pc),
+                    "titulo": dato("titulo_de", lambda: self.casos.titulo_de(n)),
+                    "espera": esp.get(n),
+                    "paciente": dato("paciente", lambda: PAC.de(self.casos.datos, n)),
+                    "usuario": dato("usuario_de", lambda: self.casos.usuario_de(n)),
+                    "estilo": dato("estilo_de", lambda: self.casos.estilo_de(n)),
+                    "voz": dato("resumen_voz", lambda: self.voces.resumen_voz(n)),
+                    "estudios": dato("estudios_de", lambda: self.casos.estudios_de(n)) if listo else None,
+                    "dur": dato("duracion_de", lambda: self.casos.duracion_de(n)),
+                    "revisado_en": self.casos.revisado_en(n) if revisado else None,
+                    "puede_borrar": not (
+                        remoto and (dato("origen_de", lambda: self.casos.origen_de(n)) != pc or pc == LOCAL)
+                    )
+                    and est["estado"] not in ("transcribiendo", "generando"),
+                    "puede_pausar": not remoto and est["estado"] == "transcribiendo" and n not in self.proc.pausas,
+                    "puede_reanudar": not remoto and (est["estado"] == "en pausa" or n in self.proc.pausas),
+                    "pausa_pedida": n in self.proc.pausas and est["estado"] != "en pausa",
+                    "fecha": self.casos.fecha_caso(n, a, est.get("t", self.inicio)),
+                }
+            )
         casos.sort(key=lambda c: c["fecha"], reverse=True)
         return casos
 
@@ -96,20 +116,45 @@ class VistaCasos:
                 if tipo:
                     seg.update(tipo=tipo, motivo=mot, seg=MAR.buscar_tiempo(t, palabras))
                 segs.append(seg)
-            out.append({"segs": segs, "linea": ln["linea"],
-                        "motivo": (ln.get("motivo") or MAR.MOTIVO_LINEA.get(ln["linea"])) if ln["linea"] else None,
-                        "titulo": ln["titulo"], "seg": MAR.buscar_tiempo(texto, palabras) if texto.strip() else None})
+            out.append(
+                {
+                    "segs": segs,
+                    "linea": ln["linea"],
+                    "motivo": (ln.get("motivo") or MAR.MOTIVO_LINEA.get(ln["linea"])) if ln["linea"] else None,
+                    "titulo": ln["titulo"],
+                    "seg": MAR.buscar_tiempo(texto, palabras) if texto.strip() else None,
+                }
+            )
         total = sum(1 for l in out if l["linea"]) + sum(1 for l in out for s in l["segs"] if s.get("tipo"))
         return out, total
 
     def guardar_marcas(self, n, salida, dictado, palabras, huecos=None):
         lineas, total = self.lineas_para_web(salida, dictado, palabras)
         om = AV.omisiones(dictado, salida, palabras)
-        om += [{"dato": f"posible parte no transcrita {mmss(h['ini'])}–{mmss(h['fin'])}", "seg": h["ini"] + 0.5,
-                "hueco": True, "ini": h["ini"], "fin": h["fin"]} for h in (huecos or [])]
+        om += [
+            {
+                "dato": f"posible parte no transcrita {mmss(h['ini'])}–{mmss(h['fin'])}",
+                "seg": h["ini"] + 0.5,
+                "hueco": True,
+                "ini": h["ini"],
+                "fin": h["fin"],
+            }
+            for h in (huecos or [])
+        ]
         nuevos = AV.estudios_sin_plantilla(salida)
-        escribir_atomico(self.casos.datos / f"{n}.marcas.json", json.dumps({"v": VERSION_MARCAS, "lineas": lineas, "omisiones": om, "estudios_nuevos": nuevos,
-                                                           "total": total + len(om)}, ensure_ascii=False))
+        escribir_atomico(
+            self.casos.datos / f"{n}.marcas.json",
+            json.dumps(
+                {
+                    "v": VERSION_MARCAS,
+                    "lineas": lineas,
+                    "omisiones": om,
+                    "estudios_nuevos": nuevos,
+                    "total": total + len(om),
+                },
+                ensure_ascii=False,
+            ),
+        )
         return lineas, om
 
     def cargar_caso(self, nombre):
@@ -122,22 +167,34 @@ class VistaCasos:
         if m.get("v") == VERSION_MARCAS:
             lineas, om = m["lineas"], m["omisiones"]
         else:
-            lineas, om = self.guardar_marcas(nombre, ia.read_text(encoding="utf-8"), trans["texto"], trans["palabras"],
-                                        trans.get("huecos"))
+            lineas, om = self.guardar_marcas(
+                nombre, ia.read_text(encoding="utf-8"), trans["texto"], trans["palabras"], trans.get("huecos")
+            )
         borrador = BOR.leer(self.casos.datos, nombre)
         om_ok = borrador["omisiones_ok"]
         fin = self.casos.datos / f"{nombre}.final.txt"
         # cada palabra con su forma normalizada ("veintitrés" -> "23"), para ubicar cada línea del informe en el dictado
         palabras = [dict(w, n=re.sub(r"[^a-z0-9.]", "", normalizar(w["p"])).strip(".")) for w in trans["palabras"]]
-        return {"nombre": nombre, "dictado": trans["texto"], "palabras": palabras, "lineas": lineas,
-                "omisiones": om, "omisiones_ok": om_ok, "medico": self.casos.medico_de(nombre), "voz": self.voces.resumen_voz(nombre),
-                "paciente": PAC.de(self.casos.datos, nombre), "titulo": self.casos.titulo_de(nombre),
-                "estudios": self.casos.estudios_de(nombre), "dur": self.casos.duracion_de(nombre),
-                "estudios_nuevos": AV.estudios_sin_plantilla(ia.read_text(encoding="utf-8")),
-                "borrador": borrador["html"],
-                "borrador_revision": borrador.get("revision", 0),
-                "revisado": fin.exists(), "tiene_audio": self.casos.ruta_audio(nombre) is not None,
-                "estilo": self._estilo_para_web(nombre)}
+        return {
+            "nombre": nombre,
+            "dictado": trans["texto"],
+            "palabras": palabras,
+            "lineas": lineas,
+            "omisiones": om,
+            "omisiones_ok": om_ok,
+            "medico": self.casos.medico_de(nombre),
+            "voz": self.voces.resumen_voz(nombre),
+            "paciente": PAC.de(self.casos.datos, nombre),
+            "titulo": self.casos.titulo_de(nombre),
+            "estudios": self.casos.estudios_de(nombre),
+            "dur": self.casos.duracion_de(nombre),
+            "estudios_nuevos": AV.estudios_sin_plantilla(ia.read_text(encoding="utf-8")),
+            "borrador": borrador["html"],
+            "borrador_revision": borrador.get("revision", 0),
+            "revisado": fin.exists(),
+            "tiene_audio": self.casos.ruta_audio(nombre) is not None,
+            "estilo": self._estilo_para_web(nombre),
+        }
 
     def _estilo_para_web(self, n):
         e = self.casos.estilo_de(n)
@@ -162,6 +219,7 @@ class VistaCasos:
                 pass
         import numpy as np
         from transcripcion.asr import whisper as W
+
         x = np.abs(W.cargar_audio(a))
         dur = len(x) / 16000.0
         if not len(x):

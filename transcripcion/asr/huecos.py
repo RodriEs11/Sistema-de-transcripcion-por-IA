@@ -9,13 +9,26 @@ o estira una palabra varios segundos (ej. "aparte" de 135.7 s a 139.0 s tapando
   2) se vuelve a transcribir SOLO ese pedazo y se inserta lo recuperado,
   3) lo que no se pudo recuperar se avisa en la interfaz para escucharlo.
 """
+
 import numpy as np
 
 SR = 16000
 # frases que Whisper "inventa" en pedazos cortos o con ruido
-ALUCINACIONES = ("gracias por ver", "subtítulos", "subtitulos", "amara.org", "suscríbete", "suscribete",
-                 "¡gracias!", "gracias.", "música", "[música]", "www.", "transcripción")
-VENT = 0.03          # ventanas de 30 ms
+ALUCINACIONES = (
+    "gracias por ver",
+    "subtítulos",
+    "subtitulos",
+    "amara.org",
+    "suscríbete",
+    "suscribete",
+    "¡gracias!",
+    "gracias.",
+    "música",
+    "[música]",
+    "www.",
+    "transcripción",
+)
+VENT = 0.03  # ventanas de 30 ms
 
 
 def energia(audio):
@@ -24,7 +37,7 @@ def energia(audio):
     if k == 0:
         return np.zeros(0)
     x = audio[: k * n].reshape(k, n)
-    return np.sqrt((x ** 2).mean(axis=1) + 1e-12)
+    return np.sqrt((x**2).mean(axis=1) + 1e-12)
 
 
 def regiones_sospechosas(audio, palabras, gap_min=1.0, palabra_max=1.4, voz_min=0.6):
@@ -34,8 +47,7 @@ def regiones_sospechosas(audio, palabras, gap_min=1.0, palabra_max=1.4, voz_min=
     e = energia(audio)
     t = lambda s: int(s / VENT)
     # umbral de voz: relativo a la energia tipica durante las palabras
-    hablado = np.concatenate([e[t(w["ini"]): max(t(w["ini"]) + 1, t(w["fin"]))] for w in palabras]) \
-        if palabras else e
+    hablado = np.concatenate([e[t(w["ini"]) : max(t(w["ini"]) + 1, t(w["fin"]))] for w in palabras]) if palabras else e
     umbral = max(np.percentile(hablado, 50) * 0.35, np.percentile(e, 20) * 2.0)
 
     cands = []
@@ -53,7 +65,7 @@ def regiones_sospechosas(audio, palabras, gap_min=1.0, palabra_max=1.4, voz_min=
 
     out = []
     for a, b, mot in cands:
-        seg = e[t(a): t(b)]
+        seg = e[t(a) : t(b)]
         voz = (seg > umbral).sum() * VENT
         if voz >= voz_min:
             out.append((round(a, 2), round(b, 2), mot, round(float(voz), 2)))
@@ -68,24 +80,37 @@ def reparar(modelo, audio, palabras, prompt_base=None, margen=0.3, al_avanzar=No
         return palabras, []
     palabras = list(palabras)
     pendientes = []
-    for a, b, mot, voz in sorted(regiones, reverse=True):     # de atras para adelante
-        if al_avanzar:           # pausa del servidor (entre tramo y tramo)
+    for a, b, mot, voz in sorted(regiones, reverse=True):  # de atras para adelante
+        if al_avanzar:  # pausa del servidor (entre tramo y tramo)
             al_avanzar(a, len(audio) / SR)
         a0, b0 = max(0.0, a - margen), min(len(audio) / SR, b + margen)
-        clip = audio[int(a0 * SR): int(b0 * SR)]
+        clip = audio[int(a0 * SR) : int(b0 * SR)]
         previas = [w["p"] for w in palabras if w["fin"] <= a][-25:]
         prompt = ((prompt_base or "") + " " + "".join(previas)).strip() or None
-        segs, _ = modelo.transcribe(clip, language="es", beam_size=5, vad_filter=False,
-                                    word_timestamps=True, condition_on_previous_text=False,
-                                    initial_prompt=prompt)
+        segs, _ = modelo.transcribe(
+            clip,
+            language="es",
+            beam_size=5,
+            vad_filter=False,
+            word_timestamps=True,
+            condition_on_previous_text=False,
+            initial_prompt=prompt,
+        )
         nuevas = []
         for s in segs:
-            for w in (s.words or []):
+            for w in s.words or []:
                 ini, fin = a0 + w.start, a0 + w.end
-                if fin <= a - 0.05 or ini >= b + 0.05:       # fuera de la region
+                if fin <= a - 0.05 or ini >= b + 0.05:  # fuera de la region
                     continue
-                nuevas.append({"p": w.word, "ini": round(ini, 2), "fin": round(fin, 2),
-                               "conf": round(w.probability, 3), "recuperada": True})
+                nuevas.append(
+                    {
+                        "p": w.word,
+                        "ini": round(ini, 2),
+                        "fin": round(fin, 2),
+                        "conf": round(w.probability, 3),
+                        "recuperada": True,
+                    }
+                )
         # solo sirve si trae algo distinto a lo que ya habia
         quitar = [w for w in palabras if w["ini"] >= a - 0.05 and w["fin"] <= b + 0.05]
         viejo = " ".join(w["p"].strip().lower() for w in quitar)

@@ -15,5 +15,11 @@ def debe_ir_en_negrita(linea, titulo, cfg):
 
 
 NEGRITA_EXACTAS = ["Tórax", "Abdomen", "Pelvis", "CONCLUSIÓN"]
-NEGRITA_DEF = ["Categorización conjunta", "Se efectuó el estudio en", "Se efectuó en un equipo PET/CT",
-               "Hallazgos PET/CT", "Hallazgos CT", "SERVICIO DE"]
+NEGRITA_DEF = [
+    "Categorización conjunta",
+    "Se efectuó el estudio en",
+    "Se efectuó en un equipo PET/CT",
+    "Hallazgos PET/CT",
+    "Hallazgos CT",
+    "SERVICIO DE",
+]

@@ -2,12 +2,12 @@
 trabajador cuando la IA no está lista.
 
 Viene de servidor.py (docs/refactor.md, etapa 6a). Lo crea servidor.configurar()."""
+
 import os
 import time
 
 from transcripcion.base import registro as L
 from transcripcion.ia import ollama as OLL
-
 
 
 class EstadoIA:
@@ -60,8 +60,11 @@ class EstadoIA:
             if e == "ok":
                 L.ok("IA", "Ollama responde de nuevo: la IA está lista.")
             elif e == "caida":
-                L.aviso("IA", "Ollama dejó de responder. Abrí Ollama: sin él no se pueden generar informes "
-                              "(los audios que lleguen quedan con error y se pueden volver a procesar).")
+                L.aviso(
+                    "IA",
+                    "Ollama dejó de responder. Abrí Ollama: sin él no se pueden generar informes "
+                    "(los audios que lleguen quedan con error y se pueden volver a procesar).",
+                )
             else:
                 L.aviso("IA", f"Ollama está abierto pero no tiene el modelo {self.cfg['modelo_ia']}.")
             L.estado(ia=e == "ok")
@@ -80,17 +83,22 @@ class EstadoIA:
                 if avisado:
                     L.ok("IA", f"La IA volvió: sigo con {self.casos.visible(n)}.")
                 return
-            self.proc.trabajo["esperando_ia"] = True       # se puede reiniciar el servidor sin esperar (se retoma al volver)
+            self.proc.trabajo["esperando_ia"] = True  # se puede reiniciar el servidor sin esperar (se retoma al volver)
             self.ultimo["e"] = e
             self.cache.update(t=time.time(), ok=e != "caida")
             motivo = "Ollama no responde" if e == "caida" else f"falta el modelo {self.cfg['modelo_ia']}"
             for x in lote:
                 if x in self.proc.borrados:
                     continue
-                if self.proc.estado.get(x, {}).get("estado") == "en cola" and not self.proc.estado[x].get("msg", "").startswith("Esperando a la IA ("):
+                if self.proc.estado.get(x, {}).get("estado") == "en cola" and not self.proc.estado[x].get(
+                    "msg", ""
+                ).startswith("Esperando a la IA ("):
                     self.proc.poner_estado(x, "en cola", f"Esperando a la IA ({motivo})…")
             if not avisado:
-                L.aviso("IA", f"{self.casos.visible(n)} ya está transcrito, pero {motivo}: queda esperando en la cola y se "
-                              f"termina solo cuando la IA esté lista.")
+                L.aviso(
+                    "IA",
+                    f"{self.casos.visible(n)} ya está transcrito, pero {motivo}: queda esperando en la cola y se "
+                    f"termina solo cuando la IA esté lista.",
+                )
                 avisado = True
             time.sleep(5)

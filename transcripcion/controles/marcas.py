@@ -13,6 +13,7 @@ Cada marca lleva su motivo concreto ("Dictado: 12 / Informe: 2").
 
 Viene de nucleo.py (docs/refactor.md, etapa 3).
 """
+
 import difflib
 import html
 import re
@@ -29,13 +30,45 @@ COD_RE = re.compile(r"\b([HCDLST]\d{1,2}(?:-[CDLS]\d{1,2})?)\b")
 
 
 LINEAS_FIJAS = ("hemos obtenido", "lo saluda")
-IGNORAR_TITULO = {"digital", "bilateral", "prolongaciones", "axilares", "ginecologica", "ambas", "ambos",
-                  "frente", "perfil", "oblicuo", "tecnica", "derecha", "derecho", "izquierda", "izquierdo"}
+IGNORAR_TITULO = {
+    "digital",
+    "bilateral",
+    "prolongaciones",
+    "axilares",
+    "ginecologica",
+    "ambas",
+    "ambos",
+    "frente",
+    "perfil",
+    "oblicuo",
+    "tecnica",
+    "derecha",
+    "derecho",
+    "izquierda",
+    "izquierdo",
+}
 
 
-ESTRUCTURALES = {"dimensiones", "uterinas", "longitudinal", "anteroposterior", "transverso",
-                 "transversal", "endometrio", "espesor", "ovario", "derecho", "izquierdo", "mide",
-                 "lobulo", "istmo", "categorizacion", "conjunta", "central", "ecogenico"}
+ESTRUCTURALES = {
+    "dimensiones",
+    "uterinas",
+    "longitudinal",
+    "anteroposterior",
+    "transverso",
+    "transversal",
+    "endometrio",
+    "espesor",
+    "ovario",
+    "derecho",
+    "izquierdo",
+    "mide",
+    "lobulo",
+    "istmo",
+    "categorizacion",
+    "conjunta",
+    "central",
+    "ecogenico",
+}
 
 
 def palabras_estructurales():
@@ -58,8 +91,29 @@ def soporte(linea, vocab_dictado):
 
 # ------------------------------------------- explicacion de cada marca
 # Cada marca lleva un motivo concreto ("Dictado: 12 / Informe: 2") en vez de uno generico.
-STOP_ALINEAR = {"como", "para", "sobre", "entre", "desde", "hasta", "este", "esta", "estos", "estas", "tiene",
-                "presenta", "pero", "porque", "cual", "cuales", "donde", "cuando", "nivel", "ambas", "ambos"}
+STOP_ALINEAR = {
+    "como",
+    "para",
+    "sobre",
+    "entre",
+    "desde",
+    "hasta",
+    "este",
+    "esta",
+    "estos",
+    "estas",
+    "tiene",
+    "presenta",
+    "pero",
+    "porque",
+    "cual",
+    "cuales",
+    "donde",
+    "cuando",
+    "nivel",
+    "ambas",
+    "ambos",
+}
 
 
 RE_COD = r"[hcdlst]\d{1,2}(?:[cdls]\d{1,2})?"
@@ -90,8 +144,7 @@ def _igual(c, t):
             return True
     elif c == t:
         return True
-    return c[:2] == t[:2] and abs(len(c) - len(t)) <= 3 and \
-        difflib.SequenceMatcher(a=c, b=t).ratio() >= 0.82
+    return c[:2] == t[:2] and abs(len(c) - len(t)) <= 3 and difflib.SequenceMatcher(a=c, b=t).ratio() >= 0.82
 
 
 def ventana_dictado(linea, toks):
@@ -140,7 +193,7 @@ def datos_cerca(linea, toks, codigo=False):
     pat = RE_COD if codigo else RE_NUM
     en_linea = datos_criticos(linea, True)
     out = []
-    for t in toks[max(0, a - 6): b + 7]:
+    for t in toks[max(0, a - 6) : b + 7]:
         if re.fullmatch(pat, t) and t not in en_linea and t not in out:
             out.append(t)
     return out
@@ -206,7 +259,7 @@ def marcar(informe, dictado, palabras_whisper=None):
     vocab = set(PAL.palabras_norm(dictado))
     toks = toks_dictado(norm_dict)
     bajos = {}
-    for w in (palabras_whisper or []):
+    for w in palabras_whisper or []:
         if w["conf"] < 0.6:
             for x in re.findall(r"\d+(?:\.\d+)?", normalizar(w["p"])):
                 bajos[x] = min(bajos.get(x, 1.0), w["conf"])
@@ -216,10 +269,20 @@ def marcar(informe, dictado, palabras_whisper=None):
         segs = []
         l = linea.rstrip()
         if re.match(r"(?i)^-\s*(es un |un )?protocolo( normal)?\.?$", l.strip()):
-            salida.append({"segs": [("[COMPLETAR: protocolo normal de este estudio]", "completar",
-                                     "La IA escribió «protocolo normal» sin el texto: falta la plantilla de este "
-                                     "estudio. Escribí las viñetas del protocolo normal")],
-                           "linea": None, "titulo": False})
+            salida.append(
+                {
+                    "segs": [
+                        (
+                            "[COMPLETAR: protocolo normal de este estudio]",
+                            "completar",
+                            "La IA escribió «protocolo normal» sin el texto: falta la plantilla de este "
+                            "estudio. Escribí las viñetas del protocolo normal",
+                        )
+                    ],
+                    "linea": None,
+                    "titulo": False,
+                }
+            )
             continue
         low = sin_acentos(l.lower()).strip()
         fija = low.startswith(LINEAS_FIJAS) or not l.strip() or PL.es_linea_fija(l)
@@ -230,21 +293,33 @@ def marcar(informe, dictado, palabras_whisper=None):
             m = re.match(r"\[\[(COMPLETAR:?|\?)\s*(.*?)\]\]$", p, flags=re.S)
             if m:
                 if m.group(1).startswith("COMPLETAR"):
-                    segs.append(("[COMPLETAR: " + m.group(2) + "]", "completar",
-                                 f"Falta: {m.group(2).strip() or 'un dato'}. No se dictó: completalo escuchando "
-                                 "el audio o borralo si no corresponde"))
+                    segs.append(
+                        (
+                            "[COMPLETAR: " + m.group(2) + "]",
+                            "completar",
+                            f"Falta: {m.group(2).strip() or 'un dato'}. No se dictó: completalo escuchando "
+                            "el audio o borralo si no corresponde",
+                        )
+                    )
                 else:
-                    segs.append((m.group(2), "dudoso", f"La IA no entendió bien esta parte y propone «{m.group(2)}». "
-                                                       "Escuchá el audio para confirmarlo"))
+                    segs.append(
+                        (
+                            m.group(2),
+                            "dudoso",
+                            f"La IA no entendió bien esta parte y propone «{m.group(2)}». "
+                            "Escuchá el audio para confirmarlo",
+                        )
+                    )
                 continue
             if fija or not p:
-                segs.append((p, None, None)); continue
+                segs.append((p, None, None))
+                continue
             # 2) numeros y codigos
             pos = 0
             for mm in re.finditer(r"\b[HCDLST]\d{1,2}(?:-[CDLS]\d{1,2})?\b|(?<![A-Za-z0-9.,])\d+(?:[.,]\d+)?", p):
                 tok = mm.group(0)
                 if pos < mm.start():
-                    segs.append((p[pos:mm.start()], None, None))
+                    segs.append((p[pos : mm.start()], None, None))
                 key = tok.lower().replace("-", "").replace(",", ".")
                 if key[0].isalpha():
                     ok = key in cods_dict
@@ -253,8 +328,14 @@ def marcar(informe, dictado, palabras_whisper=None):
                 if not ok:
                     segs.append((tok, "numero", motivo_numero(tok, l, toks)))
                 elif key in bajos:
-                    segs.append((tok, "bajaconf", f"Whisper oyó «{tok}» con poca seguridad "
-                                                  f"(confianza {round(bajos[key] * 100)} %): escuchalo para confirmar"))
+                    segs.append(
+                        (
+                            tok,
+                            "bajaconf",
+                            f"Whisper oyó «{tok}» con poca seguridad "
+                            f"(confianza {round(bajos[key] * 100)} %): escuchalo para confirmar",
+                        )
+                    )
                 else:
                     segs.append((tok, None, None))
                 pos = mm.end()
@@ -273,8 +354,7 @@ def marcar(informe, dictado, palabras_whisper=None):
             if sop < 0.5:
                 tipo_linea = "plantilla" if l in plantilla else "verificar"
                 motivo_l = motivo_linea(tipo_linea, l, vocab, norm_dict)
-        salida.append({"segs": segs, "linea": tipo_linea, "motivo": motivo_l,
-                       "titulo": bool(es_titulo_l and not fija)})
+        salida.append({"segs": segs, "linea": tipo_linea, "motivo": motivo_l, "titulo": bool(es_titulo_l and not fija)})
     CLI.controles_clinicos(salida, norm_dict, formas_originales(dictado))
     control_palabras_raras(salida)
     return salida
@@ -311,8 +391,9 @@ def control_palabras_raras(salida):
         texto = "".join(t for t, _, _ in ln["segs"])
         if not texto.strip() or sin_acentos(texto.lower()).startswith(LINEAS_FIJAS):
             continue
-        ln["segs"] = CLI.partir(ln["segs"], r"[A-Za-zÁÉÍÓÚáéíóúñÑüÜ]{3,}", "dudoso", MOTIVO_RARA,
-                             lambda m: m.group(0).lower() not in v)
+        ln["segs"] = CLI.partir(
+            ln["segs"], r"[A-Za-zÁÉÍÓÚáéíóúñÑüÜ]{3,}", "dudoso", MOTIVO_RARA, lambda m: m.group(0).lower() not in v
+        )
 
 
 def texto_limpio(informe):
@@ -321,8 +402,10 @@ def texto_limpio(informe):
     return re.sub(r"\[\[\?\s*(.*?)\]\]", r"\1", t)
 
 
-MOTIVO_LINEA = {"plantilla": "Frase de plantilla que no se dictó explícitamente: confirmá que corresponde",
-                "verificar": "La IA escribió esta línea y no se encuentra en el dictado: verificar"}
+MOTIVO_LINEA = {
+    "plantilla": "Frase de plantilla que no se dictó explícitamente: confirmá que corresponde",
+    "verificar": "La IA escribió esta línea y no se encuentra en el dictado: verificar",
+}
 
 
 def buscar_tiempo(texto, palabras):
@@ -345,10 +428,12 @@ def buscar_tiempo(texto, palabras):
 def a_html(marcado, palabras=None):
     out = []
     for ln in marcado:
+
         def mk(t, tipo, mot):
             seg = buscar_tiempo(t, palabras) if palabras else None
             click = f' onclick="ir({seg})" style="cursor:pointer"' if seg is not None else ""
             return f'<mark class="m-{tipo}" title="{html.escape(mot)}"{click}>{html.escape(t)}</mark>'
+
         inner = "".join(html.escape(t) if not tipo else mk(t, tipo, mot) for t, tipo, mot in ln["segs"])
         cls = ["ln"]
         tit = ""

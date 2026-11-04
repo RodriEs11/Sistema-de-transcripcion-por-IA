@@ -3,6 +3,7 @@ médico como prompt y transcripción con tiempos por palabra.
 
 Viene de fase1_transcribir.py (docs/refactor.md, etapa 4).
 """
+
 import glob
 import os
 import sys
@@ -11,7 +12,7 @@ from pathlib import Path
 from transcripcion import RAIZ
 
 
-VOCAB_DEF = RAIZ / "vocabulario.txt"     # vocabulario médico para el prompt de Whisper
+VOCAB_DEF = RAIZ / "vocabulario.txt"  # vocabulario médico para el prompt de Whisper
 
 
 # ----------------------------------------------------------------- GPU
@@ -20,6 +21,7 @@ def preparar_cuda():
     bases = {sys.prefix, os.path.join(sys.prefix, "Lib", "site-packages")}
     try:
         import site
+
         bases.update(site.getsitepackages())
     except Exception:
         pass
@@ -40,6 +42,7 @@ def _preparar_cuda_linux(bases):
     forma, se cargan acá a mano (RTLD_GLOBAL) para que CTranslate2 las encuentre. Si no hay GPU o las
     bibliotecas son las del sistema, no hace nada."""
     import ctypes
+
     ld = os.environ.get("LD_LIBRARY_PATH", "")
     pendientes = []
     for base in bases:
@@ -48,7 +51,7 @@ def _preparar_cuda_linux(bases):
                 continue
             for patron in ("libcublasLt.so*", "libcublas.so*", "libcudnn*.so*"):
                 pendientes += sorted(glob.glob(os.path.join(d, patron)))
-    for _ in range(3):                  # algunas dependen de otras: reintentar las que fallaron
+    for _ in range(3):  # algunas dependen de otras: reintentar las que fallaron
         fallaron = []
         for f in pendientes:
             try:
@@ -63,6 +66,7 @@ def _preparar_cuda_linux(bases):
 def cargar_modelo(nombre, device):
     preparar_cuda()
     from faster_whisper import WhisperModel
+
     compute = "float16" if device == "cuda" else "int8"
     print(f"Cargando modelo '{nombre}' en {device} ({compute})...")
     print("(la primera vez se descarga, ~3 GB; despues queda guardado)")
@@ -73,20 +77,25 @@ def cargar_modelo(nombre, device):
 def leer_vocabulario(ruta):
     if not ruta or not Path(ruta).exists():
         return None
-    terms = [l.strip() for l in Path(ruta).read_text(encoding="utf-8-sig").splitlines()
-             if l.strip() and not l.strip().startswith("#")]
+    terms = [
+        l.strip()
+        for l in Path(ruta).read_text(encoding="utf-8-sig").splitlines()
+        if l.strip() and not l.strip().startswith("#")
+    ]
     return "Informe médico de diagnóstico por imágenes: " + ", ".join(terms) + "."
 
 
 def cargar_audio(ruta, sr=16000):
     """Lee un WAV PCM y lo pasa a 16 kHz mono float32 (sin depender de PyAV)."""
     import numpy as np
+
     try:
         with wave.open(str(ruta)) as w:
             n, ch, ancho, fr = w.getnframes(), w.getnchannels(), w.getsampwidth(), w.getframerate()
             crudo = w.readframes(n)
     except Exception:
         from faster_whisper import decode_audio  # otros formatos (mp3, etc.)
+
         return decode_audio(str(ruta), sampling_rate=sr)
     if ancho == 1:
         x = (np.frombuffer(crudo, np.uint8).astype(np.float32) - 128) / 128
@@ -115,15 +124,21 @@ def transcribir(modelo, ruta_wav, prompt, al_avanzar=None):
     """al_avanzar(pos, total): se llama después de cada tramo (el servidor lo usa para mostrar por dónde va y
     para la pausa: si la función no vuelve, Whisper queda detenido ahí con lo transcrito hasta ese momento)."""
     segs, info = modelo.transcribe(
-        cargar_audio(ruta_wav), language="es", beam_size=5, vad_filter=True,
-        word_timestamps=True, condition_on_previous_text=False,
-        initial_prompt=prompt)
+        cargar_audio(ruta_wav),
+        language="es",
+        beam_size=5,
+        vad_filter=True,
+        word_timestamps=True,
+        condition_on_previous_text=False,
+        initial_prompt=prompt,
+    )
     palabras, textos = [], []
     for s in segs:
         textos.append(s.text.strip())
-        for w in (s.words or []):
-            palabras.append({"p": w.word, "ini": round(w.start, 2),
-                             "fin": round(w.end, 2), "conf": round(w.probability, 3)})
+        for w in s.words or []:
+            palabras.append(
+                {"p": w.word, "ini": round(w.start, 2), "fin": round(w.end, 2), "conf": round(w.probability, 3)}
+            )
         if al_avanzar:
             al_avanzar(s.end, getattr(info, "duration", None))
     return {"texto": " ".join(textos), "palabras": palabras}

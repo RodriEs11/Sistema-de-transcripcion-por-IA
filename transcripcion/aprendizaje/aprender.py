@@ -12,6 +12,7 @@ Como funciona:
 Ademas lleva un historial indexado (resultados\\historial.sqlite3; importa el CSV anterior) con el % de palabras que tuviste
 que corregir en cada informe, para ver si el sistema mejora con el tiempo.
 """
+
 import difflib
 import json
 import re
@@ -30,7 +31,7 @@ try:
 except Exception:
     pass
 
-AQUI = RAIZ          # carpeta del sistema (no la del paquete)
+AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 EJ = AQUI / "ejemplos"
 HIST = AQUI / "resultados" / "historial.csv"
 REG = EJ / "_procesados.json"
@@ -38,6 +39,7 @@ REG = EJ / "_procesados.json"
 
 def leer_docx(ruta, titulo_ia, n_encabezado):
     from docx import Document
+
     d = Document(str(ruta))
     pars = d.paragraphs
     resaltados = any(r.font.highlight_color for p in pars for r in p.runs)
@@ -51,14 +53,16 @@ def leer_docx(ruta, titulo_ia, n_encabezado):
 
 
 def pct_corregido(ia, final):
-    a = re.findall(r"\S+", ia); b = re.findall(r"\S+", final)
+    a = re.findall(r"\S+", ia)
+    b = re.findall(r"\S+", final)
     sm = difflib.SequenceMatcher(a=a, b=b, autojunk=False)
     ed = sum(max(i2 - i1, j2 - j1) for op, i1, i2, j1, j2 in sm.get_opcodes() if op != "equal")
     return ed / max(1, len(b))
 
 
-def registrar_ejemplo(nombre, dictado, ia, final, clave=None, medico=None, *, recalcular=True, fecha=None,
-                      usuario=None):
+def registrar_ejemplo(
+    nombre, dictado, ia, final, clave=None, medico=None, *, recalcular=True, fecha=None, usuario=None
+):
     """Guarda el par dictado -> informe final como ejemplo y anota el historial.
     usuario: transcriptor que lo revisó (el ejemplo es de su estilo); None = general.
     Devuelve (clave, porcentaje_corregido)."""
@@ -80,8 +84,10 @@ def registrar_ejemplo(nombre, dictado, ia, final, clave=None, medico=None, *, re
     pc = pct_corregido(ia_sin_espacios, final)
     fecha = fecha or time.strftime("%Y-%m-%d %H:%M")
     with AL.abrir(HIST) as c:
-        c.execute('INSERT OR REPLACE INTO historial VALUES (?,?,?,?,?)',
-                  (fecha[:10], nombre, fecha, len(final.split()), f"{pc*100:.1f}"))
+        c.execute(
+            "INSERT OR REPLACE INTO historial VALUES (?,?,?,?,?)",
+            (fecha[:10], nombre, fecha, len(final.split()), f"{pc * 100:.1f}"),
+        )
         _indexar_correcciones(c, clave, MAR.texto_limpio(ia), final.strip() + "\n")
         AL.poner_usuario(c, clave, usuario)
     if recalcular:
@@ -89,6 +95,7 @@ def registrar_ejemplo(nombre, dictado, ia, final, clave=None, medico=None, *, re
             analizar_correcciones()
         except Exception:
             from transcripcion.base import registro as L
+
             L.aviso("APRENDIZAJE", "No se pudieron actualizar las correcciones frecuentes.", exc=True)
     return clave, pc
 
@@ -107,7 +114,7 @@ def cambios_de_textos(ia, final):
     b = re.findall(r"\S+", final)
     cambios = set()
     for op, i1, i2, j1, j2 in difflib.SequenceMatcher(a=a, b=b, autojunk=False).get_opcodes():
-        if op == "equal" or max(i2-i1, j2-j1) > 12:
+        if op == "equal" or max(i2 - i1, j2 - j1) > 12:
             continue
         de, a_ = " ".join(a[i1:i2]), " ".join(b[j1:j2])
         if re.search(r"\d", de + a_):
@@ -119,7 +126,7 @@ def cambios_de_textos(ia, final):
 
 
 def _indexar_correcciones(c, clave, ia, final):
-    firma = hashlib.sha256(json.dumps([ia, final], ensure_ascii=False).encode('utf-8')).hexdigest()
+    firma = hashlib.sha256(json.dumps([ia, final], ensure_ascii=False).encode("utf-8")).hexdigest()
     return AL.actualizar_ejemplo(c, clave, firma, lambda: cambios_de_textos(ia, final))
 
 
@@ -147,7 +154,7 @@ def repartir_correcciones(fuentes, minimo=2):
         if cnt.get("", 0) >= minimo or len(cnt) >= 2:
             generales.append((n, k))
         else:
-            (u, m), = cnt.items()
+            ((u, m),) = cnt.items()
             propias.setdefault(u, []).append((m, k))
     orden = lambda x: (x[0], x[1][0], x[1][1], x[1][2])
     generales.sort(key=orden, reverse=True)
@@ -163,33 +170,38 @@ def analizar_correcciones(minimo=2, *, reconstruir=False):
         inicializado = c.execute("SELECT v FROM meta WHERE k='correcciones'").fetchone()
         if reconstruir or not inicializado:
             claves = set()
-            for inf in EJ.glob('*.informe.txt'):
-                clave = inf.name[:-len('.informe.txt')]
-                ia_f = EJ / f'{clave}.ia.txt'
+            for inf in EJ.glob("*.informe.txt"):
+                clave = inf.name[: -len(".informe.txt")]
+                ia_f = EJ / f"{clave}.ia.txt"
                 if not ia_f.exists():
-                    nombre = clave.split('_', 2)[-1]
-                    viejo = DATOS_INF / f'{nombre}.informe_ia.txt'
+                    nombre = clave.split("_", 2)[-1]
+                    viejo = DATOS_INF / f"{nombre}.informe_ia.txt"
                     if not viejo.exists():
                         continue
-                    escribir_atomico(ia_f, MAR.texto_limpio(viejo.read_text(encoding='utf-8')))
+                    escribir_atomico(ia_f, MAR.texto_limpio(viejo.read_text(encoding="utf-8")))
                 claves.add(clave)
-                _indexar_correcciones(c, clave, ia_f.read_text(encoding='utf-8'), inf.read_text(encoding='utf-8'))
-                usu = EJ / f'{clave}.usuario.txt'
-                AL.poner_usuario(c, clave, usu.read_text(encoding='utf-8').strip() if usu.exists() else None)
-            for (clave,) in c.execute('SELECT clave FROM ejemplos').fetchall():
+                _indexar_correcciones(c, clave, ia_f.read_text(encoding="utf-8"), inf.read_text(encoding="utf-8"))
+                usu = EJ / f"{clave}.usuario.txt"
+                AL.poner_usuario(c, clave, usu.read_text(encoding="utf-8").strip() if usu.exists() else None)
+            for (clave,) in c.execute("SELECT clave FROM ejemplos").fetchall():
                 if clave not in claves:
                     AL.quitar_ejemplo(c, clave)
             c.execute("INSERT OR REPLACE INTO meta VALUES ('correcciones','1')")
         frec, propias = repartir_correcciones(AL.correcciones_por_fuente(c), minimo)
-    salida = _lineas_correcciones(frec, "# CORRECCIONES QUE EL TRANSCRIPTOR HIZO VARIAS VECES (se actualiza solo; no editar)")
+    salida = _lineas_correcciones(
+        frec, "# CORRECCIONES QUE EL TRANSCRIPTOR HIZO VARIAS VECES (se actualiza solo; no editar)"
+    )
     if not ARCH_CORR.exists() or ARCH_CORR.read_text(encoding="utf-8") != salida:
         escribir_atomico(ARCH_CORR, salida)
     from transcripcion.acceso import usuarios as U
+
     for clave in set(U.claves_con_carpeta()) | set(propias):
         try:
             if propias.get(clave):
-                texto = _lineas_correcciones(propias[clave], "# CORRECCIONES QUE HICISTE VARIAS VECES "
-                                                             "(solo para tu estilo; se actualiza solo; no editar)")
+                texto = _lineas_correcciones(
+                    propias[clave],
+                    "# CORRECCIONES QUE HICISTE VARIAS VECES (solo para tu estilo; se actualiza solo; no editar)",
+                )
                 if U.leer_archivo(clave, "correcciones_aprendidas.md") != texto:
                     U.escribir_archivo(clave, "correcciones_aprendidas.md", texto)
             else:
@@ -202,23 +214,23 @@ def analizar_correcciones(minimo=2, *, reconstruir=False):
 def _importar_procesados(c):
     if c.execute("SELECT v FROM meta WHERE k='procesados'").fetchone():
         return
-    reg = json.loads(REG.read_text(encoding='utf-8')) if REG.exists() else {}
+    reg = json.loads(REG.read_text(encoding="utf-8")) if REG.exists() else {}
     for ruta, d in reg.items():
-        c.execute('INSERT OR REPLACE INTO procesados VALUES (?,?,?)', (ruta,d['mtime'],d['ejemplo']))
+        c.execute("INSERT OR REPLACE INTO procesados VALUES (?,?,?)", (ruta, d["mtime"], d["ejemplo"]))
     c.execute("INSERT INTO meta VALUES ('procesados','1')")
 
 
 def procesado(docx):
     with AL.abrir(HIST) as c:
         _importar_procesados(c)
-        r = c.execute('SELECT mtime,ejemplo FROM procesados WHERE ruta=?', (str(docx),)).fetchone()
-        return {'mtime':r[0], 'ejemplo':r[1]} if r else {}
+        r = c.execute("SELECT mtime,ejemplo FROM procesados WHERE ruta=?", (str(docx),)).fetchone()
+        return {"mtime": r[0], "ejemplo": r[1]} if r else {}
 
 
 def anotar_procesado(docx, clave):
     with AL.abrir(HIST) as c:
         _importar_procesados(c)
-        c.execute('INSERT OR REPLACE INTO procesados VALUES (?,?,?)', (str(docx),Path(docx).stat().st_mtime,clave))
+        c.execute("INSERT OR REPLACE INTO procesados VALUES (?,?,?)", (str(docx), Path(docx).stat().st_mtime, clave))
 
 
 def aprender(cfg, silencioso=False):
@@ -247,14 +259,17 @@ def aprender(cfg, silencioso=False):
         if resaltado or "[COMPLETAR" in final or "[REVISAR" in final:
             pendientes.append(docx.name)
             continue
-        clave, pc = registrar_ejemplo(nombre, dic_f.read_text(encoding="utf-8"), ia_f.read_text(encoding="utf-8"),
-                                      final, registro.get("ejemplo"))
+        clave, pc = registrar_ejemplo(
+            nombre, dic_f.read_text(encoding="utf-8"), ia_f.read_text(encoding="utf-8"), final, registro.get("ejemplo")
+        )
         anotar_procesado(docx, clave)
         nuevos.append((nombre, pc))
 
     if nuevos:
-        print(f"Aprendidos {len(nuevos)} informe(s) revisado(s): " +
-              ", ".join(f"{n} ({p*100:.0f}% corregido)" for n, p in nuevos))
+        print(
+            f"Aprendidos {len(nuevos)} informe(s) revisado(s): "
+            + ", ".join(f"{n} ({p * 100:.0f}% corregido)" for n, p in nuevos)
+        )
     if pendientes and not silencioso:
         print(f"Sin revisar todavía (tienen resaltados): {', '.join(pendientes)}")
     return nuevos
@@ -266,9 +281,9 @@ def resumen():
         return
     filas = AL.leer_historial(HIST)
     pcs = [float(f["porcentaje_corregido"]) for f in filas]
-    print(f"\nHistorial: {len(pcs)} informes revisados · promedio corregido {sum(pcs)/len(pcs):.1f}%")
+    print(f"\nHistorial: {len(pcs)} informes revisados · promedio corregido {sum(pcs) / len(pcs):.1f}%")
     if len(pcs) >= 20:
         a, b = pcs[:-10], pcs[-10:]
-        print(f"  primeros {len(a)}: {sum(a)/len(a):.1f}%   ·   últimos 10: {sum(b)/len(b):.1f}%")
+        print(f"  primeros {len(a)}: {sum(a) / len(a):.1f}%   ·   últimos 10: {sum(b) / len(b):.1f}%")
     n_ej = len(list(EJ.glob("*.informe.txt")))
     print(f"Ejemplos aprendidos disponibles para la IA: {n_ej} (+ los 33 del dataset)")

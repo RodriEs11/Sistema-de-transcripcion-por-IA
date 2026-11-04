@@ -2,6 +2,7 @@
 los mensajes que el panel muestra en la pantalla de todas las PC.
 
 Viene de servidor.py (docs/refactor.md, etapa 6a). Lo crea servidor.configurar()."""
+
 import json
 import os
 import sys
@@ -14,8 +15,10 @@ from transcripcion.base.persistencia import escribir_atomico
 from transcripcion.casos.repositorio import LOCAL
 
 
-TEXTO_REINICIO = ("Guardá lo que estés haciendo. El informe abierto se guarda solo; en un minuto el sistema "
-                  "vuelve y la pantalla se reconecta sola.")
+TEXTO_REINICIO = (
+    "Guardá lo que estés haciendo. El informe abierto se guarda solo; en un minuto el sistema "
+    "vuelve y la pantalla se reconecta sola."
+)
 
 
 class Operacion:
@@ -30,7 +33,7 @@ class Operacion:
         self.tunel = tunel
         self.srv = srv
         self.fin_lock = fin_lock
-        self.mantenimiento = mantenimiento    # módulo mantenimiento: prueba del código nuevo, git, código de reinicio
+        self.mantenimiento = mantenimiento  # módulo mantenimiento: prueba del código nuevo, git, código de reinicio
         self.reinicio = {}  # reinicio programado desde el panel: id, cuando, estado (programado|esperando|reiniciando)...
         self.mensaje = {}  # cartel en la pantalla de todas las PC: id, texto, tipo, desde, hasta, por, reinicio
         self.msj_lock = threading.Lock()
@@ -40,8 +43,15 @@ class Operacion:
         ahora = time.time()
         with self.msj_lock:
             self.mensaje.clear()
-            self.mensaje.update(id=f"{int(ahora * 1000):x}", texto=texto, tipo=tipo, desde=ahora,
-                           hasta=ahora + minutos * 60 if minutos else None, por=por or LOCAL, reinicio=reinicio)
+            self.mensaje.update(
+                id=f"{int(ahora * 1000):x}",
+                texto=texto,
+                tipo=tipo,
+                desde=ahora,
+                hasta=ahora + minutos * 60 if minutos else None,
+                por=por or LOCAL,
+                reinicio=reinicio,
+            )
 
     def quitar_mensaje(self, solo_reinicio=False):
         with self.msj_lock:
@@ -66,7 +76,7 @@ class Operacion:
             with self.rei_lock:
                 if self.reinicio:
                     out["reinicio"] = {"cuando": self.reinicio.get("cuando"), "estado": self.reinicio.get("estado")}
-                    out["id"] = f"{m['id']}-{self.reinicio.get('estado')}"     # cambia de etapa: se vuelve a mostrar
+                    out["id"] = f"{m['id']}-{self.reinicio.get('estado')}"  # cambia de etapa: se vuelve a mostrar
         return out
 
     def estado_reinicio(self):
@@ -74,7 +84,9 @@ class Operacion:
             if not self.reinicio:
                 return None
             r = {k: self.reinicio.get(k) for k in ("cuando", "estado", "por", "avisar", "pedido")}
-        r["procesando"] = [self.casos.titulo_de(n) for n in self.proc.en_estado("transcribiendo") + self.proc.en_estado("generando")]
+        r["procesando"] = [
+            self.casos.titulo_de(n) for n in self.proc.en_estado("transcribiendo") + self.proc.en_estado("generando")
+        ]
         r["en_cola"] = len(self.proc.cola_pendiente())
         return r
 
@@ -95,27 +107,46 @@ class Operacion:
         t0 = time.time()
         err = self.mantenimiento.prueba_de_arranque()
         if err:
-            L.aviso("SERVIDOR", f"Reinicio pedido desde el panel ({quien_txt}) cancelado: el código de la carpeta tiene "
-                                f"un error y el servidor no volvería a abrir.", det=err.splitlines()[-6:])
-            return {"error": "No se reinicia: el código que está en la carpeta tiene un error y el servidor no volvería "
-                             "a abrir. Corregilo y probá de nuevo.", "detalle": err}, 409
+            L.aviso(
+                "SERVIDOR",
+                f"Reinicio pedido desde el panel ({quien_txt}) cancelado: el código de la carpeta tiene "
+                f"un error y el servidor no volvería a abrir.",
+                det=err.splitlines()[-6:],
+            )
+            return {
+                "error": "No se reinicia: el código que está en la carpeta tiene un error y el servidor no volvería "
+                "a abrir. Corregilo y probá de nuevo.",
+                "detalle": err,
+            }, 409
         with self.rei_lock:
             if self.reinicio.get("estado") == "reiniciando":
                 return {"error": "El servidor ya se está reiniciando."}, 409
             rid = f"{int(time.time() * 1000):x}"
             self.reinicio.clear()
-            self.reinicio.update(id=rid, cuando=time.time() + seg, pedido=time.time(), por=quien_txt, estado="programado",
-                            detener=False, forzar=False, avisar=bool(avisar))
+            self.reinicio.update(
+                id=rid,
+                cuando=time.time() + seg,
+                pedido=time.time(),
+                por=quien_txt,
+                estado="programado",
+                detener=False,
+                forzar=False,
+                avisar=bool(avisar),
+            )
         if avisar:
             self.poner_mensaje(texto, tipo="aviso", por=quien, reinicio=True)
         else:
             self.quitar_mensaje(solo_reinicio=True)
         threading.Thread(target=self._hilo_reinicio, args=(rid,), daemon=True, name="reinicio").start()
         cambios = ", ".join(c["archivo"] for c in self.mantenimiento.cambios_sin_tomar()) or "sin cambios en el código"
-        L.info("SERVIDOR", f"Reinicio del servidor programado desde el panel ({quien_txt}) "
-                           + (f"para dentro de {L.seg(seg)}" if seg else "para ahora")
-                           + (", con aviso a las PC" if avisar else "") + f". Toma: {cambios}. "
-                           f"(el código nuevo se probó en {L.seg(time.time() - t0)})")
+        L.info(
+            "SERVIDOR",
+            f"Reinicio del servidor programado desde el panel ({quien_txt}) "
+            + (f"para dentro de {L.seg(seg)}" if seg else "para ahora")
+            + (", con aviso a las PC" if avisar else "")
+            + f". Toma: {cambios}. "
+            f"(el código nuevo se probó en {L.seg(time.time() - t0)})",
+        )
         if seg:
             msg = f"Reinicio programado: en {mmss(seg)} (y cuando termine lo que se esté procesando)."
         else:
@@ -141,8 +172,11 @@ class Operacion:
             if self.reinicio.get("estado") == "reiniciando":
                 return {"error": "Ya se está reiniciando."}, 409
             self.reinicio.update(forzar=True, cuando=min(self.reinicio["cuando"], time.time()))
-        L.aviso("SERVIDOR", f"Reinicio sin esperar pedido desde el panel ({quien or LOCAL}): lo que se estaba procesando "
-                            f"se vuelve a procesar al volver.")
+        L.aviso(
+            "SERVIDOR",
+            f"Reinicio sin esperar pedido desde el panel ({quien or LOCAL}): lo que se estaba procesando "
+            f"se vuelve a procesar al volver.",
+        )
         return {"ok": True, "msg": "Reiniciando ahora…"}, 200
 
     def _hilo_reinicio(self, rid):
@@ -151,18 +185,29 @@ class Operacion:
             time.sleep(0.5)
             with self.rei_lock:
                 if self.reinicio.get("id") != rid:
-                    return                       # cancelado o vuelto a programar
+                    return  # cancelado o vuelto a programar
                 if time.time() < self.reinicio["cuando"]:
                     continue
-                self.reinicio["detener"] = True       # el trabajador no empieza nada nuevo
-                ocupado = self.proc.trabajo["ocupado"] and not self.proc.trabajo["esperando_ia"] and not self.proc.trabajo.get("en_pausa")
+                self.reinicio["detener"] = True  # el trabajador no empieza nada nuevo
+                ocupado = (
+                    self.proc.trabajo["ocupado"]
+                    and not self.proc.trabajo["esperando_ia"]
+                    and not self.proc.trabajo.get("en_pausa")
+                )
                 if ocupado and not self.reinicio.get("forzar"):
                     self.reinicio["estado"] = "esperando"
                     if not avisado:
                         avisado = True
-                        proc = ", ".join(f"«{self.casos.titulo_de(n)}»" for n in self.proc.en_estado("transcribiendo") + self.proc.en_estado("generando"))
-                        L.info("SERVIDOR", "Reinicio: espero a que termine lo que se está procesando"
-                                           + (f" ({proc})" if proc else "") + ".")
+                        proc = ", ".join(
+                            f"«{self.casos.titulo_de(n)}»"
+                            for n in self.proc.en_estado("transcribiendo") + self.proc.en_estado("generando")
+                        )
+                        L.info(
+                            "SERVIDOR",
+                            "Reinicio: espero a que termine lo que se está procesando"
+                            + (f" ({proc})" if proc else "")
+                            + ".",
+                        )
                     continue
                 self.reinicio["estado"] = "reiniciando"
             self._reiniciar_ahora()
@@ -170,28 +215,41 @@ class Operacion:
 
     def _reiniciar_ahora(self):
         por = self.reinicio.get("por") or LOCAL
-        self.fin_lock.acquire(timeout=60)             # que no quede un «Guardar Word» a medias (no se suelta: se cierra)
+        self.fin_lock.acquire(timeout=60)  # que no quede un «Guardar Word» a medias (no se suelta: se cierra)
         pend = self.proc.cola_pendiente()
         pausados = [n for n in pend if self.proc.estado.get(n, {}).get("estado") == "en pausa"]
         pend = [n for n in pend if n not in pausados]
         for n in pausados:
-            L.aviso("SERVIDOR", f"{self.casos.visible(n)} estaba en pausa: " + ('se conserva la pausa; usá Reanudar al volver.' if self.proc.duradera is not None
-                    else 'queda sin procesar (botón Procesar en la lista cuando quieras).'))
+            L.aviso(
+                "SERVIDOR",
+                f"{self.casos.visible(n)} estaba en pausa: "
+                + (
+                    "se conserva la pausa; usá Reanudar al volver."
+                    if self.proc.duradera is not None
+                    else "queda sin procesar (botón Procesar en la lista cuando quieras)."
+                ),
+            )
         if self.proc.duradera is None:
             try:
-                escribir_atomico(self.cola_al_reiniciar, json.dumps({"t": time.time(), "nombres": pend}, ensure_ascii=False))
+                escribir_atomico(
+                    self.cola_al_reiniciar, json.dumps({"t": time.time(), "nombres": pend}, ensure_ascii=False)
+                )
             except OSError:
                 L.error("SERVIDOR", "No se pudo anotar la cola antes de reiniciar.", exc=True)
-        L.aviso("SERVIDOR", f"Reiniciando el servidor (pedido desde el panel, {por}) para tomar los cambios"
-                            + (f"; {L.plural(len(pend), 'audio')} de la cola se retoman al volver." if pend else ".")
-                            + " Las PC del trabajo se reconectan solas.")
-        time.sleep(1.5)                          # que las páginas alcancen a ver «reiniciando»
+        L.aviso(
+            "SERVIDOR",
+            f"Reiniciando el servidor (pedido desde el panel, {por}) para tomar los cambios"
+            + (f"; {L.plural(len(pend), 'audio')} de la cola se retoman al volver." if pend else ".")
+            + " Las PC del trabajo se reconectan solas.",
+        )
+        time.sleep(1.5)  # que las páginas alcancen a ver «reiniciando»
         self.srv["salida"] = self.mantenimiento.CODIGO_REINICIO
 
-        def _vigia():                            # si el cierre se traba, salir igual para que el .bat lo vuelva a abrir
+        def _vigia():  # si el cierre se traba, salir igual para que el .bat lo vuelva a abrir
             time.sleep(30)
             L.aviso("SERVIDOR", "El cierre para reiniciar se demoró más de 30 s: salgo igual para volver a abrir.")
             self._salir_para_reiniciar()
+
         threading.Thread(target=_vigia, daemon=True, name="vigia-reinicio").start()
         if self.srv["http"]:
             self.srv["http"].shutdown()
@@ -209,6 +267,13 @@ class Operacion:
 
     def estado_mantenimiento(self):
         ok, motivo = self.mantenimiento.soporta_reinicio(self.tunel["modo"])
-        return {"cambios": self.mantenimiento.cambios_sin_tomar(), "git": self.mantenimiento.info_git(), "git_inicio": self.mantenimiento.git_al_arrancar(),
-                "reiniciable": ok, "motivo_no": motivo, "bat": self.mantenimiento.bat_del_modo(self.tunel["modo"]).name,
-                "reinicio": self.estado_reinicio(), "mensaje": self.mensaje_actual()}
+        return {
+            "cambios": self.mantenimiento.cambios_sin_tomar(),
+            "git": self.mantenimiento.info_git(),
+            "git_inicio": self.mantenimiento.git_al_arrancar(),
+            "reiniciable": ok,
+            "motivo_no": motivo,
+            "bat": self.mantenimiento.bat_del_modo(self.tunel["modo"]).name,
+            "reinicio": self.estado_reinicio(),
+            "mensaje": self.mensaje_actual(),
+        }

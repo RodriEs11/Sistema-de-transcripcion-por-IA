@@ -18,6 +18,7 @@ Los pedidos que llegan por Cloudflare traen sus encabezados (Cf-Ray, Cf-Connecti
 Tunnels llegan a un puerto propio (PUERTO_TUNEL) donde todo cuenta como remoto. Esos SIEMPRE necesitan
 llave o sesion. Los que vienen directo de esta PC (127.0.0.1, puerto de la interfaz) no.
 """
+
 import hashlib
 import hmac
 import json
@@ -35,7 +36,7 @@ from transcripcion.base import registro as L
 from transcripcion.acceso import usuarios as U
 from transcripcion.base.persistencia import escribir_atomico
 
-AQUI = RAIZ          # carpeta del sistema (no la del paquete)
+AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 ARCH = AQUI / "acceso_remoto.json"
 ARCH_SESIONES = AQUI / "sesiones.json"
 CARPETA_CLIENTE = AQUI / "cliente"
@@ -45,24 +46,35 @@ SESION_SEG = 12 * 3600
 # consultando). Se renueva sola con el uso; se cierra con «Cerrar sesión», «Salir», al cerrarse la app (la cookie
 # muere con ella) o tras 12 h sin ninguna consulta (PC apagada o suspendida).
 SESION_INACTIVA_SEG = 12 * 3600
-RENOVAR_SEG = 10 * 60             # cada cuánto se corre el vencimiento de una sesión en uso (y se guarda)
-ACTIVO_SEG = 5 * 60               # «usuario activo» de una PC: su página consultó en los últimos 5 minutos
+RENOVAR_SEG = 10 * 60  # cada cuánto se corre el vencimiento de una sesión en uso (y se guarda)
+ACTIVO_SEG = 5 * 60  # «usuario activo» de una PC: su página consultó en los últimos 5 minutos
 BLOQUEO_SEG = 45
 _lock = threading.RLock()
 
-SESIONES = {}    # huella del sid -> {"pc", "exp", "usuario", "local", "ult"}
-CODIGOS = {}     # codigo -> {"pc", "exp"}
-BLOQUEOS = {}    # nombre de caso -> {"pc", "t" (última señal), "desde" (cuándo lo abrió)}
-LIBERADOS = {}   # nombre de caso -> {"pc", "t"}: casos que el panel le sacó a una PC
+SESIONES = {}  # huella del sid -> {"pc", "exp", "usuario", "local", "ult"}
+CODIGOS = {}  # codigo -> {"pc", "exp"}
+BLOQUEOS = {}  # nombre de caso -> {"pc", "t" (última señal), "desde" (cuándo lo abrió)}
+LIBERADOS = {}  # nombre de caso -> {"pc", "t"}: casos que el panel le sacó a una PC
 LIBERADO_SEG = 15 * 60
-FALLOS = {}      # ip -> [tiempos de intentos fallidos]   (para el panel: "admin:<pc>" -> [...])
-ADMIN_SES = {}   # token -> {"pc", "ip", "desde", "ult", "exp"}: panel de administración abierto desde una PC del trabajo
-ADMIN_MAX_SEG = 8 * 3600        # una sesión del panel dura como mucho 8 horas
-ADMIN_INACTIVA_SEG = 30 * 60    # y se cierra sola tras 30 minutos sin usarla
-URL_TUNEL = {"url": None, "desde": None, "proceso": None,
-             # para el panel de administración
-             "estado": None, "publicada": None, "error_pub": None, "reinicios": 0, "centro": None,
-             "iniciado": False, "cambio": None, "servicio": None, "url_publicada": None}
+FALLOS = {}  # ip -> [tiempos de intentos fallidos]   (para el panel: "admin:<pc>" -> [...])
+ADMIN_SES = {}  # token -> {"pc", "ip", "desde", "ult", "exp"}: panel de administración abierto desde una PC del trabajo
+ADMIN_MAX_SEG = 8 * 3600  # una sesión del panel dura como mucho 8 horas
+ADMIN_INACTIVA_SEG = 30 * 60  # y se cierra sola tras 30 minutos sin usarla
+URL_TUNEL = {
+    "url": None,
+    "desde": None,
+    "proceso": None,
+    # para el panel de administración
+    "estado": None,
+    "publicada": None,
+    "error_pub": None,
+    "reinicios": 0,
+    "centro": None,
+    "iniciado": False,
+    "cambio": None,
+    "servicio": None,
+    "url_publicada": None,
+}
 _PEDIDO = {"reinicio": False, "despertar": False, "cerrando": False}
 ULTIMA_GRABADA = {}  # pc -> cuándo se guardó por última vez su última conexión (para no escribir en cada pedido)
 
@@ -119,9 +131,13 @@ def poner_contrasena_admin(c):
     with _lock:
         d = _leer()
         sal = secrets.token_hex(16)
-        d["contrasena_admin"] = {"sal": sal, "huella": _huella_contrasena(c, sal), "desde": time.strftime("%Y-%m-%d %H:%M")}
+        d["contrasena_admin"] = {
+            "sal": sal,
+            "huella": _huella_contrasena(c, sal),
+            "desde": time.strftime("%Y-%m-%d %H:%M"),
+        }
         _grabar(d)
-    return cerrar_sesiones_admin()      # las sesiones abiertas con la contraseña anterior dejan de valer
+    return cerrar_sesiones_admin()  # las sesiones abiertas con la contraseña anterior dejan de valer
 
 
 def quitar_contrasena_admin():
@@ -163,7 +179,7 @@ def admin_de(tok, pc):
         if not v or v["pc"] != pc or not _admin_vigente(v, ahora):
             if v:
                 ADMIN_SES.pop(tok, None)
-                if v["pc"] != pc:      # la cookie de una PC apareció en otra: por las dudas se anula
+                if v["pc"] != pc:  # la cookie de una PC apareció en otra: por las dudas se anula
                     L.aviso("ACCESO", f"La sesión del panel de {v['pc']} se usó desde {pc}: se cerró por seguridad.")
             return False
         v["ult"] = ahora
@@ -186,8 +202,14 @@ def cerrar_sesiones_admin(pc=None):
 def sesiones_admin():
     ahora = time.time()
     with _lock:
-        return sorted(({"pc": v["pc"], "desde": v["desde"], "ult": v["ult"]} for v in ADMIN_SES.values()
-                       if _admin_vigente(v, ahora)), key=lambda x: x["desde"])
+        return sorted(
+            (
+                {"pc": v["pc"], "desde": v["desde"], "ult": v["ult"]}
+                for v in ADMIN_SES.values()
+                if _admin_vigente(v, ahora)
+            ),
+            key=lambda x: x["desde"],
+        )
 
 
 def cookie_admin(tok):
@@ -205,7 +227,8 @@ def escribir_conexion_cliente(d=None):
         return
     CARPETA_CLIENTE.mkdir(exist_ok=True)
     (CARPETA_CLIENTE / "conexion.json").write_text(
-        json.dumps({"tema": d["tema_aviso"], "aviso": NTFY}, indent=1), encoding="utf-8")
+        json.dumps({"tema": d["tema_aviso"], "aviso": NTFY}, indent=1), encoding="utf-8"
+    )
 
 
 def contrasena_ok(c):
@@ -240,8 +263,10 @@ def vincular(pc, contrasena, ip, usuario=None):
     if U.hay_usuarios():
         if not usuario:
             anotar_fallo(ip)
-            return None, ("Contraseña incorrecta. Ahora cada transcriptor entra con su usuario: actualizá la "
-                          "aplicación o pedí al administrador que conecte esta PC.")
+            return None, (
+                "Contraseña incorrecta. Ahora cada transcriptor entra con su usuario: actualizá la "
+                "aplicación o pedí al administrador que conecte esta PC."
+            )
         if not U.verificar(usuario, contrasena):
             anotar_fallo(ip)
             return None, "Usuario o contraseña incorrectos."
@@ -252,7 +277,9 @@ def vincular(pc, contrasena, ip, usuario=None):
     with _lock:
         d = _leer()
         d.setdefault("clientes", {})[hashlib.sha256(llave.encode()).hexdigest()] = {
-            "pc": pc, "creado": time.strftime("%Y-%m-%d %H:%M")}
+            "pc": pc,
+            "creado": time.strftime("%Y-%m-%d %H:%M"),
+        }
         _grabar(d)
     return llave, None
 
@@ -269,7 +296,7 @@ def anular_pc(pc):
         d = _leer()
         antes = len(d.get("clientes", {}))
         d["clientes"] = {k: v for k, v in d.get("clientes", {}).items() if v["pc"] != pc}
-        d.get("pcs_info", {}).pop(pc, None)       # que no siga figurando en el panel
+        d.get("pcs_info", {}).pop(pc, None)  # que no siga figurando en el panel
         ULTIMA_GRABADA.pop(pc, None)
         _grabar(d)
         for h in [s for s, v in SESIONES.items() if v["pc"] == pc]:
@@ -294,7 +321,8 @@ def pcs_vinculadas():
             x["ultima_vinculacion"] = c["creado"]
     for pc, info in d.get("pcs_info", {}).items():
         out.setdefault(pc, {"llaves": 0, "vinculada": None, "ultima_vinculacion": None}).update(
-            ultima=info.get("ultima"), version=info.get("version"))
+            ultima=info.get("ultima"), version=info.get("version")
+        )
     return out
 
 
@@ -372,11 +400,16 @@ def _sesion_vigente(v, ahora):
 def _guardar_sesiones():
     """Solo las sesiones con transcriptor: así un reinicio del servidor no obliga a volver a entrar."""
     try:
-        datos = {h: {k: v[k] for k in ("pc", "exp", "usuario", "local") if k in v}
-                 for h, v in SESIONES.items() if v.get("usuario")}
+        datos = {
+            h: {k: v[k] for k in ("pc", "exp", "usuario", "local") if k in v}
+            for h, v in SESIONES.items()
+            if v.get("usuario")
+        }
         escribir_atomico(ARCH_SESIONES, json.dumps(datos, ensure_ascii=False))
     except OSError:
-        L.aviso("ACCESO", "No se pudieron guardar las sesiones abiertas (al reiniciar habrá que volver a entrar).", exc=True)
+        L.aviso(
+            "ACCESO", "No se pudieron guardar las sesiones abiertas (al reiniciar habrá que volver a entrar).", exc=True
+        )
 
 
 def cargar_sesiones():
@@ -400,7 +433,13 @@ def nueva_sesion(pc, usuario=None, local=False, reemplaza=None):
         _limpiar_sesiones(ahora)
         if reemplaza:
             SESIONES.pop(_h(reemplaza), None)
-        SESIONES[_h(sid)] = {"pc": pc, "exp": ahora + SESION_SEG, "usuario": usuario, "local": bool(local), "ult": ahora}
+        SESIONES[_h(sid)] = {
+            "pc": pc,
+            "exp": ahora + SESION_SEG,
+            "usuario": usuario,
+            "local": bool(local),
+            "ult": ahora,
+        }
         if usuario:
             _guardar_sesiones()
     return sid
@@ -419,7 +458,7 @@ def sesion(sid):
             return None
         v["ult"] = ahora
         if v.get("usuario") and ahora + SESION_SEG - v["exp"] > RENOVAR_SEG:
-            v["exp"] = ahora + SESION_SEG      # en uso: no vence (la app puede quedar abierta días)
+            v["exp"] = ahora + SESION_SEG  # en uso: no vence (la app puede quedar abierta días)
             _guardar_sesiones()
         return dict(v)
 
@@ -462,8 +501,11 @@ def usuario_activo(pc):
     """Transcriptor que está usando la página en esa PC ahora (para los audios que la app toma sola)."""
     ahora = time.time()
     with _lock:
-        cand = [v for v in SESIONES.values() if v["pc"] == pc and v.get("usuario") and _sesion_vigente(v, ahora)
-                and ahora - v.get("ult", 0) < ACTIVO_SEG]
+        cand = [
+            v
+            for v in SESIONES.values()
+            if v["pc"] == pc and v.get("usuario") and _sesion_vigente(v, ahora) and ahora - v.get("ult", 0) < ACTIVO_SEG
+        ]
     return max(cand, key=lambda v: v.get("ult", 0))["usuario"] if cand else None
 
 
@@ -488,7 +530,7 @@ COOKIE_SESION_BORRAR = "ts=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"
 
 
 # -------------------------------------------------------------- bloqueos
-LIBERADO = object()      # respuesta de bloquear(): el panel de administración le sacó el caso a esta PC
+LIBERADO = object()  # respuesta de bloquear(): el panel de administración le sacó el caso a esta PC
 
 
 def bloquear(nombre, pc, renovar=False):
@@ -643,12 +685,20 @@ def publicar_url(url, forzar=False):
     tema = _leer().get("tema_aviso")
     if not tema or not url:
         return False
-    if (not forzar and URL_TUNEL.get("url_publicada") == url and URL_TUNEL.get("publicada")
-            and time.time() - URL_TUNEL["publicada"] < 3600):
+    if (
+        not forzar
+        and URL_TUNEL.get("url_publicada") == url
+        and URL_TUNEL.get("publicada")
+        and time.time() - URL_TUNEL["publicada"] < 3600
+    ):
         return True
     try:
-        req = urllib.request.Request(f"{NTFY}/{tema}", data=url.encode("utf-8"), method="POST",
-                                     headers={"Title": "Transcripcion", "Cache": "yes"})
+        req = urllib.request.Request(
+            f"{NTFY}/{tema}",
+            data=url.encode("utf-8"),
+            method="POST",
+            headers={"Title": "Transcripcion", "Cache": "yes"},
+        )
         urllib.request.urlopen(req, timeout=15).read()
         L.debug("TÚNEL", f"Dirección publicada en el canal de avisos: {url}")
         URL_TUNEL.update(publicada=time.time(), error_pub=None, url_publicada=url)
@@ -656,8 +706,11 @@ def publicar_url(url, forzar=False):
     except Exception as ex:
         URL_TUNEL.update(error_pub=f"{ex}"[:200])
         if forzar or L.una_vez(("ntfy", f"{ex}"[:60]), 600):
-            L.aviso("TÚNEL", f"No se pudo publicar la dirección en el canal de avisos (ntfy.sh): {ex}. "
-                             f"Si las aplicaciones no se conectan solas, escribí la dirección a mano.")
+            L.aviso(
+                "TÚNEL",
+                f"No se pudo publicar la dirección en el canal de avisos (ntfy.sh): {ex}. "
+                f"Si las aplicaciones no se conectan solas, escribí la dirección a mano.",
+            )
         return False
 
 
@@ -677,7 +730,7 @@ def reiniciar_tunel():
         return f"Falta el programa del túnel: ejecutá {P.script('configurar_tunel')}."
     if p is None or p.poll() is not None:
         if est in ("sin sesion", "sin configurar", "error"):
-            _PEDIDO["despertar"] = True         # p. ej. ya se volvió a iniciar sesión: probar ahora, sin esperar
+            _PEDIDO["despertar"] = True  # p. ej. ya se volvió a iniciar sesión: probar ahora, sin esperar
             return None
         _PEDIDO["despertar"] = True
         return "El túnel ya se está volviendo a abrir."
@@ -692,7 +745,7 @@ def reiniciar_tunel():
 
 def cerrar_tunel():
     """Al apagar el servidor: cerrar el programa del túnel para que no quede andando solo."""
-    _PEDIDO["cerrando"] = True          # que el hilo del túnel no lo vuelva a abrir mientras el servidor se cierra
+    _PEDIDO["cerrando"] = True  # que el hilo del túnel no lo vuelva a abrir mientras el servidor se cierra
     _PEDIDO["despertar"] = True
     p = URL_TUNEL.get("proceso")
     if p and p.poll() is None:
@@ -715,8 +768,15 @@ def _esperar(seg):
 def _correr(args, timeout=90):
     """Corre devtunnel y devuelve (código, salida). Código None = no se pudo correr."""
     try:
-        r = subprocess.run(args, capture_output=True, text=True, encoding="utf-8", errors="replace",
-                           timeout=timeout, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        r = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
         return r.returncode, (r.stdout or "") + (r.stderr or "")
     except FileNotFoundError:
         return None, "no existe"
@@ -726,8 +786,20 @@ def _correr(args, timeout=90):
 
 def falta_sesion(texto):
     t = (texto or "").lower()
-    return any(p in t for p in ("not logged in", "login required", "user login", "log in", "sign in",
-                                "unauthorized", "not authenticated", "token expired", "token has expired"))
+    return any(
+        p in t
+        for p in (
+            "not logged in",
+            "login required",
+            "user login",
+            "log in",
+            "sign in",
+            "unauthorized",
+            "not authenticated",
+            "token expired",
+            "token has expired",
+        )
+    )
 
 
 def no_existe(texto):
@@ -762,8 +834,11 @@ def asegurar_devtunnel(exe, puerto):
         if falta_sesion(sal) and not no_existe(sal):
             return None, "sin sesion"
         if no_existe(sal):
-            L.aviso("TÚNEL", f"El túnel «{tid}» ya no existe en Microsoft (se borran tras 30 días sin usar). "
-                             f"Lo creo de nuevo con el mismo nombre.")
+            L.aviso(
+                "TÚNEL",
+                f"El túnel «{tid}» ya no existe en Microsoft (se borran tras 30 días sin usar). "
+                f"Lo creo de nuevo con el mismo nombre.",
+            )
             nuevo, sal2 = crear_devtunnel(exe, tid.split(".")[0], puerto)
             if not nuevo:
                 L.error("TÚNEL", "No se pudo crear el túnel de nuevo: " + sal2.strip()[-300:])
@@ -774,7 +849,7 @@ def asegurar_devtunnel(exe, puerto):
             return nuevo, None
         L.aviso("TÚNEL", "devtunnel respondió con un error: " + sal.strip()[-300:])
         return None, "error"
-    if not re.search(rf"\b{puerto}\b", sal):         # el túnel existe pero no tiene el puerto
+    if not re.search(rf"\b{puerto}\b", sal):  # el túnel existe pero no tiene el puerto
         cod2, sal2 = _correr([str(exe), "port", "create", tid, "-p", str(puerto), "--protocol", "http"])
         L.debug("TÚNEL", "devtunnel port create: " + sal2.strip()[:300])
     return tid, None
@@ -790,23 +865,42 @@ def _hilo_devtunnel(puerto):
             _estado_tunel(problema)
             URL_TUNEL["reinicios"] += 1
             if problema == "sin devtunnel":
-                L.error("TÚNEL", f"No encuentro {Path(exe).name}. Ejecutá {P.script('configurar_tunel')} para "
-                                 f"descargarlo e iniciar sesión. Mientras tanto el sistema funciona solo en esta PC.")
+                L.error(
+                    "TÚNEL",
+                    f"No encuentro {Path(exe).name}. Ejecutá {P.script('configurar_tunel')} para "
+                    f"descargarlo e iniciar sesión. Mientras tanto el sistema funciona solo en esta PC.",
+                )
             elif problema == "sin configurar":
-                L.error("TÚNEL", f"Microsoft Dev Tunnels todavía no está configurado: ejecutá "
-                                 f"{P.script('configurar_tunel')}. Mientras tanto el sistema funciona solo en esta PC.")
+                L.error(
+                    "TÚNEL",
+                    f"Microsoft Dev Tunnels todavía no está configurado: ejecutá "
+                    f"{P.script('configurar_tunel')}. Mientras tanto el sistema funciona solo en esta PC.",
+                )
             elif problema == "sin sesion":
-                L.error("TÚNEL", f"La sesión de Microsoft Dev Tunnels venció o no está iniciada: ejecutá "
-                                 f"{P.script('configurar_tunel')} y volvé a entrar con tu cuenta. Lo reintento cada 5 minutos.")
-            _esperar(300 if problema != "error" else min(30 * 2 ** fallos, 300))
+                L.error(
+                    "TÚNEL",
+                    f"La sesión de Microsoft Dev Tunnels venció o no está iniciada: ejecutá "
+                    f"{P.script('configurar_tunel')} y volvé a entrar con tu cuenta. Lo reintento cada 5 minutos.",
+                )
+            _esperar(300 if problema != "error" else min(30 * 2**fallos, 300))
             fallos += 1
             continue
-        L.info("TÚNEL", "Abriendo el túnel de Microsoft (Dev Tunnels) para las PC del trabajo…" if not fallos
-               else "Volviendo a abrir el túnel de Microsoft…")
+        L.info(
+            "TÚNEL",
+            "Abriendo el túnel de Microsoft (Dev Tunnels) para las PC del trabajo…"
+            if not fallos
+            else "Volviendo a abrir el túnel de Microsoft…",
+        )
         try:
-            p = subprocess.Popen([str(exe), "host", tid], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                 text=True, encoding="utf-8", errors="replace",
-                                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            p = subprocess.Popen(
+                [str(exe), "host", tid],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
         except FileNotFoundError:
             _estado_tunel("sin devtunnel")
             _esperar(300)
@@ -829,7 +923,10 @@ def _hilo_devtunnel(puerto):
                     if publicar_url(url):
                         L.ok("TÚNEL", "Dirección publicada: las aplicaciones del trabajo la encuentran solas.")
                 if URL_TUNEL.get("estado") != "activo":
-                    L.ok("TÚNEL", f"Túnel conectado con Microsoft (región {m.group(1)}). Ya se puede usar desde el trabajo.")
+                    L.ok(
+                        "TÚNEL",
+                        f"Túnel conectado con Microsoft (región {m.group(1)}). Ya se puede usar desde el trabajo.",
+                    )
                     _estado_tunel("activo")
                     fallos = 0
             elif "relay" in bajo and ("lost" in bajo or "disconnect" in bajo):
@@ -848,13 +945,15 @@ def _hilo_devtunnel(puerto):
                     L.aviso("TÚNEL", "Microsoft Dev Tunnels informó un problema: " + linea.strip()[:200])
         cod = p.wait()
         if _PEDIDO["cerrando"]:
-            return                           # el servidor se está cerrando (o reiniciando): no reabrir
+            return  # el servidor se está cerrando (o reiniciando): no reabrir
         URL_TUNEL["reinicios"] += 1
         URL_TUNEL["proceso"] = None
         if _PEDIDO["reinicio"]:
             _PEDIDO["reinicio"] = False
             _estado_tunel("reconectando")
-            L.info("TÚNEL", "Túnel cerrado desde el panel de administración: se abre de nuevo (la dirección no cambia).")
+            L.info(
+                "TÚNEL", "Túnel cerrado desde el panel de administración: se abre de nuevo (la dirección no cambia)."
+            )
             time.sleep(1)
             continue
         fallos += 1
@@ -868,7 +967,7 @@ def _hilo_devtunnel(puerto):
 def _hilo_cloudflare(puerto):
     exe = P.ruta_cloudflared()
     vez = 0
-    fallos = 0          # cierres seguidos sin llegar a conectarse: la espera crece (10 s, 20 s, 40 s… hasta 5 min)
+    fallos = 0  # cierres seguidos sin llegar a conectarse: la espera crece (10 s, 20 s, 40 s… hasta 5 min)
     while True:
         vez += 1
         if vez == 1:
@@ -877,13 +976,21 @@ def _hilo_cloudflare(puerto):
             L.info("TÚNEL", "Volviendo a abrir el túnel…")
         _estado_tunel("abriendo")
         try:
-            p = subprocess.Popen([str(exe), "tunnel", "--no-autoupdate", "--url", f"http://127.0.0.1:{puerto}"],
-                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                                 encoding="utf-8", errors="replace",
-                                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            p = subprocess.Popen(
+                [str(exe), "tunnel", "--no-autoupdate", "--url", f"http://127.0.0.1:{puerto}"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
         except FileNotFoundError:
-            L.error("TÚNEL", f"No encuentro {Path(exe).name}. Ejecutá {P.script('iniciar_servidor')} para descargarlo. "
-                             f"Mientras tanto el sistema funciona solo en esta PC.")
+            L.error(
+                "TÚNEL",
+                f"No encuentro {Path(exe).name}. Ejecutá {P.script('iniciar_servidor')} para descargarlo. "
+                f"Mientras tanto el sistema funciona solo en esta PC.",
+            )
             _estado_tunel("sin cloudflared")
             return
         URL_TUNEL["proceso"] = p
@@ -893,7 +1000,7 @@ def _hilo_cloudflare(puerto):
             linea = linea.rstrip()
             if not linea.strip():
                 continue
-            L.debug("TÚNEL", "cloudflared: " + linea)      # todo lo de cloudflared queda en el archivo
+            L.debug("TÚNEL", "cloudflared: " + linea)  # todo lo de cloudflared queda en el archivo
             m = RE_CLOUDFLARE.search(linea)
             if "failed to request quick tunnel" in linea.lower():
                 if "no such host" in linea.lower() or "lookup" in linea.lower():
@@ -909,8 +1016,12 @@ def _hilo_cloudflare(puerto):
                 fallos = 0
                 lugar = re.search(r"location=(\S+)", linea)
                 URL_TUNEL["centro"] = lugar.group(1) if lugar else None
-                L.ok("TÚNEL", "Túnel conectado con Cloudflare" + (f" (centro {lugar.group(1)})" if lugar else "")
-                     + ". Ya se puede usar desde el trabajo.")
+                L.ok(
+                    "TÚNEL",
+                    "Túnel conectado con Cloudflare"
+                    + (f" (centro {lugar.group(1)})" if lugar else "")
+                    + ". Ya se puede usar desde el trabajo.",
+                )
                 _estado_tunel("activo")
             else:
                 e = re.match(r"^\S+\s+ERR\s+(.*)$", linea)
@@ -920,7 +1031,7 @@ def _hilo_cloudflare(puerto):
                         L.aviso("TÚNEL", "Cloudflare informó un problema: " + e.group(1)[:200])
         cod = p.wait()
         if _PEDIDO["cerrando"]:
-            return                           # el servidor se está cerrando (o reiniciando): no reabrir
+            return  # el servidor se está cerrando (o reiniciando): no reabrir
         URL_TUNEL.update(url=None, desde=None, centro=None, proceso=None)
         URL_TUNEL["reinicios"] += 1
         _estado_tunel("reconectando")
@@ -933,19 +1044,26 @@ def _hilo_cloudflare(puerto):
             fallos += 1
         espera = min(10 * 2 ** max(fallos - 1, 0), 300)
         if sin_dns and L.una_vez(("cloudflared", "sin_dns"), 1800):
-            L.error("TÚNEL", "Esta PC no encuentra el servicio de túneles rápidos de Cloudflare (api.trycloudflare.com "
-                             "no existe para su DNS: puede estar bloqueado por el proveedor de internet o caído). "
-                             f"Alternativa: Microsoft Dev Tunnels, con {P.script('configurar_tunel')}.")
+            L.error(
+                "TÚNEL",
+                "Esta PC no encuentra el servicio de túneles rápidos de Cloudflare (api.trycloudflare.com "
+                "no existe para su DNS: puede estar bloqueado por el proveedor de internet o caído). "
+                f"Alternativa: Microsoft Dev Tunnels, con {P.script('configurar_tunel')}.",
+            )
         if fallos < 3 or L.una_vez(("cloudflared", "cerrado"), 1800):
-            L.aviso("TÚNEL", f"El túnel se cerró (código {cod}). Lo vuelvo a abrir en {espera} s; la dirección nueva "
-                             f"se publica sola.")
+            L.aviso(
+                "TÚNEL",
+                f"El túnel se cerró (código {cod}). Lo vuelvo a abrir en {espera} s; la dirección nueva "
+                f"se publica sola.",
+            )
         _esperar(espera)
 
 
 def iniciar_tunel(puerto, puerto_tunel=None):
     """Abre el túnel elegido en un hilo; si se cae lo vuelve a abrir.
     puerto = el de la interfaz (Cloudflare); puerto_tunel = el propio del túnel (Dev Tunnels)."""
-    def republicar():   # el programa del túnel puede quedar callado horas: republicar igual (el aviso dura 12 h)
+
+    def republicar():  # el programa del túnel puede quedar callado horas: republicar igual (el aviso dura 12 h)
         while True:
             time.sleep(REPUBLICAR_SEG)
             if URL_TUNEL["url"]:

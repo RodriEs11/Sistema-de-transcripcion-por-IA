@@ -11,6 +11,7 @@ MANTENIMIENTO (panel de administración, tarjeta "Mantenimiento").
 
 Las páginas (web\\*.html), las plantillas y las reglas se leen en cada pedido: no necesitan reiniciar.
 """
+
 import hashlib
 import os
 import re
@@ -25,18 +26,18 @@ from pathlib import Path
 from transcripcion import RAIZ
 from transcripcion.base import plataforma as P
 
-AQUI = RAIZ          # carpeta del sistema (no la del paquete)
+AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 GIT = AQUI / ".git"
-CODIGO_REINICIO = 75          # el .bat vuelve a abrir el servidor cuando termina con este código
+CODIGO_REINICIO = 75  # el .bat vuelve a abrir el servidor cuando termina con este código
 MARCA_BAT = "REINICIO-DESDE-EL-PANEL"
-EXTRA = ("configuracion.json",)       # se lee solo al arrancar
+EXTRA = ("configuracion.json",)  # se lee solo al arrancar
 _SIN_VENTANA = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 _lock = threading.Lock()
-CARGADO = {}          # "servidor.py", "transcripcion/base/registro.py" -> {"hash", "t"}: versión que usa el servidor
-_LOCALES = {}         # módulo del sistema -> archivo ("transcripcion.base.registro" -> "transcripcion/base/registro.py")
-PAQUETE = "transcripcion"   # paquete con los módulos del sistema (docs/refactor.md)
-_HASH = {}            # ruta -> ((tamaño, mtime), hash): no volver a leer archivos que no cambiaron
+CARGADO = {}  # "servidor.py", "transcripcion/base/registro.py" -> {"hash", "t"}: versión que usa el servidor
+_LOCALES = {}  # módulo del sistema -> archivo ("transcripcion.base.registro" -> "transcripcion/base/registro.py")
+PAQUETE = "transcripcion"  # paquete con los módulos del sistema (docs/refactor.md)
+_HASH = {}  # ruta -> ((tamaño, mtime), hash): no volver a leer archivos que no cambiaron
 _ARRANQUE = {"titulo": None, "git": None, "t": None}
 _CACHE_GIT = {"t": 0, "v": None}
 
@@ -138,15 +139,21 @@ def cambios_sin_tomar():
             mt = p.stat().st_mtime
         except OSError:
             mt = None
-        out.append({"archivo": nombre, "estado": "borrado" if h is None else "modificado", "modificado": mt,
-                    "cargado": v["t"]})
+        out.append(
+            {"archivo": nombre, "estado": "borrado" if h is None else "modificado", "modificado": mt, "cargado": v["t"]}
+        )
     return out
 
 
 # ---------------------------------------------------------------------- git
 def _git(*args, timeout=6):
-    r = subprocess.run(["git", "-c", "core.quotepath=off", *args], cwd=AQUI, capture_output=True, timeout=timeout,
-                       creationflags=_SIN_VENTANA)
+    r = subprocess.run(
+        ["git", "-c", "core.quotepath=off", *args],
+        cwd=AQUI,
+        capture_output=True,
+        timeout=timeout,
+        creationflags=_SIN_VENTANA,
+    )
     if r.returncode != 0:
         raise RuntimeError(r.stderr.decode("utf-8", "replace").strip()[:200] or f"git terminó con {r.returncode}")
     return r.stdout.decode("utf-8", "replace")
@@ -167,8 +174,16 @@ def _git_cli():
             ruta = ln[3:].strip().strip('"')
             sucios.append(ruta.split(" -> ")[-1])
     nuevos = [ln[3:].strip().strip('"') for ln in _git("status", "--porcelain").splitlines() if ln.startswith("??")]
-    return {"commit": corto, "completo": completo, "fecha": int(t) if t.isdigit() else None, "mensaje": msg,
-            "rama": rama, "sucios": sucios, "sin_seguimiento": nuevos, "fuente": "git"}
+    return {
+        "commit": corto,
+        "completo": completo,
+        "fecha": int(t) if t.isdigit() else None,
+        "mensaje": msg,
+        "rama": rama,
+        "sucios": sucios,
+        "sin_seguimiento": nuevos,
+        "fuente": "git",
+    }
 
 
 def _leer_ref(ref):
@@ -187,7 +202,7 @@ def _leer_ref(ref):
 def _objeto(sha):
     f = GIT / "objects" / sha[:2] / sha[2:]
     if not f.is_file():
-        return None                      # guardado en un "pack": git lo comprime junto con otros
+        return None  # guardado en un "pack": git lo comprime junto con otros
     return zlib.decompress(f.read_bytes())
 
 
@@ -201,8 +216,8 @@ def _indice():
         return {}
     pos, out = 12, {}
     for _ in range(n):
-        sha = d[pos + 40:pos + 60].hex()
-        flags = struct.unpack(">H", d[pos + 60:pos + 62])[0]
+        sha = d[pos + 40 : pos + 60].hex()
+        flags = struct.unpack(">H", d[pos + 60 : pos + 62])[0]
         ini = pos + 62 + (2 if (ver == 3 and flags & 0x4000) else 0)
         fin = d.index(b"\0", ini)
         out[d[ini:fin].decode("utf-8", "replace")] = sha
@@ -243,11 +258,19 @@ def _git_archivos():
                 sucios.append(ruta)
                 continue
             if _blob(datos) != h and (b"\r\n" not in datos or _blob(datos.replace(b"\r\n", b"\n")) != h):
-                sucios.append(ruta)          # (git guarda los textos con fin de línea LF aunque en la carpeta estén con CRLF)
+                sucios.append(ruta)  # (git guarda los textos con fin de línea LF aunque en la carpeta estén con CRLF)
     except (OSError, ValueError, struct.error):
         sucios = None
-    return {"commit": sha[:7], "completo": sha, "fecha": t, "mensaje": msg, "rama": rama, "sucios": sucios,
-            "sin_seguimiento": None, "fuente": "archivos"}
+    return {
+        "commit": sha[:7],
+        "completo": sha,
+        "fecha": t,
+        "mensaje": msg,
+        "rama": rama,
+        "sucios": sucios,
+        "sin_seguimiento": None,
+        "fuente": "archivos",
+    }
 
 
 def info_git(forzar=False):
@@ -283,19 +306,22 @@ def bat_del_modo(tunel):
 def soporta_reinicio(tunel):
     """(True, None) si el servidor se puede reiniciar desde el panel: lo abrió el .bat (que lo vuelve a abrir
     cuando termina con el código 75). Si no, (False, motivo)."""
-    if os.environ.get("REINICIO_BUCLE") == "1":       # pruebas: un script que hace lo mismo que el .bat
+    if os.environ.get("REINICIO_BUCLE") == "1":  # pruebas: un script que hace lo mismo que el .bat
         return True, None
     bat = bat_del_modo(tunel)
     if not P.ES_WINDOWS:
         # Linux: los .sh (y el servicio de systemd) avisan con esta variable que vuelven a abrir el servidor
         if os.environ.get("TRANSCRIPCION_REINICIO") != "1":
-            return False, (f"El servidor no se abrió con {bat.name} (ni como servicio): cerralo y abrilo con "
-                           f"./{bat.name} para poder reiniciarlo desde acá.")
+            return False, (
+                f"El servidor no se abrió con {bat.name} (ni como servicio): cerralo y abrilo con "
+                f"./{bat.name} para poder reiniciarlo desde acá."
+            )
         return True, None
     t = _ARRANQUE["titulo"] or ""
     if not (t.lower().startswith("transcripcion - ") or t.startswith("Transcripción · Servidor")):
-        return False, (f"El servidor no se abrió con {bat.name}: cerralo y abrilo con {bat.name} para poder "
-                       f"reiniciarlo desde acá.")
+        return False, (
+            f"El servidor no se abrió con {bat.name}: cerralo y abrilo con {bat.name} para poder reiniciarlo desde acá."
+        )
     try:
         if MARCA_BAT not in bat.read_text(encoding="utf-8", errors="replace"):
             return False, f"{bat.name} es de una versión anterior: no vuelve a abrir el servidor solo."
@@ -310,6 +336,7 @@ def titulo_consola():
         return None
     try:
         import ctypes
+
         buf = ctypes.create_unicode_buffer(512)
         ctypes.windll.kernel32.GetConsoleTitleW(buf, 512)
         return buf.value
@@ -338,8 +365,14 @@ def prueba_de_arranque(timeout=120):
     configuración e importa el servidor) antes de reiniciar. Devuelve None si anda o el error (últimas líneas)."""
     env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONDONTWRITEBYTECODE="1")
     try:
-        r = subprocess.run([sys.executable, "-X", "utf8", "-c", PRUEBA], cwd=AQUI, capture_output=True,
-                           timeout=timeout, env=env, creationflags=_SIN_VENTANA)
+        r = subprocess.run(
+            [sys.executable, "-X", "utf8", "-c", PRUEBA],
+            cwd=AQUI,
+            capture_output=True,
+            timeout=timeout,
+            env=env,
+            creationflags=_SIN_VENTANA,
+        )
     except subprocess.TimeoutExpired:
         return "La prueba del código nuevo tardó demasiado (más de 2 minutos)."
     except OSError as ex:

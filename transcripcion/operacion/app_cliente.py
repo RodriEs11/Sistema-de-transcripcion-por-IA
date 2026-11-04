@@ -11,6 +11,7 @@ Transcripcion.exe nuevo en sistema\\cliente (con el servidor andando o no).
 Solo se ofrecen estos archivos (nunca otra cosa de la carpeta):
   Transcripcion.exe, Transcripcion.exe.config, LEEME.txt, conexion.json y las .dll (incluida runtimes\\).
 """
+
 import hashlib
 import os
 import re
@@ -21,12 +22,12 @@ from pathlib import Path
 from transcripcion import RAIZ
 from transcripcion.base import registro as L
 
-AQUI = RAIZ          # carpeta del sistema (no la del paquete)
+AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 CARPETA = AQUI / "cliente"
 FIJOS = {"transcripcion.exe", "transcripcion.exe.config", "leeme.txt", "conexion.json"}
 _lock = threading.Lock()
 _CACHE = {"firma": None, "t": 0, "man": None}
-VERSION_PC = {}          # pc -> version de la app que usa (segun su User-Agent)
+VERSION_PC = {}  # pc -> version de la app que usa (segun su User-Agent)
 _UA = re.compile(r"Transcripcion/([0-9][0-9.]{0,15})")
 
 
@@ -57,10 +58,10 @@ def version_exe(ruta):
     if i < 0:
         return ""
     i += len("FileVersion") * 2 + 2
-    while i < len(datos) - 1 and datos[i:i + 2] == b"\x00\x00":
+    while i < len(datos) - 1 and datos[i : i + 2] == b"\x00\x00":
         i += 2
     fin = i
-    while fin < len(datos) - 1 and datos[fin:fin + 2] != b"\x00\x00" and fin - i < 64:
+    while fin < len(datos) - 1 and datos[fin : fin + 2] != b"\x00\x00" and fin - i < 64:
         fin += 2
     v = datos[i:fin].decode("utf-16-le", "replace").strip()
     if not re.fullmatch(r"[0-9]+(\.[0-9]+){0,3}", v):
@@ -95,15 +96,17 @@ def manifiesto():
         for rel, tam, _, p in lista:
             try:
                 archivos.append({"ruta": rel, "sha256": _sha(p), "tam": tam})
-            except OSError:      # se esta copiando justo ahora: se vuelve a intentar en 5 s
+            except OSError:  # se esta copiando justo ahora: se vuelve a intentar en 5 s
                 _CACHE["t"] = 0
                 return _CACHE["man"] or {"version": "", "huella": "", "archivos": []}
         exe = CARPETA / "Transcripcion.exe"
-        man = {"version": version_exe(exe) if exe.exists() else "",
-               "huella": huella_de(archivos), "archivos": archivos}
+        man = {"version": version_exe(exe) if exe.exists() else "", "huella": huella_de(archivos), "archivos": archivos}
         if _CACHE["man"] is not None and _CACHE["man"]["huella"] != man["huella"] and archivos:
-            L.ok("APP", f"Hay una versión nueva de la app del trabajo ({man['version'] or 'sin número'}): "
-                        f"las PC se actualizan solas cuando nadie la está usando.")
+            L.ok(
+                "APP",
+                f"Hay una versión nueva de la app del trabajo ({man['version'] or 'sin número'}): "
+                f"las PC se actualizan solas cuando nadie la está usando.",
+            )
         _CACHE["firma"], _CACHE["man"] = firma, man
         return man
 

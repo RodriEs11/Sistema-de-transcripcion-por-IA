@@ -3,6 +3,7 @@ títulos de estudio, líneas de texto fijo y selección de las plantillas releva
 
 Viene de nucleo.py (docs/refactor.md, etapa 3).
 """
+
 import difflib
 import re
 import time
@@ -47,14 +48,22 @@ def frases_de_plantilla():
 def categorias(texto, claves=None):
     t = sin_acentos(texto.lower())
     c = set()
-    if re.search(r"\bmamm?(a|as|o|ografia|aria)\b|birads|bi-rads|birrad|\bacr\b", t): c.add("mama")
-    if re.search(r"transvag|trasvag|atrapag|utero|endometr|ovario", t): c.add("gine")
-    if re.search(r"tiroid", t): c.add("tiroides")
-    if re.search(r"espinograma|colum|colonia\s+(?:lumb|lomb|cerv|dors)|vertebr|lumbo|lombo|cervical", t): c.add("columna")
-    if re.search(r"torax|torads|pulmon|costofren", t): c.add("torax")
-    if re.search(r"\bmanos?\b|muneca|hombro|rodilla|cadera|\bpies?\b|brazo|codo|tobillo", t): c.add("osteo")
-    if re.search(r"\btc\b|tomograf|\btomo\b|\bte ce\b|tomografo", t): c.add("tc")
-    if re.search(r"\bpet\b|captacion|\bfdg\b|\bsuv\b|radiofarmaco", t): c.add("pet")
+    if re.search(r"\bmamm?(a|as|o|ografia|aria)\b|birads|bi-rads|birrad|\bacr\b", t):
+        c.add("mama")
+    if re.search(r"transvag|trasvag|atrapag|utero|endometr|ovario", t):
+        c.add("gine")
+    if re.search(r"tiroid", t):
+        c.add("tiroides")
+    if re.search(r"espinograma|colum|colonia\s+(?:lumb|lomb|cerv|dors)|vertebr|lumbo|lombo|cervical", t):
+        c.add("columna")
+    if re.search(r"torax|torads|pulmon|costofren", t):
+        c.add("torax")
+    if re.search(r"\bmanos?\b|muneca|hombro|rodilla|cadera|\bpies?\b|brazo|codo|tobillo", t):
+        c.add("osteo")
+    if re.search(r"\btc\b|tomograf|\btomo\b|\bte ce\b|tomografo", t):
+        c.add("tc")
+    if re.search(r"\bpet\b|captacion|\bfdg\b|\bsuv\b|radiofarmaco", t):
+        c.add("pet")
     # estudios agregados en plantillas.md (ej. "ECOGRAFÍA ABDOMINAL" -> "abdominal")
     palabras = set(re.findall(r"[a-z]{5,}", t))
     for clave in claves_de_plantillas() if claves is None else claves:
@@ -63,11 +72,48 @@ def categorias(texto, claves=None):
     return c
 
 
-GENERICAS = {"ecografia", "mamografia", "estudio", "digital", "bilateral", "frente", "perfil", "ambas", "ambos",
-             "derecha", "derecho", "izquierda", "izquierdo", "osteoarticular", "orden", "cierre", "informe",
-             "columna", "espinograma", "torax", "mamaria", "transvaginal", "ginecologica", "tiroidea", "cervical",
-             "dorsal", "lumbosacra", "dorsolumbar", "manos", "muneca", "hombros", "rodillas", "caderas", "brazo",
-             "region", "texto", "comun", "tomografia", "partes", "blandas"}
+GENERICAS = {
+    "ecografia",
+    "mamografia",
+    "estudio",
+    "digital",
+    "bilateral",
+    "frente",
+    "perfil",
+    "ambas",
+    "ambos",
+    "derecha",
+    "derecho",
+    "izquierda",
+    "izquierdo",
+    "osteoarticular",
+    "orden",
+    "cierre",
+    "informe",
+    "columna",
+    "espinograma",
+    "torax",
+    "mamaria",
+    "transvaginal",
+    "ginecologica",
+    "tiroidea",
+    "cervical",
+    "dorsal",
+    "lumbosacra",
+    "dorsolumbar",
+    "manos",
+    "muneca",
+    "hombros",
+    "rodillas",
+    "caderas",
+    "brazo",
+    "region",
+    "texto",
+    "comun",
+    "tomografia",
+    "partes",
+    "blandas",
+}
 
 
 def claves_de_plantillas():
@@ -147,8 +193,11 @@ def guardar_secciones_usuario(usuario, secs):
         bk.mkdir(parents=True, exist_ok=True)
         (bk / time.strftime("plantillas_%Y%m%d_%H%M%S.md")).write_text(anterior, encoding="utf-8")
     texto = "\n\n".join(f"## {n.strip()}\n{c.strip()}" for n, c in secs if n.strip())
-    U.escribir_archivo(usuario, "plantillas.md", "# PLANTILLAS PROPIAS (reemplazan a la general del mismo nombre)\n\n"
-                       + texto + "\n" if texto else "")
+    U.escribir_archivo(
+        usuario,
+        "plantillas.md",
+        "# PLANTILLAS PROPIAS (reemplazan a la general del mismo nombre)\n\n" + texto + "\n" if texto else "",
+    )
 
 
 def aplicar_plantillas(enviadas, usuario, destino):
@@ -164,8 +213,11 @@ def aplicar_plantillas(enviadas, usuario, destino):
     nuevas = {_clave_seccion(n): (n, c) for n, c in enviadas}
     if len(nuevas) != len(enviadas):
         raise ValueError("Hay dos plantillas con el mismo nombre: cambiale el nombre a una.")
-    cambiadas = {k: v for k, v in nuevas.items() if k not in vistas or vistas[k][1].strip() != v[1].strip()
-                 or vistas[k][0] != v[0]}
+    cambiadas = {
+        k: v
+        for k, v in nuevas.items()
+        if k not in vistas or vistas[k][1].strip() != v[1].strip() or vistas[k][0] != v[0]
+    }
     borradas = [k for k in vistas if k not in nuevas]
     if not cambiadas and not borradas:
         return {"generales": 0, "propias": 0, "sin_cambios": True}
@@ -178,7 +230,7 @@ def aplicar_plantillas(enviadas, usuario, destino):
             gen[k] = v
             if k not in orden:
                 orden.append(k)
-            propias.pop(k, None)              # ya es la general: deja de ser propia
+            propias.pop(k, None)  # ya es la general: deja de ser propia
         for k in borradas:
             gen.pop(k, None)
             propias.pop(k, None)
@@ -186,17 +238,20 @@ def aplicar_plantillas(enviadas, usuario, destino):
     else:
         for k, v in cambiadas.items():
             if k in gen and gen[k][1].strip() == v[1].strip() and gen[k][0] == v[0]:
-                propias.pop(k, None)          # quedó igual a la general
+                propias.pop(k, None)  # quedó igual a la general
             else:
                 propias[k] = v
         for k in borradas:
             if k in propias:
-                propias.pop(k)                # borrar la propia = volver a la general (si existe)
+                propias.pop(k)  # borrar la propia = volver a la general (si existe)
     if usuario:
         guardar_secciones_usuario(usuario, list(propias.values()))
-    return {"generales": len(cambiadas) + len(borradas) if destino == "todos" else 0,
-            "propias": len(cambiadas) + len(borradas) if destino == "mio" else 0, "sin_cambios": False,
-            "no_borradas": [vistas[k][0] for k in borradas if destino == "mio" and k in gen]}
+    return {
+        "generales": len(cambiadas) + len(borradas) if destino == "todos" else 0,
+        "propias": len(cambiadas) + len(borradas) if destino == "mio" else 0,
+        "sin_cambios": False,
+        "no_borradas": [vistas[k][0] for k in borradas if destino == "mio" and k in gen],
+    }
 
 
 def volver_a_general(usuario, nombre):
@@ -263,20 +318,21 @@ def plantillas_relevantes(dictado, medico=None, sin_estilos=False, usuario=None)
     pre, secs = secciones_plantillas(usuario)
     d = categorias(dictado)
     if "pet" in d:
-        d = {"pet"}                         # el PET describe todo el cuerpo: solo su plantilla
+        d = {"pet"}  # el PET describe todo el cuerpo: solo su plantilla
     elegidas = []
     for nombre, cuerpo in secs:
         if d:
             tit = " ".join(l for l in cuerpo.splitlines() if l.strip().upper().startswith("TITULO"))
-            c = {x for x in categorias(_base(nombre) + " " + tit) if not x.startswith("pl:")} | \
-                {x for x in categorias(_base(nombre).split("(")[0]) if x.startswith("pl:")}
+            c = {x for x in categorias(_base(nombre) + " " + tit) if not x.startswith("pl:")} | {
+                x for x in categorias(_base(nombre).split("(")[0]) if x.startswith("pl:")
+            }
             if any(x in c and x not in d for x in ("tc", "pet")):
-                continue                    # no mezclar TC/PET con RX/ecografias
+                continue  # no mezclar TC/PET con RX/ecografias
             if c and any(x in d and x not in c for x in ("tc", "pet")):
-                continue                    # ni RX/ecografias en una TC/PET
+                continue  # ni RX/ecografias en una TC/PET
             organo = c - {"tc", "pet"}
             if c and not (organo & d if organo else c & d):
-                continue                    # la TC de otro organo no va
+                continue  # la TC de otro organo no va
         elegidas.append((nombre, cuerpo))
     # estilos por medico
     propias = {_base(n) for n, _ in elegidas if _estilo(n) and es_del_medico(_estilo(n), medico)}
@@ -287,17 +343,39 @@ def plantillas_relevantes(dictado, medico=None, sin_estilos=False, usuario=None)
             if es_del_medico(est, medico):
                 final.append((nombre, cuerpo))
             elif not medico and d and not sin_estilos:
-                final.append((nombre, "VARIANTE DE OTRO MÉDICO: usala solo si el dictado usa estas mismas frases.\n"
-                              + cuerpo))
+                final.append(
+                    (nombre, "VARIANTE DE OTRO MÉDICO: usala solo si el dictado usa estas mismas frases.\n" + cuerpo)
+                )
         elif _base(nombre) not in propias:
             final.append((nombre, cuerpo))
     return pre.rstrip() + "\n\n" + "\n\n".join(f"## {n}\n{c}" for n, c in final)
 
 
 # ------------------------------------------------- titulos y lineas fijas
-PALABRAS_ESTUDIO = {"rx", "tc", "ecografia", "eco", "mamografia", "doppler", "ecodoppler", "rm", "resonancia",
-                    "servicio", "pet", "densitometria", "angiotc", "angiografia", "colangiorresonancia", "uro",
-                    "radiografia", "tomografia", "centellograma", "seriada", "espinograma", "artrorresonancia"}
+PALABRAS_ESTUDIO = {
+    "rx",
+    "tc",
+    "ecografia",
+    "eco",
+    "mamografia",
+    "doppler",
+    "ecodoppler",
+    "rm",
+    "resonancia",
+    "servicio",
+    "pet",
+    "densitometria",
+    "angiotc",
+    "angiografia",
+    "colangiorresonancia",
+    "uro",
+    "radiografia",
+    "tomografia",
+    "centellograma",
+    "seriada",
+    "espinograma",
+    "artrorresonancia",
+}
 
 
 def es_titulo(linea):
@@ -309,8 +387,11 @@ def es_titulo(linea):
     return bool(w) and (w[0] in PALABRAS_ESTUDIO or clave_titulo(l) in titulos_conocidos())
 
 
-_SOBRA_TITULO = re.compile(r"\b(?:digital|bilateral(?:es)?|con\s+prolongaciones\s+axilares|con\s+contraste|"
-                           r"sin\s+contraste)\b", re.I)
+_SOBRA_TITULO = re.compile(
+    r"\b(?:digital|bilateral(?:es)?|con\s+prolongaciones\s+axilares|con\s+contraste|"
+    r"sin\s+contraste)\b",
+    re.I,
+)
 
 
 _SIGLAS = {"rx", "tc", "rm", "tac", "pet", "ct", "us"}
@@ -339,8 +420,9 @@ def estudio_corto(titulo):
         return ("Eco " + " ".join(resto[:2]).lower()).strip() if resto else "Ecografía"
     if p0 == "tomografia":
         w, p0 = ["TC"] + w[1:], "tc"
-    out = " ".join([w[0].upper() if p0 in _SIGLAS else w[0]] + [x if x.isupper() and len(x) <= 4 else x.lower()
-                                                                for x in w[1:]])
+    out = " ".join(
+        [w[0].upper() if p0 in _SIGLAS else w[0]] + [x if x.isupper() and len(x) <= 4 else x.lower() for x in w[1:]]
+    )
     out = out.rstrip(" ,")
     return out if len(out) <= 30 else out[:29].rstrip(" ,") + "…"
 
@@ -371,10 +453,13 @@ def es_linea_fija(linea):
             l = l.strip()
             up = sin_acentos(l.upper())
             if up.startswith("TEXTO FIJO"):
-                en_bloque = True; continue
-            if l.startswith("## ") or up.startswith(("PROTOCOLO NORMAL", "FRASES", "NOTAS", "VARIANTE", "COMO ELEGIR",
-                                                      "CIERRE", "TITULO")):
-                en_bloque = False; continue
+                en_bloque = True
+                continue
+            if l.startswith("## ") or up.startswith(
+                ("PROTOCOLO NORMAL", "FRASES", "NOTAS", "VARIANTE", "COMO ELEGIR", "CIERRE", "TITULO")
+            ):
+                en_bloque = False
+                continue
             if not en_bloque or not l or l.startswith(("-", "#", "<")) or len(l) < 15:
                 continue
             if "<" in l:

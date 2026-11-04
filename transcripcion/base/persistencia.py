@@ -1,4 +1,5 @@
 """Publicación atómica de archivos en el mismo volumen, sin truncar el anterior."""
+
 import os
 from pathlib import Path
 import tempfile

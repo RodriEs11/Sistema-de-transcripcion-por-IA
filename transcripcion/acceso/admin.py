@@ -7,6 +7,7 @@ Acá está lo que no depende del servidor HTTP:
 - decidir si un pedido puede usar el panel (solo esta PC, nunca por el túnel).
 El estado completo lo arma servidor.py (que tiene la cola, la IA, etc.).
 """
+
 import re
 import threading
 import time
@@ -20,8 +21,8 @@ _LINEA = re.compile(r"^(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d)  (AVISO|ERROR)\s+(\S+)
 _CABECERA = re.compile(r"^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d  ")
 _DET = " " * 31 + "· "
 _TB = "    | "
-_MAX_LEER = 3 * 1024 * 1024        # del final de cada archivo alcanza
-_CACHE = {}                        # ruta -> (firma, eventos)
+_MAX_LEER = 3 * 1024 * 1024  # del final de cada archivo alcanza
+_CACHE = {}  # ruta -> (firma, eventos)
 _lock = threading.Lock()
 
 
@@ -40,7 +41,7 @@ def _eventos_de(ruta):
         with open(ruta, "rb") as f:
             if st.st_size > _MAX_LEER:
                 f.seek(st.st_size - _MAX_LEER)
-                f.readline()           # la primera puede venir cortada
+                f.readline()  # la primera puede venir cortada
             texto = f.read().decode("utf-8", "replace")
     except OSError:
         return []
@@ -48,20 +49,27 @@ def _eventos_de(ruta):
     for linea in texto.splitlines():
         m = _LINEA.match(linea)
         if m:
-            actual = {"fecha": m.group(1), "hora": m.group(2), "nivel": m.group(3).lower(), "area": m.group(4),
-                      "msg": m.group(5).strip(), "det": [], "tb": []}
+            actual = {
+                "fecha": m.group(1),
+                "hora": m.group(2),
+                "nivel": m.group(3).lower(),
+                "area": m.group(4),
+                "msg": m.group(5).strip(),
+                "det": [],
+                "tb": [],
+            }
             eventos.append(actual)
             continue
         if actual is None:
             continue
         if linea.startswith(_DET):
             if len(actual["det"]) < 12:
-                actual["det"].append(linea[len(_DET):].strip())
+                actual["det"].append(linea[len(_DET) :].strip())
         elif linea.startswith(_TB):
             if len(actual["tb"]) < 60:
-                actual["tb"].append(linea[len(_TB):])
+                actual["tb"].append(linea[len(_TB) :])
         elif _CABECERA.match(linea) or not linea.startswith(" "):
-            actual = None              # otra línea del registro (OK, INFO, cartel…): termina el evento
+            actual = None  # otra línea del registro (OK, INFO, cartel…): termina el evento
     with _lock:
         _CACHE[ruta] = (firma, eventos)
     return eventos
@@ -74,10 +82,12 @@ def ultimos_eventos(limite=60):
     ayer = L.archivo_del_dia(ahora - 86400)
     ev_hoy = _eventos_de(hoy)
     todos = (_eventos_de(ayer) if ayer != hoy else []) + ev_hoy
-    return {"errores_hoy": sum(1 for e in ev_hoy if e["nivel"] == "error"),
-            "avisos_hoy": sum(1 for e in ev_hoy if e["nivel"] == "aviso"),
-            "eventos": list(reversed(todos[-limite:])),
-            "archivo": str(hoy)}
+    return {
+        "errores_hoy": sum(1 for e in ev_hoy if e["nivel"] == "error"),
+        "avisos_hoy": sum(1 for e in ev_hoy if e["nivel"] == "aviso"),
+        "eventos": list(reversed(todos[-limite:])),
+        "archivo": str(hoy),
+    }
 
 
 # ------------------------------------------------------------- permisos
@@ -130,6 +140,7 @@ def origenes_validos(handler, puerto):
     hosts = {_host(handler.headers.get("Host")), _host(handler.headers.get("X-Forwarded-Host"))}
     try:
         from transcripcion.acceso import remoto as R
+
         hosts.add(_host(R.URL_TUNEL.get("url")))
     except Exception:
         pass
@@ -149,8 +160,10 @@ def motivo_origen(handler, puerto):
         return "falta el encabezado X-Panel"
     origen = handler.headers.get("Origin") or ""
     if origen and _host(origen) not in origenes_validos(handler, puerto):
-        return (f"Origin «{origen[:80]}» no coincide (Host «{(handler.headers.get('Host') or '')[:60]}», "
-                f"X-Forwarded-Host «{(handler.headers.get('X-Forwarded-Host') or '')[:60]}»)")
+        return (
+            f"Origin «{origen[:80]}» no coincide (Host «{(handler.headers.get('Host') or '')[:60]}», "
+            f"X-Forwarded-Host «{(handler.headers.get('X-Forwarded-Host') or '')[:60]}»)"
+        )
     sitio = handler.headers.get("Sec-Fetch-Site")
     if sitio and sitio not in ("same-origin", "none"):
         return f"Sec-Fetch-Site «{sitio}»"

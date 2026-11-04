@@ -3,6 +3,7 @@ escritura atómica del .docx. Lo usan el servidor (Guardar Word, vista previa) y
 
 Viene de informe.py (docs/refactor.md, etapa 6a).
 """
+
 import re
 import time
 from transcripcion.informe import formato as FMT
@@ -12,8 +13,15 @@ from transcripcion.informe import formato as FMT
 COLORES = None
 
 
-PAGINA_DEF = {"nombre": "A4", "ancho_cm": 21.0, "alto_cm": 29.7, "margen_superior_cm": 2.5,
-              "margen_inferior_cm": 4.0, "margen_izquierdo_cm": 1.3, "margen_derecho_cm": 3.0}
+PAGINA_DEF = {
+    "nombre": "A4",
+    "ancho_cm": 21.0,
+    "alto_cm": 29.7,
+    "margen_superior_cm": 2.5,
+    "margen_inferior_cm": 4.0,
+    "margen_izquierdo_cm": 1.3,
+    "margen_derecho_cm": 3.0,
+}
 
 
 ALINEACIONES = ("left", "center", "right", "justify")
@@ -39,8 +47,11 @@ def parrafos_docx(marcado, cfg):
     while lineas and lineas[-1] is None:
         lineas.pop()
     if not cfg["linea_vacia_entre_titulo_y_texto"]:
-        lineas = [x for i, x in enumerate(lineas)
-                  if not (x is None and i > 0 and lineas[i - 1] is not None and lineas[i - 1]["titulo"])]
+        lineas = [
+            x
+            for i, x in enumerate(lineas)
+            if not (x is None and i > 0 and lineas[i - 1] is not None and lineas[i - 1]["titulo"])
+        ]
     out = []
     for ln in lineas:
         if ln is None:
@@ -49,8 +60,15 @@ def parrafos_docx(marcado, cfg):
         segs = ln["segs"]
         segs = [(segs[0][0].lstrip(), *segs[0][1:])] + list(segs[1:]) if segs else segs
         alin = "center" if ln["titulo"] and cfg.get("centrar_titulos", True) else ""
-        out.append({"segs": segs, "linea": ln["linea"], "alin": alin, "alin_def": alin,
-                    "negrita": FMT.debe_ir_en_negrita("".join(t for t, _, _ in ln["segs"]), ln["titulo"], cfg)})
+        out.append(
+            {
+                "segs": segs,
+                "linea": ln["linea"],
+                "alin": alin,
+                "alin_def": alin,
+                "negrita": FMT.debe_ir_en_negrita("".join(t for t, _, _ in ln["segs"]), ln["titulo"], cfg),
+            }
+        )
     return out
 
 
@@ -68,8 +86,14 @@ def aplicar_formato(pars, formato):
         if p is None:
             continue
         t = texto_parrafo(p)
-        k = next((i for i in list(range(desde, len(lista))) + list(range(0, desde))
-                  if i not in usados and lista[i]["t"] == t), None)
+        k = next(
+            (
+                i
+                for i in list(range(desde, len(lista))) + list(range(0, desde))
+                if i not in usados and lista[i]["t"] == t
+            ),
+            None,
+        )
         if k is None:
             continue
         usados.add(k)
@@ -85,13 +109,21 @@ def aplicar_formato(pars, formato):
             h = r.get("h") or ""
             fuente = r.get("f") or ""
             tamano = r.get("s")
-            runs.append({"t": r["t"], "b": bool(r.get("b")), "i": bool(r.get("i")), "u": bool(r.get("u")),
-                         "x": bool(r.get("x")),
-                         "c": c if isinstance(c, str) and re.fullmatch(r"#[0-9a-fA-F]{6}", c) else "",
-                         "h": h if isinstance(h, str) and re.fullmatch(r"#[0-9a-fA-F]{6}", h) else "",
-                         "f": fuente if isinstance(fuente, str) and re.fullmatch(r"[\w .-]{1,80}", fuente) else "",
-                         "s": float(tamano) if isinstance(tamano, (float, int)) and not isinstance(tamano, bool)
-                              and 6 <= tamano <= 96 else None})
+            runs.append(
+                {
+                    "t": r["t"],
+                    "b": bool(r.get("b")),
+                    "i": bool(r.get("i")),
+                    "u": bool(r.get("u")),
+                    "x": bool(r.get("x")),
+                    "c": c if isinstance(c, str) and re.fullmatch(r"#[0-9a-fA-F]{6}", c) else "",
+                    "h": h if isinstance(h, str) and re.fullmatch(r"#[0-9a-fA-F]{6}", h) else "",
+                    "f": fuente if isinstance(fuente, str) and re.fullmatch(r"[\w .-]{1,80}", fuente) else "",
+                    "s": float(tamano)
+                    if isinstance(tamano, (float, int)) and not isinstance(tamano, bool) and 6 <= tamano <= 96
+                    else None,
+                }
+            )
         if runs and "".join(r["t"] for r in runs) == t:
             p["runs"] = runs
     return pars
@@ -102,8 +134,15 @@ def escribir_docx(marcado, destino, cfg, formato=None):
     from docx.enum.text import WD_COLOR_INDEX as C, WD_ALIGN_PARAGRAPH as A
     from docx.oxml.ns import qn
     from docx.shared import Cm, Pt, RGBColor
-    color = {"numero": C.RED, "completar": C.RED, "dudoso": C.YELLOW, "bajaconf": C.YELLOW,
-             "plantilla": C.GRAY_25, "verificar": C.TURQUOISE}
+
+    color = {
+        "numero": C.RED,
+        "completar": C.RED,
+        "dudoso": C.YELLOW,
+        "bajaconf": C.YELLOW,
+        "plantilla": C.GRAY_25,
+        "verificar": C.TURQUOISE,
+    }
 
     doc = Document()
     pg, sec = pagina(cfg), doc.sections[0]
@@ -134,7 +173,7 @@ def escribir_docx(marcado, destino, cfg, formato=None):
             continue
         if ln.get("alin") in alinear:
             p.alignment = alinear[ln["alin"]]
-        if ln.get("runs"):          # formato elegido a mano en la vista previa
+        if ln.get("runs"):  # formato elegido a mano en la vista previa
             for x in ln["runs"]:
                 r = p.add_run(x["t"])
                 r.bold = True if x["b"] else None
@@ -149,6 +188,7 @@ def escribir_docx(marcado, destino, cfg, formato=None):
                     r.font.size = Pt(x["s"])
                 if x.get("h"):
                     from docx.oxml import OxmlElement
+
                     fondo = OxmlElement("w:shd")
                     fondo.set(qn("w:fill"), x["h"][1:].upper())
                     r._element.get_or_add_rPr().append(fondo)

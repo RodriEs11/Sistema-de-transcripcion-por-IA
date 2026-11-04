@@ -1,4 +1,5 @@
 """Cola duradera: una última versión por caso, un consumidor y reintentos idempotentes."""
+
 import json
 import threading
 import uuid
@@ -57,6 +58,7 @@ class ColaAprendizaje:
     def iniciar(self):
         if self.hilo is not None:
             return
+
         def bucle():
             while True:
                 self.despertar.clear()
@@ -65,5 +67,6 @@ class ColaAprendizaje:
                 except Exception:
                     L.error("APRENDIZAJE", "La cola conserva las tareas y volverá a intentar.", exc=True)
                 self.despertar.wait(30)
+
         self.hilo = threading.Thread(target=bucle, daemon=True, name="aprendizaje")
         self.hilo.start()

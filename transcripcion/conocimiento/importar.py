@@ -7,13 +7,14 @@ La IA los usa para copiar el formato y las frases de ese tipo de estudio
   Carpeta de origen: Dataset\\Informes word   (o la que se pase como argumento)
   Destino:           sistema\\referencias\\NOMBRE.txt
 """
+
 import re
 import sys
 from pathlib import Path
 
 from transcripcion import RAIZ
 
-AQUI = RAIZ          # carpeta del sistema (no la del paquete)
+AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 ORIGEN = AQUI.parent / "Dataset" / "Informes word"
 DESTINO = AQUI / "referencias"
 
@@ -25,6 +26,7 @@ except Exception:
 
 def texto_docx(ruta):
     from docx import Document
+
     d = Document(str(ruta))
     lineas = [p.text.replace("​", "").replace("\xa0", " ").rstrip() for p in d.paragraphs]
     t = "\n".join(lineas)
@@ -42,9 +44,11 @@ def importar(origen=ORIGEN):
         try:
             t = texto_docx(f)
         except Exception:
-            mal.append(f.name); continue
+            mal.append(f.name)
+            continue
         if len(t) < 40:
-            mal.append(f.name); continue
+            mal.append(f.name)
+            continue
         (DESTINO / (f.stem + ".txt")).write_text(t + "\n", encoding="utf-8")
         ok.append(f.name)
     return ok, mal
@@ -63,6 +67,7 @@ def plantilla_desde_word(ruta_o_bytes):
     """Convierte una plantilla de Word (.docx) en una seccion de plantillas.md para revisar."""
     import io
     from docx import Document
+
     d = Document(io.BytesIO(ruta_o_bytes) if isinstance(ruta_o_bytes, (bytes, bytearray)) else str(ruta_o_bytes))
     ls = [p.text.replace("\u200b", "").replace("\xa0", " ").strip() for p in d.paragraphs]
     ls = [l for l in ls]
@@ -82,7 +87,7 @@ def plantilla_desde_word(ruta_o_bytes):
         elif not vinetas:
             fijo.append(l)
         elif len(l) < 30 and not l.endswith("."):
-            vinetas.append(l)                       # subtitulo (ej. "Tórax")
+            vinetas.append(l)  # subtitulo (ej. "Tórax")
         else:
             despues.append(l)
 

@@ -14,6 +14,7 @@ TRANSCRIPTORES: cada persona entra con su usuario y su contraseña, y tiene su p
 
 Mientras no haya ningún transcriptor creado, el sistema funciona como antes (sin pedir usuario).
 """
+
 import hashlib
 import hmac
 import json
@@ -26,7 +27,7 @@ import unicodedata
 from transcripcion.base.persistencia import escribir_atomico
 from transcripcion import RAIZ
 
-AQUI = RAIZ          # carpeta del sistema (no la del paquete)
+AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 ARCH = AQUI / "usuarios.json"
 CARPETA = AQUI / "conocimiento" / "usuarios"
 MIN_CONTRASENA = 6
@@ -48,7 +49,7 @@ def _leer():
                 d = {}
             d.setdefault("usuarios", {})
             _CACHE.update(mt=mt, d=d)
-        return json.loads(json.dumps(_CACHE["d"]))      # copia: nadie modifica la caché por error
+        return json.loads(json.dumps(_CACHE["d"]))  # copia: nadie modifica la caché por error
 
 
 def _grabar(d):
@@ -107,8 +108,14 @@ def datos(clave):
     u = _leer()["usuarios"].get(clave or "")
     if not u:
         return None
-    return {"clave": clave, "nombre": u["nombre"], "activo": u.get("activo", True), "cambiar": bool(u.get("cambiar")),
-            "creado": u.get("creado"), "ultima": u.get("ultima")}
+    return {
+        "clave": clave,
+        "nombre": u["nombre"],
+        "activo": u.get("activo", True),
+        "cambiar": bool(u.get("cambiar")),
+        "creado": u.get("creado"),
+        "ultima": u.get("ultima"),
+    }
 
 
 def lista(incluir_inactivos=True):
@@ -126,8 +133,14 @@ def crear(nombre, contrasena):
         if clave in d["usuarios"]:
             raise FileExistsError(f"Ya existe un transcriptor con ese nombre: {d['usuarios'][clave]['nombre']}.")
         sal = secrets.token_hex(16)
-        d["usuarios"][clave] = {"nombre": nombre, "sal": sal, "huella": _huella(contrasena, sal), "activo": True,
-                                "cambiar": True, "creado": time.strftime("%Y-%m-%d %H:%M")}
+        d["usuarios"][clave] = {
+            "nombre": nombre,
+            "sal": sal,
+            "huella": _huella(contrasena, sal),
+            "activo": True,
+            "cambiar": True,
+            "creado": time.strftime("%Y-%m-%d %H:%M"),
+        }
         _grabar(d)
     return clave
 
@@ -203,7 +216,7 @@ def verificar(nombre, contrasena):
     d = _leer()
     clave = _buscar(d, nombre)
     u = d["usuarios"].get(clave) if clave else None
-    ref = u or _HUELLA_FALSA                       # mismo trabajo aunque el usuario no exista
+    ref = u or _HUELLA_FALSA  # mismo trabajo aunque el usuario no exista
     ok = hmac.compare_digest(_huella(str(contrasena or ""), ref["sal"]), ref["huella"])
     if not (u and ok and contrasena and u.get("activo", True)):
         return None
@@ -268,13 +281,16 @@ def _leer_json(clave, nombre):
 
 
 # --- preferencias de la pantalla (las mismas claves que la página guarda en localStorage)
-PREF_VALIDA = re.compile(r"^(pref_[A-Za-z0-9_]{1,40}|tema|listaOculta|velUltima|barraFormatoOculta|zoomVp|"
-                         r"anchoLista|anchoLista2|propInforme|filtroCasos)$")
+PREF_VALIDA = re.compile(
+    r"^(pref_[A-Za-z0-9_]{1,40}|tema|listaOculta|velUltima|barraFormatoOculta|zoomVp|"
+    r"anchoLista|anchoLista2|propInforme|filtroCasos)$"
+)
 
 
 def preferencias(clave):
-    return {k: v for k, v in _leer_json(clave, "preferencias.json").items()
-            if PREF_VALIDA.match(k) and isinstance(v, str)}
+    return {
+        k: v for k, v in _leer_json(clave, "preferencias.json").items() if PREF_VALIDA.match(k) and isinstance(v, str)
+    }
 
 
 def guardar_preferencias(clave, prefs):

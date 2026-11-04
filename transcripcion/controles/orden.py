@@ -2,6 +2,7 @@
 
 Viene de nucleo.py (docs/refactor.md, etapa 3).
 """
+
 from transcripcion.texto.normalizacion import sin_acentos
 from transcripcion.conocimiento import plantillas as PL
 
@@ -28,7 +29,8 @@ def ordenar_estudios(texto):
     bloques, pre, cat = [], [], None
     for l in ls:
         if sin_acentos(l.strip().lower()).startswith("categorizacion"):
-            cat = l.strip(); continue
+            cat = l.strip()
+            continue
         if PL.es_titulo(l):
             bloques.append([l])
         elif bloques:
@@ -37,7 +39,7 @@ def ordenar_estudios(texto):
             pre.append(l)
     rangos = [_rango(b[0]) for b in bloques]
     if len(bloques) < 2 or None in rangos or rangos == sorted(rangos) and cat is None:
-        return texto                                    # nada que ordenar (o no son estudios mamarios)
+        return texto  # nada que ordenar (o no son estudios mamarios)
     orden = sorted(range(len(bloques)), key=lambda i: (rangos[i], i))
     out = list(pre)
     puesto = cat is None
@@ -48,7 +50,8 @@ def ordenar_estudios(texto):
             b.pop()
         out += b + [""]
         if not puesto and i == destino:
-            out += [cat, ""]; puesto = True
+            out += [cat, ""]
+            puesto = True
     if not puesto:
         out += [cat, ""]
     while out and not out[-1].strip():

@@ -7,6 +7,7 @@
 - abrir un archivo o carpeta con el programa del escritorio (Explorador / xdg-open);
 - rutas de configuracion.json escritas con barras de Windows ("..\\Informes") también valen en Linux.
 """
+
 import os
 import shutil
 import subprocess
@@ -14,7 +15,7 @@ import sys
 from pathlib import Path
 from transcripcion import RAIZ
 
-AQUI = RAIZ          # carpeta del sistema (no la del paquete)
+AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 ES_WINDOWS = os.name == "nt"
 NOMBRE = "windows" if ES_WINDOWS else ("mac" if sys.platform == "darwin" else "linux")
 EXT_SCRIPT = ".bat" if ES_WINDOWS else ".sh"
@@ -51,6 +52,7 @@ def ruta_devtunnel():
 def descarga_devtunnel():
     """Dirección oficial de Microsoft para bajar devtunnel en este sistema."""
     import platform
+
     if ES_WINDOWS:
         return "https://aka.ms/TunnelsCliDownload/win-x64"
     arq = platform.machine().lower()
@@ -82,6 +84,11 @@ def abrir(ruta):
     if not puede_abrir():
         return False
     prog = "open" if sys.platform == "darwin" else "xdg-open"
-    subprocess.Popen([prog, str(ruta)], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                     stderr=subprocess.DEVNULL, start_new_session=True)
+    subprocess.Popen(
+        [prog, str(ruta)],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
     return True

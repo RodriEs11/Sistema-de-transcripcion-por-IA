@@ -11,6 +11,7 @@ Une lo que ya se guarda:
 Un informe guardado varias veces cuenta una sola vez (vale el último guardado).
 No escribe nada: solo lee.
 """
+
 import csv
 import io
 import re
@@ -24,7 +25,7 @@ from transcripcion.conocimiento import plantillas as PL
 from transcripcion.aprendizaje import almacen as AL
 from transcripcion.base import registro as L
 
-AQUI = RAIZ          # carpeta del sistema (no la del paquete)
+AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 HIST = AQUI / "resultados" / "historial.csv"
 EJ = AQUI / "ejemplos"
 SIN_MEDICO = "Sin especificar"
@@ -68,6 +69,7 @@ def _firma():
             return (s.st_size, s.st_mtime_ns)
         except OSError:
             return None
+
     return (st(L.CARPETA / "actividad.csv"), st(HIST), st(AL.ruta_base(HIST)), st(EJ))
 
 
@@ -81,7 +83,7 @@ def _indice_ejemplos():
     for nm in nombres:
         m = _CLAVE_EJ.match(nm)
         if m:
-            idx[m.group(2)] = nm[:-len(".informe.txt")]      # ordenados: queda el último
+            idx[m.group(2)] = nm[: -len(".informe.txt")]  # ordenados: queda el último
     return idx
 
 
@@ -147,8 +149,9 @@ def _informes(actual):
             estudios = actual["estudios"](n) or ""
         m = _PC_EN_NOMBRE.match(n)
         pc = (g.get("pc") or "").strip() or (m.group(1) if m else LOCAL)
-        titulo = (g.get("audio_original") or "").strip() or \
-            (n[m.end():].replace("-", " ") if m else re.sub(r"\.tmp$", "", n))
+        titulo = (g.get("audio_original") or "").strip() or (
+            n[m.end() :].replace("-", " ") if m else re.sub(r"\.tmp$", "", n)
+        )
         pct = _num(g.get("porcentaje_corregido"))
         if pct is None:
             pct = h.get("pct")
@@ -161,14 +164,24 @@ def _informes(actual):
             if any(v is not None for v in vals):
                 marcas = sum(v or 0 for v in vals)
         rev = _num(g.get("revision_s"))
-        salida.append({
-            "caso": n, "t": t, "titulo": titulo, "pc": pc, "medico": medico or SIN_MEDICO,
-            "estudios": estudios or SIN_ESTUDIO, "pct": pct, "palabras": palabras,
-            "rev": rev if rev and rev > 0 else None, "marcas": marcas,
-            "dur": _num(ge.get("duracion_audio_s")) if ge else None,
-            "voz_estado": (g.get("voz_estado") or "").strip(), "voz_medico": (g.get("medico_voz") or "").strip(),
-            "voz_puntaje": _num(g.get("voz_puntaje")),
-        })
+        salida.append(
+            {
+                "caso": n,
+                "t": t,
+                "titulo": titulo,
+                "pc": pc,
+                "medico": medico or SIN_MEDICO,
+                "estudios": estudios or SIN_ESTUDIO,
+                "pct": pct,
+                "palabras": palabras,
+                "rev": rev if rev and rev > 0 else None,
+                "marcas": marcas,
+                "dur": _num(ge.get("duracion_audio_s")) if ge else None,
+                "voz_estado": (g.get("voz_estado") or "").strip(),
+                "voz_medico": (g.get("medico_voz") or "").strip(),
+                "voz_puntaje": _num(g.get("voz_puntaje")),
+            }
+        )
     salida.sort(key=lambda x: x["t"])
     generados = []
     for r in _leer_csv(L.CARPETA / "actividad.csv"):
@@ -179,12 +192,20 @@ def _informes(actual):
             continue
         n = (r.get("caso") or "").strip()
         m = _PC_EN_NOMBRE.match(n)
-        generados.append({"t": t, "evento": r.get("evento"), "caso": n,
-                          "titulo": (r.get("audio_original") or "").strip() or (n[m.end():].replace("-", " ") if m else n),
-                          "pc": (r.get("pc") or "").strip() or (m.group(1) if m else LOCAL),
-                          "medico": (r.get("medico") or "").strip(), "dur": _num(r.get("duracion_audio_s")),
-                          "whisper": _num(r.get("whisper_s")), "ia": _num(r.get("ia_s")),
-                          "detalle": (r.get("detalle") or "").strip()[:200]})
+        generados.append(
+            {
+                "t": t,
+                "evento": r.get("evento"),
+                "caso": n,
+                "titulo": (r.get("audio_original") or "").strip() or (n[m.end() :].replace("-", " ") if m else n),
+                "pc": (r.get("pc") or "").strip() or (m.group(1) if m else LOCAL),
+                "medico": (r.get("medico") or "").strip(),
+                "dur": _num(r.get("duracion_audio_s")),
+                "whisper": _num(r.get("whisper_s")),
+                "ia": _num(r.get("ia_s")),
+                "detalle": (r.get("detalle") or "").strip()[:200],
+            }
+        )
     generados.sort(key=lambda x: x["t"])
     with _lock:
         _CACHE.update(firma=firma, t=time.time(), informes=salida, generados=generados)
@@ -208,10 +229,13 @@ def _resumen(lista):
     corr = sum((i["pct"] or 0) / 100 * (i["palabras"] or 0) for i in lista)
     return {
         "n": len(lista),
-        "pct": _prom(pcts), "pct_mediana": _mediana(pcts),
+        "pct": _prom(pcts),
+        "pct_mediana": _mediana(pcts),
         "palabras": int(sum(i["palabras"] or 0 for i in lista)),
         "corregidas": int(round(corr)),
-        "rev_n": len(revs), "rev_prom": _prom(revs), "rev_mediana": _mediana(revs),
+        "rev_n": len(revs),
+        "rev_prom": _prom(revs),
+        "rev_mediana": _mediana(revs),
         "rev_total": int(round(sum(revs))),
         "marcas": _prom([i["marcas"] for i in lista]),
         "audio_prom": _prom([i["dur"] for i in lista]),
@@ -252,7 +276,7 @@ def _semanas(lista, desde, hasta):
         grupos.setdefault(_lunes(i["t"]), []).append(i)
     ini = _lunes(desde) if desde else min(grupos)
     fin = _lunes(hasta)
-    ini = max(ini, fin - timedelta(weeks=25))         # como mucho 26 semanas en el gráfico
+    ini = max(ini, fin - timedelta(weeks=25))  # como mucho 26 semanas en el gráfico
     filas, d = [], ini
     while d <= fin:
         g = grupos.get(d, [])
@@ -277,12 +301,19 @@ def _resumen_tiempos(lista):
     ia = [g["ia"] for g in ok if g["ia"]]
     fx = [g["whisper"] / g["dur"] for g in ok if g["whisper"] and g["dur"] and g["dur"] > 1]
     tot = [(g["whisper"] or 0) + (g["ia"] or 0) for g in ok if g["whisper"] or g["ia"]]
-    return {"n": len(ok), "errores": sum(1 for g in lista if g["evento"] == "error"),
-            "whisper_prom": _prom(w), "whisper_mediana": _mediana(w),
-            "whisper_x": round(statistics.median(fx), 3) if fx else None,          # segundos por segundo de audio
-            "ia_prom": _prom(ia), "ia_mediana": _mediana(ia), "ia_p90": _pctl(ia, 0.9),
-            "total_prom": _prom(tot), "total_mediana": _mediana(tot),
-            "audio_prom": _prom([g["dur"] for g in ok])}
+    return {
+        "n": len(ok),
+        "errores": sum(1 for g in lista if g["evento"] == "error"),
+        "whisper_prom": _prom(w),
+        "whisper_mediana": _mediana(w),
+        "whisper_x": round(statistics.median(fx), 3) if fx else None,  # segundos por segundo de audio
+        "ia_prom": _prom(ia),
+        "ia_mediana": _mediana(ia),
+        "ia_p90": _pctl(ia, 0.9),
+        "total_prom": _prom(tot),
+        "total_mediana": _mediana(tot),
+        "audio_prom": _prom([g["dur"] for g in ok]),
+    }
 
 
 def tiempos(desde, dias, ahora):
@@ -301,10 +332,19 @@ def tiempos(desde, dias, ahora):
     lentos = []
     for g in sorted(ok, key=lambda g: -((g["whisper"] or 0) + (g["ia"] or 0)))[:10]:
         x = g["whisper"] / g["dur"] if g["whisper"] and g["dur"] and g["dur"] > 1 else None
-        lentos.append({"t": g["t"], "titulo": g["titulo"], "pc": g["pc"], "dur": g["dur"], "whisper": g["whisper"],
-                       "ia": g["ia"], "whisper_x": round(x, 3) if x else None,
-                       "ia_lenta": bool(g["ia"] and med_ia and g["ia"] >= 2 * med_ia and g["ia"] - med_ia >= 10),
-                       "whisper_lento": bool(x and med_x and x >= 2 * med_x and (g["whisper"] or 0) >= 5)})
+        lentos.append(
+            {
+                "t": g["t"],
+                "titulo": g["titulo"],
+                "pc": g["pc"],
+                "dur": g["dur"],
+                "whisper": g["whisper"],
+                "ia": g["ia"],
+                "whisper_x": round(x, 3) if x else None,
+                "ia_lenta": bool(g["ia"] and med_ia and g["ia"] >= 2 * med_ia and g["ia"] - med_ia >= 10),
+                "whisper_lento": bool(x and med_x and x >= 2 * med_x and (g["whisper"] or 0) >= 5),
+            }
+        )
     semanas = []
     if ok:
         grupos = {}
@@ -315,13 +355,25 @@ def tiempos(desde, dias, ahora):
         ini = max(ini, fin - timedelta(weeks=25))
         d = ini
         while d <= fin:
-            semanas.append(dict(_resumen_tiempos(grupos.get(d, [])), desde=d.isoformat(),
-                                hasta=(d + timedelta(days=6)).isoformat()))
+            semanas.append(
+                dict(
+                    _resumen_tiempos(grupos.get(d, [])), desde=d.isoformat(), hasta=(d + timedelta(days=6)).isoformat()
+                )
+            )
             d += timedelta(weeks=1)
-    errores = [{"t": g["t"], "titulo": g["titulo"], "pc": g["pc"], "detalle": g["detalle"]}
-               for g in reversed(lista) if g["evento"] == "error"][:8]
-    return {"resumen": res, "previo": previo, "lentos": lentos, "semanas": semanas, "errores": errores,
-            "desde_registro": todos[0]["t"] if todos else None}
+    errores = [
+        {"t": g["t"], "titulo": g["titulo"], "pc": g["pc"], "detalle": g["detalle"]}
+        for g in reversed(lista)
+        if g["evento"] == "error"
+    ][:8]
+    return {
+        "resumen": res,
+        "previo": previo,
+        "lentos": lentos,
+        "semanas": semanas,
+        "errores": errores,
+        "desde_registro": todos[0]["t"] if todos else None,
+    }
 
 
 def _voz(lista):
@@ -334,6 +386,7 @@ def _voz(lista):
     def grupo(estados):
         g = [i for i in con if i["voz_estado"] in estados]
         return {"n": len(g), "bien": sum(1 for i in g if i["voz_medico"] == i["medico"])}
+
     por_med = {}
     for i in con:
         x = por_med.setdefault(i["medico"], {"medico": i["medico"], "n": 0, "seguro": 0, "bien": 0, "mal": 0})
@@ -341,12 +394,25 @@ def _voz(lista):
         if i["voz_estado"] == "seguro":
             x["seguro"] += 1
             x["bien" if i["voz_medico"] == i["medico"] else "mal"] += 1
-    mal = [{"t": i["t"], "titulo": i["titulo"], "medico": i["medico"], "voz_medico": i["voz_medico"],
-            "puntaje": i["voz_puntaje"]}
-           for i in reversed(con) if i["voz_estado"] == "seguro" and i["voz_medico"] != i["medico"]][:10]
-    return {"n": len(con), "seguro": grupo(("seguro",)), "dudoso": grupo(("dudoso",)),
-            "sin": grupo(("desconocido", "corto")),
-            "medicos": sorted(por_med.values(), key=lambda x: (-x["n"], x["medico"])), "errores": mal}
+    mal = [
+        {
+            "t": i["t"],
+            "titulo": i["titulo"],
+            "medico": i["medico"],
+            "voz_medico": i["voz_medico"],
+            "puntaje": i["voz_puntaje"],
+        }
+        for i in reversed(con)
+        if i["voz_estado"] == "seguro" and i["voz_medico"] != i["medico"]
+    ][:10]
+    return {
+        "n": len(con),
+        "seguro": grupo(("seguro",)),
+        "dudoso": grupo(("dudoso",)),
+        "sin": grupo(("desconocido", "corto")),
+        "medicos": sorted(por_med.values(), key=lambda x: (-x["n"], x["medico"])),
+        "errores": mal,
+    }
 
 
 def calcular(dias=30, medico_actual=None, estudios_actual=None):
@@ -367,14 +433,19 @@ def calcular(dias=30, medico_actual=None, estudios_actual=None):
         if ant:
             previo = _resumen(ant)
     medida = medida_trabajo(lista)
-    ultimos = [{k: i[k] for k in ("t", "titulo", "pc", "medico", "estudios", "pct", "palabras", "rev", "marcas")}
-               for i in reversed(lista[-40:])]
+    ultimos = [
+        {k: i[k] for k in ("t", "titulo", "pc", "medico", "estudios", "pct", "palabras", "rev", "marcas")}
+        for i in reversed(lista[-40:])
+    ]
     return {
-        "ahora": ahora, "dias": dias, "desde": desde,
+        "ahora": ahora,
+        "dias": dias,
+        "desde": desde,
         "primero": todos[0]["t"] if todos else None,
         "total_historico": len(todos),
         "rev_desde": next((i["t"] for i in todos if i["rev"]), None),
-        "resumen": _resumen(lista), "previo": previo,
+        "resumen": _resumen(lista),
+        "previo": previo,
         "semanas": _semanas(lista, desde, ahora),
         "medida": medida,
         "medicos": _por(lista, "medico", medida),

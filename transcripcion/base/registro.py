@@ -17,6 +17,7 @@ Uso:   import registro as L
        L.ok("AUDIO", "Audio recibido…")      L.info / L.aviso / L.error / L.debug
        L.error("IA", "No se pudo…", exc=True)   (guarda el traceback en el archivo)
 """
+
 import csv
 import logging
 import os
@@ -29,7 +30,7 @@ import time
 from pathlib import Path
 from transcripcion import RAIZ
 
-AQUI = RAIZ          # carpeta del sistema (no la del paquete)
+AQUI = RAIZ  # carpeta del sistema (no la del paquete)
 CARPETA = AQUI / "registros"
 
 OK = 25
@@ -38,13 +39,35 @@ log = logging.getLogger("transcripcion")
 log.propagate = False
 log.setLevel(logging.DEBUG)
 
-NIVEL_TXT = {logging.DEBUG: "DEBUG", logging.INFO: "INFO", OK: "OK", logging.WARNING: "AVISO",
-             logging.ERROR: "ERROR", logging.CRITICAL: "ERROR"}
-COL_NIVEL = {logging.DEBUG: "2", logging.INFO: "36", OK: "1;32", logging.WARNING: "1;30;43",
-             logging.ERROR: "1;97;41", logging.CRITICAL: "1;97;41"}
-COL_AREA = {"AUDIO": "94", "WHISPER": "95", "IA": "96", "INFORME": "92", "ACCESO": "93",
-            "CASO": "37", "TÚNEL": "34", "CONFIG": "37", "SERVIDOR": "97",
-            "APP": "35", "VOZ": "36"}
+NIVEL_TXT = {
+    logging.DEBUG: "DEBUG",
+    logging.INFO: "INFO",
+    OK: "OK",
+    logging.WARNING: "AVISO",
+    logging.ERROR: "ERROR",
+    logging.CRITICAL: "ERROR",
+}
+COL_NIVEL = {
+    logging.DEBUG: "2",
+    logging.INFO: "36",
+    OK: "1;32",
+    logging.WARNING: "1;30;43",
+    logging.ERROR: "1;97;41",
+    logging.CRITICAL: "1;97;41",
+}
+COL_AREA = {
+    "AUDIO": "94",
+    "WHISPER": "95",
+    "IA": "96",
+    "INFORME": "92",
+    "ACCESO": "93",
+    "CASO": "37",
+    "TÚNEL": "34",
+    "CONFIG": "37",
+    "SERVIDOR": "97",
+    "APP": "35",
+    "VOZ": "36",
+}
 DIAS = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
 ANCHO_AREA = 8
 _COLOR = False
@@ -70,9 +93,10 @@ def _activar_colores():
             return False
     except Exception:
         return False
-    if os.name == "nt":     # Windows 10/11: activar las secuencias de color de la consola
+    if os.name == "nt":  # Windows 10/11: activar las secuencias de color de la consola
         try:
             import ctypes
+
             k = ctypes.windll.kernel32
             h = k.GetStdHandle(-11)
             modo = ctypes.c_uint32()
@@ -137,13 +161,15 @@ class Consola(logging.Handler):
             area = getattr(r, "area", "SERVIDOR")
             dia = time.strftime("%Y-%m-%d", time.localtime(r.created))
             salida = []
-            if self.ultimo_dia and dia != self.ultimo_dia:     # cambio de día con el servidor abierto
+            if self.ultimo_dia and dia != self.ultimo_dia:  # cambio de día con el servidor abierto
                 txt = f" {fecha_larga(r.created)} "
                 salida.append(c("2", "─" * 4 + txt + "─" * max(4, ancho() - 6 - len(txt))))
             self.ultimo_dia = dia
             hora = time.strftime("%H:%M:%S", time.localtime(r.created))
-            pre = f" {c('2', hora)}  {c(COL_NIVEL.get(r.levelno), f' {nivel:<5} ')}  " \
-                  f"{c(COL_AREA.get(area, '37'), f'{area:<{ANCHO_AREA}}')}  "
+            pre = (
+                f" {c('2', hora)}  {c(COL_NIVEL.get(r.levelno), f' {nivel:<5} ')}  "
+                f"{c(COL_AREA.get(area, '37'), f'{area:<{ANCHO_AREA}}')}  "
+            )
             sangria = " " * (1 + 8 + 2 + 7 + 2 + ANCHO_AREA + 2)
             msg = r.getMessage()
             if r.levelno >= logging.ERROR:
@@ -156,17 +182,17 @@ class Consola(logging.Handler):
             salida.append(pre + c(cod_msg, _resaltar(filas[0])))
             salida += [sangria + c(cod_msg, _resaltar(f)) for f in filas[1:]]
             for d in getattr(r, "det", None) or []:
-                if URL_RE.fullmatch(str(d)):      # una dirección sola: entera, en su renglón y resaltada
+                if URL_RE.fullmatch(str(d)):  # una dirección sola: entera, en su renglón y resaltada
                     salida.append(sangria + "→ " + _resaltar(str(d)))
                     continue
                 for i, f in enumerate(cortar(str(d), ancho() - len(sangria) - 3)):
                     salida.append(sangria + c("2", ("· " if i == 0 else "  ") + f))
             if r.exc_info and r.exc_info[1] is not None:
                 ex = r.exc_info[1]
-                if str(ex) not in msg:      # el motivo técnico, si el mensaje no lo dice ya
+                if str(ex) not in msg:  # el motivo técnico, si el mensaje no lo dice ya
                     tec = f"{type(ex).__name__}: {ex}"
                     lim = ancho() - len(sangria) - 1
-                    salida.append(sangria + c("2", tec if len(tec) <= lim else tec[:lim - 1] + "…"))
+                    salida.append(sangria + c("2", tec if len(tec) <= lim else tec[: lim - 1] + "…"))
                 salida.append(sangria + c("2", f"detalle técnico en {ruta_corta(archivo_del_dia(r.created))}"))
             with _lock:
                 _out().write("\n".join(salida) + "\n")
@@ -192,6 +218,7 @@ class ArchivoDiario(logging.Handler):
                 lineas.append(" " * 31 + "· " + str(d))
             if r.exc_info and r.exc_info[1] is not None:
                 import traceback
+
                 tb = "".join(traceback.format_exception(*r.exc_info)).rstrip()
                 lineas += ["    | " + x for x in tb.splitlines()]
             escribir_archivo("\n".join(lineas) + "\n", r.created)
@@ -219,14 +246,20 @@ def configurar(consola=True, programa="servidor"):
     log.addHandler(ArchivoDiario())
     if consola:
         log.addHandler(Consola())
-    escribir_archivo("\n" + "=" * 100 + f"\n{time.strftime('%Y-%m-%d %H:%M:%S')}  INICIO  {programa}"
-                     f" (pid {os.getpid()})\n" + "=" * 100 + "\n")
+    escribir_archivo(
+        "\n" + "=" * 100 + f"\n{time.strftime('%Y-%m-%d %H:%M:%S')}  INICIO  {programa}"
+        f" (pid {os.getpid()})\n" + "=" * 100 + "\n"
+    )
 
-    def hilo_fallo(a):     # errores no previstos dentro de los hilos del servidor
+    def hilo_fallo(a):  # errores no previstos dentro de los hilos del servidor
         if issubclass(a.exc_type, SystemExit):
             return
-        log.error(f"Error inesperado en el hilo «{a.thread.name if a.thread else '?'}»",
-                  exc_info=(a.exc_type, a.exc_value, a.exc_traceback), extra={"area": "SERVIDOR"})
+        log.error(
+            f"Error inesperado en el hilo «{a.thread.name if a.thread else '?'}»",
+            exc_info=(a.exc_type, a.exc_value, a.exc_traceback),
+            extra={"area": "SERVIDOR"},
+        )
+
     threading.excepthook = hilo_fallo
 
 
@@ -277,8 +310,15 @@ def cartel(titulo, derecha, filas, pie=None, archivo=True):
     out = [""]
     out.append("  " + c("36", "┌" + "─" * (w - 2) + "┐"))
     izq = f"  {titulo}"
-    out.append("  " + c("36", "│") + c("1", izq) + " " * max(1, w - 2 - len(izq) - len(derecha) - 2)
-               + c("2", derecha) + "  " + c("36", "│"))
+    out.append(
+        "  "
+        + c("36", "│")
+        + c("1", izq)
+        + " " * max(1, w - 2 - len(izq) - len(derecha) - 2)
+        + c("2", derecha)
+        + "  "
+        + c("36", "│")
+    )
     out.append("  " + c("36", "│") + c("2", f"  {sub}".ljust(w - 2)) + c("36", "│"))
     out.append("  " + c("36", "└" + "─" * (w - 2) + "┘"))
     plano = [f"{titulo}  {derecha}  ({sub})"]
@@ -287,7 +327,9 @@ def cartel(titulo, derecha, filas, pie=None, archivo=True):
     for clave, valor, tono in filas:
         m = c(tonos.get(tono, "2"), marca.get(tono, "·"))
         filas_v = cortar(str(valor), w - 22)
-        out.append(f"   {m} {c('2', f'{clave:<16}')}{c(tonos.get(tono) if tono in ('aviso', 'error') else None, filas_v[0])}")
+        out.append(
+            f"   {m} {c('2', f'{clave:<16}')}{c(tonos.get(tono) if tono in ('aviso', 'error') else None, filas_v[0])}"
+        )
         out += [" " * 21 + f for f in filas_v[1:]]
         plano.append(f"    {clave:<16}{valor}")
     if pie:
@@ -326,7 +368,7 @@ def _linea(segs, w):
     plano, color, usado = [], [], 0
     for t, cod in segs:
         if usado + len(t) > w:
-            t = t[:max(0, w - usado - 1)] + "…"
+            t = t[: max(0, w - usado - 1)] + "…"
         plano.append(t)
         color.append(c(cod, t) if t else "")
         usado += len(t)
@@ -352,12 +394,19 @@ class Panel:
         L = [
             [("  ┌" + "─" * (w - 2) + "┐", "36")],
             [("  │", "36"), (izq, "1"), (" " * hueco, None), (self.derecha, "2"), ("  │", "36")],
-            [("  │", "36"), (reloj.ljust(w - 2)[:w - 2], None), ("│", "36")],
+            [("  │", "36"), (reloj.ljust(w - 2)[: w - 2], None), ("│", "36")],
             [("  └" + "─" * (w - 2) + "┘", "36")],
         ]
         for clave, valor, tono in filas:
-            L.append([("   ", None), (TONO_MARCA.get(tono, "·"), TONO_COLOR.get(tono, "2")), (" ", None),
-                      (f"{clave:<16}", "2"), (str(valor), TONO_COLOR.get(tono) if tono in ("aviso", "error") else None)])
+            L.append(
+                [
+                    ("   ", None),
+                    (TONO_MARCA.get(tono, "·"), TONO_COLOR.get(tono, "2")),
+                    (" ", None),
+                    (f"{clave:<16}", "2"),
+                    (str(valor), TONO_COLOR.get(tono) if tono in ("aviso", "error") else None),
+                ]
+            )
         txt = f" {self.pie} "
         L.append([("  ──" + txt + "─" * max(2, w - 2 - len(txt)), "2")])
         return [_linea(s, cols - 1) for s in L]
@@ -367,7 +416,7 @@ class Panel:
         lineas = self.construir(self.fn(), cols)
         alto = len(lineas)
         with _lock:
-            if filas_t < alto + 6:          # ventana muy baja: sin encabezado fijo hasta que se agrande
+            if filas_t < alto + 6:  # ventana muy baja: sin encabezado fijo hasta que se agrande
                 if self.region:
                     _out().write(f"\x1b[r\x1b[{filas_t};1H")
                     _out().flush()
@@ -375,7 +424,7 @@ class Panel:
                 return
             nuevo = not self.region or (cols, filas_t) != self.tam or len(self.previo or []) != alto
             out = []
-            if nuevo:     # fijar la región de eventos debajo del encabezado y dejar el cursor abajo
+            if nuevo:  # fijar la región de eventos debajo del encabezado y dejar el cursor abajo
                 out.append(f"\x1b[{alto + 1};{filas_t}r")
                 self.previo = [None] * alto
             else:
@@ -383,7 +432,7 @@ class Panel:
             for i, (plano, color) in enumerate(lineas):
                 if plano != self.previo[i]:
                     out.append(f"\x1b[{i + 1};1H\x1b[2K{color}")
-            if self.primera:      # los eventos empiezan justo debajo del encabezado
+            if self.primera:  # los eventos empiezan justo debajo del encabezado
                 out.append(f"\x1b[{alto + 1};1H")
                 self.primera = False
             else:
@@ -399,7 +448,7 @@ class Panel:
                 self.dibujar()
             except Exception:
                 debug("SERVIDOR", "No pude dibujar el encabezado", det=[repr(sys.exc_info()[1])])
-            time.sleep(1.02 - (time.time() % 1))      # justo después de cada cambio de segundo
+            time.sleep(1.02 - (time.time() % 1))  # justo después de cada cambio de segundo
 
     def cerrar(self):
         self.vivo = False
@@ -417,18 +466,24 @@ def encabezado(titulo, derecha, fn_filas, pie):
     segundo; si no, se imprime una vez (como antes). En los dos casos se copia al archivo del día."""
     global _PANEL
     filas = fn_filas()
-    escribir_archivo("\n".join([f"{titulo}  {derecha}  ({fecha_larga()} · {time.strftime('%H:%M')})"]
-                               + [f"    {k:<16}{v}" for k, v, _ in filas]) + "\n")
+    escribir_archivo(
+        "\n".join(
+            [f"{titulo}  {derecha}  ({fecha_larga()} · {time.strftime('%H:%M')})"]
+            + [f"    {k:<16}{v}" for k, v, _ in filas]
+        )
+        + "\n"
+    )
     if not _COLOR or os.environ.get("SIN_ENCABEZADO_FIJO"):
         cartel(titulo, derecha, filas, pie=[pie], archivo=False)
         return
     with _lock:
-        _out().write("\x1b[?25l\x1b[2J\x1b[3J\x1b[H")     # sin cursor parpadeando, pantalla limpia
+        _out().write("\x1b[?25l\x1b[2J\x1b[3J\x1b[H")  # sin cursor parpadeando, pantalla limpia
         _out().flush()
     _PANEL = Panel(titulo, derecha, fn_filas, pie)
     _PANEL.dibujar()
     threading.Thread(target=_PANEL.bucle, daemon=True, name="encabezado").start()
     import atexit
+
     atexit.register(cerrar_encabezado)
 
 
@@ -469,6 +524,7 @@ def estado(**campos):
     try:
         if os.name == "nt":
             import ctypes
+
             ctypes.windll.kernel32.SetConsoleTitleW(texto)
         elif _COLOR:
             _out().write(f"\x1b]0;{texto}\x07")
@@ -490,21 +546,45 @@ def contar(clave, n=1):
 
 
 # ------------------------------------------------------- actividad.csv
-COLUMNAS = ["fecha", "hora", "evento", "caso", "audio_original", "pc", "medico", "estudios", "duracion_audio_s",
-            "whisper_s", "ia_s", "palabras_dictado", "marcas_rojas", "marcas_amarillas", "marcas_turquesa",
-            "marcas_grises", "datos_faltantes", "partes_no_transcritas", "estudios_sin_plantilla",
-            "porcentaje_corregido", "palabras_informe", "revision_s", "medico_voz", "voz_estado", "voz_puntaje",
-            "detalle", "usuario"]
-_COLUMNAS_OK = {"ok": False}      # ya se comprobó que el archivo tiene estas columnas
+COLUMNAS = [
+    "fecha",
+    "hora",
+    "evento",
+    "caso",
+    "audio_original",
+    "pc",
+    "medico",
+    "estudios",
+    "duracion_audio_s",
+    "whisper_s",
+    "ia_s",
+    "palabras_dictado",
+    "marcas_rojas",
+    "marcas_amarillas",
+    "marcas_turquesa",
+    "marcas_grises",
+    "datos_faltantes",
+    "partes_no_transcritas",
+    "estudios_sin_plantilla",
+    "porcentaje_corregido",
+    "palabras_informe",
+    "revision_s",
+    "medico_voz",
+    "voz_estado",
+    "voz_puntaje",
+    "detalle",
+    "usuario",
+]
+_COLUMNAS_OK = {"ok": False}  # ya se comprobó que el archivo tiene estas columnas
 
 
 def _num(v):
     if isinstance(v, float):
-        return f"{v:.1f}".replace(".", ",")      # coma decimal para el Excel en español
+        return f"{v:.1f}".replace(".", ",")  # coma decimal para el Excel en español
     return "" if v is None else str(v)
 
 
-_PENDIENTES = []      # filas que no se pudieron anotar porque el CSV estaba abierto en Excel
+_PENDIENTES = []  # filas que no se pudieron anotar porque el CSV estaba abierto en Excel
 
 
 def _migrar_columnas(f):
@@ -546,7 +626,9 @@ def actividad(evento, **campos):
         with _lock:
             agregadas = None
             if not _COLUMNAS_OK["ok"] and f.exists():
-                agregadas = _migrar_columnas(f)   # si está abierto en Excel tira PermissionError y la fila queda pendiente
+                agregadas = _migrar_columnas(
+                    f
+                )  # si está abierto en Excel tira PermissionError y la fila queda pendiente
             _COLUMNAS_OK["ok"] = True
             nuevo = not f.exists()
             with open(f, "a", newline="", encoding="utf-8-sig" if nuevo else "utf-8") as fh:
@@ -559,8 +641,11 @@ def actividad(evento, **campos):
             info("SERVIDOR", "registros\\actividad.csv: se agregaron las columnas " + ", ".join(agregadas) + ".")
     except PermissionError:
         if una_vez("csv_abierto", 600):
-            aviso("SERVIDOR", "No pude anotar en registros\\actividad.csv porque está abierto en Excel. "
-                              "Las filas se guardan cuando lo cierres.")
+            aviso(
+                "SERVIDOR",
+                "No pude anotar en registros\\actividad.csv porque está abierto en Excel. "
+                "Las filas se guardan cuando lo cierres.",
+            )
     except Exception:
         debug("SERVIDOR", "No pude anotar en actividad.csv", det=[repr(sys.exc_info()[1])])
 
@@ -590,7 +675,7 @@ class SalidaAlRegistro:
 
     def __init__(self, area):
         self.area, self.buf = area, ""
-        self.hilo = threading.get_ident()      # solo se captura lo que imprime el hilo que la puso
+        self.hilo = threading.get_ident()  # solo se captura lo que imprime el hilo que la puso
         self.dentro = threading.local()
 
     def write(self, s):

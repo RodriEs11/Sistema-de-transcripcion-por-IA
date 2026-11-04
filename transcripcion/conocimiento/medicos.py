@@ -2,6 +2,7 @@
 
 Viene de nucleo.py (docs/refactor.md, etapa 3).
 """
+
 import re
 import threading
 from transcripcion.texto.normalizacion import sin_acentos
@@ -22,11 +23,38 @@ def validar_nombre_medico(nombre):
     if not isinstance(nombre, str):
         raise ValueError("Escribí el nombre del médico.")
     nombre = " ".join(nombre.split())
-    if (len(nombre) < 2 or len(nombre) > 120 or not any(c.isalpha() for c in nombre)
-            or re.search(r"[^\w .,-]", nombre) or nombre.endswith(".")
-            or nombre.split(".")[0].upper() in {"CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4",
-                                                  "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2",
-                                                  "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}):
+    if (
+        len(nombre) < 2
+        or len(nombre) > 120
+        or not any(c.isalpha() for c in nombre)
+        or re.search(r"[^\w .,-]", nombre)
+        or nombre.endswith(".")
+        or nombre.split(".")[0].upper()
+        in {
+            "CON",
+            "PRN",
+            "AUX",
+            "NUL",
+            "COM1",
+            "COM2",
+            "COM3",
+            "COM4",
+            "COM5",
+            "COM6",
+            "COM7",
+            "COM8",
+            "COM9",
+            "LPT1",
+            "LPT2",
+            "LPT3",
+            "LPT4",
+            "LPT5",
+            "LPT6",
+            "LPT7",
+            "LPT8",
+            "LPT9",
+        }
+    ):
         raise ValueError("Usá un nombre de 2 a 120 caracteres, con letras y sin símbolos especiales ni punto final.")
     return nombre
 
@@ -102,7 +130,7 @@ def guardar_medico(nombre, notas, *, crear=False, original=None):
             anterior = _archivo_medico(original)
             # El renombrado también admite cambios de mayúsculas en Windows.
             anterior.rename(f)
-            for clave in U.claves_con_carpeta():      # las notas propias de cada transcriptor siguen al médico
+            for clave in U.claves_con_carpeta():  # las notas propias de cada transcriptor siguen al médico
                 viejo = _archivo_medico_usuario(original, clave)
                 if viejo.exists():
                     viejo.rename(_archivo_medico_usuario(nombre, clave))

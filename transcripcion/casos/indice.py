@@ -1,4 +1,5 @@
 """Índice de metadatos por firma de archivos; nunca cachea permisos ni estado de trabajos."""
+
 import os
 import threading
 
