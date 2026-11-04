@@ -6,15 +6,16 @@ const path = require('node:path');
 const http = require('node:http');
 const assert = require('node:assert/strict');
 const web = path.resolve(__dirname, '../web');
+const {archivoWeb} = require('./web_pruebas.cjs');
 const p = t => ({t, b:false, a:'', a0:'', r:null});
 const textoLargo = 'Párrafo de prueba con palabras y medidas ficticias. '.repeat(600);
 let modelo = [p('Informe ficticio'), null, p(textoLargo), p('Último párrafo.')];
 let formato = null, borrador = '';
 const pagina = {nombre:'A4', ancho_cm:21, alto_cm:29.7, margen_superior_cm:7.5, margen_inferior_cm:4, margen_izquierdo_cm:1.3, margen_derecho_cm:3};
 const server = http.createServer((req,res) => {
-  const file = req.url === '/editor_word.js' ? 'editor_word.js' : 'index.html';
-  res.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : 'text/html; charset=utf-8');
-  res.end(fs.readFileSync(path.join(web,file)));
+  const [tipo, cuerpo] = archivoWeb(req.url);
+  res.setHeader('Content-Type', tipo);
+  res.end(cuerpo);
 });
 (async () => {
   await new Promise(r=>server.listen(0,'127.0.0.1',r));

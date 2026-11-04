@@ -2,6 +2,7 @@
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 const web=path.resolve(__dirname,'../web');
+const {archivoWeb}=require('./web_pruebas.cjs');
 const pagina=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../configuracion.ejemplo.json'),'utf8')).pagina;
 let falla=false, activos=0, maxActivos=0, guardados=[], liberados=[], desbloquear=null, demorar=false;
 let respuestaInvalida=null;
@@ -10,9 +11,9 @@ const revisiones=new Map();
 const borradores=new Map();
 const server=http.createServer((req,res)=>{
   if(req.url.startsWith('/audio/')) { res.statusCode=404;res.end();return; }
-  const f=req.url==='/editor_word.js'?'editor_word.js':'index.html';
-  res.setHeader('Content-Type',f.endsWith('.js')?'text/javascript':'text/html; charset=utf-8');
-  res.end(fs.readFileSync(path.join(web,f)));
+  const [tipo,cuerpo]=archivoWeb(req.url);
+  res.setHeader('Content-Type',tipo);
+  res.end(cuerpo);
 });
 (async()=>{
   await new Promise(r=>server.listen(0,'127.0.0.1',r));

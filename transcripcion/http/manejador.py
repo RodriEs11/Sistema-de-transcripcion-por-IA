@@ -175,9 +175,12 @@ class Manejador(BaseHTTPRequestHandler):
         self.end_headers()
 
     def _html(self, b, code=200):
+        self._contenido(b, "text/html; charset=utf-8", code)
+
+    def _contenido(self, b, tipo, code=200):
         b = b.encode("utf-8") if isinstance(b, str) else b
         self.send_response(code)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Type", tipo)
         self.send_header("Content-Length", str(len(b)))
         self.send_header("Cache-Control", "no-store")
         self.end_headers()

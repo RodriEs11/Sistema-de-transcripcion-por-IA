@@ -193,7 +193,8 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 │                            acceso (remoto: túnel, llaves y sesiones; admin: permisos del panel),
 │                            operacion (mantenimiento, estadísticas, app_cliente, gpu),
 │                            http (tabla de rutas y una función por ruta); ver docs/refactor.md
-├── web/                     Interfaz de revisión, panel de administración, estadísticas y plantillas/ (entrar, panel)
+├── web/                     Interfaz de revisión (index.html + css/principal/ + js/principal/), panel de
+│                            administración, estadísticas y plantillas/ (entrar, panel)
 ├── cliente_codigo/          Código fuente de la app de Windows (C#)
 ├── cliente/                 Carpeta de distribución de la app (solo el manual y el .config se versionan)
 ├── conocimiento.ejemplo/    Plantillas y reglas de ejemplo (ficticias)

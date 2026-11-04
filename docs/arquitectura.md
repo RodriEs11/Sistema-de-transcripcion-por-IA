@@ -79,7 +79,11 @@ en la raíz son los puntos de entrada y lo que todavía no se reorganizó.
 | `transcripcion/operacion/app_cliente.py` | Manifiesto (SHA-256) de la carpeta `cliente\` para la actualización automática |
 
 La interfaz está en `web/` y no usa *frameworks* ni dependencias externas: `index.html` (revisión),
-`admin.html` (estado) y `estadisticas.html`.
+`admin.html` (estado) y `estadisticas.html`. La página de revisión tiene su HTML en `index.html`, sus estilos en
+`css/principal/` y su script en `js/principal/`, partidos por área (`010-base.js`, `020-lista.js`, … `260-mi-cuenta.js`).
+El servidor envía cada carpeta unida en orden de nombre como `/css/principal.css` y `/js/principal.js`: un único
+script, igual que cuando estaba dentro de `index.html` (las funciones son globales y se pueden usar desde cualquier
+parte; la app del trabajo llama a `window.ponerApp`, `window.salirDeSesion`…).
 
 ## Flujo de un audio
 

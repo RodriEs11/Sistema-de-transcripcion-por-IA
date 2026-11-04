@@ -10,6 +10,7 @@ Los casos se identifican con el parámetro o campo `nombre` (validado: sin rutas
 | Método | Ruta | Descripción |
 |---|---|---|
 | GET | `/` | Interfaz de revisión (`web/index.html`) |
+| GET | `/css/principal.css`, `/js/principal.js` | Estilos y script de la interfaz: las partes de `web/css/principal/` y `web/js/principal/` unidas en orden |
 | GET | `/admin` | Panel de administración (solo local o con contraseña del panel) |
 | GET | `/admin/estadisticas` | Estadísticas |
 | GET | `/admin/correcciones` | Lo más corregido |

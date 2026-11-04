@@ -1,0 +1,111 @@
+/* Barra del informe, médico reconocido por la voz, tamaño del texto y ayuda. */
+/* ---------- barra del informe compacta (pensada para 1366 × 768): dos filas que nunca se enciman.
+   Fila 1: paciente, médico y audio. Fila 2: marcas y acciones; si no entra, ajustarBarra() la achica por pasos
+   (clases n1…n6 en #filaAcciones) en lugar de partirla en varias líneas. */
+.barra{padding:8px 14px;gap:6px}
+.barra .fila{flex-wrap:nowrap;min-width:0}
+.f1{gap:8px}
+.f1 .tit-caso{flex:0 1 auto;min-width:90px;max-width:44%}
+.f1 .tit-caso h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto;font-size:15.5px}
+.f1 .tit-audio{flex:0 1000 auto}
+.barra{container-type:inline-size}
+@container (max-width:900px){ .f1 .tit-audio{display:none} }
+@container (max-width:760px){ #tiempo{display:none} .barra select.med{min-width:96px} }
+.barra select.med{flex:0 1 190px;min-width:110px;max-width:190px}
+.med-selector{display:flex;align-items:center;gap:4px;flex:0 1 230px;min-width:130px;max-width:230px}
+#bMedCaso{flex:1;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;padding:5px 8px}
+#nombreMedCaso{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+#bMedCaso svg{display:block;width:14px;height:14px;flex:none}
+#bAgregarMedCaso{flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0}
+#bAgregarMedCaso svg{display:block;width:14px;height:14px;flex:none;pointer-events:none}
+#menuMedCaso{position:fixed;z-index:100;display:flex;flex-direction:column;padding:8px;gap:6px;background:var(--panel);border:1px solid var(--bd2);border-radius:9px;box-shadow:var(--sombra)}
+#menuMedCaso[hidden]{display:none}
+#buscarMedCaso{width:100%;padding:7px 9px;flex:none}
+#opcionesMedCaso{overflow:auto;min-height:0;overscroll-behavior:contain}
+#opcionesMedCaso button{position:relative;display:block;width:100%;text-align:left;white-space:normal;border-color:transparent;padding:6px 32px 6px 8px}
+#opcionesMedCaso button.activa,#opcionesMedCaso button:hover,#opcionesMedCaso button:focus-visible{background:var(--gris-bg);border-color:var(--bd2)}
+#opcionesMedCaso button[aria-selected=true]{font-weight:600;color:var(--ac);background:var(--ac-suave);border-color:var(--ac)}
+#opcionesMedCaso button[aria-selected=true]::after{content:'\2713';position:absolute;right:10px;top:50%;transform:translateY(-50%)}
+#opcionesMedCaso .sin-medicos{padding:8px;color:var(--mu)}
+/* médico reconocido por la voz */
+.voz-chip{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:1.2;border-radius:12px;padding:4px 9px;border:1px solid var(--bd2);background:var(--panel);color:var(--mu);cursor:pointer;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.voz-chip svg{width:13px;height:13px;flex:none}
+.voz-chip .vz-txt{overflow:hidden;text-overflow:ellipsis}
+.voz-chip.seguro{border-color:var(--ok);color:var(--ok);background:var(--ok-suave)}
+.voz-chip.dudoso{border-color:var(--amar-f);color:var(--tx);background:var(--amarillo)}
+.voz-chip.sin{border-style:dashed}
+@container (max-width:900px){ .voz-chip .vz-txt{display:none} }
+.lista2 li .mvz{float:right;color:var(--mu);font-size:11.5px;font-weight:400}
+#medVoz{border:1px solid var(--bd);border-radius:8px;background:var(--panel);padding:10px 12px;max-height:40%;overflow:auto;font-size:13px;flex:none}
+#medVoz:empty{display:none}
+#medVoz ul,.grupo-voz ul{list-style:none;margin:6px 0 0;padding:0}
+#medVoz li,.grupo-voz li{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--bd)}
+#medVoz .n,.grupo-voz .n{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#medVoz .mu,.grupo-voz .mu{color:var(--mu);font-size:12px}
+#medVoz li .mu{flex:1;min-width:0}
+#grupos{display:flex;flex-direction:column;gap:12px}
+.grupo-voz{border:1px solid var(--bd);border-radius:10px;background:var(--panel);padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.grupo-voz header{font-size:14px}
+.grupo-voz label{display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer}
+.grupo-voz select{border:1px solid var(--bd2);border-radius:7px;padding:5px 6px;background:var(--panel);color:var(--tx);min-width:220px;max-width:100%}
+.grupo-voz .fila{margin-top:8px}
+.play-m{min-width:34px}
+.f1 .player{flex:1 1 320px;flex-wrap:nowrap;gap:5px}
+.f1 .player button{padding:5px 9px}
+#bPlay{width:38px}
+#prog{min-width:50px}
+#tiempo{min-width:0;white-space:nowrap}
+.f2{gap:6px}
+.f2 > *{flex:none}
+.f2 > .sep{flex:1 1 0;min-width:2px}
+.f2 button{display:inline-flex;align-items:center;gap:6px}
+.f2 button svg{width:16px;height:16px;flex:none}
+.f2 button.ico{padding:5px;color:var(--mu)}
+.f2 button.ico svg{width:18px;height:18px}
+.f2 button.ico[aria-expanded=true]{color:var(--ac);border-color:var(--ac);background:var(--ac-suave)}
+.f2 kbd{margin-left:0}
+#pend{white-space:nowrap}
+.et-corta{display:none}
+.f2.n1 .nivel-1,.f2.n4 .nivel-4{display:none!important}
+.f2.n2 kbd{display:none}
+.f2.n3 #bVista .et,.f2.n6 #bCopiar .et{display:none}
+.f2.n3 #bVista,.f2.n6 #bCopiar{padding:6px 8px}
+.f2.n5 #bSig .et,.f2.n5 #pend .et-larga{display:none}
+.f2.n5 #bSig .et-corta,.f2.n5 #pend .et-corta{display:inline}
+.f2.n7 #bFin .et{display:none}
+.f2.n7 #bFin .et-corta{display:inline}
+.f2.n8{flex-wrap:wrap}
+.mas{position:relative}
+#bMas{padding:5px 8px;color:var(--mu)}
+#bMas .et{display:none}
+#bMas[aria-expanded=true]{color:var(--ac);border-color:var(--ac);background:var(--ac-suave)}
+.menu{position:absolute;right:0;top:calc(100% + 5px);z-index:7;background:var(--panel);border:1px solid var(--bd2);border-radius:10px;
+  box-shadow:0 8px 28px rgba(0,0,0,.18);padding:4px;min-width:210px;animation:cfEntra .12s ease-out}
+.menu button{display:flex;align-items:center;gap:8px;width:100%;border:0;background:transparent;text-align:left;padding:7px 10px;border-radius:7px;font-size:13.5px}
+.menu button:hover,.menu button:focus-visible{background:var(--bg);outline:none}
+.menu button.peligro-txt{color:var(--err)}
+.menu button svg{width:15px;height:15px;flex:none}
+.menu[hidden],.mas[hidden],.pop[hidden]{display:none}
+/* referencias de colores y atajos: en pantallas chicas se ocultan solos (siempre están en el botón «?») */
+.barra .ley{gap:6px 10px}
+body[data-leyenda=no] #leyenda,body[data-atajos=no] .dict .ayuda{display:none}
+@media (max-height:820px),(max-width:1440px){
+  body:not([data-leyenda=si]) #leyenda{display:none}
+  body:not([data-atajos=si]) .dict .ayuda{display:none}
+}
+@media (max-height:820px){ .cols{padding:10px 12px} .hoja{padding:26px 36px} .dict h2{padding:7px 12px} }
+/* tamaño del texto en pantalla (no cambia el Word) */
+body[data-letra=chica] #editor{font-size:14px} body[data-letra=chica] #dictado{font-size:13px;line-height:1.6}
+body[data-letra=grande] #editor{font-size:18px} body[data-letra=grande] #dictado{font-size:16px}
+/* ventanita de ayuda (colores y atajos) */
+.pop{position:fixed;z-index:9;width:min(400px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;background:var(--panel);color:var(--tx);
+  border:1px solid var(--bd2);border-radius:11px;box-shadow:0 10px 34px rgba(0,0,0,.22);padding:12px 16px 14px;font-size:13px;line-height:1.4;animation:cfEntra .12s ease-out}
+.pop h3{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--mu);margin:4px 0 8px}
+.pop h3 + *{margin-top:0}
+.pop-colores{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:6px}
+.pop-colores li{display:grid;grid-template-columns:16px 1fr;gap:9px;align-items:start}
+.pop-colores i{width:16px;height:16px;border-radius:4px;margin-top:1px}
+.pop-nota{margin:0 0 12px;color:var(--mu);font-size:12.5px}
+.pop-atajos{display:grid;grid-template-columns:max-content 1fr;gap:6px 12px;margin:0}
+.pop-atajos dt{white-space:nowrap;color:var(--mu)} .pop-atajos dd{margin:0}
+.pop kbd{margin-left:0}

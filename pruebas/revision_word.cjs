@@ -2,6 +2,7 @@
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 const web=path.resolve(__dirname,'../web'), guardados=new Map();
+const {archivoWeb}=require('./web_pruebas.cjs');
 const configuracion=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../configuracion.ejemplo.json'),'utf8'));
 const pagina=configuracion.pagina;
 const palabras=['Hallazgo','dudoso','de','prueba.'].map((p,i)=>({p:p+' ',n:p.toLowerCase().replace('.',''),ini:i*.4,fin:(i+1)*.4,conf:1}));
@@ -22,8 +23,8 @@ const server=http.createServer((req,res)=>{
       res.setHeader('Content-Length',fin-inicio+1);res.end(wav.subarray(inicio,fin+1));
     }else{res.setHeader('Content-Length',wav.length);res.end(wav);}return;
   }
-  const file=req.url==='/editor_word.js'?'editor_word.js':'index.html';
-  res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':'text/html; charset=utf-8');res.end(fs.readFileSync(path.join(web,file)));
+  const [tipo,cuerpo]=archivoWeb(req.url);
+  res.setHeader('Content-Type',tipo);res.end(cuerpo);
 });
 (async()=>{
   await new Promise(r=>server.listen(0,'127.0.0.1',r));

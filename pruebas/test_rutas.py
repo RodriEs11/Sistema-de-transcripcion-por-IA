@@ -29,6 +29,8 @@ ESPERADAS = [
     ("GET", "/", "paginas.principal"),
     ("GET", "/index.html", "paginas.principal"),
     ("GET", "/editor_word.js", "paginas.editor_word"),
+    ("GET", "/css/principal.css", "paginas.estilos"),
+    ("GET", "/js/principal.js", "paginas.script"),
     ("GET", "/admin", "panel.consultar"),
     ("GET", "/admin/estadisticas", "panel.consultar"),
     ("GET", "/admin/correcciones", "panel.consultar"),
@@ -188,6 +190,27 @@ class Despacho(unittest.TestCase):
         p = pagina_panel_entrar(S.SIS, "info-01", "/admin/medicos")
         self.assertIn('const VOLVER = "/admin/medicos";', p)
         self.assertIn("<b>info-01</b>", p)
+
+    def test_script_y_estilos_de_la_pagina_principal_son_sus_partes_en_orden(self):
+        """web/js/principal/ y web/css/principal/ se envían unidos, como cuando estaban dentro de index.html."""
+        for ruta, carpeta, tipo in (("/js/principal.js", "js", "text/javascript"), ("/css/principal.css", "css", "text/css")):
+            with self.subTest(ruta=ruta):
+                partes = sorted((RAIZ / "web" / carpeta / "principal").glob(f"*.{carpeta}"))
+                self.assertGreater(len(partes), 5)
+                c = http.client.HTTPConnection("127.0.0.1", self.http.server_port, timeout=10)
+                try:
+                    c.request("GET", ruta)
+                    r = c.getresponse()
+                    cuerpo = r.read().decode("utf-8")
+                    self.assertEqual(r.status, 200)
+                    self.assertTrue(r.getheader("Content-Type").startswith(tipo))
+                    self.assertEqual(r.getheader("Cache-Control"), "no-store")
+                finally:
+                    c.close()
+                self.assertEqual(cuerpo, "".join(p.read_text(encoding="utf-8") for p in partes))
+        index = (RAIZ / "web" / "index.html").read_text(encoding="utf-8")
+        self.assertIn('<script src="/js/principal.js"></script>', index)
+        self.assertLess(index.index("/js/principal.js"), index.index("/editor_word.js"))
 
 
 if __name__ == "__main__":

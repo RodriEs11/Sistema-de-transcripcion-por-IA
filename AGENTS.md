@@ -56,7 +56,8 @@ No dar por terminado un cambio funcional hasta completar su versión, documentac
 - App de escritorio: incrementar `Programa.VERSION`, `AssemblyVersion` y `AssemblyFileVersion`
   en `cliente_codigo/Programa.cs`, juntos. Mantener el esquema existente (1.15 → 1.16).
   Revisar si el cambio rompe compatibilidad y requiere otra versión mayor.
-- Los cambios de `web/index.html` que se usan en la app también requieren nueva versión
+- Los cambios de la página principal (`web/index.html`, `web/js/principal/`, `web/css/principal/`)
+  que se usan en la app también requieren nueva versión
   de escritorio, aunque no cambie C#. No alcanza con cambiar la versión del servidor.
 - Servidor: al cambiar su comportamiento, APIs, procesamiento o páginas servidas, incrementar
   `VERSION` en `servidor.py` con el esquema existente `AAAA.MM.N`, usando la fecha de
