@@ -101,7 +101,7 @@ Los nombres son orientativos: cada etapa puede ajustarlos y lo deja escrito acá
 | 6a | **Servicios fuera de `servidor.py`** | Trabajador → `procesamiento/trabajador.py`; lista, caso abierto y borrado → `casos/`; voz → `voz/`; estado de la IA, reinicio y mensajes → `operacion/`; «Guardar Word» y Word → `informe/`. Cada uno recibe en su constructor los objetos que usa | **Alto** | Servidor |
 | 6b | **Módulos de la raíz al paquete** | `remoto`, `admin` → `acceso/`; `mantenimiento`, `estadisticas`, `app_cliente` → `operacion/`; `aprender`, `correcciones` → `aprendizaje/`; `importar_informes` → `conocimiento/importar.py`. En la raíz quedan lanzadores de consola. Así el HTTP (6c) puede vivir en el paquete | Bajo | Servidor |
 | 6c | **HTTP** | Tabla de rutas y handlers por área (casos, conocimiento, cliente, usuario, admin, páginas); páginas HTML fuera de las cadenas; `servidor.py` queda con el arranque | **Alto** | Servidor |
-| 7 | **Página principal** | `web/index.html` → `css/principal/` y `js/principal/` en partes por área, que el servidor une en orden (un solo script, como antes) | Medio | Servidor (la App no cambia: ver «Etapa 7») |
+| 7 | **Página principal** | `web/index.html` → `css/principal/` y `js/principal/` en partes por área, que el servidor une en orden (un solo script, como antes) | Medio | Servidor + App |
 | 8 | **App de escritorio** | `VentanaPrincipal.cs` en clases por responsabilidad (bandeja, compacto, puente con la página, actualizaciones) | Medio | App |
 | 9 | **Calidad continua** | Reglas de ruff y formato por módulo terminado, tipos y mypy en el paquete, cobertura en el CI | Nulo | — |
 
@@ -121,7 +121,7 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 | 6a | `refactor/6a-servicios` · PR #20 · Servidor 2026.11.8 | Hecha (fusionada el 03/11) |
 | 6b | `refactor/6b-raiz-al-paquete` · PR #21 · Servidor 2026.11.9 | Hecha (fusionada el 03/11) |
 | 6c | `refactor/6c-http` · PR #22 · Servidor 2026.11.10 | Hecha (fusionada el 03/11) |
-| 7 | `refactor/7-pagina-principal` · Servidor 2026.11.11 | En revisión |
+| 7 | `refactor/7-pagina-principal` · PR #23 · Servidor 2026.11.11 · App 1.25 | Hecha (fusionada el 03/11) |
 | 2b, 8, 9 | — | Pendiente |
 
 ### Etapa 1: qué quedó
@@ -212,10 +212,9 @@ en las secciones que ya tenía el script, sin cambiar una línea (cada parte emp
 - Numeración con saltos de 10 para poder agregar una parte entre dos (`155-…js`). `verificar_fuentes.cjs` revisa cada
   parte, el script unido y las funciones repetidas en todo el script. Las pruebas de Playwright con servidor propio
   arman `/js/principal.js` y `/css/principal.css` igual que el servidor (`pruebas/web_pruebas.cjs`).
-- **Versión**: sube el servidor (rutas nuevas y la página se arma distinto). **La App no sube**: el ejecutable no
-  cambia y la página que muestra es la misma, así que una versión nueva solo obligaría a compilar y distribuir el
-  mismo programa a todas las PC. La regla de `AGENTS.md` (cambios de la página que se usan en la app = versión nueva
-  de la app) sigue valiendo para cambios funcionales; ahora cubre también `web/js/principal/` y `web/css/principal/`.
+- **Versión**: Servidor 2026.11.11 y App 1.25. La App se subió aparte, después de fusionar el PR #23, a pedido del
+  usuario: se mantiene la regla de `AGENTS.md` (todo cambio de la página que usa la app = versión nueva de la app,
+  aunque el C# no cambie), que ahora cubre también `web/js/principal/` y `web/css/principal/`.
 - **Activación**: después del `git pull` la página no carga hasta reiniciar el servidor (`index.html` ya pide
   `/js/principal.js` y el servidor viejo no tiene esa ruta). Reiniciar desde el panel enseguida, en un momento sin
   trabajo; el panel no cambia.

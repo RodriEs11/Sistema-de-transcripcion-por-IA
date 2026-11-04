@@ -9,6 +9,15 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [App 1.25] — 2026-11-03
+
+Acompaña al Servidor 2026.11.11 (etapa 7 del [refactor por etapas](docs/refactor.md)).
+
+### Cambiado
+- La página que muestra la app (revisión) tiene sus estilos y su programa en `web/css/principal/` y
+  `web/js/principal/`, separados por tema. Se ve y funciona igual; la versión nueva sigue la regla de que todo cambio
+  de la página que usa la app lleva versión de la app. El código C# no cambió.
+
 ## [Servidor 2026.11.11] — 2026-11-03
 
 Etapa 7 del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles: la página de
