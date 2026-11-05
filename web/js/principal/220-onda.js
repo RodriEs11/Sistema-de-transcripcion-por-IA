@@ -134,8 +134,9 @@ function granoScrub(desde, hasta){                               // suena desdeâ
   }
   scrub.fuentes.add(src);src.onended=()=>{scrub.fuentes.delete(src);src.disconnect();g.disconnect();};
   src.buffer = atras ? scrub.rev : b; src.playbackRate.value = rate;
-  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(1, t0 + ov);
-  g.gain.setValueAtTime(1, t0 + TICK); g.gain.linearRampToValueAtTime(0, t0 + dur);
+  const v = volumenActual();                                     // el mismo volumen que el reproductor (0 = silencio)
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(v, t0 + ov);
+  g.gain.setValueAtTime(v, t0 + TICK); g.gain.linearRampToValueAtTime(0, t0 + dur);
   src.connect(g); g.connect(ctx.destination);
   const pos = atras ? D - desde : desde;
   src.start(t0, Math.max(0, Math.min(D - 0.005, pos))); src.stop(t0 + dur + 0.01);

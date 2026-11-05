@@ -21,6 +21,7 @@ function aplicarPrefs(){
 $('#seguir').addEventListener('change', e => { grabarLS('pref_seguir', e.target.checked ? '' : 'no'); pintarConfig(); });
 { const v = PREF.leer('velInicial') || leerLS('velUltima');
   if(v && [...$('#vel').options].some(o => o.value === v)) $('#vel').value = v; }
+iniciarVolumen();                                   // el volumen guardado en esta PC (100 % si nunca se cambió)
 
 /* ================================================ ocultar / mostrar la lista de informes */
 const listaOculta = () => leerLS('listaOculta') === '1';

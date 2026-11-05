@@ -71,6 +71,11 @@
             <button id="bAtras" title="Atrás 3 segundos (F6)">−3s</button>
             <button id="bPlay" title="Reproducir / pausar (F5)">▶</button>
             <button id="bAdel" title="Adelante 3 segundos">+3s</button>
+            <!-- Volumen (en esta PC): el parlante silencia y vuelve al nivel anterior; la rueda del mouse sube y baja. -->
+            <div class="volumen" id="volumen" data-nivel="alto">
+              <button id="bVol" type="button" title="Silenciar (volumen 100 %)" aria-label="Silenciar" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="vol-onda vol-onda1" d="M15.5 9.5a3.5 3.5 0 0 1 0 5"/><path class="vol-onda vol-onda2" d="M18 7a7 7 0 0 1 0 10"/><path class="vol-x" d="m15.5 9.5 5 5m0-5-5 5"/></svg></button>
+              <input type="range" id="vol" min="0" max="100" step="5" value="100" aria-label="Volumen" title="Volumen: 100 %">
+            </div>
             <input type="range" id="prog" min="0" max="1000" value="0" aria-label="Posición">
             <span id="tiempo">0:00 / 0:00</span>
             <select id="vel" title="Velocidad de reproducción"><option value="0.25">0.25×</option><option value="0.5">0.50×</option><option value="0.75">0.75×</option><option value="1" selected>1.00×</option><option value="1.25">1.25×</option><option value="1.5">1.50×</option><option value="1.75">1.75×</option><option value="2">2.00×</option><option value="2.25">2.25×</option><option value="2.5">2.50×</option></select>

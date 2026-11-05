@@ -54,7 +54,7 @@ function escucharMuestra(n, b){
   if(BOTON_M === b){ pararMuestra(); return; }
   pararMuestra(); audio.pause();
   if(!AUDIO_M){ AUDIO_M = new Audio(); AUDIO_M.onended = pararMuestra; }
-  AUDIO_M.src = '/audio/' + encodeURIComponent(n);
+  AUDIO_M.src = '/audio/' + encodeURIComponent(n); AUDIO_M.volume = volumenActual();   // el volumen del reproductor
   AUDIO_M.play().catch(() => { pararMuestra(); toast('No se pudo reproducir el audio.'); });
   BOTON_M = b; b.textContent = '❚❚';
 }
