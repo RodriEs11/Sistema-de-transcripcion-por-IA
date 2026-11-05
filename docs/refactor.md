@@ -79,9 +79,11 @@ Los nombres son orientativos: cada etapa puede ajustarlos y lo deja escrito acá
    (lo que un punto de entrada hace antes de usar el núcleo).
 4. **Las pruebas existentes se migran en el mismo PR** que mueve lo que prueban (dejan de parchear globales y
    pasan a construir los objetos que necesitan).
-5. **Versión**: un refactor que cambia código que corre en el servidor sube la versión del servidor
-   (`AAAA.MM.N`) para que el panel muestre qué código está corriendo. En el CHANGELOG va bajo
-   «Cambiado» como *reorganización interna, sin cambios visibles*. Si toca `web/index.html`, sube también la app.
+5. **Versión**: un refactor no sube versiones por su cuenta ([ADR 0002](adr/0002-versiones-por-entrega.md)). Deja su
+   nota en «Sin publicar» del CHANGELOG, bajo `#### Interno` de `### Servidor` (y de `### App` si toca la página
+   principal o `cliente_codigo/`), como *reorganización interna, sin cambios visibles*, y sale con la próxima
+   entrega. Qué código corre lo muestra el panel (commit y etiqueta en Mantenimiento). Hasta la etapa 9, cada etapa
+   subía su versión; ver [versiones.md](versiones.md).
 6. **Producción**: cada etapa que toca el servidor necesita reiniciarlo. Antes, etiqueta git del commit actual;
    se activa en una ventana sin trabajo; vuelta atrás = volver a la etiqueta y reiniciar. Las etapas marcadas
    como *riesgo alto* se prueban antes en `sistema_pruebas` (`crear_entorno_pruebas.py`).

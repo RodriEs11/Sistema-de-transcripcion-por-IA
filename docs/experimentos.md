@@ -19,12 +19,13 @@ Tampoco `dev`/`develop`: dan a entender que todo lo que entra termina en producc
 
 1. **`experimental` nunca se fusiona entera en `main`.** Cuando un experimento sirve, se
    **promueve**: rama nueva `feat/<tema>` desde `main`, se trae el cambio (`git cherry-pick <commits>`
-   o rehaciéndolo prolijo) y se completa como cualquier entrega (versiones, CHANGELOG, pruebas, PR a `main`).
+   o rehaciéndolo prolijo) y se completa como cualquier PR (notas en «Sin publicar», pruebas, PR a `main`); el número
+   lo asigna la próxima entrega ([versiones.md](versiones.md)).
 2. **Actualizar `experimental` con `main` seguido** (`git merge origin/main` en una rama
    `exp/actualizar-main` o directo si no hay conflictos) para que no se aleje.
 3. **Sin versiones nuevas en la rama experimental.** No se tocan `Programa.VERSION` ni `VERSION`
-   de `servidor.py`: la versión se asigna al promover. Así nunca se publica un número que después
-   no existe en `main`, y `herramientas/verificar_versiones.py` sigue pasando.
+   de `servidor.py`, ni las notas de «Sin publicar»: la versión se asigna en la entrega, después de promover.
+   Así nunca se publica un número que después no existe en `main`, y `herramientas/verificar_versiones.py` sigue pasando.
 4. **Nunca se distribuye la app compilada desde `experimental`** a las PC del trabajo: el servidor
    de pruebas usa otro puerto y no abre túnel, así que ninguna PC del trabajo se actualiza desde él.
 5. Commits con Conventional Commits igual que siempre (`feat(editor): probar …`). Los mismos cuidados:
@@ -102,5 +103,5 @@ git push -u origin exp/editor-colores
 ```
 
 Si funciona y se decide incluirlo: `git switch -c feat/editor-colores origin/main`,
-`git cherry-pick <commits>`, versiones + CHANGELOG + pruebas, PR hacia `main` y activación normal en
-`sistema\` (ver [activacion-coordinada.md](activacion-coordinada.md)).
+`git cherry-pick <commits>`, notas en «Sin publicar» + pruebas, PR hacia `main`; sale a `sistema\` con la
+próxima entrega ([versiones.md](versiones.md)).

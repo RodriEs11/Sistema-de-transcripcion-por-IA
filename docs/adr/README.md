@@ -7,6 +7,7 @@ se escribe un ADR nuevo que la reemplaza y el viejo pasa a «Reemplazado por NNN
 | # | Decisión | Estado |
 |---|---|---|
 | [0001](0001-modularizar-por-etapas.md) | Modularizar el código por etapas, con contratos como red de seguridad | Aceptado |
+| [0002](0002-versiones-por-entrega.md) | Subir versiones por entrega, no por PR, y marcar cada entrega con etiquetas de git | Aceptado |
 
 Decisiones anteriores a este registro (están en el CHANGELOG y en `docs/`): Gemma 4 12B en lugar de Qwen
 (fase 2), Git dentro de la carpeta en uso, lotes de IA de 2 audios / 180 s (`validacion-gpu.md`), cola SQLite

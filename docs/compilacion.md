@@ -94,17 +94,17 @@ Otras reglas:
 
 ## Publicar una versión
 
-Cada cambio en la aplicación de escritorio debe incrementar su versión, incluidos los cambios
-en la interfaz de revisión que carga del servidor. Mantener sincronizados los tres valores de `Programa.cs`.
+La versión de la app no se sube en cada PR: se sube en la entrega, junto con la del servidor si corresponde,
+con `herramientas/subir_version.py` (cambia los tres valores de `Programa.cs` a la vez, el CHANGELOG y LEEME).
+Qué número toca y el procedimiento completo están en [versiones.md](versiones.md). En resumen:
 
-1. Subir la versión en `Programa.cs`: `AssemblyVersion`, `AssemblyFileVersion` y `Programa.VERSION`.
-2. Actualizar `cliente/LEEME.txt` y el [CHANGELOG](../CHANGELOG.md).
-3. Compilar y verificar (arriba).
-4. Copiar el `.exe` a `sistema\cliente\` del servidor. Si el anterior está en uso, renombrarlo antes a
-   `Transcripcion.exe.viejo-X.Y` (el manifiesto ignora esos archivos).
-5. No hace falta reiniciar el servidor: el manifiesto se recalcula solo. Cada PC se actualiza cuando no se usa.
-
-6. Ejecutar `python herramientas/verificar_versiones.py`: debe confirmar app, servidor, CHANGELOG, LEEME,
+1. Rama `release/…` y `python herramientas/subir_version.py --app parche|menor|mayor [--servidor] --leeme "…"`.
+2. PR de la entrega: el CI compila, ejecuta la autoprueba y corre `verificar_versiones.py --entrega`.
+3. Tras fusionar y etiquetar, en `sistema\`: `git merge --ff-only app-vX.Y` y compilar con `compilar.ps1`
+   (arriba). El script deja el ejecutable en `cliente\` y conserva el anterior como `.viejo`; el manifiesto
+   ignora esos archivos.
+4. No hace falta reiniciar el servidor: el manifiesto se recalcula solo. Cada PC se actualiza cuando no se usa.
+5. Ejecutar `python herramientas/verificar_versiones.py`: debe confirmar app, servidor, CHANGELOG, LEEME,
    versión del ejecutable y manifiesto. En un checkout sin distribución, `--sin-binario` verifica
    únicamente las fuentes; no reemplaza la validación del ejecutable.
 

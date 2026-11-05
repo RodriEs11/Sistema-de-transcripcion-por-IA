@@ -1,6 +1,7 @@
 # Documentación
 
-Versiones actuales: **Servidor 2026.11.12 · App 1.25**. La entrega App 1.22 / Servidor 2026.10.46
+Las versiones actuales están en el [CHANGELOG](../CHANGELOG.md) (la primera entrada fechada de cada
+componente) y en el panel; cómo se numeran y se entregan, en [versiones.md](versiones.md). La entrega App 1.22 / Servidor 2026.10.46
 se documenta por etapas (persistencia, CI y listado, editor y audio, Word y aprendizaje, correcciones
 incrementales, lotes de IA); su activación y piloto están en [activacion-coordinada.md](activacion-coordinada.md).
 
@@ -15,6 +16,7 @@ incrementales, lotes de IA); su activación y piloto están en [activacion-coord
 | [configuracion.md](configuracion.md) | Administración | `configuracion.json`, plantillas, reglas, médicos, vocabulario |
 | [acceso-remoto.md](acceso-remoto.md) | Administración / Desarrollo | Túnel, autenticación, app del trabajo y actualizaciones |
 | [compilacion.md](compilacion.md) | Desarrollo | Compilar, verificar y publicar la app de Windows |
+| [versiones.md](versiones.md) | Desarrollo / Operación | Esquemas de versión, notas en «Sin publicar», preparar y activar una entrega, etiquetas |
 | [administracion.md](administracion.md) | Administración | Panel, estadísticas, registros y borrado |
 | [api.md](api.md) | Desarrollo | Rutas HTTP del servidor |
 | [seguridad.md](seguridad.md) | Todos | Datos, amenazas y protecciones |
