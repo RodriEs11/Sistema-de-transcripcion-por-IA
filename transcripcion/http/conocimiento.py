@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-from transcripcion.acceso import remoto as R
 from transcripcion.acceso import usuarios as U
 from transcripcion.base import registro as L
 from transcripcion.conocimiento import medicos as MED
@@ -63,16 +62,6 @@ def plantilla_word(h, pedido):
 
     L.info("CONFIG", f"{h.pc} armó una plantilla desde el Word «{Path(arch).name}».")
     return h._json(plantilla_desde_word(h._body()))
-
-
-def mi_medico(h, pedido):
-    """POST /api/mi_medico."""
-    datos = pedido.datos
-    med = datos.get("medico", "").strip()
-    if med != R.medico_pc(h.pc):
-        L.info("CONFIG", f"{h.pc} eligió médico para sus audios: {med or 'ninguno'}.")
-    R.poner_medico_pc(h.pc, med)
-    return h._json({"ok": True})
 
 
 def medico(h, pedido):

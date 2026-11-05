@@ -63,7 +63,6 @@ Los casos se identifican con el parámetro o campo `nombre` (validado: sin rutas
 | POST | `/api/usuario/preferencias` | `{preferencias: {clave: valor}}` (las mismas claves que la página guarda en `localStorage`) |
 | POST | `/api/usuario/formato` | `{formato: {opción: valor \| null}}` (`null` = usar el general) |
 | POST | `/api/usuario/reglas` | `{reglas}`: reglas de dictado propias (se suman a las generales) |
-| POST | `/api/mi_medico` | Médico predeterminado de la PC (vacío = automático por la voz) |
 | GET | `/api/voces`, `/api/voces/muestras`, `/api/voces/agrupar` | Reconocimiento por la voz (ver [voz.md](voz.md)) |
 | POST | `/api/voces/etiquetar`, `/api/voces/quitar` | Etiquetar audios con su médico / quitar una muestra |
 

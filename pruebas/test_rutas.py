@@ -61,7 +61,6 @@ ESPERADAS = [
     ("POST", "/api/vista_previa", "casos.vista_previa"),
     ("POST", "/api/admin/entrar", "panel.entrar"),
     ("POST", "/api/admin/salir", "panel.salir"),
-    ("POST", "/api/mi_medico", "conocimiento.mi_medico"),
     ("POST", "/api/medico", "conocimiento.medico"),
     ("POST", "/api/voces/etiquetar", "voces.etiquetar"),
     ("POST", "/api/voces/quitar", "voces.quitar"),

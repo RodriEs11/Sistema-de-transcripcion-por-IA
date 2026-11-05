@@ -26,7 +26,6 @@ class RecepcionTest(unittest.TestCase):
         self.parches=ExitStack(); self.addCleanup(self.parches.close)
         self.encolar=self.parches.enter_context(patch.object(S.PROC,'encolar'))
         self.parches.enter_context(patch.object(AU,'anunciar_audio'))
-        self.parches.enter_context(patch.object(S.R,'medico_pc',return_value=''))
         self.parches.enter_context(patch.object(S.CASOS,'ruta_audio',side_effect=lambda n: next(self.nuevos.glob(n+'.wav'),None)))
         self.h=object.__new__(S.H); self.h.pc='PC-ficticia'
 

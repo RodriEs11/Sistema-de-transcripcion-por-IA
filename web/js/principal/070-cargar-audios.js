@@ -28,10 +28,10 @@ async function subir(files){
   if(EN_APP && APP && APP.cola){ for(const f of buenos) await pasarALaApp(f); return; }
   let enviados = 0, guardados = 0;
   for(const f of buenos){
-    if(SRV.ok === false){ enEspera.push({f, medico: $('#medSubir').value}); guardados++; continue; }
-    try { await enviarAudio(f, $('#medSubir').value); enviados++; }
+    if(SRV.ok === false){ enEspera.push({f}); guardados++; continue; }
+    try { await enviarAudio(f); enviados++; }
     catch(e){
-      if(e.sinConexion){ marcarSinConexion(); enEspera.push({f, medico: $('#medSubir').value}); guardados++; }
+      if(e.sinConexion){ marcarSinConexion(); enEspera.push({f}); guardados++; }
       else toast(`No se pudo cargar «${f.name}»: ${e.message}`, [], 8000);
     }
   }
@@ -41,8 +41,9 @@ async function subir(files){
   ponerEspera();
   cargarLista();
 }
-function enviarAudio(f, medico){
-  return pedir('/api/subir?archivo='+encodeURIComponent(f.name)+'&medico='+encodeURIComponent(medico || ''), {method:'POST', body:f});
+// Sin médico: lo reconoce el servidor por la voz (#30).
+function enviarAudio(f){
+  return pedir('/api/subir?archivo='+encodeURIComponent(f.name), {method:'POST', body:f});
 }
 function marcarSinConexion(){ if(SRV.ok !== false){ SRV.ok = false; SRV.desde = Date.now(); } ponerEstadoSrv(); }
 function ponerEspera(){
@@ -58,7 +59,7 @@ async function enviarEnEspera(){                         // se llama cuando el s
   try {
     while(enEspera.length){
       const x = enEspera[0];
-      try { await enviarAudio(x.f, x.medico); ok++; enEspera.shift(); }
+      try { await enviarAudio(x.f); ok++; enEspera.shift(); }
       catch(e){ if(e.sinConexion){ marcarSinConexion(); break; } toast(`No se pudo cargar «${x.f.name}»: ${e.message}`, [], 8000); enEspera.shift(); }
     }
   } finally { enviandoEspera = false; ponerEspera(); }

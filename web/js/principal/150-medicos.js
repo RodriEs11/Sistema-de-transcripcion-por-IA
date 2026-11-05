@@ -2,7 +2,6 @@
 /* ------------------------------------------------ medicos */
 let medicos = [];
 const NUEVO_MED = '__nuevo__';
-const AUTO_MED = 'Automático (por la voz)';
 // El select oculto conserva la integración con el caso y el reconocimiento por voz.
 // El menú va en body para que el contenedor de la barra no recorte la lista.
 const menuMedCaso = document.createElement('div');
@@ -93,7 +92,6 @@ const leerLS = k => { try { return localStorage.getItem(k) || ''; } catch(e){ re
 const grabarLS = (k,v) => { try { localStorage.setItem(k, v); } catch(e){} };
 async function cargarMedicos(){
   try { medicos = (await api('/api/medicos')).medicos; } catch(e){ medicos = []; }
-  llenarMedicos($('#medSubir'), MI.medico, AUTO_MED);
   if(actual) llenarMedicos($('#medCaso'), $('#medCaso').value, 'Médico: sin especificar');
 }
 function llenarMedicos(sel, valor, vacio){
@@ -121,11 +119,6 @@ async function nuevoMedico(){
     await cargarMedicos(); toast(`Médico agregado: ${r.medico}`); return r.medico;
   } catch(e){ toast(e.sinConexion ? 'Sin conexión con el servidor: no se pudo agregar el médico. Probá de nuevo cuando vuelva.' : 'No se pudo agregar el médico: ' + e.message, [], 8000); return null; }
 }
-$('#medSubir').onchange = async e => {
-  if(e.target.value===NUEVO_MED){ const n = await nuevoMedico(); llenarMedicos(e.target, n||'', AUTO_MED); }
-  MI.medico = e.target.value;
-  try { await api('/api/mi_medico', {medico: e.target.value}); } catch(err){ toast(err.message); }
-};
 $('#medCaso').onchange = async e => {
   const v = e.target.value; actualizarMedicoCaso();
   cambiarMedicoCaso(v);

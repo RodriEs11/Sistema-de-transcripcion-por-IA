@@ -111,8 +111,7 @@ button.ini-cifra:hover{border-color:var(--ac)}
 #dictado span:hover{outline:1px solid var(--bd2)}
 #dictado .baja{text-decoration:underline wavy var(--err) 1px;text-underline-offset:3px}
 #dictado .actual{background:var(--actual)}
-.selmed{margin:0 12px 10px;display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mu)}
-.selmed select,.barra select.med{border:1px solid var(--bd2);border-radius:7px;padding:5px 6px;background:var(--panel);color:var(--tx)}
+.barra select.med{border:1px solid var(--bd2);border-radius:7px;padding:5px 6px;background:var(--panel);color:var(--tx)}
 /* con la lista angosta los íconos pasan a una segunda fila (a la derecha) en vez de salirse de la columna */
 .pie{border-top:1px solid var(--bd);padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;row-gap:6px}
 .pie > button{flex:1 1 auto;min-width:0}

@@ -24,8 +24,9 @@ revisados. No hace falta elegir el médico antes de mandar los audios: alcanza c
    (`voces/huellas.json`). Si se guarda sin médico, no se registra nada. Si después se cambia el médico de un
    informe ya guardado, la muestra se corrige al momento.
 
-Si el audio llegó con un médico elegido (el de la PC o el de «Médico de los audios que subas»), ese médico se
-respeta: la voz solo se anota para las estadísticas.
+Los audios nuevos llegan sin médico y siempre se reconocen por la voz (desde App 1.27 / Servidor 2026.11.14 ya no
+existe «Médico de los audios que subas» ni el médico fijo por PC, #30). Si un audio trae un médico ya asignado
+(por ejemplo, al volver a procesarlo), ese médico se respeta: la voz solo se anota para las estadísticas.
 
 ## En la pantalla
 
@@ -40,7 +41,6 @@ respeta: la voz solo se anota para las estadísticas.
   todos de una vez (también les pone ese médico).
 - **Estadísticas → Médico reconocido por la voz**: cuántos se reconocieron solos, cuántos de esos estaban bien,
   dudosos, sin reconocer y los equivocados, por médico.
-- «Médico de los audios que subas» tiene ahora la opción **Automático (por la voz)**, que es la de siempre (vacío).
 
 ## Archivos
 

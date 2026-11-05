@@ -22,14 +22,14 @@ async function pausarCaso(n, pausar, boton){
   cargarLista();
 }
 /* PC desde la que se usa la página: "Servidor" en esta PC, info-01... por el túnel */
-let MI = {pc:'Servidor', remoto:false, medico:'', usuario:null, con_usuarios:false};
+let MI = {pc:'Servidor', remoto:false, usuario:null, con_usuarios:false};
 let filtro = (()=>{ try { return localStorage.getItem('filtroCasos') || ''; } catch(e){ return ''; } })();
 function ponerFiltro(f){ filtro = f; try { localStorage.setItem('filtroCasos', f); } catch(e){}
   $('#tabMia').classList.toggle('on', f==='mia'); $('#tabTodas').classList.toggle('on', f!=='mia'); cargarLista(); }
 async function cargarMiPc(){
   try { MI = await api('/api/mi_pc'); } catch(e){ return; }
   $('#tabMia').textContent = 'Esta PC';
-  if(MI.remoto){ $('#medSubirTxt').textContent = 'Médico de los audios nuevos de esta PC'; document.title = 'Informes · ' + MI.pc; }
+  if(MI.remoto){ document.title = 'Informes · ' + MI.pc; }
   ponerFiltro(filtro || (MI.remoto ? 'mia' : 'todas'));
   $('#bAdmin').hidden = !!MI.remoto && !MI.admin;   // en el trabajo, solo si el panel está habilitado (pide su contraseña)
   if(typeof cargarMedicos === 'function') cargarMedicos();

@@ -9,6 +9,26 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [App 1.27] — 2026-11-05
+
+Acompaña al Servidor 2026.11.14.
+
+### Quitado
+- Barra lateral de la página principal: la lista desplegable «Médico de los audios que subas» (#30). Los audios que
+  se cargan desde la página llegan sin médico y lo reconoce el servidor por la voz; si hace falta, se cambia en la
+  barra del informe como siempre. Los audios que ya estaban esperando sin conexión se envían igual, sin médico.
+
+## [Servidor 2026.11.14] — 2026-11-05
+
+Sirve la página de la App 1.27.
+
+### Quitado
+- El médico fijo por PC (#30): la ruta `POST /api/mi_medico`, el campo `medico` de `GET /api/mi_pc` y de las PC en el
+  estado del panel, y la columna «Médico de sus audios» de la tabla de PC del panel de administración. Los audios que
+  manda la app sola tampoco reciben ya ese médico: todos se reconocen por la voz.
+- El valor `medico_pc` que quedó guardado en `acceso_remoto.json` se borra solo en la próxima escritura del archivo.
+  Una página o app anterior que todavía llame a `/api/mi_medico` recibe 404, sin otro efecto.
+
 ## [App 1.26] — 2026-11-04
 
 Acompaña al Servidor 2026.11.13. Es la entrega de los ajustes de interfaz del 04/11 (grupo #42): reúne en esta misma
