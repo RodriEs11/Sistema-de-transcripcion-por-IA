@@ -100,7 +100,7 @@ crear previamente `respaldo/` en el checkout de ensayo.
 
 El microbenchmark `python herramientas/medir_listado.py` prepara automáticamente una copia aislada
 y mide el listado con 100 y 1.000 casos ficticios. No ejecuta HTTP ni IA y no reemplaza pruebas
-de carga simultánea, navegador o GPU. Consultar [resultados y límites](auditoria-rendimiento-2026-10-29.md)
+de carga simultánea, navegador o GPU. Consultar [resultados y límites](historial/auditoria-rendimiento-2026-10-29.md)
 y [puertas CI/CD](ci-cd.md) antes de interpretar sus resultados.
 
 La primera etapa de persistencia agrega `pruebas/test_borradores.py`, `pruebas/borradores.cjs`
@@ -117,7 +117,7 @@ ni ejecutar la migración sobre la instalación en uso para probarla.
 
 `test_preparacion_activacion.py` prueba copia verificada, backup SQLite e integridad del paquete,
 además de rollback de borradores/historial únicamente en copias ficticias. `scripts/preparar_activacion.py`
-no tiene una acción de despliegue. Ver [activación coordinada y criterios de ventana](activacion-coordinada.md).
+no tiene una acción de despliegue. Ver [activación coordinada y criterios de ventana](historial/activacion-coordinada.md).
 
 Las pruebas `editor_word.cjs` y `revision_word.cjs` también verifican la paginación parcial,
 equivalencia de cortes de hojas, reutilización del fondo de onda y cancelación/liberación de audio.
@@ -139,13 +139,13 @@ daemon Ollama separado y cancelación conservadora ante trabajo de producción. 
 opción no carga modelos. `herramientas/resumir_gpu_real.py` valida/agrega campañas completas y
 `test_validacion_gpu.py` prueba guardas y métricas sin GPU. No ejecutar otros Python
 durante la medición: la vigilancia los considera trabajo ajeno. Ver [resultados RTX 3080,
-protocolo y límites](validacion-gpu.md). El benchmark real no corre automáticamente en CI.
+protocolo y límites](historial/validacion-gpu.md). El benchmark real no corre automáticamente en CI.
 
 `herramientas/comparar_cpu_gpu.py --ejecutar --corpus respaldo/gpu_real_FECHA_HORA`
 compara el camino actual de lotes GPU con Whisper GPU/Gemma CPU en paralelo,
 usando únicamente el corpus sintético verificado. Mantiene el servidor en uso,
 espera la liberación natural de sus modelos y cancela el ensayo ante actividad.
-Ver [protocolo, resultados y límites](comparacion-cpu-gpu.md). Ejecutar sus pruebas
+Ver [protocolo, resultados y límites](historial/comparacion-cpu-gpu.md). Ejecutar sus pruebas
 `test_comparar_cpu_gpu.py` antes o después de medir, nunca durante la campaña.
 
 ### Convenciones generales
@@ -173,11 +173,7 @@ Ver [protocolo, resultados y límites](comparacion-cpu-gpu.md). Ejecutar sus pru
 
 ## Commits
 
-La rama principal remota es `main`. `feat/admin-medicos` se integró mediante la PR #3
-y fue eliminada del remoto. La entrega App 1.22 / Servidor 2026.10.46 se propone desde
-`feat/persistencia-rendimiento-ci` hacia `main`; el workflow valida las PR y los pushes
-a `main`. Crear ramas por tarea y abrir una PR contra la principal, conservando los
-commits existentes y los artefactos de producción fuera de Git.
+La rama principal es `main`. Ramas por tarea y PR hacia `main` (reglas en [AGENTS.md](../AGENTS.md)).
 
 Las pruebas que quizá no lleguen a la versión final van en ramas `exp/<tema>` sobre la rama
 permanente `experimental`, y se ejecutan en una copia aislada creada con `scripts/crear_entorno_pruebas.py`

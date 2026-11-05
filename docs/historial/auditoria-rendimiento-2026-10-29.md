@@ -3,10 +3,10 @@
 Base revisada: commit `48afe40`, servidor **2026.10.45**, app **1.21**. Árbol Git inicialmente limpio.
 
 Seguimiento: se preparó el candidato App 1.22 / Servidor 2026.10.46 para la primera etapa de
-borradores y cola de audios. Ver [implementación, pruebas y promoción pendiente](persistencia.md).
+borradores y cola de audios. Ver [implementación, pruebas y promoción pendiente](../persistencia.md).
 Los hallazgos siguientes describen la base auditada, no el estado del candidato posterior.
 Esta entrega agrega documentación y un microbenchmark; las mejoras de producción descritas abajo
-son propuestas, no cambios ya implementados. El plan de entrega está en [ci-cd.md](ci-cd.md).
+son propuestas, no cambios ya implementados. El plan de entrega está en [ci-cd.md](../ci-cd.md).
 
 ## Conclusión
 

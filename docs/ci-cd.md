@@ -9,7 +9,7 @@ Las Actions están fijadas por SHA; el job solo tiene lectura del repositorio y 
 La ejecución remota y los checks obligatorios requieren publicar estos archivos y configurar GitHub;
 no se activaron remotamente desde esta instalación. Las secciones siguientes mantienen la hoja de
 ruta para ampliar plataformas, evaluación GPU y promoción final a producción.
-Ver [auditoría de rendimiento](auditoria-rendimiento-2026-10-29.md).
+Ver [auditoría de rendimiento](historial/auditoria-rendimiento-2026-10-29.md).
 
 ### Corrección del primer CI remoto — 2026-10-30
 
@@ -120,7 +120,7 @@ verifica integridad, pero por sí solo no identifica al editor de una distribuci
 
 ## Promoción y recuperación
 
-La [preparación local 1.22/2026.10.46](activacion-coordinada.md) genera candidato/rollback con
+La [preparación local 1.22/2026.10.46](historial/activacion-coordinada.md) genera candidato/rollback con
 SHA-256 y respaldos privados separados. Su verificador detecta alteraciones y archivos extra;
 no autoriza por sí solo a activar. Las condiciones de PC y servidor se repiten durante la ventana.
 

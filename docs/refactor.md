@@ -1,7 +1,9 @@
 # Plan de refactor: código modular, legible y mantenible
 
-*Iniciado el 03/11/2026. Decisión y alternativas en [ADR 0001](adr/0001-modularizar-por-etapas.md).
-Este documento es la guía de trabajo: se actualiza al cerrar cada etapa (tabla «Estado»).*
+*Iniciado y terminado el 03/11/2026 (etapas 0 a 9). Decisión en [ADR 0001](adr/0001-modularizar-por-etapas.md).
+**Documento histórico:** para trabajar en el código alcanza con [arquitectura.md](arquitectura.md) y
+[desarrollo.md](desarrollo.md). Acá queda el porqué de cada cambio («Etapa N: qué quedó»), al que remiten
+algunos comentarios del código.*
 
 ## Por qué
 
@@ -127,7 +129,7 @@ para tomar ritmo (riesgo bajo, contrato del núcleo como guardia) antes de las 5
 | App 1.25 | `version/app-1.25` · PR #24 | Hecha (fusionada el 03/11) |
 | 8 | `refactor/8-ventana-principal` · PR #25 · App 1.25 | Hecha (fusionada el 03/11) |
 | 2b | `refactor/2b-scripts-herramientas` · PR #26 · sin versión nueva | Hecha (fusionada el 03/11) |
-| 9 | `calidad/9-ruff-cobertura` · Servidor 2026.11.12 | En revisión |
+| 9 | `calidad/9-ruff-cobertura` · PR #27 · Servidor 2026.11.12 | Hecha (fusionada) |
 
 ### Etapa 1: qué quedó
 

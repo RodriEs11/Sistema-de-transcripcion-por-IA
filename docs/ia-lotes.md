@@ -2,7 +2,7 @@
 
 29/10/2026. Se agrupa en el candidato aún no distribuido **App 1.22 / Servidor 2026.10.46**.
 En la implementación inicial no se reinició el servidor, no se cargaron modelos reales
-y no se cambiaron preferencias locales. La [validación posterior en GPU real](validacion-gpu.md)
+y no se cambiaron preferencias locales. La [validación posterior en GPU real](historial/validacion-gpu.md)
 usó únicamente voz sintética y confirma el valor 2/180 para el uso diario.
 
 ## Reducir la espera del primer informe
@@ -94,7 +94,7 @@ Se verifica que el primer informe está listo antes de transcribir el tercer aud
 fría con ASR simulado crea caché real y el reintento no vuelve a invocar ASR/carga/descarga de modelos.
 
 Estas pruebas demuestran orden y trabajo evitado, no una mejora medida de segundos/tokens por
-segundo en producción. La [campaña real posterior](validacion-gpu.md) comparó lotes 1/2/4
+segundo en producción. La [campaña real posterior](historial/validacion-gpu.md) comparó lotes 1/2/4
 con cuatro audios sintéticos, tres repeticiones por tamaño y los modelos locales en RTX 3080.
 Quedan pendientes colas de 1/5/20, arranques completamente fríos, duraciones variadas y
 llegada continua, siempre fuera del trabajo activo. No se extrapolan esos escenarios.

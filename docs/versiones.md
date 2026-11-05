@@ -134,7 +134,7 @@ commit y ese commit contiene todo lo anterior.
 
 ## Activar la entrega en la instalación
 
-En `sistema\`, en una ventana sin trabajo en curso (ver [activacion-coordinada.md](activacion-coordinada.md)):
+En `sistema\`, en una ventana sin trabajo en curso (ver [activacion-coordinada.md](historial/activacion-coordinada.md)):
 
 ```bat
 git fetch origin --tags

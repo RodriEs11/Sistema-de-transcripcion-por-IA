@@ -15,7 +15,7 @@ Los cambios se agrupan en el candidato todavía no distribuido App **1.22** / Se
 
 La activación remota requiere subir el código a GitHub y configurar protección de rama/checks
 obligatorios. No se ejecutó GitHub Actions ni se modificaron ajustes remotos en esta entrega.
-El despliegue final sigue siendo una promoción coordinada, según [ci-cd.md](ci-cd.md).
+El despliegue final sigue siendo una promoción coordinada, según [ci-cd.md](../ci-cd.md).
 Quedan pendientes matriz Linux/otras versiones Python, firma de distribución, hashes del entorno
 Python, evaluación GPU y despliegue automático con drenaje/rollback probado.
 

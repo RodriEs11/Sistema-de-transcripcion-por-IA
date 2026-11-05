@@ -167,7 +167,7 @@ El historial y el registro de Word procesados usan `resultados/historial.sqlite3
 mantienen contribuciones por ejemplo y un índice de frecuencias. Se importan los datos anteriores
 una sola vez; el CSV previo se conserva. Ver [migración, exportación y recuperación](aprendizaje-incremental.md).
 
-Ver [auditoría y mediciones](auditoria-rendimiento-2026-10-29.md) y [flujo CI/CD propuesto](ci-cd.md).
+Ver [auditoría y mediciones](historial/auditoria-rendimiento-2026-10-29.md) y [flujo CI/CD propuesto](ci-cd.md).
 
 ## Archivos de un caso
 
