@@ -30,14 +30,14 @@ inmutable para identificar cada candidato. Evitar desarrollar o ejecutar CI sobr
 Mantener las reglas de [AGENTS.md](../AGENTS.md) y los respaldos locales obligatorios.
 
 Cada PR debe describir problema, comportamiento final, compatibilidad, pruebas, mediciones y
-rollback. Si toca interfaz compartida, subir versión App y Servidor juntas; documentación y
-herramientas sin cambios funcionales no necesitan incremento. Revisar CHANGELOG y LEEME.
+rollback. Los PR de trabajo dejan sus notas en «Sin publicar» del CHANGELOG y no suben versiones; las versiones,
+LEEME y las etiquetas se hacen en el PR de entrega (`release/…`). Ver [versiones.md](versiones.md).
 
 ## Puertas de integración
 
 | Puerta | Entorno | Qué debe bloquear el merge |
 |---|---|---|
-| Higiene | Checkout limpio | `git diff --check`, secretos/datos prohibidos versionados, Python/JS inválidos, funciones globales duplicadas, versiones incoherentes |
+| Higiene | Checkout limpio | `git diff --check`, secretos/datos prohibidos versionados, Python/JS inválidos, funciones globales duplicadas, versiones incoherentes; en `release/`, entrega incompleta (`verificar_versiones.py --entrega` con las etiquetas) |
 | Python | Windows y Linux; empezar por Python 3.12 | `unittest discover`, Word y APIs ficticias; agregar contratos de casos, bloqueos, cola, rangos, persistencia y errores |
 | Navegador | Edge Windows; Chromium Linux como segundo objetivo | Los tres scripts de `pruebas/`, errores de página y regresiones de selección/pegado/autoguardado |
 | Escritorio | Windows .NET Framework 4.8 | Compilación, versión PE y `--autoprueba`; no aceptar solo compilación Mono |

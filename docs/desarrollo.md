@@ -206,22 +206,27 @@ Se usa [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/) en
 
 Ejemplo: `fix(cliente): reemplazar TrimEnd(char) por la sobrecarga de .NET 4.8`.
 
-## Checklist antes de publicar un cambio
+## Checklist de un PR
 
-Las instrucciones persistentes para agentes están en [AGENTS.md](../AGENTS.md).
-Versionar es parte del cambio: si la interfaz web modifica la experiencia de la app,
-actualizar tanto la versión del servidor como la de escritorio. Los cambios exclusivamente
-de documentación, pruebas o herramientas de desarrollo no requieren subir esas versiones.
-Al publicar, trasladar las notas entregadas de «Sin publicar» a las entradas fechadas correspondientes.
+Las instrucciones persistentes para agentes están en [AGENTS.md](../AGENTS.md); versiones y entregas, en
+[versiones.md](versiones.md). Un PR de trabajo **no** cambia números de versión: deja sus notas en «Sin publicar».
 
 - [ ] `python -m ruff format transcripcion`, `python -m ruff check .` y `python -m mypy` sin errores; cobertura por encima del piso.
 - [ ] Contratos (`test_contrato_http`, `test_contrato_nucleo`) en verde sin regenerar, salvo cambio funcional deliberado.
 - [ ] `node pruebas/verificar_fuentes.cjs`: sintaxis y sin funciones repetidas en la página principal.
 - [ ] Probado en modo simulado (y en la PC real si toca Whisper, Ollama o Windows).
-- [ ] Si cambió la app: versión subida, API revisada contra .NET 4.8, autoprueba OK ([compilacion.md](compilacion.md)).
+- [ ] Si cambió la app: API revisada contra .NET 4.8 y autoprueba OK ([compilacion.md](compilacion.md)).
+- [ ] Notas en «Sin publicar» del CHANGELOG (`### App` / `### Servidor`, categorías `####`), si hay cambios funcionales o internos del código que corre.
+- [ ] `python herramientas/verificar_versiones.py --sin-binario` sin errores.
 - [ ] `git status` sin datos de pacientes, secretos ni binarios.
-- [ ] CHANGELOG actualizado.
-- [ ] `python herramientas/verificar_versiones.py` sin errores; compilación y autoprueba del ejecutable si cambió la app.
+
+## Checklist de una entrega
+
+- [ ] Rama `release/…` desde `main` actualizado; `python herramientas/subir_version.py …` con `--leeme` si sale la app.
+- [ ] Entradas del CHANGELOG revisadas (notas unidas, «Requiere …» si cambia la compatibilidad); documentación que nombra versiones al día.
+- [ ] `python herramientas/verificar_versiones.py --sin-binario --entrega` sin errores; CI en verde (compila y ejecuta la autoprueba).
+- [ ] Tras fusionar: etiquetas `app-vX` / `servidor-vY` en el commit de la fusión, con autorización para publicar.
+- [ ] Activación: `git merge --ff-only <etiqueta>`, compilar si cambió la app, `python herramientas/verificar_versiones.py`.
 - [ ] Distinguir archivos publicados de procesos reiniciados y PC efectivamente actualizadas.
 
 ## Lecciones aprendidas

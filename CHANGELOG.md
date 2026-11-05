@@ -2,12 +2,28 @@
 
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El servidor se versiona por fecha; la app del trabajo, con [versionado semántico](https://semver.org/lang/es/).
+Cada PR fusionado deja sus notas en «Sin publicar», bajo `### App` y/o `### Servidor` con categorías `####`
+(Agregado, Cambiado, Corregido, Quitado, Interno). Al preparar una entrega, `herramientas/subir_version.py` las pasa
+a las entradas fechadas. Ver [docs/versiones.md](docs/versiones.md).
 
 ## Sin publicar
 
 Siguen pendientes la medición de colas grandes/duraciones variadas y la confirmación de
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
+
+### Servidor
+
+#### Agregado
+- Panel de administración → Mantenimiento: al lado del commit «En uso» y «En la carpeta» aparece la etiqueta de la
+  entrega publicada (por ejemplo `servidor-v2026.11.16`), para saber qué entrega está corriendo. Funciona con git
+  instalado y también leyendo la carpeta `.git` directamente.
+
+#### Interno
+- Versiones por entrega ([docs/versiones.md](docs/versiones.md)): los PR ya no suben números; se suben juntos en una
+  rama `release/…` con `herramientas/subir_version.py`, y cada entrega queda marcada con etiquetas `app-vX` /
+  `servidor-vY`. `herramientas/verificar_versiones.py` comprueba además el esquema, el mes del servidor, que ninguna
+  versión sea anterior a la última etiqueta y, con `--entrega`, que no queden notas en «Sin publicar».
 
 ## [App 1.28] — 2026-11-05
 
