@@ -1,0 +1,50 @@
+name: "🎨 Interfaz / UX"
+description: Cambiar cómo se ve o cómo se usa algo que ya existe.
+title: "[UX] "
+labels: ["ux"]
+body:
+  - type: markdown
+    attributes:
+      value: "⚠️ Las capturas no deben mostrar datos de pacientes ni nombres de médicos."
+  - type: textarea
+    id: actual
+    attributes:
+      label: Situación actual
+      description: Cómo es hoy (captura si ayuda).
+    validations: {required: true}
+  - type: textarea
+    id: friccion
+    attributes:
+      label: Fricción
+      description: Qué hace perder tiempo o provoca errores.
+    validations: {required: true}
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: Cambio propuesto
+      description: Descripción o boceto.
+    validations: {required: true}
+  - type: dropdown
+    id: afecta
+    attributes:
+      label: A quién afecta
+      multiple: true
+      options: [Transcriptores, Administración, Médicos]
+  - type: dropdown
+    id: pantalla
+    attributes:
+      label: Pantalla
+      multiple: true
+      options: [Lista de informes, Editor, Panel web, Configuración, Pantalla de inicio, Otra]
+  - type: textarea
+    id: exito
+    attributes:
+      label: Criterio de éxito
+      placeholder: "Ej.: se ve el estado del informe sin abrirlo"
+    validations: {required: true}
+  - type: dropdown
+    id: prioridad
+    attributes:
+      label: Prioridad
+      options: ["P1 - urgente", "P2 - importante", "P3 - cuando se pueda"]
+    validations: {required: true}

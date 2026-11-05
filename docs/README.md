@@ -23,6 +23,7 @@ incrementales, lotes de IA); su activación y piloto están en [activacion-coord
 | [refactor.md](refactor.md) | Desarrollo | Plan de refactor por etapas: estructura destino, reglas de cada PR, contratos y estado |
 | [adr/](adr/README.md) | Desarrollo | Registro de decisiones de arquitectura (ADR) y su plantilla |
 | [experimentos.md](experimentos.md) | Desarrollo | Rama `experimental`, ramas `exp/`, promoción a `main` y entorno de pruebas aislado |
+| [issues.md](issues.md) | Desarrollo | Plantillas de issues (bug, característica, UX, paraguas), etiquetas y orden de trabajo |
 | [auditoria-rendimiento-2026-10-29.md](auditoria-rendimiento-2026-10-29.md) | Desarrollo / Operación | Mediciones sintéticas, 19 hallazgos, prioridades y criterios de rendimiento |
 | [ci-cd.md](ci-cd.md) | Desarrollo / Operación | Workflow de CI implementado (`.github/workflows/ci.yml`) y hoja de ruta de staging, promoción y recuperación |
 | [persistencia.md](persistencia.md) | Desarrollo / Operación | Etapa 1: borradores confirmados, cola cifrada, compatibilidad y promoción pendiente |
