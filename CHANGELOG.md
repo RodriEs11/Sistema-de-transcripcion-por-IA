@@ -9,6 +9,26 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+## [App 1.26] — 2026-11-04
+
+Acompaña al Servidor 2026.11.13. Es la entrega de los ajustes de interfaz del 04/11 (grupo #42): reúne en esta misma
+versión los cambios de la página principal que se sumen antes de distribuirla.
+
+### Agregado
+- Selector de volumen en el reproductor, a la derecha de **+3s** (#31): deslizador de 0 % a 100 % (de a 5 %, también
+  con la rueda del mouse o las flechas) y un parlante que silencia y vuelve al nivel anterior. El ícono cambia con el
+  nivel y en 0 % se ve tachado. El volumen se guarda en cada PC (no sigue al transcriptor, porque depende de sus
+  parlantes o auriculares), se mantiene al pasar de un informe a otro y vuelve al 100 % con «Volver a la configuración
+  original de la pantalla». También se aplica al arrastrar sobre la onda y a las muestras de voz de Médicos. En una
+  barra muy angosta queda solo el parlante.
+
+## [Servidor 2026.11.13] — 2026-11-04
+
+Sirve la página de la App 1.26 (entrega de ajustes de interfaz del 04/11, grupo #42). Sin cambios de API ni de datos.
+
+### Agregado
+- Selector de volumen en el reproductor de la página de revisión (#31); ver App 1.26.
+
 ## [Servidor 2026.11.12] — 2026-11-03
 
 Etapa 9 del [refactor por etapas](docs/refactor.md). Reorganización interna, sin cambios visibles (contratos, suite y
