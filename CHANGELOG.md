@@ -8,14 +8,31 @@ a las entradas fechadas. Ver [docs/versiones.md](docs/versiones.md).
 
 ## Sin publicar
 
-### Servidor
+## [App 1.29] — 2026-11-05
 
-#### Agregado
+Acompaña al Servidor 2026.11.16.
+
+### Cambiado
+- Botón de administración (#37): ahora lleva un escudo con tilde en lugar del engranaje, para no confundirlo con
+  «Configuración». Lo mismo en el acceso rápido «Administración» del Inicio.
+
+### Quitado
+- La barra superior ya no tiene el botón «Word descargados». La carpeta de los Word se sigue eligiendo y abriendo
+  desde Configuración, y la descarga del Word no cambia (#38).
+
+## [Servidor 2026.11.16] — 2026-11-05
+
+Acompaña a la App 1.29.
+
+### Cambiado
+- Página principal: el ícono del botón de administración (ver App). Sin cambios en la API ni en el procesamiento.
+
+### Agregado
 - Panel de administración → Mantenimiento: al lado del commit «En uso» y «En la carpeta» aparece la etiqueta de la
   entrega publicada (por ejemplo `servidor-v2026.11.16`), para saber qué entrega está corriendo. Funciona con git
   instalado y también leyendo la carpeta `.git` directamente.
 
-#### Interno
+### Interno
 - Versiones por entrega ([docs/versiones.md](docs/versiones.md)): los PR ya no suben números; se suben juntos en una
   rama `release/…` con `herramientas/subir_version.py`, y cada entrega queda marcada con etiquetas `app-vX` /
   `servidor-vY`. `herramientas/verificar_versiones.py` comprueba además el esquema, el mes del servidor, que ninguna

@@ -21,12 +21,10 @@ namespace Transcripcion
         {
             barra.Dock = DockStyle.Top; barra.Height = 46; barra.BackColor = Estilo.Panel;
             barra.Padding = new Padding(14, 6, 10, 6);
-            barra.ColumnCount = 8; barra.RowCount = 1;
+            barra.ColumnCount = 6; barra.RowCount = 1;
             barra.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 20));
             barra.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             barra.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            barra.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-            barra.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             barra.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             barra.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             barra.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -47,9 +45,6 @@ namespace Transcripcion
             btnActualizar.Anchor = AnchorStyles.Right; btnActualizar.Margin = new Padding(6, 0, 6, 0); btnActualizar.Visible = false;
             btnActualizar.Click += async (s, e) => await ActualizarAhora("la persona tocó Actualizar");
 
-            VentanaVincular.Boton(btnWord, "Word descargados", false);
-            btnWord.Anchor = AnchorStyles.Right; btnWord.Margin = new Padding(6, 0, 0, 0);
-            btnWord.Click += (s, e) => Abrir(Programa.CarpetaDescargas());
             VentanaVincular.Boton(btnCompacto, "Compacto", false);
             btnCompacto.Anchor = AnchorStyles.Right; btnCompacto.Margin = new Padding(6, 0, 0, 0);
             btnCompacto.Click += (s, e) => { if (compacto) SalirCompacto(); else EntrarCompacto(); };
@@ -107,9 +102,8 @@ namespace Transcripcion
             barra.Controls.Add(lblEstado, 1, 0);
             barra.Controls.Add(lblDetalle, 2, 0);
             barra.Controls.Add(btnActualizar, 3, 0);
-            barra.Controls.Add(btnWord, 5, 0);
-            barra.Controls.Add(btnCompacto, 6, 0);
-            barra.Controls.Add(btnOpciones, 7, 0);
+            barra.Controls.Add(btnCompacto, 4, 0);
+            barra.Controls.Add(btnOpciones, 5, 0);
             PonerEstado(Conexion.Iniciando, null);
         }
 
