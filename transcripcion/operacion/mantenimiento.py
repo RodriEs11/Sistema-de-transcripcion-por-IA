@@ -3,8 +3,8 @@ MANTENIMIENTO (panel de administración, tarjeta "Mantenimiento").
 
 - Qué versión de cada archivo de Python cargó el servidor y cuáles cambiaron después en la carpeta
   ("cambios sin tomar": hace falta reiniciar el servidor para que los use).
-- Versión del código según git (commit y archivos sin commitear). Usa git si está instalado; si no, lee la
-  carpeta .git directamente (solo lo básico).
+- Versión del código según git (commit, etiquetas de entrega y archivos sin commitear). Usa git si está instalado;
+  si no, lee la carpeta .git directamente (solo lo básico).
 - Si el servidor se puede reiniciar desde el panel (lo abrió un .bat que lo vuelve a abrir solo) y una prueba
   del código nuevo antes de reiniciar, para no dejar el servidor apagado por un error.
 
@@ -176,12 +176,17 @@ def _git_cli():
             ruta = ln[3:].strip().strip('"')
             sucios.append(ruta.split(" -> ")[-1])
     nuevos = [ln[3:].strip().strip('"') for ln in _git("status", "--porcelain").splitlines() if ln.startswith("??")]
+    try:
+        etiquetas = sorted(_git("tag", "--points-at", "HEAD").split())
+    except Exception:
+        etiquetas = []
     return {
         "commit": corto,
         "completo": completo,
         "fecha": int(t) if t.isdigit() else None,
         "mensaje": msg,
         "rama": rama,
+        "etiquetas": etiquetas,
         "sucios": sucios,
         "sin_seguimiento": nuevos,
         "fuente": "git",
@@ -206,6 +211,38 @@ def _objeto(sha):
     if not f.is_file():
         return None  # guardado en un "pack": git lo comprime junto con otros
     return zlib.decompress(f.read_bytes())
+
+
+def _etiquetas_archivos(sha):
+    """Etiquetas que apuntan al commit `sha` (p. ej. servidor-v2026.11.16), leyendo .git a mano: las sueltas de
+    refs/tags y las de packed-refs. Las anotadas apuntan a un objeto «tag» que a su vez nombra el commit."""
+    nombres = set()
+    pk = GIT / "packed-refs"
+    if pk.is_file():
+        anterior = None
+        for ln in pk.read_text(encoding="utf-8").splitlines():
+            if ln.startswith("^"):  # commit al que apunta la etiqueta anotada de la línea anterior
+                if anterior and ln[1:].strip() == sha:
+                    nombres.add(anterior)
+                continue
+            partes = ln.split()
+            es_etiqueta = len(partes) == 2 and partes[1].startswith("refs/tags/")
+            anterior = partes[1][len("refs/tags/") :] if es_etiqueta else None
+            if anterior and partes[0] == sha:
+                nombres.add(anterior)
+    carpeta = GIT / "refs" / "tags"
+    if carpeta.is_dir():
+        for f in carpeta.rglob("*"):
+            if not f.is_file():
+                continue
+            destino = f.read_text(encoding="utf-8").strip()
+            if destino != sha:
+                obj = _objeto(destino) if re.fullmatch(r"[0-9a-f]{40}", destino) else None
+                cuerpo = obj.split(b"\0", 1)[-1] if obj and obj.startswith(b"tag ") else b""
+                if not re.search(rb"^object " + sha.encode("ascii") + rb"$", cuerpo, re.M):
+                    continue
+            nombres.add(f.relative_to(carpeta).as_posix())
+    return sorted(nombres)
 
 
 def _indice():
@@ -263,12 +300,17 @@ def _git_archivos():
                 sucios.append(ruta)  # (git guarda los textos con fin de línea LF aunque en la carpeta estén con CRLF)
     except (OSError, ValueError, struct.error):
         sucios = None
+    try:
+        etiquetas = _etiquetas_archivos(sha)
+    except (OSError, ValueError, zlib.error):
+        etiquetas = []
     return {
         "commit": sha[:7],
         "completo": sha,
         "fecha": t,
         "mensaje": msg,
         "rama": rama,
+        "etiquetas": etiquetas,
         "sucios": sucios,
         "sin_seguimiento": None,
         "fuente": "archivos",

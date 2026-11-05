@@ -44,7 +44,9 @@ configurar la contraseña del panel remoto, abrir el registro o las carpetas (so
   el panel lo muestra y sugiere reiniciar. Las páginas (`web/`), las plantillas y las reglas no necesitan
   reiniciar: se leen en cada pedido.
 - **Versión del código**: commit con el que arrancó el servidor, commit actual de la carpeta y archivos sin
-  commitear. Usa `git` si está instalado; si no, lee `.git` directamente (commit y archivos modificados).
+  commitear, con la etiqueta de la entrega si el commit tiene una (`servidor-v2026.11.16`, `app-v1.29`; ver
+  [versiones.md](versiones.md)). Un commit sin etiqueta significa que la carpeta no está en una entrega publicada.
+  Usa `git` si está instalado; si no, lee `.git` directamente (commit, etiquetas y archivos modificados).
 - **Reiniciar servidor**: en cuanto termine lo que se está procesando, en 1 minuto o en 5 minutos, con o sin
   cartel en las PC. Antes se prueba el código nuevo en otro proceso (compila todos los `.py` e importa
   `servidor`): si falla, no se reinicia y se muestra el error. Mientras espera, no empieza audios nuevos; si la

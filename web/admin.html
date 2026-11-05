@@ -688,7 +688,8 @@ setInterval(() => document.querySelectorAll('[data-cuando]').forEach(el => { el.
 /* ---------- mantenimiento: código en uso, cambios sin tomar y reinicio */
 const TEXTO_REINICIO = 'Guardá lo que estés haciendo. El informe abierto se guarda solo; en un minuto el sistema vuelve y la pantalla se reconecta sola.';
 function lineaCommit(g){
-  return `<span class="cod">${esc(g.commit)}</span> ${esc(g.mensaje || '')}${g.fecha ? ` <span style="color:var(--mu)">· ${fechaDe(g.fecha)}</span>` : ''}`;
+  const entrega = (g.etiquetas || []).map(x => ` <span class="etq ok" title="Entrega publicada (etiqueta de git)">${esc(x)}</span>`).join('');
+  return `<span class="cod">${esc(g.commit)}</span>${entrega} ${esc(g.mensaje || '')}${g.fecha ? ` <span style="color:var(--mu)">· ${fechaDe(g.fecha)}</span>` : ''}`;
 }
 function armarMant(e){
   const m = e.mantenimiento, g = m.git || {}, gi = m.git_inicio || {}, cambios = m.cambios || [];
