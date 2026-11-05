@@ -1,7 +1,9 @@
 TRANSCRIPCIÓN · aplicación para las PC del trabajo (info-01, info-02, info-03)
 =============================================================================
 
-Versión actual: 1.28 (2026-11-05).
+Versión actual: 1.29 (2026-11-05).
+1.29 / Servidor 2026.11.16: Sin el botón «Word descargados» en la barra (la carpeta se elige en Configuración) y nuevo
+ícono de escudo para Administración.
 1.28 / Servidor 2026.11.15: en el Inicio, «Para revisar» va del estudio más nuevo al más antiguo. La tarjeta de arriba
 y el botón de la cifra «para revisar» abren el más reciente, y uno que llega con la app abierta aparece arriba.
 1.27 / Servidor 2026.11.14: se quitó de la barra lateral la lista «Médico de los audios que subas». El médico de
