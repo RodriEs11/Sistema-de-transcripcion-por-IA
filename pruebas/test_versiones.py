@@ -117,6 +117,20 @@ class VersionesTest(unittest.TestCase):
         self.assertIn(f"Versión actual: {app} (2099-12-02).\n{app} / Servidor {servidor}: Una línea para las PC.",
                       self.leer("cliente/LEEME.txt"))
 
+    def test_entrega_con_fin_de_linea_de_windows(self):
+        """En el CI y en la instalación (Windows) el checkout deja CRLF: la entrega funciona igual y lo conserva."""
+        self.con_notas(NOTAS_APP, NOTAS_SERVIDOR)
+        nombres = ("cliente_codigo/Programa.cs", "servidor.py", "CHANGELOG.md", "cliente/LEEME.txt")
+        for nombre in nombres:
+            ruta = self.raiz / nombre
+            ruta.write_bytes(ruta.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+        antes = self.versiones()
+        S.subir(self.raiz, app="parche", servidor=True, fecha=date(2099, 12, 2), leeme="Una línea.")
+        self.assertEqual(comprobar(self.raiz, sin_binario=True, entrega=True, etiquetas=antes)[0], [])
+        for nombre in nombres:
+            datos = (self.raiz / nombre).read_bytes()
+            self.assertEqual(datos.count(b"\n"), datos.count(b"\r\n"), f"{nombre}: mezcla LF y CRLF")
+
     def test_entrega_exige_notas_y_subir_lo_fusionado(self):
         self.con_notas(NOTAS_APP, NOTAS_SERVIDOR)
         with self.assertRaisesRegex(S.ErrorEntrega, "--servidor"):

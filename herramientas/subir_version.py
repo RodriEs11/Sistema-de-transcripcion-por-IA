@@ -71,12 +71,18 @@ def para_ensamblado(version):
 
 
 def _leer(ruta):
+    """(texto con fin de línea LF, formato original). En Windows el checkout deja CRLF (.gitattributes: text=auto):
+    se trabaja siempre con LF y al guardar se vuelve al fin de línea y al BOM que tenía el archivo."""
     datos = ruta.read_bytes()
-    return datos.decode("utf-8-sig"), datos.startswith(b"\xef\xbb\xbf")
+    texto = datos.decode("utf-8-sig")
+    formato = {"bom": datos.startswith(b"\xef\xbb\xbf"), "crlf": "\r\n" in texto}
+    return texto.replace("\r\n", "\n"), formato
 
 
-def _guardar(ruta, texto, bom):
-    ruta.write_bytes((b"\xef\xbb\xbf" if bom else b"") + texto.encode("utf-8"))
+def _guardar(ruta, texto, formato):
+    if formato["crlf"]:
+        texto = texto.replace("\n", "\r\n")
+    ruta.write_bytes((b"\xef\xbb\xbf" if formato["bom"] else b"") + texto.encode("utf-8"))
 
 
 def _actual(patron, texto, nombre, flags=0):
