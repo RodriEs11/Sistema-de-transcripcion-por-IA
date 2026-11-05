@@ -28,7 +28,7 @@ namespace Transcripcion
         readonly Button btnEdge = new Button(), btnReintentar = new Button();
         readonly Panel punto = new Panel();
         readonly Label lblEstado = new Label(), lblDetalle = new Label();
-        readonly Button btnWord = new Button(), btnOpciones = new Button(), btnCompacto = new Button(), btnActualizar = new Button();
+        readonly Button btnOpciones = new Button(), btnCompacto = new Button(), btnActualizar = new Button();
         bool aplicandoActualizacion = false, avisoActualizacionMostrado = false;
         DateTime sinFocoDesde = DateTime.Now;
         readonly ToolStripMenuItem miCompacto = new ToolStripMenuItem("Modo compacto (siempre visible)");

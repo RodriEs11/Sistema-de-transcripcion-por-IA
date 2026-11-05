@@ -95,7 +95,7 @@ namespace Transcripcion
 
         void AjustarBarra()
         {
-            btnWord.Visible = !compacto; lblDetalle.Visible = !compacto;
+            lblDetalle.Visible = !compacto;
             TextoBotonActualizar();
             if (compacto) { BotonIcono(btnCompacto, "Agrandar"); BotonIcono(btnOpciones, "Opciones"); }
             else { BotonTexto(btnCompacto, "Compacto"); BotonTexto(btnOpciones, "Opciones ▾"); }
