@@ -27,6 +27,7 @@ function pintarVolumen(){
   const p = +vol.value, mudo = p === 0;
   $('#volumen').dataset.nivel = mudo ? 'silencio' : p < 50 ? 'bajo' : 'alto';
   vol.title = mudo ? 'Volumen: silenciado (0 %)' : `Volumen: ${p} %`;
+  $('#volTxt').textContent = p + ' %';
   vol.setAttribute('aria-valuetext', mudo ? 'silenciado, 0 %' : p + ' %');
   bVol.title = mudo ? `Activar el sonido (volver a ${volumenAntes} %)` : `Silenciar (volumen ${p} %)`;
   bVol.setAttribute('aria-label', mudo ? 'Activar el sonido' : 'Silenciar');
@@ -39,6 +40,11 @@ function iniciarVolumen(){                        // la llama 240-preferencias-p
 }
 vol.oninput = () => ponerVolumen(vol.value);
 vol.onchange = recordarVolumen;
+vol.addEventListener('pointerdown', () => {      // mientras se arrastra, el deslizador sigue a la vista aunque el mouse salga
+  $('#volumen').classList.add('arrastrando');
+  const soltar = () => { $('#volumen').classList.remove('arrastrando'); removeEventListener('pointerup', soltar); removeEventListener('pointercancel', soltar); };
+  addEventListener('pointerup', soltar); addEventListener('pointercancel', soltar);
+});
 bVol.onclick = () => { if(+vol.value > 0){ recordarVolumen(); ponerVolumen(0); } else ponerVolumen(volumenAntes || 100); };
 $('#volumen').addEventListener('wheel', e => {
   if(!e.deltaY) return;

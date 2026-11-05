@@ -2,8 +2,9 @@ TRANSCRIPCIÓN · aplicación para las PC del trabajo (info-01, info-02, info-03
 =============================================================================
 
 Versión actual: 1.26 (2026-11-04).
-1.26 / Servidor 2026.11.13: el reproductor tiene volumen, a la derecha de "+3s". El parlante silencia y vuelve al nivel
-anterior (tachado = sin sonido); el deslizador también se mueve con la rueda del mouse. Queda guardado en cada PC.
+1.26 / Servidor 2026.11.13: el reproductor tiene volumen: el parlante a la derecha de "+3s". Al pasar el mouse aparece
+el deslizador (también se mueve con la rueda); tocar el parlante silencia y vuelve al nivel anterior (tachado = sin
+sonido). Queda guardado en cada PC.
 1.25 / Servidor 2026.11.11: misma pantalla y mismo funcionamiento; la página y el programa de la app se reorganizaron
 por dentro (archivos separados por tema). No hace falta hacer nada distinto.
 1.24 / Servidor 2026.11.2: si el Servidor se cae o se reinicia (o cambia la dirección del túnel), al volver la

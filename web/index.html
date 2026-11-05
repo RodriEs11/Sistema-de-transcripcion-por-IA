@@ -71,10 +71,14 @@
             <button id="bAtras" title="Atrás 3 segundos (F6)">−3s</button>
             <button id="bPlay" title="Reproducir / pausar (F5)">▶</button>
             <button id="bAdel" title="Adelante 3 segundos">+3s</button>
-            <!-- Volumen (en esta PC): el parlante silencia y vuelve al nivel anterior; la rueda del mouse sube y baja. -->
+            <!-- Volumen (en esta PC): solo el parlante en la barra; el deslizador flota debajo al pasar el mouse (o con el
+                 teclado) y no ocupa lugar. El parlante silencia y vuelve al nivel anterior; la rueda del mouse sube y baja. -->
             <div class="volumen" id="volumen" data-nivel="alto">
               <button id="bVol" type="button" title="Silenciar (volumen 100 %)" aria-label="Silenciar" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="vol-onda vol-onda1" d="M15.5 9.5a3.5 3.5 0 0 1 0 5"/><path class="vol-onda vol-onda2" d="M18 7a7 7 0 0 1 0 10"/><path class="vol-x" d="m15.5 9.5 5 5m0-5-5 5"/></svg></button>
-              <input type="range" id="vol" min="0" max="100" step="5" value="100" aria-label="Volumen" title="Volumen: 100 %">
+              <div class="vol-pop" id="volPop"><div class="vol-caja">
+                <input type="range" id="vol" min="0" max="100" step="5" value="100" aria-label="Volumen" title="Volumen: 100 %">
+                <span id="volTxt" aria-hidden="true">100 %</span>
+              </div></div>
             </div>
             <input type="range" id="prog" min="0" max="1000" value="0" aria-label="Posición">
             <span id="tiempo">0:00 / 0:00</span>

@@ -31,6 +31,15 @@ const estado=page=>page.evaluate(()=>({
   onda1:getComputedStyle(document.querySelector('#bVol .vol-onda1')).display,
   onda2:getComputedStyle(document.querySelector('#bVol .vol-onda2')).display,
 }));
+const deslizadorVisible=page=>page.evaluate(()=>{const c=getComputedStyle($('#volPop'));return c.opacity==='1'&&c.pointerEvents!=='none'&&$('#vol').getBoundingClientRect().width>0;});
+// Los controles visibles del reproductor no se enciman entre sí ni salen de la fila.
+const encimados=page=>page.evaluate(()=>{
+  const f=document.querySelector('.f1'),hijos=[...document.querySelector('.player').children].filter(x=>x.getClientRects().length&&x.getBoundingClientRect().width);
+  const r=hijos.map(x=>[x.id||x.className,x.getBoundingClientRect()]),mal=[];
+  for(let i=0;i<r.length;i++)for(let j=i+1;j<r.length;j++){const a=r[i][1],b=r[j][1];
+    if(a.left<b.right-.5&&b.left<a.right-.5&&a.top<b.bottom-.5&&b.top<a.bottom-.5)mal.push(r[i][0]+' / '+r[j][0]);}
+  if(f.scrollWidth>f.clientWidth+1)mal.push('la fila se desborda');
+  return mal;});
 const mover=(page,v)=>page.evaluate(v=>{const r=$('#vol');r.value=String(v);
   r.dispatchEvent(new Event('input',{bubbles:true}));r.dispatchEvent(new Event('change',{bubbles:true}));},v);
 async function abrir(page){
@@ -61,14 +70,41 @@ async function abrir(page){
 
     // Se ve, a la derecha de +3s y antes de la barra de posición, y la fila no se desborda en 1366 × 768.
     const caja=await page.evaluate(()=>{const b=s=>document.querySelector(s).getBoundingClientRect(),f=document.querySelector('.f1');
-      return {adel:b('#bAdel'),vol:b('#volumen'),prog:b('#prog'),rango:b('#vol'),desborda:f.scrollWidth>f.clientWidth+1};});
-    assert.ok(caja.vol.width>0 && caja.rango.width>=40,'el selector de volumen se ve');
+      return {adel:b('#bAdel'),vol:b('#volumen'),prog:b('#prog'),desborda:f.scrollWidth>f.clientWidth+1};});
+    assert.ok(caja.vol.width>=28,'el parlante se ve');
     assert.ok(caja.vol.left>=caja.adel.right && caja.vol.right<=caja.prog.left,'va entre +3s y la barra de posición');
     assert.ok(Math.abs(caja.vol.top+caja.vol.height/2-(caja.adel.top+caja.adel.height/2))<4,'alineado con los botones del audio');
     assert.equal(caja.desborda,false,'la fila del reproductor entra en 1366 px');
+    assert.deepEqual(await encimados(page),[],'1366 px: nada encimado');
+
+    // Por defecto solo el parlante; el deslizador aparece al pasar el mouse, flotando debajo, y se va al salir.
+    assert.equal(await deslizadorVisible(page),false,'por defecto el deslizador no se ve');
+    await page.hover('#bVol');await page.waitForTimeout(50);
+    assert.equal(await deslizadorVisible(page),true,'con el mouse encima aparece');
+    const pop=await page.evaluate(()=>({pop:$('#volPop').getBoundingClientRect(),bot:$('#bVol').getBoundingClientRect(),
+      prog:$('#prog').getBoundingClientRect(),txt:$('#volTxt').textContent}));
+    assert.ok(pop.pop.top>=pop.bot.bottom-1,'flota debajo del parlante');
+    assert.ok(pop.pop.top>=pop.prog.bottom,'no tapa la barra de posición');
+    assert.equal(pop.txt,'100 %','muestra el porcentaje');
+    // Se puede llevar el mouse del parlante al deslizador sin que se cierre.
+    const rv=await page.locator('#vol').boundingBox();await page.mouse.move(rv.x+rv.width/2,rv.y+rv.height/2,{steps:8});
+    assert.equal(await deslizadorVisible(page),true,'sigue abierto al llegar al deslizador');
+    await page.mouse.move(5,700);await page.waitForTimeout(50);
+    assert.equal(await deslizadorVisible(page),false,'al salir se oculta');
+
+    // Arrastrar: sigue a la vista aunque el mouse salga del control, hasta soltar.
+    await page.hover('#bVol');const ra=await page.locator('#vol').boundingBox();
+    await page.mouse.move(ra.x+ra.width-2,ra.y+ra.height/2);await page.mouse.down();
+    await page.mouse.move(ra.x-200,ra.y+120,{steps:6});
+    let e=await estado(page);
+    assert.equal(await deslizadorVisible(page),true,'arrastrando no se cierra');
+    assert.equal(e.valor,0,'arrastrar a la izquierda baja hasta 0 %');
+    await page.mouse.up();await page.waitForTimeout(50);
+    assert.equal(await deslizadorVisible(page),false,'al soltar afuera se cierra');
+    await page.evaluate(()=>{ponerVolumen(100);localStorage.removeItem('volumen');localStorage.removeItem('volumenAntes');volumenAntes=100;});
 
     // Sin nada guardado: 100 %, ícono con dos ondas.
-    let e=await estado(page);
+    e=await estado(page);
     assert.deepEqual([e.valor,e.volumen,e.nivel,e.x,e.onda2],[100,1,'alto','none','inline'],'arranca al 100 %');
 
     // El porcentaje se aplica tal cual al audio.
@@ -92,16 +128,22 @@ async function abrir(page){
     assert.deepEqual([e.valor,e.volumen],[55,.55],'y vuelve al 55 %');
 
     // Rueda del mouse: de a 5 %, con límites en 0 y 100, sin desplazar la página.
-    const r=await page.locator('#vol').boundingBox();await page.mouse.move(r.x+r.width/2,r.y+r.height/2);
+    await page.hover('#bVol');
     await page.mouse.wheel(0,-100);e=await estado(page);assert.equal(e.valor,60,'rueda arriba: +5 %');
     await page.mouse.wheel(0,100);await page.mouse.wheel(0,100);e=await estado(page);assert.equal(e.valor,50,'rueda abajo: −5 %');
     for(let i=0;i<15;i++)await page.mouse.wheel(0,-100);
     e=await estado(page);assert.deepEqual([e.valor,e.volumen],[100,1],'no pasa de 100 %');
     await page.mouse.move(0,0);
 
-    // Teclado sobre el deslizador.
-    await page.focus('#vol');await page.keyboard.press('ArrowLeft');e=await estado(page);
+    // Teclado: Tab hasta el parlante muestra el deslizador; Tab entra y las flechas lo mueven.
+    await page.focus('#bAdel');await page.keyboard.press('Tab');
+    assert.equal(await page.evaluate(()=>document.activeElement.id),'bVol','Tab llega al parlante');
+    assert.equal(await deslizadorVisible(page),true,'con el teclado en el parlante se ve el deslizador');
+    await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.activeElement.id),'vol','Tab entra al deslizador');
+    await page.keyboard.press('ArrowLeft');e=await estado(page);
     assert.deepEqual([e.valor,e.volumen],[95,.95],'flecha izquierda: −5 %');
+    await page.keyboard.press('Tab');await page.waitForTimeout(50);
+    assert.equal(await deslizadorVisible(page),false,'al salir con Tab se oculta');
 
     // Lo que suena aparte usa el mismo volumen: el arrastre sobre la onda y las muestras de Médicos.
     await mover(page,40);
@@ -141,27 +183,36 @@ async function abrir(page){
     await page.waitForFunction(()=>localStorage.getItem('volumen')===null);
     e=await estado(page);assert.deepEqual([e.valor,e.volumen,e.antes],[100,1,null],'restablecer vuelve al 100 %');
 
-    // Otros anchos: el deslizador queda mientras entre y la fila del reproductor nunca se desborda.
-    const medir=async ancho=>{await page.setViewportSize({width:ancho,height:700});await page.waitForTimeout(150);
-      return page.evaluate(()=>{const f=document.querySelector('.f1');
-        return {rango:getComputedStyle($('#vol')).display,boton:$('#bVol').getBoundingClientRect().width>0,desborda:f.scrollWidth>f.clientWidth+1};});};
-    assert.deepEqual(await medir(800),{rango:'block',boton:true,desborda:false},'800 px: completo');
-    assert.deepEqual(await medir(700),{rango:'block',boton:true,desborda:false},'700 px: el reproductor en su fila, completo');
-    await page.evaluate(()=>{localStorage.setItem('listaOculta','');aplicarLista();});
-    assert.deepEqual(await medir(1100),{rango:'block',boton:true,desborda:false},'1100 px con la lista: completo');
+    // Todos los anchos, con la lista visible y oculta: solo el parlante en la barra, nada encimado ni desbordado, y
+    // al pasar el mouse el deslizador aparece dentro de la pantalla.
+    for(const lista of ['1','']){
+      await page.evaluate(v=>{localStorage.setItem('listaOculta',v);aplicarLista();},lista);
+      for(const ancho of [1366,1280,1100,1024,900,800,760,700,600,520,460,400]){
+        await page.mouse.move(2,690);await page.setViewportSize({width:ancho,height:700});await page.waitForTimeout(120);
+        const donde=`${ancho} px${lista?'':' con la lista'}`;
+        assert.deepEqual(await encimados(page),[],donde+': nada encimado');
+        assert.equal(await deslizadorVisible(page),false,donde+': solo el parlante');
+        assert.ok(await page.evaluate(()=>$('#bVol').getBoundingClientRect().width>=28),donde+': el parlante se ve');
+        await page.hover('#bVol');await page.waitForTimeout(50);
+        const p=await page.evaluate(()=>{const r=$('#volPop').getBoundingClientRect();return {vis:getComputedStyle($('#volPop')).opacity,izq:r.left,der:r.right};});
+        assert.ok(p.vis==='1'&&p.izq>=0&&p.der<=ancho,donde+': el deslizador aparece dentro de la pantalla');
+      }
+    }
     await page.evaluate(()=>{localStorage.setItem('listaOculta','1');aplicarLista();});
-    // Barra muy angosta: queda solo el parlante, que sigue silenciando.
-    assert.deepEqual(await medir(460),{rango:'none',boton:true,desborda:false},'460 px: solo el parlante');
+    await page.setViewportSize({width:460,height:700});await page.waitForTimeout(120);
     await page.click('#bVol');e=await estado(page);assert.equal(e.volumen,0,'el parlante silencia en la barra angosta');
 
     if(process.env.CAPTURAS){
-      await page.setViewportSize({width:1366,height:768});await page.click('#bVol');await mover(page,35);
-      await page.locator('#barraCaso').screenshot({path:process.env.CAPTURAS+'/volumen-1366.png'});
-      await mover(page,0);await page.locator('#barraCaso').screenshot({path:process.env.CAPTURAS+'/volumen-silencio.png'});
-      for(const ancho of [1100,700,460]){await page.setViewportSize({width:ancho,height:700});await page.waitForTimeout(150);
-        await page.locator('#barraCaso').screenshot({path:`${process.env.CAPTURAS}/volumen-${ancho}.png`});}
+      await page.click('#bVol');await mover(page,35);await page.mouse.move(2,690);
+      for(const ancho of [1366,700,460]){
+        await page.setViewportSize({width:ancho,height:700});await page.waitForTimeout(150);await page.mouse.move(2,690);
+        await page.locator('#barraCaso').screenshot({path:`${process.env.CAPTURAS}/volumen-${ancho}.png`});
+        await page.hover('#bVol');await page.waitForTimeout(80);
+        const r=await page.locator('#barraCaso').boundingBox();
+        await page.screenshot({path:`${process.env.CAPTURAS}/volumen-${ancho}-hover.png`,clip:{x:r.x,y:r.y,width:r.width,height:r.height+60}});
+      }
     }
     assert.deepEqual(errores,[],'sin errores en la página');
-    console.log('OK: selector de volumen (posición, porcentaje, silenciado, rueda y teclado, onda y muestras, persistencia por PC, restablecer y barra angosta).');
+    console.log('OK: selector de volumen (posición, porcentaje, silenciado, rueda y teclado, onda y muestras, persistencia por PC, restablecer, deslizador flotante y todos los anchos).');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>server.close());

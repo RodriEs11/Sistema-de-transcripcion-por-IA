@@ -56,10 +56,10 @@ actualizarla, cerrá primero el estudio. Ver [persistencia y recuperación](pers
 | Ctrl + Z / Y | Deshacer / rehacer |
 
 La velocidad de reproducción va de 0,25× a 2,5×; al reanudar retrocede 1 segundo.
-El **volumen** está a la derecha de **+3s**: el deslizador va de 0 % a 100 % (de a 5 %, también con la rueda del mouse
-o las flechas), y el parlante silencia y vuelve al nivel anterior; en 0 % se ve tachado. Se guarda en cada PC (depende
-de sus parlantes o auriculares) y también vale al arrastrar sobre la onda y en las muestras de voz de Médicos. Si la
-barra es muy angosta queda solo el parlante.
+El **volumen** es el parlante a la derecha de **+3s**: al pasar el mouse aparece debajo un deslizador de 0 % a 100 %
+(de a 5 %, también con la rueda del mouse; con el teclado, Tab desde el parlante y las flechas). Tocar el parlante
+silencia y vuelve al nivel anterior; en 0 % se ve tachado. Se guarda en cada PC (depende de sus parlantes o auriculares)
+y también vale al arrastrar sobre la onda y en las muestras de voz de Médicos.
 Los saltos usan 3 segundos por defecto y se ajustan en **Configuración → Audio y revisión**.
 En **Configuración → Atajos de teclado** se puede elegir una tecla de F1 a F12 para cada acción,
 incluida siguiente marca. No se permiten teclas

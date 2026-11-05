@@ -16,8 +16,6 @@
   .app.plegada{grid-template-columns:1fr}
   .app.plegada .riel{flex-direction:row;height:auto;padding:6px 12px}
   .barra .fila.f1{flex-wrap:wrap}.f1 .tit-caso{max-width:100%}
-  /* el reproductor pasa a su propia fila: el deslizador de volumen vuelve a entrar mientras haya lugar */
-  @container (min-width:481px){ .f1 #vol{display:block} }
 }
 /* ---------- configuración */
 #config{position:fixed;inset:0;z-index:15;background:rgba(0,0,0,.38);display:grid;place-items:center;padding:16px}

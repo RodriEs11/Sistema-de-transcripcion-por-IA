@@ -55,19 +55,23 @@
 #bPlay{width:38px}
 #prog{min-width:50px}
 #tiempo{min-width:0;white-space:nowrap}
-/* volumen, a la derecha de +3s: parlante (silenciar) y deslizador; en una barra angosta queda solo el parlante.
-   Un solo control con borde (como los botones) para que no se confunda con la barra de posición que sigue. */
-.volumen{display:flex;align-items:center;flex:0 1 auto;min-width:0;align-self:stretch;
-  border:1px solid var(--bd2);border-radius:7px;background:var(--panel)}
-.volumen:hover,.volumen:focus-within{border-color:var(--ac)}
-.f1 .player #bVol,#bVol{display:inline-flex;align-items:center;justify-content:center;width:30px;padding:0;flex:none;
-  align-self:stretch;border:0;background:transparent;border-radius:6px}
+/* volumen, a la derecha de +3s: en la barra solo el parlante (silenciar), que nunca se achica ni se encima con los
+   otros controles. El deslizador flota debajo al pasar el mouse, con el teclado (Tab desde el parlante) o mientras se
+   arrastra (.arrastrando); no ocupa lugar en la barra. El relleno superior de .vol-pop es el puente para el mouse.
+   Oculto con opacidad (no display:none) para que Tab pueda pasar del parlante al deslizador. */
+.volumen{position:relative;display:flex;flex:none;align-self:stretch}
+.f1 .player #bVol,#bVol{display:inline-flex;align-items:center;justify-content:center;width:34px;padding:0;flex:none;align-self:stretch}
 #bVol svg{display:block;width:18px;height:18px;pointer-events:none}
-#vol{flex:0 1 72px;width:72px;min-width:44px;margin:0 8px 0 0;accent-color:var(--ac)}
 .volumen[data-nivel="silencio"] .vol-onda,.volumen:not([data-nivel="silencio"]) .vol-x,
 .volumen[data-nivel="bajo"] .vol-onda2{display:none}
 .volumen[data-nivel="silencio"] #bVol{color:var(--mu)}
-@container (max-width:760px){ #vol{display:none} }
+.vol-pop{position:absolute;top:100%;left:50%;transform:translateX(-50%);padding-top:6px;z-index:8;opacity:0;pointer-events:none}
+.volumen:hover .vol-pop,.volumen.arrastrando .vol-pop,.volumen:has(:focus-visible) .vol-pop{opacity:1;pointer-events:auto}
+.volumen:hover #bVol,.volumen.arrastrando #bVol{border-color:var(--ac)}
+.vol-caja{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--panel);border:1px solid var(--bd2);
+  border-radius:9px;box-shadow:var(--sombra);white-space:nowrap}
+#vol{width:110px;margin:0;accent-color:var(--ac)}
+#volTxt{font-size:12.5px;color:var(--mu);font-variant-numeric:tabular-nums;min-width:36px;text-align:right}
 .f2{gap:6px}
 .f2 > *{flex:none}
 .f2 > .sep{flex:1 1 0;min-width:2px}

@@ -15,12 +15,12 @@ Acompaña al Servidor 2026.11.13. Es la entrega de los ajustes de interfaz del 0
 versión los cambios de la página principal que se sumen antes de distribuirla.
 
 ### Agregado
-- Selector de volumen en el reproductor, a la derecha de **+3s** (#31): deslizador de 0 % a 100 % (de a 5 %, también
-  con la rueda del mouse o las flechas) y un parlante que silencia y vuelve al nivel anterior. El ícono cambia con el
-  nivel y en 0 % se ve tachado. El volumen se guarda en cada PC (no sigue al transcriptor, porque depende de sus
+- Selector de volumen en el reproductor (#31): en la barra, un parlante a la derecha de **+3s** que silencia y vuelve
+  al nivel anterior (el ícono cambia con el nivel y en 0 % se ve tachado). Al pasar el mouse aparece debajo, flotando,
+  un deslizador de 0 % a 100 % con el porcentaje (de a 5 %, también con la rueda del mouse; con el teclado, Tab desde
+  el parlante y las flechas). Como flota, no ocupa lugar en la barra ni se encima con los otros controles. El volumen se guarda en cada PC (no sigue al transcriptor, porque depende de sus
   parlantes o auriculares), se mantiene al pasar de un informe a otro y vuelve al 100 % con «Volver a la configuración
-  original de la pantalla». También se aplica al arrastrar sobre la onda y a las muestras de voz de Médicos. En una
-  barra muy angosta queda solo el parlante.
+  original de la pantalla». También se aplica al arrastrar sobre la onda y a las muestras de voz de Médicos.
 
 ## [Servidor 2026.11.13] — 2026-11-04
 
