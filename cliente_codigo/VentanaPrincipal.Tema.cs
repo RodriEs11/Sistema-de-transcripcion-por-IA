@@ -31,7 +31,7 @@ namespace Transcripcion
             web.DefaultBackgroundColor = cFondo;
             cartel.BackColor = cFondo; cartel.ForeColor = cSuave;
             lblEstado.ForeColor = cTexto; lblDetalle.ForeColor = cSuave;
-            foreach (var b in new[] { btnWord, btnCompacto, btnOpciones })
+            foreach (var b in new[] { btnCompacto, btnOpciones })
             {
                 b.BackColor = cPanel; b.ForeColor = cTexto; b.FlatAppearance.BorderColor = cBorde;
                 b.FlatAppearance.MouseOverBackColor = oscuro ? Color.FromArgb(0x26, 0x26, 0x24) : Color.FromArgb(0xee, 0xed, 0xe9);

@@ -8,6 +8,12 @@ a las entradas fechadas. Ver [docs/versiones.md](docs/versiones.md).
 
 ## Sin publicar
 
+### App
+
+#### Quitado
+- La barra superior ya no tiene el botón «Word descargados». La carpeta de los Word se sigue eligiendo y abriendo
+  desde Configuración, y la descarga del Word no cambia (#38).
+
 ### Servidor
 
 #### Agregado
