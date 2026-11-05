@@ -10,7 +10,7 @@ se escribe un ADR nuevo que la reemplaza y el viejo pasa a «Reemplazado por NNN
 | [0002](0002-versiones-por-entrega.md) | Subir versiones por entrega, no por PR, y marcar cada entrega con etiquetas de git | Aceptado |
 
 Decisiones anteriores a este registro (están en el CHANGELOG y en `docs/`): Gemma 4 12B en lugar de Qwen
-(fase 2), Git dentro de la carpeta en uso, lotes de IA de 2 audios / 180 s (`validacion-gpu.md`), cola SQLite
+(fase 2), Git dentro de la carpeta en uso, lotes de IA de 2 audios / 180 s (`historial/validacion-gpu.md`), cola SQLite
 (`cola-servidor.md`), rama `experimental` (`experimentos.md`). Se pueden pasar a ADR cuando se las revise.
 
 ## Plantilla

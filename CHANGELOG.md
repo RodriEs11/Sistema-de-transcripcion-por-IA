@@ -8,10 +8,6 @@ a las entradas fechadas. Ver [docs/versiones.md](docs/versiones.md).
 
 ## Sin publicar
 
-Siguen pendientes la medición de colas grandes/duraciones variadas y la confirmación de
-instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
-ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
-
 ### Servidor
 
 #### Agregado

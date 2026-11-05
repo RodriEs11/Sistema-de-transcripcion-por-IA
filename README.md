@@ -225,17 +225,17 @@ cada PC se actualiza sola después de verificar que la versión nueva funciona c
 | [API HTTP](docs/api.md) | Rutas del servidor |
 | [Seguridad y privacidad](docs/seguridad.md) | Datos que maneja el sistema y cómo se protegen |
 | [Desarrollo](docs/desarrollo.md) | Modo simulado, convenciones, pruebas y lecciones aprendidas |
-| [Auditoría de rendimiento](docs/auditoria-rendimiento-2026-10-29.md) | Hallazgos de servidor/cliente, mediciones reproducibles y plan de mejora |
+| [Auditoría de rendimiento](docs/historial/auditoria-rendimiento-2026-10-29.md) | Hallazgos de servidor/cliente, mediciones reproducibles y plan de mejora |
 | [CI/CD propuesto](docs/ci-cd.md) | Pruebas, compilación reproducible, promoción controlada y recuperación |
 | [Persistencia y recuperación](docs/persistencia.md) | Borradores, confirmaciones verificadas, cola cifrada, recepción atómica y recuperación ante fallos |
 | [Cola persistente del servidor](docs/cola-servidor.md) | Recuperación tras caídas, FIFO, pausas, resultados confirmados y respaldo SQLite sin detener el servidor |
-| [Activación coordinada](docs/activacion-coordinada.md) | Preparación 1.22/2026.10.46, piloto pc-test, verificaciones, respaldos privados y rollback conservando trabajo |
-| [CI y listado de casos](docs/ci-listado.md) | Segunda etapa implementada, mediciones y estado real de despliegue |
+| [Activación coordinada](docs/historial/activacion-coordinada.md) | Preparación 1.22/2026.10.46, piloto pc-test, verificaciones, respaldos privados y rollback conservando trabajo |
+| [CI y listado de casos](docs/historial/ci-listado.md) | Segunda etapa implementada, mediciones y estado real de despliegue |
 | [Editor A4 y audio](docs/editor-audio.md) | Paginación parcial, fondo de onda reutilizable, pruebas y límites |
 | [Word y aprendizaje](docs/word-aprendizaje.md) | Guardado atómico, aprendizaje en segundo plano, recuperación y pruebas |
 | [Aprendizaje incremental](docs/aprendizaje-incremental.md) | Correcciones por ejemplo, historial indexado, migración y exportación |
 | [Lotes y procesamiento de IA](docs/ia-lotes.md) | Espera acotada, reutilización ASR, cachés y métricas para GPU |
-| [Validación en GPU real](docs/validacion-gpu.md) | Lotes 1/2/4 en RTX 3080: tiempos, capacidad, protocolo sintético y recomendación |
+| [Validación en GPU real](docs/historial/validacion-gpu.md) | Lotes 1/2/4 en RTX 3080: tiempos, capacidad, protocolo sintético y recomendación |
 | [Historial de cambios](CHANGELOG.md) | Versiones del servidor y de la app |
 
 ## Privacidad

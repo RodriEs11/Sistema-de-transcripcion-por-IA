@@ -4,7 +4,7 @@ Reglas del proyecto (ramas, versiones, entregas, pruebas): @AGENTS.md
 
 ## Ahorrar contexto
 - Leer solo los archivos de la tarea. Usar este mapa y `grep` en lugar de recorrer carpetas.
-- No leer `CHANGELOG.md`, `docs/refactor.md` ni `docs/auditoria-*` enteros: buscar la sección con `grep`.
+- No leer enteros `CHANGELOG.md` ni `docs/refactor.md` (buscar la sección con `grep`). `docs/historial/` es historia: no hace falta.
 - No abrir `package-lock.json`, binarios, `cliente/` ni `respaldo/`.
 - Correr solo las pruebas del área tocada; la suite completa, antes de publicar.
 - Respuestas cortas: qué cambió, pruebas corridas, qué falta. Sin repetir el plan.
