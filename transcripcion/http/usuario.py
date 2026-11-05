@@ -14,7 +14,6 @@ def mi_pc(h, pedido):
         {
             "pc": h.pc,
             "remoto": h.remoto,
-            "medico": R.medico_pc(h.pc),
             "admin": (not h.remoto) or R.admin_configurado(),  # si se muestra el engranaje del panel
             "con_usuarios": U.hay_usuarios(),
             "usuario": {"clave": du["clave"], "nombre": du["nombre"], "cambiar": du["cambiar"]} if du else None,

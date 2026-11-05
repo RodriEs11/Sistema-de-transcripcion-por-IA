@@ -614,7 +614,7 @@ function armarPcs(e){
     poner('#pcs', `<div class="vacio"><b>Todavía no se vinculó ninguna PC.</b>En cada PC del trabajo abrí <span class="cod">Transcripcion.exe</span>, escribí el nombre de la PC (ej. info-01) y el usuario y la contraseña de un transcriptor (o, si todavía no hay transcriptores, la contraseña del sistema). Aparecen acá solas.</div>`);
     return;
   }
-  let h = '<div class="tabla-env"><table><thead><tr><th scope="col">PC</th><th scope="col">Conexión</th><th scope="col">App</th><th scope="col">Médico de sus audios</th><th scope="col">Vinculada</th><th scope="col"><span class="sr" style="position:absolute;left:-9999px">Acciones</span></th></tr></thead><tbody>';
+  let h = '<div class="tabla-env"><table><thead><tr><th scope="col">PC</th><th scope="col">Conexión</th><th scope="col">App</th><th scope="col">Vinculada</th><th scope="col"><span class="sr" style="position:absolute;left:-9999px">Acciones</span></th></tr></thead><tbody>';
   for(const p of e.pcs){
     const con = p.conectada ? '<span class="conex"><span class="punto ok vivo"></span>Conectada ahora</span>'
       : p.ultima ? `<span class="conex"><span class="punto"></span>Última vez ${hace(e.ahora - p.ultima)}</span><span class="sec">${fechaDe(p.ultima)}</span>`
@@ -626,7 +626,7 @@ function armarPcs(e){
     const vinc = p.llaves ? fechaCorta(p.vinculada) + (p.llaves > 1 ? `<span class="sec">${p.llaves} vinculaciones · última ${fechaCorta(p.ultima_vinculacion)}</span>` : '')
       : '<span style="color:var(--mu)">entró con contraseña</span>' + (p.sesiones ? `<span class="sec">${plural(p.sesiones, 'sesión abierta', 'sesiones abiertas')}</span>` : '');
     const puedeAnular = p.llaves || p.sesiones;
-    h += `<tr><td><span class="pcnom">${esc(p.pc)}</span></td><td>${con}${rev}</td><td>${app}</td><td>${p.medico ? esc(p.medico) : '<span style="color:var(--mu)">sin especificar</span>'}</td><td>${vinc}</td>`
+    h += `<tr><td><span class="pcnom">${esc(p.pc)}</span></td><td>${con}${rev}</td><td>${app}</td><td>${vinc}</td>`
        + `<td style="text-align:right">${puedeAnular ? `<button class="chico peligro" data-anular="${esc(p.pc)}" title="Quita el permiso de esta PC. Para volver a usarla hay que vincularla con la contraseña.">Anular</button>` : ''}</td></tr>`;
   }
   h += '</tbody></table></div>';

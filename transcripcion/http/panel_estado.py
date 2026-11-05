@@ -150,7 +150,6 @@ def estado_admin(sis):
                 "conectada": bool(ultima and ahora - ultima < 60),
                 "version": version,
                 "desactualizada": bool(version and oficial and version != oficial),
-                "medico": R.medico_pc(pc),
                 "sesiones": R.sesiones_de(pc),
                 "panel": pc in con_panel,
                 "revisando": sorted(

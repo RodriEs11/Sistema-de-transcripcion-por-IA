@@ -92,6 +92,8 @@ def _leer():
 
 
 def _grabar(d):
+    # El médico fijo por PC se retiró (#30): el que quedó guardado se borra en la próxima escritura.
+    d.pop("medico_pc", None)
     tmp = ARCH.with_suffix(".tmp")
     tmp.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")
     tmp.replace(ARCH)
@@ -112,7 +114,6 @@ def poner_contrasena(c):
         d["contrasena"] = {"sal": sal, "huella": _huella_contrasena(c, sal)}
         d.setdefault("tema_aviso", "transcripcion-" + secrets.token_urlsafe(18).replace("_", "").replace("-", "")[:24])
         d.setdefault("clientes", {})
-        d.setdefault("medico_pc", {})
         _grabar(d)
         escribir_conexion_cliente(d)
     return d
@@ -587,18 +588,6 @@ def bloqueado_por(nombre, pc):
     if b and b["pc"] != pc and time.time() - b["t"] < BLOQUEO_SEG:
         return b["pc"]
     return None
-
-
-# ---------------------------------------------------------- medico por PC
-def medico_pc(pc):
-    return _leer().get("medico_pc", {}).get(pc, "")
-
-
-def poner_medico_pc(pc, med):
-    with _lock:
-        d = _leer()
-        d.setdefault("medico_pc", {})[pc] = med
-        _grabar(d)
 
 
 # -------------------------------------------------------------- huellas

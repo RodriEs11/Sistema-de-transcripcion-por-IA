@@ -73,9 +73,6 @@ def recibir_audio_serializado(h, original, cuerpo, huella=None):
     sis.casos.poner_usuario_caso(
         nombre, getattr(h, "usuario", None) or (R.usuario_activo(h.pc) if U.hay_usuarios() else None)
     )
-    med = R.medico_pc(h.pc)
-    if med:
-        escribir_atomico(sis.datos / f"{nombre}.medico.txt", med)
     # Publicar al final: el vigilante no debe leer un WAV parcial o sin metadatos.
     escribir_atomico(sis.nuevos / f"{nombre}{ext}", cuerpo)
     R.guardar_huella(sis.datos, hs, nombre)

@@ -120,7 +120,7 @@ button.peligro:hover{filter:brightness(1.08);border-color:var(--err)}
 .espera-envio[hidden]{display:none}
 /* ---------- modo compacto: solo la cola y los avisos */
 body.compacto .app{grid-template-columns:1fr}
-body.compacto main,body.compacto .drop,body.compacto .selmed,body.compacto .pie,body.compacto .divisor{display:none!important}
+body.compacto main,body.compacto .drop,body.compacto .pie,body.compacto .divisor{display:none!important}
 body.compacto aside{border-right:0;height:100vh;max-height:none}
 body.compacto .marca{padding:10px 12px 8px}
 body.compacto .tabs{margin:0 10px 8px}
