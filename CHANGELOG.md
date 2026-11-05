@@ -8,7 +8,16 @@ a las entradas fechadas. Ver [docs/versiones.md](docs/versiones.md).
 
 ## Sin publicar
 
+### App
+
+#### Cambiado
+- Botón de administración (#37): ahora lleva un escudo con tilde en lugar del engranaje, para no confundirlo con
+  «Configuración». Lo mismo en el acceso rápido «Administración» del Inicio.
+
 ### Servidor
+
+#### Cambiado
+- Página principal: el ícono del botón de administración (ver App). Sin cambios en la API ni en el procesamiento.
 
 #### Agregado
 - Panel de administración → Mantenimiento: al lado del commit «En uso» y «En la carpeta» aparece la etiqueta de la
