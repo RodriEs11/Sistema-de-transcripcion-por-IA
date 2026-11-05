@@ -63,7 +63,7 @@ los envía por un túnel cifrado y muestra la misma interfaz de revisión.
 **Revisión asistida**
 - Marcas por color con la explicación de cada una (rojo: dato que no coincide; amarillo: duda; turquesa: término no dictado; gris: frase de protocolo).
 - Avisos de datos dictados que no quedaron en el informe, partes no transcritas y estudios sin plantilla.
-- Audio sincronizado: el cursor del informe resalta el tramo del dictado y la forma de onda; atajos configurables (F5 reproducir/pausa, F6/F7 saltos, F3/F4 velocidad, F10 está bien).
+- Audio sincronizado: el cursor del informe resalta el tramo del dictado y la forma de onda; atajos configurables (F5 reproducir/pausa, F6/F7 saltos, F3/F4 velocidad, F10 está bien) y volumen con silenciado.
 - Vista previa idéntica al Word (A4, márgenes, Tahoma 12) con editor de formato (F9).
 - Autocorrecciones de Word (Normal.dotm) dentro del editor, modo oscuro, modo compacto, paneles ajustables.
 - Pegado desde Word con el formato original (alineación, estilos, fuente, tamaño y colores), tanto con Ctrl+V como desde el menú contextual. El texto sin formato se pega alineado a la izquierda y sin negrita heredada.

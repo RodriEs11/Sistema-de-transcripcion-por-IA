@@ -122,9 +122,10 @@ $('#cfgOriginal').onclick = async () => {
   if(!await confirmar('¿Volver a la configuración original de la pantalla?',
       '<p>Tema, tamaño del texto, lista, anchos de los paneles y opciones del audio vuelven a como venían. No se toca ningún informe.</p>', 'Restablecer', 'prim')) return;
   try { Object.keys(localStorage).filter(k => k.startsWith('pref_')).forEach(k => localStorage.removeItem(k));
-        ['tema', 'listaOculta', 'velUltima', 'barraFormatoOculta'].forEach(k => localStorage.removeItem(k)); } catch(e){}
+        ['tema', 'listaOculta', 'velUltima', 'barraFormatoOculta', 'volumen', 'volumenAntes'].forEach(k => localStorage.removeItem(k)); } catch(e){}
   delete document.documentElement.dataset.theme;
   $('#vel').value = '1'; audio.playbackRate = 1;
+  volumenAntes = 100; ponerVolumen(100, false);
   $('#cfgPaneles').onclick();
   aplicarTema(); aplicarPrefs(); aplicarLista(); aplicarBarraFormato(); pintarConfig(); mostrarGuardado();
 };

@@ -72,6 +72,7 @@ python -m unittest discover -s pruebas -p 'test_*.py' -v
 python herramientas/verificar_versiones.py --sin-binario
 node pruebas/editor_word.cjs
 node pruebas/revision_word.cjs
+node pruebas/volumen.cjs
 node pruebas/medicos.cjs
 python herramientas/medir_listado.py --casos 100 1000 --repeticiones 5
 ```
