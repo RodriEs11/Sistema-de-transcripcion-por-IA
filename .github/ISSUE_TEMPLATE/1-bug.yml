@@ -1,0 +1,52 @@
+name: "🐞 Bug"
+description: Algo funciona mal o distinto de lo esperado.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "⚠️ **No incluir datos de pacientes, nombres de médicos ni secretos** (tampoco en capturas)."
+  - type: textarea
+    id: que_pasa
+    attributes:
+      label: Qué pasa
+    validations: {required: true}
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Pasos para reproducir
+      placeholder: "1. ...\n2. ...\n3. ..."
+    validations: {required: true}
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Resultado esperado
+    validations: {required: true}
+  - type: dropdown
+    id: donde
+    attributes:
+      label: Dónde ocurre
+      multiple: true
+      options: [Servidor, App de escritorio, Panel web, Editor, Transcripción / IA, Otro]
+    validations: {required: true}
+  - type: input
+    id: versiones
+    attributes:
+      label: Versiones
+      placeholder: "Servidor 2026.11.x · App 1.xx"
+  - type: dropdown
+    id: frecuencia
+    attributes:
+      label: Frecuencia
+      options: [Siempre, A veces, Una sola vez]
+  - type: dropdown
+    id: prioridad
+    attributes:
+      label: Prioridad
+      options: ["P1 - bloquea el trabajo", "P2 - molesta", "P3 - menor"]
+    validations: {required: true}
+  - type: textarea
+    id: evidencia
+    attributes:
+      label: Evidencia
+      description: Capturas, líneas del registro, mensajes de error.

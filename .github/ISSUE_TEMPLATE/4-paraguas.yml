@@ -1,0 +1,23 @@
+name: "📋 Paraguas (grupo de issues)"
+description: Agrupa varios issues relacionados y muestra el avance.
+title: "[Grupo] "
+labels: ["paraguas"]
+body:
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: Objetivo
+      description: Qué se logra cuando estén todos cerrados.
+    validations: {required: true}
+  - type: textarea
+    id: tareas
+    attributes:
+      label: Issues incluidos
+      description: "Primero creá cada issue y después enlazalo acá con #número."
+      value: "- [ ] #\n- [ ] #\n- [ ] #"
+    validations: {required: true}
+  - type: textarea
+    id: orden
+    attributes:
+      label: Orden o dependencias
+      placeholder: "Ej.: #12 antes que #13"

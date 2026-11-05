@@ -1,0 +1,47 @@
+name: "✨ Característica"
+description: Algo nuevo que el sistema debería poder hacer.
+title: "[Feat] "
+labels: ["feat"]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: Problema
+      description: Qué cuesta o falta hoy, en una o dos frases.
+    validations: {required: true}
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: Propuesta
+    validations: {required: true}
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      description: Cuándo se considera terminada. Sirven también para probar.
+      value: "- [ ] \n- [ ] "
+    validations: {required: true}
+  - type: textarea
+    id: fuera
+    attributes:
+      label: Fuera de alcance
+      description: Lo que NO entra en este issue.
+  - type: checkboxes
+    id: impacto
+    attributes:
+      label: Qué toca
+      options:
+        - label: Servidor (sube versión del servidor)
+        - label: App de escritorio (sube versión de la app)
+        - label: Datos o configuración (migración, archivos nuevos)
+  - type: dropdown
+    id: prioridad
+    attributes:
+      label: Prioridad
+      options: ["P1 - urgente", "P2 - importante", "P3 - cuando se pueda"]
+    validations: {required: true}
+  - type: dropdown
+    id: experimental
+    attributes:
+      label: ¿Va primero a experimental?
+      options: ["No, directo a main", "Sí, probar en exp/ antes"]
