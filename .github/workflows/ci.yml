@@ -50,6 +50,13 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python herramientas/verificar_versiones.py --sin-binario
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          # PR de entrega (docs/versiones.md): versiones nuevas respecto de las etiquetas y nada en «Sin publicar».
+          if ($env:GITHUB_HEAD_REF -like 'release/*') {
+            git fetch --force --depth=1 origin '+refs/tags/*:refs/tags/*'
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            python herramientas/verificar_versiones.py --sin-binario --entrega
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
           git diff --check
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Regresión de navegador
