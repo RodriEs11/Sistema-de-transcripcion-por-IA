@@ -9,6 +9,13 @@ Siguen pendientes la medición de colas grandes/duraciones variadas y la confirm
 instalación de App 1.22 en las PC desconectadas. La comparación de lotes 1/2/4 en GPU real con voz sintética
 ya se completó; ver [protocolo, resultados y límites](docs/validacion-gpu.md).
 
+### Cambiado
+- Pantalla de inicio (#29): «Para revisar» ahora va del estudio más nuevo al más antiguo. La tarjeta de arriba
+  («El más reciente»), el botón de la cifra «para revisar» y la lista abren/muestran primero el último que llegó,
+  y uno nuevo aparece arriba sin reiniciar. La lista lateral no cambia. Falta la versión (Servidor + App), que se
+  asigna al publicar junto con los demás cambios de interfaz.
+- Prueba `pruebas/orden_inicio.cjs` del orden, agregada a la regresión de navegador del CI.
+
 ## [App 1.27] — 2026-11-05
 
 Acompaña al Servidor 2026.11.14.

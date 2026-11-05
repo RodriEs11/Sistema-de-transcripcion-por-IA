@@ -33,7 +33,7 @@ function armarVacio(lista, todos){
         : deSistema('La ventana del servidor parece cerrada. Abrí <b>iniciar_servidor.bat</b> (o <b>interfaz.bat</b>) y esta página se reconecta sola.'))
       + '</p><p class="vac-nota"><span class="spin"></span> Reintentando cada 2 segundos…</p>');
   } else {
-    const listos = lista.filter(c => c.estado==='listo' && !c.bloqueado_por).sort((a, b) => a.fecha - b.fecha);
+    const listos = lista.filter(c => c.estado==='listo' && !c.bloqueado_por).sort((a, b) => b.fecha - a.fecha);   // el más nuevo primero
     const enProc = lista.filter(c => EN_PROC.includes(c.estado)).sort((a, b) => ((a.espera||{}).eta ?? 1e9) - ((b.espera||{}).eta ?? 1e9));
     const errores = lista.filter(c => c.estado==='error'), nuevos = lista.filter(c => c.estado==='nuevo');
     const prox = enProc[0], proxTxt = prox ? (prox.estado==='en pausa' ? 'cuando se reanude la transcripción (está en pausa)' : esperaIA(prox) ? 'cuando la IA esté lista'
@@ -54,7 +54,7 @@ function armarVacio(lista, todos){
     } else if(listos.length){
       const c = listos[0], a = c.avisos, n = a ? a.rojo + a.amarillo + a.turq + a.gris + a.faltan.length + a.huecos.length : (c.marcas || 0);
       h = card('doc', '', `<h2>${listos.length===1 ? 'Hay 1 informe para revisar' : `Hay ${listos.length} informes para revisar`}</h2>`
-        + `<p>${listos.length > 1 ? 'El más antiguo' : 'Es'}: <span class="vac-titulo">${nombreDe(c)}</span> · ${hhmm(c.fecha)}${c.medico ? ' · ' + esc(c.medico) : ''} · ${n ? n + (n===1 ? ' marca' : ' marcas') + ' para revisar' : 'sin marcas'}.</p>`
+        + `<p>${listos.length > 1 ? 'El más reciente' : 'Es'}: <span class="vac-titulo">${nombreDe(c)}</span> · ${hhmm(c.fecha)}${c.medico ? ' · ' + esc(c.medico) : ''} · ${n ? n + (n===1 ? ' marca' : ' marcas') + ' para revisar' : 'sin marcas'}.</p>`
         + `<div class="vac-bot"><button class="prim" data-acc="abrir" data-n="${esc(c.nombre)}">Abrir ${nombreDe(c)}</button></div>`
         + (extra.length ? `<p class="vac-nota">${extra.join(' ')}</p>` : ''));
     } else if(enProc.length){
@@ -126,7 +126,7 @@ function armarInicio(foco, lista, todos, listos, enProc, errores){
   const fecha = new Date().toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'});
   const ia = SRV.ia === 'ok' ? ['', 'IA lista'] : SRV.ia === 'sin_modelo' ? ['av', 'IA sin modelo'] : ['av', 'IA no lista'];
   const cifra = (n, txt, clase, acc) => acc && n
-    ? `<button class="ini-cifra ${clase}" data-acc="${acc}" data-n="${acc==='abrir' ? esc(listos[0].nombre) : ''}" title="Abrir el más antiguo"><b>${n}</b><span>${txt}</span></button>`
+    ? `<button class="ini-cifra ${clase}" data-acc="${acc}" data-n="${acc==='abrir' ? esc(listos[0].nombre) : ''}" title="Abrir el más reciente"><b>${n}</b><span>${txt}</span></button>`
     : `<div class="ini-cifra ${n ? clase : ''}"><b>${n}</b><span>${txt}</span></div>`;
   let h = '<div class="ini"><header class="ini-cab"><div><h1>Inicio</h1><p>'
     + esc(fecha.charAt(0).toUpperCase() + fecha.slice(1)) + ' · ' + (MI.remoto ? 'PC ' + esc(MI.pc) : 'PC del servidor')
@@ -147,7 +147,7 @@ function armarInicio(foco, lista, todos, listos, enProc, errores){
       + '</li>';
   };
   const secs = [];
-  if(listos.length > 1) secs.push(`<section class="ini-sec"><h3>Para revisar <small>del más antiguo al más nuevo</small></h3><ul class="ini-filas">`
+  if(listos.length > 1) secs.push(`<section class="ini-sec"><h3>Para revisar <small>del más nuevo al más antiguo</small></h3><ul class="ini-filas">`
     + listos.slice(0, 6).map(c => fila(c, false)).join('') + '</ul>'
     + (listos.length > 6 ? `<p class="ini-mas">y ${listos.length - 6} más en la lista de la izquierda.</p>` : '') + '</section>');
   if(rev.length) secs.push(`<section class="ini-sec"><h3>Últimos revisados</h3><ul class="ini-filas">`
