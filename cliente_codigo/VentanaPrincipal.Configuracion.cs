@@ -135,7 +135,7 @@ namespace Transcripcion
                 StartPosition = FormStartPosition.CenterParent, MinimizeBox = false, MaximizeBox = false, ShowInTaskbar = false,
                 BackColor = cPanel, ForeColor = cTexto, Icon = Icon, AutoScroll = true })
             {
-                int margen = Escala(18), ancho = Escala(470), y = Escala(14);
+                int margen = Escala(18), ancho = Escala(470), y = Escala(2);
                 Action<Control, int> poner = (c, arriba) => { y += arriba; c.Location = new Point(margen, y); f.Controls.Add(c); y += c.Height; };
                 Action<string, bool> texto = (t, negrita) =>
                 {
@@ -168,7 +168,6 @@ namespace Transcripcion
                     y += alto;
                 };
 
-                texto("La pantalla del Servidor no está cargada. Acá están las opciones de esta PC; el resto aparece en Configuración cuando vuelva la conexión.", false);
                 texto("Esta PC", true);
                 var cInicio = opcion("Abrir al iniciar Windows", Programa.IniciaConWindows());
                 var cTomar = opcion("Tomar los audios del sistema automáticamente", !Config.Pausado);
@@ -198,6 +197,7 @@ namespace Transcripcion
                 var bDesv = boton("Desconectar esta PC…", false); bDesv.Click += (s, e) => { f.Close(); BeginInvoke(new Action(Desvincular)); };
                 fila(new[] { bDir, bRec, bDesv });
 
+                texto("Aplicación de transcripción", true);
                 texto("Versión " + Programa.VERSION + " · Creada por Rodrigo Espíndola", false);
                 y += Escala(8);
                 var cerrar = boton("Listo", true); cerrar.DialogResult = DialogResult.OK;
