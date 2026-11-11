@@ -1,5 +1,6 @@
-"""«Guardar Word y aprender»: arma el Word final del caso, lo publica de forma atómica, registra la actividad y deja
-el aprendizaje (ejemplo, historial, voz, correcciones) en la cola persistente. También la vista previa del Word.
+"""«Guardar Word y aprender»: arma el Word final del caso, lo publica de forma atómica, registra la actividad y la
+muestra de voz, y deja el aprendizaje (ejemplo, historial, correcciones) en la cola persistente. También la vista
+previa del Word.
 
 Viene de servidor.py (docs/refactor.md, etapa 6a). Lo crea servidor.configurar()."""
 
@@ -69,6 +70,11 @@ class Guardado:
             }
         )
         L.contar("guardados")
+        # La muestra de voz se registra ya, no en la cola de aprendizaje: la página la da por hecha al guardar (#51).
+        try:
+            self.voces.muestra_al_guardar(nombre)
+        except Exception:
+            L.aviso("VOZ", "No se pudo registrar la muestra de voz del informe guardado.", exc=True)
         vz = self.voces.resumen_voz(nombre)
         rev = self.casos.revision_de(nombre)
         por = f"{U.nombre_de(usuario)} ({quien})" if usuario else quien
@@ -141,17 +147,6 @@ class Guardado:
         docx = Path(tarea["docx"])
         if docx.exists() and docx.stat().st_mtime_ns == tarea["mtime_ns"]:
             anotar_procesado(docx, tarea["clave"])
-        n = tarea["nombre"]
-        fin = self.casos.datos / f"{n}.final.txt"
-        if (
-            fin.exists()
-            and fin.read_text(encoding="utf-8") == tarea["final"]
-            and self.casos.medico_de(n) == (tarea["medico"] or "")
-        ):
-            try:
-                self.voces.muestra_al_guardar(n)
-            except Exception:
-                L.aviso("VOZ", "No se pudo registrar la muestra de voz del informe guardado.", exc=True)
         self.estadisticas.invalidar()
 
     def analizar_aprendizaje(self):

@@ -32,7 +32,7 @@ Los casos se identifican con el parámetro o campo `nombre` (validado: sin rutas
 | POST | `/api/caso/bloquear` | Toma o renueva el bloqueo del caso (y suma tiempo de revisión `rev`) |
 | POST | `/api/caso/soltar` | Libera el bloqueo |
 | POST | `/api/caso/pausar`, `/api/caso/reanudar` | Pausa o reanuda la transcripción en curso `{nombre}` (solo local; por el túnel, 403) |
-| POST | `/api/caso_medico` | Cambia el médico de un caso |
+| POST | `/api/caso_medico` | Cambia el médico de un caso. Devuelve `muestra` (`posible`, `motivo`, `registrada`, `guardado`): si la voz del audio queda como muestra de ese médico |
 | POST | `/api/paciente` | Corrige el nombre del paciente |
 | POST | `/api/finalizar` | Guarda el Word, aprende y registra estadísticas |
 | POST | `/api/borrar` | Borra uno o varios casos `{"nombres": [...]}` |
