@@ -57,7 +57,7 @@ configurar la contraseña del panel remoto, abrir el registro o las carpetas (so
     líneas del `.bat` anteriores a `python servidor.py` no se tocan, porque Windows lee el archivo mientras corre.
   - Al reiniciar se pierden las sesiones en memoria: las apps vuelven a entrar solas con su llave; el panel desde
     el trabajo pide de nuevo su contraseña. Con túnel, la dirección cambia y se publica sola.
-- **Mensaje a las PC del trabajo**: un cartel arriba a la derecha de la página de informes (también en modo
+- **Mensaje a las PC's conectadas**: un cartel arriba a la derecha de la página de informes (también en modo
   compacto), por un tiempo o hasta quitarlo. Cada PC lo cierra con «Entendido». Vive en memoria: se borra al
   reiniciar. El aviso del reinicio usa el mismo cartel, con la cuenta regresiva.
 - **Cola de procesamiento**: qué se transcribe o genera, cuánto lleva cada etapa, el orden y cuánto falta

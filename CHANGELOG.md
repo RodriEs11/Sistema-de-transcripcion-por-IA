@@ -8,6 +8,25 @@ a las entradas fechadas. Ver [docs/versiones.md](docs/versiones.md).
 
 ## Sin publicar
 
+### App
+
+#### Cambiado
+- Configuración → «Acerca de» (#34): el título ahora dice «Aplicación de transcripción» en lugar de «Aplicación del
+  trabajo». La ventana de configuración propia de la app (cuando la pantalla del Servidor no está cargada) muestra
+  el mismo título arriba de la versión.
+
+#### Quitado
+- Ventana de configuración propia de la app (#35): ya no muestra la leyenda «La pantalla del Servidor no está
+  cargada…». Las opciones son las mismas.
+
+### Servidor
+
+#### Cambiado
+- Página principal: título de «Acerca de» (#34, ver App).
+- Panel de administración (#41): títulos más cortos. «PC del trabajo» → «PC's registradas», «Panel desde las PC del
+  trabajo» → «Panel», «Túnel para las PC del trabajo» → «Túnel» y «Mensaje a las PC del trabajo» → «Mensaje a las
+  PC's conectadas».
+
 ## [App 1.29] — 2026-11-05
 
 Acompaña al Servidor 2026.11.16.
