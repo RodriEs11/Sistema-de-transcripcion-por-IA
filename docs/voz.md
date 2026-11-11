@@ -20,9 +20,16 @@ revisados. No hace falta elegir el médico antes de mandar los audios: alcanza c
 | **Sin reconocer** | menos de 0,45, o no hay muestras | Sin médico; plantilla general |
 | **Corto** | menos de 2 s de voz | Sin médico; plantilla general |
 
-4. Al **Guardar Word y aprender** con un médico elegido, la voz del audio queda como muestra de ese médico
-   (`voces/huellas.json`). Si se guarda sin médico, no se registra nada. Si después se cambia el médico de un
-   informe ya guardado, la muestra se corrige al momento.
+4. Al **Guardar Word y aprender** con un médico elegido (a mano o por la voz), la voz del audio queda como muestra
+   de ese médico (`voces/huellas.json`) en el mismo momento del guardado, sin esperar la cola de aprendizaje. Si se
+   guarda sin médico, no se registra nada. Si después se cambia el médico de un informe ya guardado, la muestra se
+   corrige al momento.
+
+   No se puede registrar si el audio tiene menos de 2 s de voz, si no se pudo sacar la huella, si todavía no tiene
+   huella (modelo sin bajar o error al calcularla) o si la huella es de un modelo anterior. En los dos últimos casos
+   se calcula y se registra sola al reiniciar el servidor. Cada vez que no se registra queda un aviso `VOZ` en el
+   registro con el motivo, y la página no promete la muestra: la barra del caso y el aviso al elegir el médico
+   dicen por qué no queda (#51).
 
 Los audios nuevos llegan sin médico y siempre se reconocen por la voz (desde App 1.27 / Servidor 2026.11.14 ya no
 existe «Médico de los audios que subas» ni el médico fijo por PC, #30). Si un audio trae un médico ya asignado

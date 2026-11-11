@@ -16,8 +16,10 @@ function ponerVoz(v, med){
     tit = `Médico reconocido por la voz (se parece ${pctV(v.puntaje)} a sus muestras). Si no es, elegí el correcto en la lista: al guardar se corrige.`;
   } else if(med){
     cls = 'ok'; txt = v.muestra === med ? 'voz registrada' : 'elegido a mano';
+    const parecida = v.medico && v.medico !== med && v.puntaje != null ? ` (la voz se parecía más a ${v.medico}, ${pctV(v.puntaje)})` : '';
     tit = v.muestra === med ? `La voz de este audio ya es una muestra de ${med}.`
-      : `Al guardar, la voz de este audio queda como muestra de ${med}` + (v.medico && v.medico !== med && v.puntaje != null ? ` (la voz se parecía más a ${v.medico}, ${pctV(v.puntaje)}).` : '.');
+      : v.muestra_posible === false ? `Elegido a mano${parecida}. La voz de este audio no queda como muestra de ${med}: ${v.motivo_muestra}.`
+      : `Al guardar, la voz de este audio queda como muestra de ${med}${parecida}.`;
   } else if(v.estado === 'dudoso' && v.medico){
     cls = 'dudoso'; txt = '¿' + v.medico + '? ' + pctV(v.puntaje);
     tit = `La voz se parece a ${v.medico} (${pctV(v.puntaje)})` + (v.segundo ? ` y a ${v.segundo} (${pctV(v.puntaje2)})` : '')
@@ -26,7 +28,9 @@ function ponerVoz(v, med){
     cls = 'sin'; txt = 'voz muy corta'; tit = 'El audio tiene muy poca voz para reconocer al médico. Elegilo en la lista.';
   } else {
     cls = 'sin'; txt = 'voz sin reconocer';
-    tit = (v.motivo ? v.motivo[0].toUpperCase() + v.motivo.slice(1) + '. ' : '') + 'Elegí el médico en la lista: al guardar, su voz queda registrada y los audios siguientes se reconocen solos.';
+    tit = (v.motivo ? v.motivo[0].toUpperCase() + v.motivo.slice(1) + '. ' : '') + (v.muestra_posible === false
+      ? `Elegí el médico en la lista. Su voz no va a quedar registrada: ${v.motivo_muestra}.`
+      : 'Elegí el médico en la lista: al guardar, su voz queda registrada y los audios siguientes se reconocen solos.');
   }
   b.className = 'voz-chip ' + cls; b.innerHTML = ICO_VOZ + '<span class="vz-txt">' + esc(txt) + '</span>';
   b.title = tit; b.setAttribute('aria-label', 'Reconocimiento por la voz: ' + tit); b.hidden = false;
@@ -38,13 +42,21 @@ $('#vozCaso').onclick = () => {
     actualizarMedicoCaso();
   } else toast($('#vozCaso').title, [], 9000);
 };
+/* qué pasa con la muestra de voz al elegir el médico: solo se promete si el servidor dice que se puede (#51) */
+function textoMuestra(m, med){
+  if(!m || m.posible == null) return `Al guardar, la voz de este audio queda como muestra de ${med}.`;
+  if(!m.posible) return `La voz de este audio no queda como muestra de ${med}: ${m.motivo}.`;
+  if(m.guardado) return m.registrada ? `La voz de este audio quedó como muestra de ${med}.` : `No se pudo registrar la voz de este audio como muestra de ${med}.`;
+  return `Al guardar, la voz de este audio queda como muestra de ${med}.`;
+}
 async function cambiarMedicoCaso(v){
   const n = actual; if(!n) return;
   let r; try { r = await api('/api/caso_medico', {nombre: n, medico: v}); } catch(e){ toast(e.message); return; }
   if(actual === n) ponerVoz(r.voz, v);
-  if(v && r.regenerar) toast(`Médico: ${v}. La IA armó este informe sin su estilo: podés regenerarlo con sus plantillas y ejemplos (se pierden los cambios). Al guardar, su voz queda registrada.`,
+  const voz = textoMuestra(r.muestra, v);
+  if(v && r.regenerar) toast(`Médico: ${v}. La IA armó este informe sin su estilo: podés regenerarlo con sus plantillas y ejemplos (se pierden los cambios). ${voz}`,
     [['Regenerar con este médico', () => $('#bRegen').click()]], 12000);
-  else toast(v ? `Médico: ${v}. Al guardar, la voz de este audio queda como muestra de ${v}.` : 'Médico quitado.', [], 6000);
+  else toast(v ? `Médico: ${v}. ${voz}` : 'Médico quitado.', [], v && r.muestra && !r.muestra.posible ? 9000 : 6000);
   cargarLista();
 }
 /* escuchar un audio desde Médicos o Agrupar voces (aparte del reproductor del caso) */

@@ -74,14 +74,19 @@ def medico(h, pedido):
     else:
         f.unlink(missing_ok=True)
     sis.casos.anotar_voz(n, medico_por="usuaria" if med else "")
-    if (sis.datos / f"{n}.final.txt").exists():
-        sis.voces.actualizar_muestra(n, med)  # ya guardado: la muestra de voz se corrige al momento
+    guardado = (sis.datos / f"{n}.final.txt").exists()
+    registrada = False
+    if guardado:
+        registrada = sis.voces.actualizar_muestra(n, med)  # ya guardado: la muestra de voz se corrige al momento
     L.info("CASO", f"{sis.casos.visible(n)}: médico cambiado a {med or 'ninguno'} ({h.pc}).")
     vz = sis.voces.resumen_voz(n) or {}
+    posible, motivo = sis.voces.muestra_posible(n)
     return h._json(
         {
             "ok": True,
             "voz": vz,
+            # si la voz de este audio queda (o va a quedar al guardar) como muestra del médico elegido (#51)
+            "muestra": {"posible": posible, "motivo": motivo, "registrada": bool(registrada), "guardado": guardado},
             "regenerar": bool(vz)
             and (vz.get("medico_ia") or "") != med
             and not (sis.datos / f"{n}.final.txt").exists(),
