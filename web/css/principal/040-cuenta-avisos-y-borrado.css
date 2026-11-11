@@ -9,7 +9,7 @@
 .cuenta-cab > button{flex:none}
 .cuenta-sec:last-child .cuenta-cab{margin-bottom:0}
 .cuenta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;margin:0}
-.cuenta-grid.tres{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cuenta-grid.una{grid-template-columns:minmax(0,340px)}
 .cuenta-grid label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:var(--mu);min-width:0}
 .cuenta-grid input,.cuenta-grid select{width:100%;box-sizing:border-box;padding:6px 9px;font-weight:400;font-size:13.5px;color:var(--tx);background:var(--bg)}
 .cuenta-pie{grid-column:1/-1;display:flex;align-items:center;justify-content:flex-end;gap:10px}
@@ -38,7 +38,7 @@
 .rd-fila button{flex:none;width:32px;padding:6px 0}
 #reglasDlg .botones{display:flex;align-items:center;gap:8px;margin-top:14px}
 #reglasDlg .botones .sep{flex:1}
-@media (max-width:760px){.cuenta-grid,.cuenta-grid.tres{grid-template-columns:1fr}}
+@media (max-width:760px){.cuenta-grid,.cuenta-grid.una{grid-template-columns:1fr}}
 #nuevoEst{display:none;margin:0 0 12px;padding:10px 12px;border:1px solid var(--aviso);border-radius:8px;background:var(--panel);font-size:13px}
 #nuevoEst b{color:var(--aviso)}
 @media (max-width:1000px){.vista .fila2{grid-template-columns:1fr;gap:16px}}
