@@ -8,32 +8,36 @@ a las entradas fechadas. Ver [docs/versiones.md](docs/versiones.md).
 
 ## Sin publicar
 
-### App
+## [App 1.30] — 2026-11-11
 
-#### Cambiado
+Acompaña al Servidor 2026.11.17.
+
+### Cambiado
 - Configuración → «Acerca de» (#34): el título ahora dice «Aplicación de transcripción» en lugar de «Aplicación del
   trabajo». La ventana de configuración propia de la app (cuando la pantalla del Servidor no está cargada) muestra
   el mismo título arriba de la versión.
 - Configuración → Mi cuenta → Contraseña (#39): las cajas «Actual», «Nueva» y «Repetila» quedan una debajo de la
   otra, y «Nueva» ya no muestra «mínimo 6 caracteres». Si la nueva es más corta, el aviso sigue apareciendo.
 
-#### Corregido
+### Corregido
 - Caso abierto (#51): la barra del caso y el aviso al elegir el médico solo prometen la muestra de voz cuando de
   verdad se va a registrar (ver Servidor).
 
-#### Quitado
+### Quitado
 - Ventana de configuración propia de la app (#35): ya no muestra la leyenda «La pantalla del Servidor no está
   cargada…». Las opciones son las mismas.
 
-### Servidor
+## [Servidor 2026.11.17] — 2026-11-11
 
-#### Cambiado
+Acompaña a la App 1.30.
+
+### Cambiado
 - Página principal: título de «Acerca de» (#34) y formulario de contraseña de «Mi cuenta» (#39), ver App.
 - Panel de administración (#41): títulos más cortos. «PC del trabajo» → «PC's registradas», «Panel desde las PC del
   trabajo» → «Panel», «Túnel para las PC del trabajo» → «Túnel» y «Mensaje a las PC del trabajo» → «Mensaje a las
   PC's conectadas».
 
-#### Corregido
+### Corregido
 - Muestra de voz al elegir el médico a mano (#51): se registra al guardar el Word, sin depender de la cola de
   aprendizaje (antes podía quedar sin registrar si esa tarea fallaba o se salteaba). Cuando no se puede registrar
   (audio con muy poca voz, sin huella o con huella de un modelo anterior), queda un aviso `VOZ` con el motivo.
