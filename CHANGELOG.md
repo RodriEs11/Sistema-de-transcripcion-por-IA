@@ -8,6 +8,16 @@ a las entradas fechadas. Ver [docs/versiones.md](docs/versiones.md).
 
 ## Sin publicar
 
+### Servidor
+
+#### Corregido
+- Muestra de voz al elegir el médico a mano (#51): se registra al guardar el Word, sin depender de la cola de
+  aprendizaje (antes podía quedar sin registrar si esa tarea fallaba o se salteaba). Cuando no se puede registrar
+  (audio con muy poca voz, sin huella o con huella de un modelo anterior), queda un aviso `VOZ` con el motivo.
+  `/api/caso_medico` informa en `muestra` si la voz va a quedar como muestra.
+- Página principal: la barra del caso y el aviso al elegir el médico solo prometen la muestra de voz cuando de
+  verdad se va a registrar; si no, dicen por qué.
+
 ## [App 1.29] — 2026-11-05
 
 Acompaña al Servidor 2026.11.16.

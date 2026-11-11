@@ -36,6 +36,7 @@ class ServicioVoz:
             if not v:
                 return None
             d = v.get("det") or {}
+            posible, motivo = self.muestra_posible(n, v)
             c = (
                 mt,
                 {
@@ -49,6 +50,8 @@ class ServicioVoz:
                     "seg": v.get("seg"),
                     "por": v.get("medico_por") or "",
                     "medico_ia": v.get("medico_ia"),
+                    "muestra_posible": posible,  # si se puede registrar como muestra al guardar (#51)
+                    "motivo_muestra": motivo,
                 },
             )
             self.casos.voz_cache[n] = c
@@ -152,22 +155,44 @@ class ServicioVoz:
             )
         return det
 
-    def muestra_al_guardar(self, n):
-        """Al guardar el Word: la voz del caso pasa a ser muestra del médico elegido (o deja de serlo si se quitó)."""
-        v = self.casos.voz_de(n)
-        if not v or not v.get("h") or v.get("modelo") != VOZ.VERSION_HUELLA:
-            return v
-        med = self.casos.medico_de(n)
+    def muestra_posible(self, n, v=None):
+        """¿La voz del caso puede quedar como muestra de un médico? (True, "") o (False, motivo para mostrar).
+        Lo usan la página (para no prometer una muestra que no se va a registrar) y el guardado."""
+        if v is None:
+            v = self.casos.voz_de(n)
+        if not v:
+            if not VOZ.modelo_listo():
+                return False, "el reconocimiento de voz todavía no está listo; se registra al reiniciar el servidor"
+            return False, "el audio todavía no tiene huella de voz; se calcula y se registra al reiniciar el servidor"
+        if v.get("modelo") != VOZ.VERSION_HUELLA:
+            return False, "la huella de voz es de un modelo anterior; se recalcula y registra al reiniciar el servidor"
+        if not v.get("h"):
+            seg = v.get("seg")
+            if seg is not None and seg < float(VOZ.parametros(self.cfg)["min_voz_s"]):
+                return False, f"el audio tiene muy poca voz ({seg} s) para usarlo como muestra"
+            return False, "no se pudo sacar la huella de voz de este audio"
+        return True, ""
+
+    def registrar_muestra(self, n, med, cuando="guardado"):
+        """La voz del caso pasa a ser muestra de `med` (o deja de ser muestra si `med` está vacío).
+        Devuelve True si quedó registrada. Si no se puede, lo anota en el registro con el motivo."""
         antes = VOZ.muestra(n)
         if not med:
             if antes:
                 VOZ.quitar(n)
                 L.info(
                     "VOZ",
-                    f"{self.casos.visible(n)} se guardó sin médico: su voz ya no cuenta como muestra de "
+                    f"{self.casos.visible(n)} quedó sin médico: su voz ya no cuenta como muestra de "
                     f"«{antes['medico']}».",
                 )
-            return v
+            return False
+        v = self.casos.voz_de(n)
+        ok, motivo = self.muestra_posible(n, v)
+        if not ok:
+            if antes:  # la muestra vieja era de otra huella o de otro médico: no se deja mal etiquetada
+                VOZ.quitar(n)
+            L.aviso("VOZ", f"{self.casos.visible(n)} ({cuando}) con «{med}»: su voz no queda como muestra ({motivo}).")
+            return False
         k = VOZ.agregar(n, med, v["h"], "guardado", v.get("seg"))
         if not antes or antes.get("medico") != med:
             minimo = int(VOZ.parametros(self.cfg)["min_muestras"])
@@ -183,17 +208,15 @@ class ServicioVoz:
                 )
                 + ".",
             )
-        return v
+        return True
+
+    def muestra_al_guardar(self, n):
+        """Al guardar el Word: la voz del caso pasa a ser muestra del médico elegido (o deja de serlo si se quitó)."""
+        return self.registrar_muestra(n, self.casos.medico_de(n), "guardado")
 
     def actualizar_muestra(self, n, med):
         """El médico de un caso ya guardado se cambió a mano: se corrige su muestra de voz al momento."""
-        v = self.casos.voz_de(n)
-        if not v or not v.get("h") or v.get("modelo") != VOZ.VERSION_HUELLA:
-            return
-        if med:
-            VOZ.agregar(n, med, v["h"], "guardado", v.get("seg"))
-        else:
-            VOZ.quitar(n)
+        return self.registrar_muestra(n, med, "médico cambiado")
 
     def casos_sin_etiquetar(self):
         """Casos sin médico cuya huella de voz todavía no es muestra de nadie (para «Agrupar voces»). Los que ya
