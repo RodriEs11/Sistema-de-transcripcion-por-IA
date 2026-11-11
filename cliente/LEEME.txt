@@ -1,7 +1,9 @@
 TRANSCRIPCIÓN · aplicación para las PC del trabajo (info-01, info-02, info-03)
 =============================================================================
 
-Versión actual: 1.29 (2026-11-05).
+Versión actual: 1.30 (2026-11-11).
+1.30 / Servidor 2026.11.17: Configuración más clara: «Acerca de» dice «Aplicación de transcripción» y las cajas de
+contraseña de Mi cuenta quedan una debajo de la otra.
 1.29 / Servidor 2026.11.16: Sin el botón «Word descargados» en la barra (la carpeta se elige en Configuración) y nuevo
 ícono de escudo para Administración.
 1.28 / Servidor 2026.11.15: en el Inicio, «Para revisar» va del estudio más nuevo al más antiguo. La tarjeta de arriba
