@@ -8,6 +8,7 @@ function actualizarPend(){
                   : '<span class="et-larga">Sin marcas pendientes</span><span class="et-corta">Sin marcas</span>';
   p.title = n ? `${n} ${n===1?'marca pendiente':'marcas pendientes'} de revisar` : 'No quedan marcas por revisar';
   p.classList.toggle('cero', !n);
+  $('#bAcepTodas').disabled = !n;
   dibujarOnda(); ajustarBarra();
 }
 function tiempoDe(el){
@@ -48,6 +49,18 @@ function marcaEnCursor(){
   if(el && el.closest('#vpHojas')) return origenMarcaWord(el.closest('[data-marca-word]'));
   if(!el || !editor.contains(el)) return null;
   return el.closest('mark') || el.closest('.ln[data-linea]');
+}
+/* «Todas bien»: da por buenas todas las marcas pendientes y los avisos de datos dictados que faltan (con confirmación).
+   Un [COMPLETAR] sigue en el texto: «Guardar Word» lo sigue frenando hasta que se complete. */
+async function aceptarTodas(){
+  const ms = marcasPend(), om = omis.filter(o => !omisOk.includes(o.dato)), n = ms.length + om.length;
+  if(!n){ toast('No quedan marcas pendientes.'); return; }
+  if(!await confirmar(n === 1 ? '¿Dar por buena la marca pendiente?' : `¿Dar por buenas las ${n} marcas pendientes?`,
+      '<p>Se quitan las marcas de colores y los avisos de lo dictado que falta en el informe. La IA aprende del informe tal como quede.</p>' +
+      '<p>Si hay un <b>[COMPLETAR]</b>, sigue en el texto hasta que lo completes.</p>', 'Dar todas por buenas', 'prim')) return;
+  for(const el of ms) if(editor.contains(el)) resolver(el);
+  if(om.length){ for(const o of om) omisOk.push(o.dato); armarAvisos(); actualizarPend(); programarBorrador(); }
+  toast(n === 1 ? 'Listo: 1 marca dada por buena.' : `Listo: ${n} marcas dadas por buenas.`);
 }
 function aceptar(){
   const el = (activa && editor.contains(activa)) ? activa : marcaEnCursor();

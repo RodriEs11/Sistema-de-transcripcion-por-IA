@@ -1,22 +1,26 @@
-// Barra del informe adaptable.
+// Barra del informe adaptable (una sola fila) y menú «⋯».
 /* ================================================ barra del informe adaptable
-   La fila de acciones nunca se parte en dos: si no entra, se achica por pasos hasta que entre.
-   n1: Borrar y Regenerar pasan al menú «Más» · n2: sin las teclas (F2, F8, F9) · n3: Vista previa solo con ícono
-   n4: Cerrar estudio al menú · n5: textos cortos (Siguiente, N marcas) · n6: Copiar para Word solo con ícono
-   n7: «Guardar Word» · n8: como último recurso, se deja partir en dos líneas.
+   Una sola barra (#filaCaso) que nunca se parte: si no entra, se achica por pasos (clases n1…n8).
+   n1 sin las teclas (F2, F8) · n2 el estado del borrador se acorta · n3 textos cortos (Siguiente, N marcas) y
+   «Todas bien» solo con ícono · n4 «Cerrar estudio» solo con ícono · n5 «Guardar Word»
+   n6 sin el texto del borrador (si falla, «Reintentar guardado» sigue a la vista)
+   n7 el médico reconocido por la voz solo con ícono · n8 como último recurso, se parte en dos.
+   Ampliar editor, Regenerar y Borrar viven siempre en el menú «⋯» (.en-menu).
    Los atajos siguen en los títulos de los botones y en el botón «?». */
-const NIVELES_BARRA = 8;
 function enMas(){
-  return [...document.querySelectorAll('#filaAcciones .secundaria')].filter(b => !b.hidden && getComputedStyle(b).display === 'none');
+  return [...document.querySelectorAll('#barraCaso .en-menu')].filter(b => !b.hidden);
 }
-function ajustarBarra(){
-  const fila = $('#filaAcciones');
-  if($('#caso').hidden || !fila.clientWidth) return;
-  for(let n = 0; n <= NIVELES_BARRA; n++){
-    for(let k = 1; k <= NIVELES_BARRA; k++) fila.classList.toggle('n' + k, k <= n);
-    $('#masCaja').hidden = !enMas().length;
+function ajustarFila(fila, niveles){
+  if(!fila || !fila.clientWidth) return;
+  for(let n = 0; n <= niveles; n++){
+    for(let k = 1; k <= niveles; k++) fila.classList.toggle('n' + k, k <= n);
     if(fila.scrollWidth <= fila.clientWidth + 1) break;
   }
+}
+function ajustarBarra(){
+  if($('#caso').hidden) return;
+  $('#masCaja').hidden = !enMas().length;
+  ajustarFila($('#filaCaso'), 8);
   if($('#masCaja').hidden) cerrarMas();
 }
 new ResizeObserver(() => ajustarBarra()).observe($('#barraCaso'));
