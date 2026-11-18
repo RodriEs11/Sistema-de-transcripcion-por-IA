@@ -8,6 +8,32 @@ a las entradas fechadas. Ver [docs/versiones.md](docs/versiones.md).
 
 ## Sin publicar
 
+## [App 1.31] — 2026-11-18
+
+Acompaña al Servidor 2026.11.18.
+
+### Cambiado
+- Editor/transcriptor (#55): una sola barra arriba con el paciente y el médico, las marcas, el estado del borrador,
+  Cerrar estudio, Copiar, Guardar Word y un menú «⋯» (Ampliar, Regenerar, Borrar); si no entra, se achica en lugar
+  de partirse. Las herramientas de formato del editor con audio quedan ocultas y se muestran con el botón «Formato»
+  (se recuerda). El reproductor queda fijo abajo, a lo ancho, con la forma de onda como barra de posición.
+
+### Agregado
+- Editor/transcriptor (#55): botón «Todas bien», que da por buenas todas las marcas pendientes y los avisos de datos
+  dictados que faltan, con confirmación.
+
+## [Servidor 2026.11.18] — 2026-11-18
+
+Acompaña a la App 1.31.
+
+### Cambiado
+- Página principal: nuevo diseño del editor/transcriptor y botón «Todas bien» (#55), ver App.
+
+### Interno
+- Entorno de pruebas listo sin configurar a mano (#56): `crear_entorno_pruebas.py` crea el transcriptor «Prueba» y
+  vincula la app de pruebas, que entra sola. El servidor solo lo acepta donde existe `.entorno_pruebas`; en
+  producción no cambia nada.
+
 ## [App 1.30] — 2026-11-11
 
 Acompaña al Servidor 2026.11.17.
