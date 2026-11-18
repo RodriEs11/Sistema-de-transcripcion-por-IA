@@ -30,7 +30,7 @@
 .cfg-tabs{display:flex;flex-direction:column;gap:2px;padding:12px 10px;border-right:1px solid var(--bd);background:var(--bg);overflow:auto}
 .cfg-tabs button{text-align:left;border-color:transparent;background:transparent;color:var(--mu);padding:7px 10px;font-size:13.5px}
 .cfg-tabs button:hover{color:var(--tx);border-color:transparent;background:var(--panel)}
-.cfg-tabs button:focus-visible,.riel button:focus-visible,.marca .ico:focus-visible,.f2 button:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+.cfg-tabs button:focus-visible,.riel button:focus-visible,.marca .ico:focus-visible,.f1 > button:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
 .cfg-tabs button[aria-selected=true]{background:var(--panel);color:var(--tx);font-weight:600;border-color:var(--bd2)}
 .cfg-tabs button[hidden]{display:none}
 .cfg-paneles{overflow:auto;min-height:0;padding:6px 22px 14px}

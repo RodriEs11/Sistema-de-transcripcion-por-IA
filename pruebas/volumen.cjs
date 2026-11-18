@@ -34,7 +34,7 @@ const estado=page=>page.evaluate(()=>({
 const deslizadorVisible=page=>page.evaluate(()=>{const c=getComputedStyle($('#volPop'));return c.opacity==='1'&&c.pointerEvents!=='none'&&$('#vol').getBoundingClientRect().width>0;});
 // Los controles visibles del reproductor no se enciman entre sí ni salen de la fila.
 const encimados=page=>page.evaluate(()=>{
-  const f=document.querySelector('.f1'),hijos=[...document.querySelector('.player').children].filter(x=>x.getClientRects().length&&x.getBoundingClientRect().width);
+  const f=document.querySelector('#reproductor'),hijos=[...document.querySelector('.player').children].filter(x=>x.getClientRects().length&&x.getBoundingClientRect().width);
   const r=hijos.map(x=>[x.id||x.className,x.getBoundingClientRect()]),mal=[];
   for(let i=0;i<r.length;i++)for(let j=i+1;j<r.length;j++){const a=r[i][1],b=r[j][1];
     if(a.left<b.right-.5&&b.left<a.right-.5&&a.top<b.bottom-.5&&b.top<a.bottom-.5)mal.push(r[i][0]+' / '+r[j][0]);}
@@ -69,22 +69,22 @@ async function abrir(page){
     await abrir(page);
 
     // Se ve, a la derecha de +3s y antes de la barra de posición, y la fila no se desborda en 1366 × 768.
-    const caja=await page.evaluate(()=>{const b=s=>document.querySelector(s).getBoundingClientRect(),f=document.querySelector('.f1');
-      return {adel:b('#bAdel'),vol:b('#volumen'),prog:b('#prog'),desborda:f.scrollWidth>f.clientWidth+1};});
+    const caja=await page.evaluate(()=>{const b=s=>document.querySelector(s).getBoundingClientRect(),f=document.querySelector('#reproductor');
+      return {adel:b('#bAdel'),vol:b('#volumen'),prog:b('#ondaCaja'),desborda:f.scrollWidth>f.clientWidth+1};});
     assert.ok(caja.vol.width>=28,'el parlante se ve');
-    assert.ok(caja.vol.left>=caja.adel.right && caja.vol.right<=caja.prog.left,'va entre +3s y la barra de posición');
+    assert.ok(caja.vol.left>=caja.adel.right && caja.vol.right<=caja.prog.left,'va entre +3s y la onda (barra de posición)');
     assert.ok(Math.abs(caja.vol.top+caja.vol.height/2-(caja.adel.top+caja.adel.height/2))<4,'alineado con los botones del audio');
     assert.equal(caja.desborda,false,'la fila del reproductor entra en 1366 px');
     assert.deepEqual(await encimados(page),[],'1366 px: nada encimado');
 
-    // Por defecto solo el parlante; el deslizador aparece al pasar el mouse, flotando debajo, y se va al salir.
+    // Por defecto solo el parlante; el deslizador aparece al pasar el mouse, flotando arriba (el reproductor está abajo), y se va al salir.
     assert.equal(await deslizadorVisible(page),false,'por defecto el deslizador no se ve');
     await page.hover('#bVol');await page.waitForTimeout(50);
     assert.equal(await deslizadorVisible(page),true,'con el mouse encima aparece');
     const pop=await page.evaluate(()=>({pop:$('#volPop').getBoundingClientRect(),bot:$('#bVol').getBoundingClientRect(),
-      prog:$('#prog').getBoundingClientRect(),txt:$('#volTxt').textContent}));
-    assert.ok(pop.pop.top>=pop.bot.bottom-1,'flota debajo del parlante');
-    assert.ok(pop.pop.top>=pop.prog.bottom,'no tapa la barra de posición');
+      prog:$('#ondaCaja').getBoundingClientRect(),caja:document.querySelector('.vol-caja').getBoundingClientRect(),txt:$('#volTxt').textContent}));
+    assert.ok(pop.pop.bottom<=pop.bot.top+1,'flota arriba del parlante');
+    assert.ok(pop.caja.right<=pop.prog.left||pop.caja.bottom<=pop.prog.top,'no tapa la onda');
     assert.equal(pop.txt,'100 %','muestra el porcentaje');
     // Se puede llevar el mouse del parlante al deslizador sin que se cierre.
     const rv=await page.locator('#vol').boundingBox();await page.mouse.move(rv.x+rv.width/2,rv.y+rv.height/2,{steps:8});

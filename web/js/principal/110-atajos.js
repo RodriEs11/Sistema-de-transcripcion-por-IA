@@ -82,4 +82,5 @@ document.addEventListener('keydown', e => {
 });
 $('#bSig').onclick = () => siguiente(1);
 $('#bAcep').onclick = aceptar;
+$('#bAcepTodas').onclick = aceptarTodas;
 
