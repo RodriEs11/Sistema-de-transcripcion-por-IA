@@ -67,7 +67,8 @@ los envía por un túnel cifrado y muestra la misma interfaz de revisión.
 - Vista previa idéntica al Word (A4, márgenes, Tahoma 12) con editor de formato (F9).
 - Autocorrecciones de Word (Normal.dotm) dentro del editor, modo oscuro, modo compacto, paneles ajustables.
 - Pegado desde Word con el formato original (alineación, estilos, fuente, tamaño y colores), tanto con Ctrl+V como desde el menú contextual. El texto sin formato se pega alineado a la izquierda y sin negrita heredada.
-- Botón «Ocultar herramientas» / «Mostrar herramientas» en el editor con audio para liberar espacio; recuerda la elección en esa PC. En la vista ampliada las herramientas permanecen visibles.
+- Herramientas de formato ocultas en el editor con audio; el botón «Formato» las muestra y recuerda la elección. En la vista ampliada las herramientas permanecen visibles.
+- «Todas bien» da por buenas todas las marcas pendientes (con confirmación).
 
 **Aprendizaje y medición**
 - Cada informe guardado se convierte en ejemplo; las correcciones repetidas pasan a ser reglas automáticas.

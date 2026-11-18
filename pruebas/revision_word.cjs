@@ -96,6 +96,9 @@ const server=http.createServer((req,res)=>{
     await page.locator('#vpHojas p[data-k="2"]').click({button:'right'});
     await page.locator('#vpMenuColores [data-c="#FF0000"]').click();
     assert(await page.evaluate(()=>VP.parrafos[2].r.some(r=>r.c==='#FF0000')));
+    // Junto al audio, las herramientas de formato arrancan ocultas; el botón «Formato» las muestra.
+    assert(await page.locator('#vpFmt').isHidden());assert.equal(await page.locator('#vpAlternarFormato').getAttribute('aria-expanded'),'false');
+    await page.locator('#vpAlternarFormato').click();assert(await page.locator('#vpFmt').isVisible());
     await page.locator('#vpColorBtn').click();await page.locator('#vpColoresPredeterminados [data-c="#0070C0"]').click();
     assert(await page.evaluate(()=>VP.parrafos[2].r.some(r=>r.c==='#0070C0')));
     const doc=await page.locator('#vp').boundingBox(),dict=await page.locator('.dict').boundingBox();assert(doc.x+doc.width<=dict.x);
@@ -220,15 +223,28 @@ const server=http.createServer((req,res)=>{
     // El HTML externo no puede ejecutar acciones ni agregar elementos ajenos al texto.
     assert.equal(await page.evaluate(()=>interpretarPegadoWord('<p onclick="window.pegadoInseguro=1">Seguro<script>window.pegadoInseguro=1</script><img src=x onerror="window.pegadoInseguro=1"></p>','Seguro')[0].t),'Seguro');
     assert.equal(await page.evaluate(()=>window.pegadoInseguro),undefined);
-    // Ocultar herramientas libera altura; audio y vista ampliada siguen disponibles.
+    // Editor integrado: formato, lupa (tamaño de la vista) y «Ampliar» en una sola franja angosta; el título queda para
+    // la vista ampliada. Ocultar las herramientas libera esa fila y se recuerda. Audio y vista ampliada siguen disponibles.
+    assert(await page.locator('#vpFmt').isVisible());assert(await page.locator('#vpTit').isHidden());
+    assert(await page.locator('#vpFmtEstado').isHidden());assert(await page.locator('.player').isVisible());
+    const franja=await page.evaluate(()=>[$('#vpFmt').getBoundingClientRect().top,$('.vp-lupa').getBoundingClientRect().top,$('#vpCerrar').getBoundingClientRect().top]);
+    assert(Math.abs(franja[0]-franja[1])<8&&Math.abs(franja[0]-franja[2])<8,'formato, lupa y Ampliar en la misma franja');
     const altura=await page.locator('#vpHojas').evaluate(e=>e.clientHeight);
     await page.locator('#vpAlternarFormato').click();assert(await page.locator('#vpFmt').isHidden());
     assert.equal(await page.locator('#vpAlternarFormato').getAttribute('aria-expanded'),'false');
-    assert(await page.locator('#vpHojas').evaluate((e,a)=>e.clientHeight>a,altura));assert(await page.locator('.player').isVisible());
-    await page.keyboard.press('F9');assert(await page.locator('#vpFmt').isVisible());assert(await page.locator('#vpAlternarFormato').isHidden());
-    await page.keyboard.press('Escape');assert(await page.locator('#vpFmt').isHidden());
+    assert(await page.locator('#vpHojas').evaluate((e,a)=>e.clientHeight>a,altura));assert(await page.locator('.vp-lupa').isVisible());
+    await page.evaluate(()=>mostrarEstadoFmt('No se pudo guardar: prueba'));assert(await page.locator('#vpFmtEstado').isVisible());
+    await page.evaluate(()=>mostrarEstadoFmt());assert(await page.locator('#vpFmt').isHidden());
+    await page.keyboard.press('F9');assert(await page.locator('#vpFmt').isVisible());assert(await page.locator('#vpTit').isVisible());
+    await page.keyboard.press('Escape');assert(await page.locator('#vpFmt').isHidden());assert(await page.locator('#vpTit').isHidden());
     await page.evaluate(()=>abrirCaso2('caso-dos'));assert(await page.locator('#vpFmt').isHidden());
     await page.locator('#vpAlternarFormato').click();assert(await page.locator('#vpFmt').isVisible());
+    // «Todas bien»: da por buenas todas las marcas pendientes, con confirmación; sin marcas queda deshabilitado.
+    await page.evaluate(()=>{(editor.querySelector('.ln')||editor).insertAdjacentHTML('beforeend',' <mark class="m-dudoso">a</mark> <mark class="m-numero">b</mark>');actualizarPend();});
+    assert(await page.locator('#bAcepTodas').isEnabled());
+    await page.locator('#bAcepTodas').click();await page.click('#cfSi');
+    await page.waitForFunction(()=>!marcasPend().length);assert(await page.locator('#bAcepTodas').isDisabled());
+    assert(await page.locator('#bCerrar').isVisible());
     await page.screenshot({path:path.join(__dirname,'revision_word_resultado.png'),fullPage:true});
     assert.deepEqual(errores,[]);
     // Configuración, conflictos, ayudas, persistencia y restablecimiento de atajos.

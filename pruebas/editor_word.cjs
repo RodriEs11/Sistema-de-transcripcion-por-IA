@@ -52,6 +52,8 @@ const server = http.createServer((req,res) => {
     }
     await page.selectOption('#vpZoom','ajustar');
     // Fuente, tamaño y estilo aplicados a parte de un párrafo y conservados en el modelo.
+    // Junto al audio las herramientas de formato están ocultas: se muestran con el botón «Formato».
+    if(await page.locator('#vpFmt').isHidden()) await page.locator('#vpAlternarFormato').click();
     await page.evaluate(()=>restaurarSel({a:{k:0,o:0},b:{k:0,o:7}}));
     await page.locator('#vpFmt [data-cmd=bold]').click();
     await page.selectOption('#vpFuente','Arial');

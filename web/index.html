@@ -56,56 +56,45 @@
     <div id="vacio" aria-live="polite"><div class="vac-card"><span class="spin"></span> Cargando los casos…</div></div>
     <section id="caso" hidden style="display:flex;flex-direction:column;flex:1;min-height:0">
       <div class="barra" id="barraCaso">
-        <div class="fila f1">
-          <div class="tit-caso"><h1 id="titulo"></h1><span id="tituloAudio" class="tit-audio"></span>
-            <button id="bPaciente" class="ico" title="Corregir el nombre del paciente (solo se muestra en la lista, no va al informe)" aria-label="Corregir el nombre del paciente">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button></div>
-          <div class="med-selector">
-            <select id="medCaso" hidden aria-hidden="true" tabindex="-1"></select>
-            <button id="bMedCaso" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="opcionesMedCaso" title="Elegir médico: buscar por nombre o apellido"><span id="nombreMedCaso">Médico: sin especificar</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
-            <button id="bAgregarMedCaso" type="button" title="Agregar médico" aria-label="Agregar médico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
-          </div>
-          <button id="vozCaso" class="voz-chip" type="button" hidden></button>
-          <div class="player">
-            <button id="bAtras" title="Atrás 3 segundos (F6)">−3s</button>
-            <button id="bPlay" title="Reproducir / pausar (F5)">▶</button>
-            <button id="bAdel" title="Adelante 3 segundos">+3s</button>
-            <!-- Volumen (en esta PC): solo el parlante en la barra; el deslizador flota debajo al pasar el mouse (o con el
-                 teclado) y no ocupa lugar. El parlante silencia y vuelve al nivel anterior; la rueda del mouse sube y baja. -->
-            <div class="volumen" id="volumen" data-nivel="alto">
-              <button id="bVol" type="button" title="Silenciar (volumen 100 %)" aria-label="Silenciar" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="vol-onda vol-onda1" d="M15.5 9.5a3.5 3.5 0 0 1 0 5"/><path class="vol-onda vol-onda2" d="M18 7a7 7 0 0 1 0 10"/><path class="vol-x" d="m15.5 9.5 5 5m0-5-5 5"/></svg></button>
-              <div class="vol-pop" id="volPop"><div class="vol-caja">
-                <input type="range" id="vol" min="0" max="100" step="5" value="100" aria-label="Volumen" title="Volumen: 100 %">
-                <span id="volTxt" aria-hidden="true">100 %</span>
-              </div></div>
+        <!-- Una sola barra (opción E): quién es (paciente y médico), la revisión de marcas y las acciones finales.
+             Ampliar editor, Regenerar, Cerrar estudio y Borrar van en el menú «⋯». El reproductor está abajo de todo
+             (#reproductor). Si no entra, ajustarBarra() la achica por pasos en lugar de partirla. -->
+        <div class="fila f1" id="filaCaso">
+          <div class="caso-id">
+            <div class="tit-caso"><h1 id="titulo"></h1><span id="tituloAudio" class="tit-audio"></span>
+              <button id="bPaciente" class="ico" title="Corregir el nombre del paciente (solo se muestra en la lista, no va al informe)" aria-label="Corregir el nombre del paciente">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button></div>
+            <div class="med-linea">
+              <div class="med-selector">
+                <select id="medCaso" hidden aria-hidden="true" tabindex="-1"></select>
+                <button id="bMedCaso" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="opcionesMedCaso" title="Elegir médico: buscar por nombre o apellido"><span id="nombreMedCaso">Médico: sin especificar</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+                <button id="bAgregarMedCaso" type="button" title="Agregar médico" aria-label="Agregar médico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+              </div>
+              <button id="vozCaso" class="voz-chip" type="button" hidden></button>
             </div>
-            <input type="range" id="prog" min="0" max="1000" value="0" aria-label="Posición">
-            <span id="tiempo">0:00 / 0:00</span>
-            <select id="vel" title="Velocidad de reproducción"><option value="0.25">0.25×</option><option value="0.5">0.50×</option><option value="0.75">0.75×</option><option value="1" selected>1.00×</option><option value="1.25">1.25×</option><option value="1.5">1.50×</option><option value="1.75">1.75×</option><option value="2">2.00×</option><option value="2.25">2.25×</option><option value="2.5">2.50×</option></select>
           </div>
-        </div>
-        <!-- Una sola fila de acciones: si no entra, se achica por pasos (ajustarBarra): primero pasan al menú «Más»
-             las acciones que se usan poco, después se ocultan las teclas, los botones quedan solo con ícono, etc. -->
-        <div class="fila f2" id="filaAcciones">
+          <span class="sepv" aria-hidden="true"></span>
           <span id="pend"><span class="et-larga">0 marcas</span></span>
           <button id="bSig" title="Ir a la siguiente marca y escuchar ese momento (F2)"><span class="et">Siguiente marca</span><span class="et-corta">Siguiente</span><kbd data-atajo="siguiente">F2</kbd></button>
           <button id="bAcep" title="La marca seleccionada está bien: quitarla (F8)"><span class="et">Está bien</span><kbd data-atajo="aceptar">F8</kbd></button>
+          <button id="bAcepTodas" class="con-ico" type="button" title="Dar por buenas todas las marcas pendientes (pide confirmación)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg><span class="et">Todas bien</span></button>
           <button id="bAyuda" class="ico" type="button" title="Qué significa cada color y atajos de teclado" aria-label="Colores y atajos de teclado" aria-haspopup="dialog" aria-expanded="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17.2h.01"/></svg></button>
           <span class="sep"></span>
-          <button id="bBorrarCaso" class="chico secundaria nivel-1" hidden title="Borrar este informe: el audio, el informe y el Word (lo que aprendió la IA se conserva)" data-menu="Borrar este informe…"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg> Borrar</button>
-          <button id="bRegen" class="chico secundaria nivel-1" title="Volver a generar el informe (se pierden los cambios)" data-menu="Regenerar el informe…">Regenerar</button>
-          <button id="bCerrar" class="secundaria nivel-4" title="Guarda los cambios como borrador y deja el estudio libre para que lo abra otra PC" data-menu="Cerrar estudio">Cerrar estudio</button>
-          <div class="mas" id="masCaja" hidden>
-            <button id="bMas" type="button" title="Más acciones" aria-label="Más acciones" aria-haspopup="menu" aria-expanded="false">
+          <div id="guardadoBorrador" class="estado-borrador" hidden><span id="estadoBorrador" role="status" aria-live="polite"></span><button id="reintentarBorrador" class="chico secundaria" hidden>Reintentar guardado</button></div>
+          <button id="bCerrar" class="con-ico secundario" title="Guarda los cambios como borrador y deja el estudio libre para que lo abra otra PC"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg><span class="et">Cerrar estudio</span></button>
+          <button id="bCopiar" class="con-ico solo-ico" aria-label="Copiar para Word" title="Copiar para Word: copia el texto con formato Tahoma 12 para pegar en tu Word"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2"/></svg><span class="et">Copiar para Word</span></button>
+          <button id="bFin" class="prim con-ico" title="Guardar Word y aprender: crea el Word en la carpeta Informes y guarda tu corrección para que la IA aprenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="et">Guardar Word y aprender</span><span class="et-corta">Guardar Word</span></button>
+          <div class="mas" id="masCaja">
+            <button id="bMas" type="button" title="Más acciones: ampliar editor, regenerar, borrar" aria-label="Más acciones" aria-haspopup="menu" aria-expanded="false">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span class="et">Más</span></button>
             <div id="menuMas" class="menu" role="menu" hidden></div>
           </div>
-          <button id="bVista" class="con-ico" title="Ampliar el editor de Word (F9)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h4"/></svg><span class="et">Ampliar editor</span><kbd data-atajo="vista">F9</kbd></button>
-          <button id="bCopiar" class="con-ico" title="Copiar para Word: copia el texto con formato Tahoma 12 para pegar en tu Word"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2"/></svg><span class="et">Copiar para Word</span></button>
-          <button id="bFin" class="prim con-ico" title="Guardar Word y aprender: crea el Word en la carpeta Informes y guarda tu corrección para que la IA aprenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="et">Guardar Word y aprender</span><span class="et-corta">Guardar Word</span></button>
+          <!-- Acciones del menú «⋯»: los botones siguen existiendo (atajos y código los usan), pero no se ven en la barra. -->
+          <button id="bVista" class="en-menu" title="Ampliar el editor de Word (F9)" data-menu="Ampliar editor (F9)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h4"/></svg><span class="et">Ampliar editor</span><kbd data-atajo="vista">F9</kbd></button>
+          <button id="bRegen" class="en-menu" title="Volver a generar el informe (se pierden los cambios)" data-menu="Regenerar el informe…"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>Regenerar</button>
+          <button id="bBorrarCaso" class="en-menu" hidden title="Borrar este informe: el audio, el informe y el Word (lo que aprendió la IA se conserva)" data-menu="Borrar este informe…"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg> Borrar</button>
         </div>
-        <div id="guardadoBorrador" class="estado-borrador" hidden><span id="estadoBorrador" role="status" aria-live="polite"></span><button id="reintentarBorrador" class="chico secundaria" hidden>Reintentar guardado</button></div>
         <div class="ley" id="leyenda"><span style="background:var(--rojo)">dato no dictado / completar</span><span style="background:var(--amarillo)">dudoso</span><span style="background:var(--turq-bg);box-shadow:inset 0 -2px 0 var(--turq)">no dictado junto al hallazgo</span><span style="background:var(--gris-bg);color:var(--gris)">frase de plantilla no dictada</span><span>· pasá el mouse sobre una marca (o usá <kbd data-atajo="siguiente">F2</kbd>) para ver qué se dictó · editar una marca la da por revisada</span></div>
       </div>
       <div class="cols">
@@ -114,9 +103,27 @@
         <div class="dict">
           <h2>Dictado <span id="lineaInfo"></span><label><input type="checkbox" id="seguir" checked> seguir el audio</label></h2>
           <div id="dictado"></div>
-          <div class="onda" id="ondaCaja" title=""><canvas id="onda"></canvas><div id="ondaTip"></div></div>
           <div class="ayuda"><kbd data-atajo="play">F4</kbd> reproducir/pausa · <kbd data-atajo="atras">F6</kbd> atrás <span class="salto-txt">3</span>s · <kbd data-atajo="adelante">F7</kbd> adelante <span class="salto-txt">3</span>s · <kbd data-atajo="lenta">F3</kbd> −0,25× · <kbd data-atajo="rapida">F4</kbd> +0,25× · <kbd data-atajo="siguiente">F2</kbd> siguiente marca · <kbd data-atajo="aceptar">F8</kbd> está bien · <kbd data-atajo="vista">F9</kbd> vista previa como Word · <kbd>Alt</kbd>+clic en una línea = escucharla · clic en una palabra del dictado = escucharla · el cursor en el informe resalta su parte del dictado · clic en la onda = saltar ahí · arrastrar sobre la onda = escuchar mientras se mueve</div>
         </div>
+      </div>
+      <!-- Reproductor: siempre abajo, a lo ancho. La onda es la barra de posición (clic = saltar, arrastrar = escuchar). -->
+      <div class="player reproductor" id="reproductor">
+        <button id="bAtras" class="rep-btn" title="Atrás 3 segundos (F6)" aria-label="Atrás 3 segundos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.4"/><path d="M3.5 3.5v4.9h4.9"/><text class="salto-txt" x="12" y="15.2" text-anchor="middle" font-size="8.5" font-weight="700" fill="currentColor" stroke="none">3</text></svg></button>
+        <button id="bPlay" class="rep-btn prim" title="Reproducir / pausar (F5)" aria-label="Reproducir"><svg class="i-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.5 5.8v12.4a1 1 0 0 0 1.5.86l9.6-6.2a1 1 0 0 0 0-1.72L10 4.94a1 1 0 0 0-1.5.86z"/></svg><svg class="i-pausa" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.2"/><rect x="13.5" y="5" width="4" height="14" rx="1.2"/></svg></button>
+        <button id="bAdel" class="rep-btn" title="Adelante 3 segundos (F7)" aria-label="Adelante 3 segundos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1l2.6 2.5"/><path d="M20.5 3.5v4.9h-4.9"/><text class="salto-txt" x="12" y="15.2" text-anchor="middle" font-size="8.5" font-weight="700" fill="currentColor" stroke="none">3</text></svg></button>
+        <!-- Volumen (en esta PC): solo el parlante; el deslizador flota arriba al pasar el mouse (o con el teclado).
+             El parlante silencia y vuelve al nivel anterior; la rueda del mouse sube y baja. -->
+        <div class="volumen" id="volumen" data-nivel="alto">
+          <button id="bVol" class="rep-btn" type="button" title="Silenciar (volumen 100 %)" aria-label="Silenciar" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="vol-onda vol-onda1" d="M15.5 9.5a3.5 3.5 0 0 1 0 5"/><path class="vol-onda vol-onda2" d="M18 7a7 7 0 0 1 0 10"/><path class="vol-x" d="m15.5 9.5 5 5m0-5-5 5"/></svg></button>
+          <div class="vol-pop" id="volPop"><div class="vol-caja">
+            <input type="range" id="vol" min="0" max="100" step="5" value="100" aria-label="Volumen" title="Volumen: 100 %">
+            <span id="volTxt" aria-hidden="true">100 %</span>
+          </div></div>
+        </div>
+        <input type="range" id="prog" min="0" max="1000" value="0" aria-label="Posición" tabindex="-1">
+        <div class="onda" id="ondaCaja" title=""><canvas id="onda"></canvas><div id="ondaTip"></div></div>
+        <span id="tiempo">0:00 / 0:00</span>
+        <select id="vel" class="rep-vel" title="Velocidad de reproducción" aria-label="Velocidad de reproducción"><option value="0.25">0.25×</option><option value="0.5">0.50×</option><option value="0.75">0.75×</option><option value="1" selected>1.00×</option><option value="1.25">1.25×</option><option value="1.5">1.50×</option><option value="1.75">1.75×</option><option value="2">2.00×</option><option value="2.25">2.25×</option><option value="2.5">2.50×</option></select>
       </div>
     </section>
     <section class="vista" id="vPlant">
@@ -317,11 +324,11 @@
 <div id="vp" role="dialog" aria-modal="true" aria-labelledby="vpTit">
   <div class="vp-barra">
     <h2 id="vpTit">Editor de Word</h2><span id="vpInfo"></span><span class="sep"></span>
-    <button id="vpAlternarFormato" type="button" aria-controls="vpFmt" aria-expanded="true">Ocultar herramientas</button>
-    <select id="vpZoom" title="Tamaño de la vista"><option value="ajustar">Ajustar al ancho</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option></select>
+    <button id="vpAlternarFormato" type="button" aria-controls="vpFmt" aria-expanded="false" title="Mostrar las herramientas de formato (negrita, fuente, tamaño…)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg><span class="et">Formato</span></button>
+    <label class="vp-lupa" title="Tamaño de la vista (zoom)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M8 11h6M11 8v6"/></svg><select id="vpZoom" aria-label="Tamaño de la vista"><option value="ajustar">Ajustar al ancho</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option></select></label>
     <button id="vpGuardar" class="prim">Guardar Word y aprender</button>
     <button id="vpCopiar" class="prim" title="Copia el texto con su formato para pegar en Word">Copiar para Word</button>
-    <button id="vpCerrar" title="Volver al informe">Volver al informe<kbd>Esc</kbd></button>
+    <button id="vpCerrar" title="Ampliar el editor (F9) · en la vista ampliada: volver junto al audio (Esc)">Volver al informe<kbd>Esc</kbd></button>
   </div>
   <div class="vp-fmt" id="vpFmt" role="toolbar" aria-label="Formato del texto">
     <div class="grupo"><label>Fuente <select id="vpFuente" aria-label="Fuente del texto"><option>Tahoma</option><option>Arial</option><option>Calibri</option><option>Cambria</option><option>Georgia</option><option>Times New Roman</option><option>Verdana</option></select></label>
@@ -351,7 +358,7 @@
     <div class="grupo">
       <button type="button" id="vpDeshacer" title="Deshacer (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
       <button type="button" id="vpRehacer" title="Rehacer (Ctrl+Y)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
-      <button type="button" id="vpLimpiar" class="ancho" title="Volver al formato normal lo seleccionado (sin selección: todo el informe)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/><path d="m15 14 6 6M21 14l-6 6" stroke-width="1.8"/></svg>Quitar formato</button>
+      <button type="button" id="vpLimpiar" class="ancho" aria-label="Quitar formato" title="Volver al formato normal lo seleccionado (sin selección: todo el informe)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/><path d="m15 14 6 6M21 14l-6 6" stroke-width="1.8"/></svg>Quitar formato</button>
     </div>
     <span id="vpFmtEstado" role="status">Editá el texto o seleccioná una parte para darle formato</span>
   </div>

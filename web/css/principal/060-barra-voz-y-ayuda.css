@@ -1,7 +1,7 @@
 /* Barra del informe, médico reconocido por la voz, tamaño del texto y ayuda. */
-/* ---------- barra del informe compacta (pensada para 1366 × 768): dos filas que nunca se enciman.
-   Fila 1: paciente, médico y audio. Fila 2: marcas y acciones; si no entra, ajustarBarra() la achica por pasos
-   (clases n1…n6 en #filaAcciones) en lugar de partirla en varias líneas. */
+/* ---------- una sola barra arriba (pensada para 1366 × 768): paciente y médico, marcas y acciones finales.
+   Si no entra, ajustarBarra() la achica por pasos (clases n1…n6 en #filaCaso) en lugar de partirla.
+   El reproductor va abajo de todo (#reproductor). */
 .barra{padding:8px 14px;gap:6px}
 .barra .fila{flex-wrap:nowrap;min-width:0}
 .f1{gap:8px}
@@ -50,50 +50,92 @@
 .grupo-voz select{border:1px solid var(--bd2);border-radius:7px;padding:5px 6px;background:var(--panel);color:var(--tx);min-width:220px;max-width:100%}
 .grupo-voz .fila{margin-top:8px}
 .play-m{min-width:34px}
-.f1 .player{flex:1 1 320px;flex-wrap:nowrap;gap:5px}
-.f1 .player button{padding:5px 9px}
-#bPlay{width:38px}
-#prog{min-width:50px}
+/* ---------- encabezado */
+.f1 > .sep{flex:1 1 0;min-width:2px}
+.f1 > *{flex:none}
+.f1 > .caso-id{display:flex;flex-direction:column;gap:1px;flex:0 0 auto;min-width:210px;max-width:34%}
+.caso-id .tit-caso{display:flex;align-items:center;gap:4px;min-width:0;max-width:none}
+.caso-id .tit-caso h1{font-size:15px;line-height:1.25;flex:0 1 auto;min-width:60px}
+.caso-id .tit-audio{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1000 auto}
+.caso-id #bPaciente{padding:2px 4px}
+.caso-id #bPaciente svg{width:14px;height:14px}
+.med-linea{display:flex;align-items:center;gap:6px;min-width:0}
+.med-linea .med-selector{flex:0 1 auto;min-width:0;max-width:100%;gap:2px}
+.med-linea #bMedCaso{flex:0 1 auto;border-color:transparent;background:transparent;padding:0 4px;height:22px;font-size:12.5px;color:var(--mu);gap:4px}
+.med-linea #bMedCaso:hover,.med-linea #bMedCaso[aria-expanded=true]{border-color:var(--bd2);color:var(--tx)}
+.med-linea #bAgregarMedCaso{width:22px;height:22px;border-color:transparent;background:transparent;color:var(--mu)}
+.med-linea #bAgregarMedCaso:hover{border-color:var(--bd2);color:var(--tx)}
+.med-linea .voz-chip{padding:1px 7px;font-size:11.5px}
+.f1 > .sepv{width:1px;height:28px;background:var(--bd);margin:0 4px}
+.f1 > button{display:inline-flex;align-items:center;gap:6px}
+.f1 > button svg{width:16px;height:16px;flex:none}
+.f1 > button.ico{padding:5px;color:var(--mu)}
+.f1 > button.ico svg{width:18px;height:18px}
+.f1 > button.ico[aria-expanded=true]{color:var(--ac);border-color:var(--ac);background:var(--ac-suave)}
+.f1 kbd{margin-left:0}
+.f1 #bCopiar.solo-ico{padding:6px 8px}
+.f1 #bCopiar.solo-ico .et{display:none}
+.f1 > .con-ico,.f1 > .mas{flex:none}
+.f1 > .con-ico{display:inline-flex;align-items:center;gap:6px}
+.f1 > .con-ico svg{width:16px;height:16px;flex:none}
+.f1 .estado-borrador{flex:none;flex-wrap:nowrap;padding:0}
+.f1 #estadoBorrador{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+.en-menu{display:none!important}
+.f1 #bAcepTodas:not(:disabled){color:var(--ok)}
+.f1.n1 kbd{display:none}
+.f1.n2 #estadoBorrador{max-width:110px}
+.f1.n3 #bSig .et,.f1.n3 #pend .et-larga,.f1.n3 #bAcepTodas .et{display:none}
+.f1.n3 #bSig .et-corta,.f1.n3 #pend .et-corta{display:inline}
+.f1.n3 #bAcepTodas,.f1.n4 #bCerrar{padding:6px 8px}
+.f1.n4 #bCerrar .et{display:none}
+.f1.n5 #bFin .et{display:none}
+.f1.n5 #bFin .et-corta{display:inline}
+.f1.n6 #estadoBorrador{display:none}
+.f1.n7 .voz-chip .vz-txt{display:none}
+.f1.n8{flex-wrap:wrap}
+/* ---------- reproductor abajo: la onda hace de barra de posición */
+.reproductor{flex:none;flex-wrap:nowrap;gap:8px;padding:8px 16px;background:var(--panel);border-top:1px solid var(--bd);position:sticky;bottom:0;z-index:4}
+.reproductor > *{flex:none}
+/* botones del reproductor: redondos, del mismo tamaño y simétricos alrededor de reproducir */
+.rep-btn{width:36px;height:36px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  background:transparent;border-color:transparent;color:var(--tx)}
+.rep-btn:hover{background:var(--bg);border-color:var(--bd2)}
+.rep-btn svg{display:block;width:22px;height:22px;pointer-events:none}
+#bPlay.rep-btn{width:40px;height:40px;background:var(--ac);border-color:var(--ac);color:var(--ac-tx)}
+#bPlay.rep-btn:hover{filter:brightness(1.08)}
+#bPlay svg{width:18px;height:18px}
+#bPlay .i-pausa,#bPlay.sonando .i-play{display:none}
+#bPlay.sonando .i-pausa{display:block}
+.rep-vel{height:30px;padding:0 6px;border-radius:15px;border-color:var(--bd);background:transparent;font-size:12.5px;font-variant-numeric:tabular-nums}
+#prog{display:none}
+.reproductor .onda{flex:1 1 auto;min-width:120px;height:46px;border-top:0;border-radius:6px}
 #tiempo{min-width:0;white-space:nowrap}
-/* volumen, a la derecha de +3s: en la barra solo el parlante (silenciar), que nunca se achica ni se encima con los
-   otros controles. El deslizador flota debajo al pasar el mouse, con el teclado (Tab desde el parlante) o mientras se
-   arrastra (.arrastrando); no ocupa lugar en la barra. El relleno superior de .vol-pop es el puente para el mouse.
+/* reproductor angosto: primero se va el tiempo, después la onda se achica (sigue sirviendo para saltar) */
+.reproductor{container-type:inline-size}
+@container (max-width:600px){ #reproductor #tiempo{display:none} #reproductor .onda{min-width:60px} }
+@container (max-width:440px){ #reproductor .onda{min-width:40px} }
+/* volumen, a la derecha de +3s: en el reproductor solo el parlante (silenciar), que nunca se achica ni se encima con
+   los otros controles. El deslizador flota arriba al pasar el mouse, con el teclado (Tab desde el parlante) o mientras se
+   arrastra (.arrastrando); no ocupa lugar. El relleno inferior de .vol-pop es el puente para el mouse.
    Oculto con opacidad (no display:none) para que Tab pueda pasar del parlante al deslizador. */
-.volumen{position:relative;display:flex;flex:none;align-self:stretch}
-.f1 .player #bVol,#bVol{display:inline-flex;align-items:center;justify-content:center;width:34px;padding:0;flex:none;align-self:stretch}
-#bVol svg{display:block;width:18px;height:18px;pointer-events:none}
+.volumen{position:relative;display:flex;flex:none;align-self:center}
+#bVol{flex:none}
+#bVol svg{width:20px;height:20px}
 .volumen[data-nivel="silencio"] .vol-onda,.volumen:not([data-nivel="silencio"]) .vol-x,
 .volumen[data-nivel="bajo"] .vol-onda2{display:none}
 .volumen[data-nivel="silencio"] #bVol{color:var(--mu)}
-.vol-pop{position:absolute;top:100%;left:50%;transform:translateX(-50%);padding-top:6px;z-index:8;opacity:0;pointer-events:none}
+.vol-pop{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);padding-bottom:12px;z-index:8;opacity:0;pointer-events:none}
 .volumen:hover .vol-pop,.volumen.arrastrando .vol-pop,.volumen:has(:focus-visible) .vol-pop{opacity:1;pointer-events:auto}
 .volumen:hover #bVol,.volumen.arrastrando #bVol{border-color:var(--ac)}
 .vol-caja{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--panel);border:1px solid var(--bd2);
   border-radius:9px;box-shadow:var(--sombra);white-space:nowrap}
 #vol{width:110px;margin:0;accent-color:var(--ac)}
 #volTxt{font-size:12.5px;color:var(--mu);font-variant-numeric:tabular-nums;min-width:36px;text-align:right}
-.f2{gap:6px}
-.f2 > *{flex:none}
-.f2 > .sep{flex:1 1 0;min-width:2px}
-.f2 button{display:inline-flex;align-items:center;gap:6px}
-.f2 button svg{width:16px;height:16px;flex:none}
-.f2 button.ico{padding:5px;color:var(--mu)}
-.f2 button.ico svg{width:18px;height:18px}
-.f2 button.ico[aria-expanded=true]{color:var(--ac);border-color:var(--ac);background:var(--ac-suave)}
-.f2 kbd{margin-left:0}
 #pend{white-space:nowrap}
 .et-corta{display:none}
-.f2.n1 .nivel-1,.f2.n4 .nivel-4{display:none!important}
-.f2.n2 kbd{display:none}
-.f2.n3 #bVista .et,.f2.n6 #bCopiar .et{display:none}
-.f2.n3 #bVista,.f2.n6 #bCopiar{padding:6px 8px}
-.f2.n5 #bSig .et,.f2.n5 #pend .et-larga{display:none}
-.f2.n5 #bSig .et-corta,.f2.n5 #pend .et-corta{display:inline}
-.f2.n7 #bFin .et{display:none}
-.f2.n7 #bFin .et-corta{display:inline}
-.f2.n8{flex-wrap:wrap}
 .mas{position:relative}
-#bMas{padding:5px 8px;color:var(--mu)}
+#bMas{padding:5px 8px;color:var(--mu);display:inline-flex;align-items:center}
+#bMas svg{width:18px;height:18px;display:block}
 #bMas .et{display:none}
 #bMas[aria-expanded=true]{color:var(--ac);border-color:var(--ac);background:var(--ac-suave)}
 .menu{position:absolute;right:0;top:calc(100% + 5px);z-index:7;background:var(--panel);border:1px solid var(--bd2);border-radius:10px;

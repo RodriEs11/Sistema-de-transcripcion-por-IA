@@ -324,7 +324,11 @@ async function guardarFormato(exigir=false){
   await FMT.guardando;
   if(exigir && FMT.pendiente) throw new Error('No se pudieron guardar todos los cambios de formato. Volvé a intentar antes de generar el Word.');
 }
-function mostrarEstadoFmt(txt){ $('#vpFmtEstado').textContent = txt || 'Editá el texto o seleccioná una parte para darle formato'; }
+function mostrarEstadoFmt(txt){
+  const e = $('#vpFmtEstado'); e.textContent = txt || 'Editá el texto o seleccioná una parte para darle formato';
+  // en la barra compacta del editor integrado solo se muestra cuando hay algo que atender
+  e.toggleAttribute('data-aviso', /^No se pudo|sin guardar/.test(txt || ''));
+}
 function estilo(cmd, valor){
   const claves = {bold: 'b', italic: 'i', underline: 'u', strikeThrough: 'x', foreColor: 'c', fontName: 'f', fontSize: 's', highlight: 'h'};
   return (sel, modelo) => {
@@ -517,16 +521,18 @@ $('#vpHojas').addEventListener('paste', e => {
   e.preventDefault(); pegarWord(e.clipboardData.getData('text/html'), e.clipboardData.getData('text/plain'));
 });
 
+/* Herramientas de formato junto al audio: ocultas salvo que se pidan con el botón «Formato» (se recuerda).
+   En la vista ampliada (F9) siempre se ven. Ctrl+B/K/S y el clic derecho funcionan igual con la barra oculta. */
 function aplicarBarraFormato(){
-  const ocultar = leerLS('barraFormatoOculta') === '1';
+  const ocultar = leerLS('barraFormatoOculta') !== '0';
   $('#vp').classList.toggle('formato-oculto', ocultar);
   const boton = $('#vpAlternarFormato');
-  boton.textContent = ocultar ? 'Mostrar herramientas' : 'Ocultar herramientas';
+  boton.title = ocultar ? 'Mostrar las herramientas de formato (negrita, fuente, tamaño…)' : 'Ocultar las herramientas de formato';
   boton.setAttribute('aria-expanded', String(!ocultar));
   cerrarPaleta();
 }
 $('#vpAlternarFormato').onclick = () => {
-  grabarLS('barraFormatoOculta', leerLS('barraFormatoOculta') === '1' ? '' : '1');
+  grabarLS('barraFormatoOculta', leerLS('barraFormatoOculta') !== '0' ? '0' : '1');
   aplicarBarraFormato();
 };
 aplicarBarraFormato();

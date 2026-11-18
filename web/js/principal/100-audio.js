@@ -50,8 +50,8 @@ $('#volumen').addEventListener('wheel', e => {
   if(!e.deltaY) return;
   e.preventDefault(); ponerVolumen(+vol.value + (e.deltaY < 0 ? 5 : -5)); recordarVolumen();
 }, {passive: false});
-audio.addEventListener('play', () => { bPlay.textContent='❚❚'; const r = PREF.retroceso(); if(r && Date.now()-ultimaPausa < 60000 && ultimaPausa) audio.currentTime = Math.max(0, audio.currentTime-r); });
-audio.addEventListener('pause', () => { bPlay.textContent='▶'; ultimaPausa = Date.now(); });
+audio.addEventListener('play', () => { bPlay.classList.add('sonando'); bPlay.setAttribute('aria-label', 'Pausar'); const r = PREF.retroceso(); if(r && Date.now()-ultimaPausa < 60000 && ultimaPausa) audio.currentTime = Math.max(0, audio.currentTime-r); });
+audio.addEventListener('pause', () => { bPlay.classList.remove('sonando'); bPlay.setAttribute('aria-label', 'Reproducir'); ultimaPausa = Date.now(); });
 let palActual = -1;
 audio.addEventListener('timeupdate', () => {
   const t = audio.currentTime;
