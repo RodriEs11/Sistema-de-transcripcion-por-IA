@@ -11,8 +11,8 @@ const PREF = {
 function aplicarPrefs(){
   for(const k of ['leyenda', 'atajos', 'letra']){ const v = PREF.leer(k); if(v) document.body.dataset[k] = v; else delete document.body.dataset[k]; }
   const s = PREF.salto();
-  $('#bAtras').textContent = '−' + s + 's'; $('#bAtras').title = `Atrás ${s} segundos`;
-  $('#bAdel').textContent = '+' + s + 's'; $('#bAdel').title = `Adelante ${s} segundos`;
+  $('#bAtras').setAttribute('aria-label', `Atrás ${s} segundos`); $('#bAtras').title = `Atrás ${s} segundos`;
+  $('#bAdel').setAttribute('aria-label', `Adelante ${s} segundos`); $('#bAdel').title = `Adelante ${s} segundos`;
   document.querySelectorAll('.salto-txt').forEach(x => x.textContent = s);
   actualizarAtajos();
   $('#seguir').checked = PREF.leer('seguir') !== 'no';

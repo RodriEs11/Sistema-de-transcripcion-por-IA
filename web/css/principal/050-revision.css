@@ -62,7 +62,6 @@
 .vp-ed ::selection{background:#b4d0f7}
 /* barra de formato (como la de Word, en chico) */
 .vp-fmt{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 16px;background:var(--panel);border-bottom:1px solid var(--bd)}
-#vp.integrado:not(.ampliado).formato-oculto #vpFmt{display:none}
 #vpAlternarFormato{display:none}
 #vp.integrado:not(.ampliado) #vpAlternarFormato{display:inline-flex}
 .vp-fmt .grupo{display:flex;gap:2px;padding-right:8px;margin-right:4px;border-right:1px solid var(--bd)}
@@ -96,3 +95,43 @@
 #vpPaleta .paleta-word button,#vpMenu .paleta-word button{width:100%;height:26px;padding:0;border:1px solid #888;border-radius:4px}
 #vpPaleta .paleta-word button:hover,#vpMenu .paleta-word button:hover{outline:2px solid var(--ac);outline-offset:2px}
 #vpPaleta small,#vpMenu small{display:block;color:var(--mu);font-size:12px;margin-top:8px}
+/* ---------- editor integrado (junto al audio): formato y vista en una sola franja angosta.
+   A la izquierda las herramientas de formato (si no entran, bajan a una segunda línea); a la derecha el tamaño de la
+   vista y «Ampliar». El título «Editor de Word», las páginas y «Ocultar herramientas» solo quedan en la vista ampliada.
+   El estado del guardado del formato aparece solo si hay un problema ([data-aviso]). */
+#vp.integrado.abierta:not(.ampliado){display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto minmax(0,1fr)}
+#vp.integrado:not(.ampliado) .vp-fmt{grid-column:1;grid-row:1;padding:4px 6px;gap:2px;border-bottom:1px solid var(--bd)}
+#vp.integrado:not(.ampliado) .vp-barra{grid-column:2;grid-row:1;padding:4px 6px;gap:4px;align-items:flex-start;flex-wrap:nowrap;border-bottom:1px solid var(--bd)}
+#vp.integrado:not(.ampliado) #vpAviso{grid-column:1/-1;grid-row:2}
+#vp.integrado:not(.ampliado) #vpHojas{grid-column:1/-1;grid-row:3}
+#vp.integrado:not(.ampliado) #vpTit,#vp.integrado:not(.ampliado) #vpInfo,#vp.integrado:not(.ampliado) .vp-barra .sep{display:none}
+#vp.integrado:not(.ampliado) #vpCerrar{height:30px}
+#vp.integrado:not(.ampliado) #vpAlternarFormato{height:30px;padding:0 9px;font-size:12.5px;gap:5px;align-items:center}
+#vpAlternarFormato svg{width:16px;height:16px;flex:none}
+#vpAlternarFormato[aria-expanded=true]{background:var(--ac-suave);border-color:var(--ac);color:var(--ac)}
+/* herramientas ocultas (lo normal): no ocupan fila; Formato, la lupa y Ampliar flotan arriba a la derecha de la hoja.
+   Si falla el guardado del formato, la barra aparece igual para mostrar el aviso. */
+#vp.integrado:not(.ampliado).formato-oculto #vpFmt{display:none}
+#vp.integrado:not(.ampliado).formato-oculto #vpFmt:has(#vpFmtEstado[data-aviso]){display:flex}
+#vp.integrado:not(.ampliado).formato-oculto .vp-barra{position:absolute;top:8px;right:20px;z-index:3;padding:3px;border:1px solid var(--bd);
+  border-radius:10px;background:var(--panel);box-shadow:0 2px 10px rgba(0,0,0,.10)}
+/* tamaño de la vista: una lupa; el desplegable (invisible) está encima y se abre al hacer clic */
+.vp-lupa{position:relative;display:inline-flex;align-items:center;justify-content:center;width:32px;height:30px;flex:none;
+  border:1px solid transparent;border-radius:7px;color:var(--mu);cursor:pointer}
+.vp-lupa:hover{border-color:var(--bd2);color:var(--tx);background:var(--bg)}
+.vp-lupa:has(select:focus-visible){outline:2px solid var(--ac);outline-offset:1px}
+.vp-lupa svg{width:18px;height:18px;pointer-events:none}
+.vp-lupa select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;padding:0;border:0}
+#vp.integrado:not(.ampliado) #vpCerrar{width:32px;padding:0;font-size:0;display:inline-flex;align-items:center;justify-content:center}
+#vp.integrado:not(.ampliado) #vpCerrar::before{content:"";width:16px;height:16px;background:currentColor;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7'/%3E%3C/svg%3E") center/contain no-repeat}
+#vp.integrado:not(.ampliado) .vp-fmt button{width:28px}
+#vp.integrado:not(.ampliado) #vpTamano{width:60px}
+#vp.integrado:not(.ampliado) .vp-fmt .grupo{padding-right:4px;margin-right:2px}
+#vp.integrado:not(.ampliado) .vp-fmt label{font-size:0;gap:0}
+#vp.integrado:not(.ampliado) .vp-fmt label select,#vp.integrado:not(.ampliado) .vp-fmt label input{font-size:12.5px}
+#vp.integrado:not(.ampliado) #vpFuente{max-width:104px}
+#vp.integrado:not(.ampliado) #vpLimpiar{width:32px;padding:0;font-size:0;gap:0}
+#vp.integrado:not(.ampliado) #vpFmtEstado{display:none}
+#vp.integrado:not(.ampliado) #vpFmtEstado[data-aviso]{display:block;flex-basis:100%;margin:2px 4px 0;font-size:11.5px;color:var(--err)}

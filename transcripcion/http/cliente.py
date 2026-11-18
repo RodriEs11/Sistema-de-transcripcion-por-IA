@@ -1,9 +1,11 @@
 """API de la app de escritorio del trabajo: vincular, sesión, estado, actualización, avisos y audios."""
 
 import json
+import os
 import urllib.parse
 from pathlib import Path
 
+from transcripcion import RAIZ
 from transcripcion.acceso import remoto as R
 from transcripcion.acceso import usuarios as U
 from transcripcion.base import registro as L
@@ -88,6 +90,13 @@ def vincular(h, pedido):
     return h._json(r)
 
 
+def _usuario_pruebas():
+    """Solo en un entorno de pruebas (scripts/crear_entorno_pruebas.py: marca .entorno_pruebas + USUARIO_PRUEBAS en
+    iniciar_pruebas.bat): la app entra sola con el transcriptor de prueba. En producción nunca hay marca."""
+    clave = os.environ.get("USUARIO_PRUEBAS", "")
+    return clave if clave and (RAIZ / ".entorno_pruebas").exists() and U.existe(clave) else None
+
+
 def sesion(h, pedido):
     """POST /api/cliente/sesion."""
     if not h._llave() or not R.pc_de_llave(h._llave()):
@@ -101,6 +110,7 @@ def sesion(h, pedido):
     # «reconectar»: la app ya estaba abierta y volvió a conectarse (servidor caído o reiniciado, dirección
     # nueva del túnel): sigue la persona que tenía la sesión abierta en esta PC, sin pedirle el usuario
     usu = R.usuario_de_pc(h.pc) if isinstance(d, dict) and d.get("reconectar") is True else None
+    usu = usu or _usuario_pruebas()
     return h._json({"ok": True, "codigo": R.nuevo_codigo(h.pc, usuario=usu)})
 
 

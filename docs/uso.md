@@ -11,11 +11,16 @@ Si en el panel hay transcriptores, cada persona entra con su usuario y la IA arm
    cada caso al revisar. Solo hace falta elegirlo antes si todos los audios que vas a subir son del mismo médico.
 3. **Cargar el audio**: arrastrarlo a la lista o hacer clic en *Cargar audio*. En las PC del trabajo la app los toma sola.
    Estados: *en cola → transcribiendo → generando → para revisar*.
-4. **Abrir el caso**: editor de Word con hojas A4 y barra de formato a la izquierda; dictado a la derecha
-   (se resalta mientras suena) y debajo la forma de onda con las marcas. El reproductor queda arriba.
+4. **Abrir el caso**: arriba, una sola barra con el paciente y el médico, las marcas y las acciones (Cerrar estudio,
+   Copiar, Guardar y «⋯» con Ampliar, Regenerar y Borrar). Editor de Word con hojas A4 a la izquierda y dictado a la
+   derecha (se resalta mientras suena). Abajo, el reproductor con la forma de onda y las marcas: clic para saltar,
+   arrastrar para escuchar. Las herramientas de formato están ocultas: el botón **Formato** (arriba a la derecha de
+   la hoja, junto a la lupa del zoom y Ampliar) las muestra; Ctrl+B/K/S y el clic derecho funcionan igual.
 5. Atender los **avisos** de arriba: datos dictados que no están en el informe, posibles partes no transcritas
    (▶ escuchar, ✕ descartar) y estudios sin plantilla.
 6. Recorrer las marcas con **F2**. Si algo está mal, se escribe encima y la marca desaparece; si está bien, **F10**.
+   **Todas bien** da por buenas todas las marcas pendientes de una vez (pide confirmación; un [COMPLETAR] sigue
+   en el texto hasta completarlo).
 7. **Leer el informe completo**: puede haber errores sin marcar. Revisar el **médico** (junto al título): si no es o
    está sin reconocer, abrir la lista y buscar por nombre o apellido (ignora tildes y mayúsculas).
    La lista tiene altura limitada y desplazamiento. El médico asignado queda en azul con una tilde;
