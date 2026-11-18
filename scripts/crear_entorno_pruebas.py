@@ -21,17 +21,26 @@ Qué hace:
 - Prepara la app del trabajo para compilarla y probarla en esta PC: copia las bibliotecas de WebView2 de
   `cliente/` (nunca el .exe ni `conexion.json`) y crea `cliente/perfil_pruebas.txt`. Con ese archivo la app usa
   otra carpeta de datos, otra instancia y otra clave de inicio con Windows: no pisa a la app de producción.
+- Deja todo listo para probar sin configurar nada a mano: crea el transcriptor «Prueba» (contraseña «prueba123», sin
+  pedir cambiarla), vincula la app de pruebas de esta PC con http://127.0.0.1:<puerto> (en Windows) y el lanzador
+  hace que la app entre sola con ese transcriptor (USUARIO_PRUEBAS; solo funciona donde está .entorno_pruebas).
 
-En un entorno ya creado, para preparar solo la app (desde la carpeta del entorno de pruebas):
+En un entorno ya creado, para preparar la app, el transcriptor de prueba y la vinculación (desde la carpeta del
+entorno de pruebas, con la app de pruebas cerrada):
 
     python scripts/crear_entorno_pruebas.py --preparar-app
 """
 import argparse
+import base64
+import hashlib
 import json
 import os
+import re
+import secrets
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 AQUI = Path(__file__).resolve().parents[1]     # carpeta del sistema (este script está en scripts/)
@@ -41,6 +50,9 @@ COPIAR = ("conocimiento", "modelos")          # se copian si existen; el resto s
 CARPETAS_PROPIAS = ("Audios_nuevos", "Informes")
 BIBLIOTECAS_APP = ("Microsoft.Web.WebView2.Core.dll", "Microsoft.Web.WebView2.WinForms.dll")
 PERFIL_APP = "perfil_pruebas.txt"
+USUARIO_PRUEBA, CLAVE_USUARIO, CONTRASENA_PRUEBA = "Prueba", "prueba", "prueba123"
+PC_APP = "pruebas"                             # nombre con el que queda vinculada la app de pruebas
+ENTROPIA_APP = b"Transcripcion-llave-v1"       # la misma que Config.Llave en cliente_codigo/Programa.cs
 
 
 class ErrorEntorno(Exception):
@@ -92,10 +104,12 @@ set PYTHONIOENCODING=utf-8
 set "PUERTO_INTERFAZ={puerto}"
 set "PUERTO_TUNEL={tunel}"
 set "SIMULAR_IA=1"
+set "USUARIO_PRUEBAS={CLAVE_USUARIO}"
 if /i "%~1"=="real" set "SIMULAR_IA="
 echo ============================================================
 echo   ENTORNO DE PRUEBAS - NO es la instalacion en uso
 echo   http://127.0.0.1:{puerto}   (produccion usa {PUERTO_PRODUCCION})
+echo   Usuario: {USUARIO_PRUEBA} / {CONTRASENA_PRUEBA}  (la app de pruebas entra sola)
 if defined SIMULAR_IA (echo   IA simulada. Para Whisper y Ollama reales: iniciar_pruebas.bat real) else (
   echo   IA REAL: comparte la GPU y Ollama con produccion.
   echo   Usalo solo cuando no haya informes en proceso.
@@ -111,7 +125,7 @@ cd "$(dirname "$(readlink -f "$0")")" || exit 1
 source linux/comun.sh
 PY="{python.as_posix()}"
 titulo "EXPERIMENTAL - Transcripción PRUEBAS (puerto {puerto})"
-export PUERTO_INTERFAZ={puerto} PUERTO_TUNEL={tunel} SIMULAR_IA=1
+export PUERTO_INTERFAZ={puerto} PUERTO_TUNEL={tunel} SIMULAR_IA=1 USUARIO_PRUEBAS={CLAVE_USUARIO}
 if [ "${{1:-}}" = "real" ]; then
   unset SIMULAR_IA
   aviso "IA REAL: comparte la GPU y Ollama con producción. Usalo solo sin informes en proceso."
@@ -146,6 +160,88 @@ def preparar_app(origen, destino):
     return copiado
 
 
+def preparar_usuario(destino):
+    """Transcriptor de prueba activo y sin cambio de contraseña pendiente (los demás usuarios no se tocan)."""
+    arch = Path(destino) / "usuarios.json"
+    try:
+        d = json.loads(arch.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        d = {}
+    usuarios = d.setdefault("usuarios", {})
+    sal = secrets.token_hex(16)   # mismo formato que transcripcion/acceso/usuarios.py
+    huella = hashlib.pbkdf2_hmac("sha256", CONTRASENA_PRUEBA.encode(), bytes.fromhex(sal), 200_000).hex()
+    previo = usuarios.get(CLAVE_USUARIO, {})
+    usuarios[CLAVE_USUARIO] = {**previo, "nombre": USUARIO_PRUEBA, "sal": sal, "huella": huella, "activo": True,
+                               "cambiar": False, "creado": previo.get("creado") or time.strftime("%Y-%m-%d %H:%M")}
+    arch.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")
+    return CLAVE_USUARIO
+
+
+def _cifrar_dpapi(texto):
+    """Como ProtectedData.Protect(..., CurrentUser) de la app: solo esta cuenta de Windows puede leer la llave."""
+    import ctypes
+    from ctypes import wintypes
+
+    class Blob(ctypes.Structure):
+        _fields_ = [("cbData", wintypes.DWORD), ("pbData", ctypes.POINTER(ctypes.c_char))]
+
+    def blob(b):
+        buf = ctypes.create_string_buffer(b, len(b))
+        return Blob(len(b), ctypes.cast(buf, ctypes.POINTER(ctypes.c_char))), buf
+
+    datos, _b1 = blob(texto.encode("utf-8"))
+    ent, _b2 = blob(ENTROPIA_APP)
+    out = Blob()
+    if not ctypes.windll.crypt32.CryptProtectData(ctypes.byref(datos), None, ctypes.byref(ent), None, None, 1,
+                                                  ctypes.byref(out)):
+        raise ErrorEntorno("Windows no pudo cifrar la llave de la app (DPAPI).")
+    try:
+        return base64.b64encode(ctypes.string_at(out.pbData, out.cbData)).decode()
+    finally:
+        ctypes.windll.kernel32.LocalFree(ctypes.cast(out.pbData, ctypes.c_void_p))
+
+
+def vincular_app(destino, puerto, carpeta_app=None, cifrar=None):
+    """Vincula la app de pruebas de esta PC con el servidor de pruebas, como si se hubiera conectado a mano:
+    llave nueva en acceso_remoto.json de la copia y en %LOCALAPPDATA%\\Transcripcion-pruebas\\config.json.
+    Devuelve la carpeta de la app, o None fuera de Windows."""
+    if carpeta_app is None:
+        if os.name != "nt" or not os.environ.get("LOCALAPPDATA"):
+            return None
+        carpeta_app = Path(os.environ["LOCALAPPDATA"]) / "Transcripcion-pruebas"
+    cifrar = cifrar or _cifrar_dpapi
+    llave = secrets.token_urlsafe(32)
+    arch = Path(destino) / "acceso_remoto.json"
+    try:
+        acc = json.loads(arch.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        acc = {}
+    clientes = acc.setdefault("clientes", {})
+    for h in [h for h, c in clientes.items() if c.get("pc") == PC_APP]:   # la llave anterior de la app de pruebas
+        del clientes[h]
+    clientes[hashlib.sha256(llave.encode()).hexdigest()] = {"pc": PC_APP, "creado": time.strftime("%Y-%m-%d %H:%M")}
+    arch.write_text(json.dumps(acc, ensure_ascii=False, indent=1), encoding="utf-8")
+    carpeta_app = Path(carpeta_app)
+    carpeta_app.mkdir(parents=True, exist_ok=True)
+    cfg_app = carpeta_app / "config.json"
+    try:
+        cfg = json.loads(cfg_app.read_text(encoding="utf-8-sig"))   # la app lo escribe con BOM
+    except (OSError, ValueError):
+        cfg = {}
+    cfg.update(pc=PC_APP, url=f"http://127.0.0.1:{puerto}", llave=cifrar(llave))
+    cfg_app.write_text(json.dumps(cfg, ensure_ascii=False), encoding="utf-8")
+    return carpeta_app
+
+
+def puerto_del_entorno(destino):
+    """Puerto anotado en el iniciar_pruebas.bat de un entorno ya creado (8865 si no se encuentra)."""
+    try:
+        m = re.search(r"PUERTO_INTERFAZ=(\d+)", (Path(destino) / "iniciar_pruebas.bat").read_text(encoding="utf-8"))
+    except OSError:
+        m = None
+    return int(m.group(1)) if m else 8865
+
+
 def origen_del_entorno(destino):
     """La instalación en uso desde la que se creó el entorno (anotada en .entorno_pruebas)."""
     marca = Path(destino) / MARCA
@@ -161,7 +257,7 @@ def origen_del_entorno(destino):
     return origen
 
 
-def crear(origen, destino, rama="experimental", puerto=8865, copiar=True, avisar=print):
+def crear(origen, destino, rama="experimental", puerto=8865, copiar=True, avisar=print, opciones_app=None):
     origen, destino = Path(origen).resolve(), Path(destino).resolve()
     if (origen / MARCA).exists():
         raise ErrorEntorno("Esta carpeta ya es un entorno de pruebas: ejecutalo desde la instalación en uso.")
@@ -193,7 +289,7 @@ def crear(origen, destino, rama="experimental", puerto=8865, copiar=True, avisar
     (destino / MARCA).write_text(f"Entorno de pruebas creado desde {origen}\n", encoding="utf-8")
     with open(destino / ".git" / "info" / "exclude", "a", encoding="utf-8") as f:   # sirve en cualquier rama
         f.write(f"\n# entorno de pruebas (crear_entorno_pruebas.py)\n/{MARCA}\n/iniciar_pruebas.bat\n/iniciar_pruebas.sh\n"
-                f"/cliente/{PERFIL_APP}\n")
+                f"/cliente/{PERFIL_APP}\n/usuarios.json\n/acceso_remoto.json\n")
     preparar_config(origen, destino)
     copiados = []
     if copiar:
@@ -204,7 +300,18 @@ def crear(origen, destino, rama="experimental", puerto=8865, copiar=True, avisar
     python = _python_produccion(origen)
     escribir_lanzadores(destino, python, puerto)
     app = preparar_app(origen, destino)
-    return {"destino": destino, "rama": rama, "puerto": puerto, "copiados": copiados, "python": python, "app": app}
+    preparar_usuario(destino)
+    vinculada = vincular_app(destino, puerto, **(opciones_app or {}))
+    return {"destino": destino, "rama": rama, "puerto": puerto, "copiados": copiados, "python": python, "app": app,
+            "vinculada": vinculada}
+
+
+def _resumen_acceso(vinculada, puerto):
+    print(f"Transcriptor de prueba: {USUARIO_PRUEBA} / {CONTRASENA_PRUEBA} (sin cambio de contraseña).")
+    if vinculada:
+        print(f"App de pruebas vinculada con http://127.0.0.1:{puerto}: abre y entra sola como {USUARIO_PRUEBA}.")
+    else:
+        print("La app no se vinculó (solo en Windows): conectala a mano con ese usuario.")
 
 
 def main(argv=None):
@@ -215,7 +322,8 @@ def main(argv=None):
     ap.add_argument("--puerto", type=int, default=8865, help="puerto de la interfaz de pruebas (por defecto 8865)")
     ap.add_argument("--sin-copiar", action="store_true", help="no copiar conocimiento/ ni modelos/")
     ap.add_argument("--preparar-app", action="store_true",
-                    help="en un entorno ya creado: solo prepara la app para compilarla y probarla (perfil de pruebas)")
+                    help="en un entorno ya creado: prepara la app (perfil de pruebas), el transcriptor de prueba, "
+                         "la vinculación y los lanzadores")
     a = ap.parse_args(argv)
     if a.preparar_app:
         try:
@@ -225,12 +333,18 @@ def main(argv=None):
                 destino, origen = Path(a.destino).resolve(), AQUI
                 origen_del_entorno(destino)
             copiado = preparar_app(origen, destino)
+            puerto = puerto_del_entorno(destino)
+            escribir_lanzadores(destino, _python_produccion(origen), puerto)
+            preparar_usuario(destino)
+            vinculada = vincular_app(destino, puerto)
         except (ErrorEntorno, OSError) as ex:
             print(f"[ERROR] {ex}", file=sys.stderr)
             return 1
         print(f"App preparada en {destino / 'cliente'} (perfil de pruebas). Copiado de {origen / 'cliente'}: "
               f"{', '.join(copiado) or 'nada (faltan las bibliotecas de WebView2 en producción)'}.")
+        _resumen_acceso(vinculada, puerto)
         print("Compilar: powershell -NoProfile -ExecutionPolicy Bypass -File cliente_codigo\\compilar.ps1")
+        print("Reiniciá iniciar_pruebas.bat para que tome los cambios.")
         return 0
     try:
         r = crear(AQUI, a.destino, a.rama, a.puerto, copiar=not a.sin_copiar)
@@ -243,6 +357,7 @@ def main(argv=None):
     print(f"Para abrirlo: {lanzador}  →  http://127.0.0.1:{r['puerto']}")
     print(f"App de prueba: {', '.join(r['app']) or 'sin bibliotecas de WebView2'} + cliente\\{PERFIL_APP} "
           "(compilala con cliente_codigo\\compilar.ps1)")
+    _resumen_acceso(r["vinculada"], r["puerto"])
     print("Trabajá y commiteá dentro de esa carpeta; la instalación en uso no cambia.")
     return 0
 
