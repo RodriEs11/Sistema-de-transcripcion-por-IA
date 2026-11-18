@@ -9,6 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import crear_entorno_pruebas as E  # noqa: E402
+import hashlib  # noqa: E402
 
 GIT = shutil.which("git")
 
@@ -62,6 +63,9 @@ class EntornoPruebas(unittest.TestCase):
         self.destino = self.tmp / "sistema_pruebas"
 
     def crear(self, **kw):
+        # la app se "vincula" en una carpeta temporal y con un cifrado falso: nunca toca %LOCALAPPDATA%
+        self.app = self.tmp / "app_datos"
+        kw.setdefault("opciones_app", {"carpeta_app": self.app, "cifrar": lambda t: "cifrada:" + t})
         return E.crear(self.prod, self.destino, avisar=lambda *_: None, **kw)
 
     def test_copia_aislada_sin_tocar_origen(self):
@@ -76,12 +80,14 @@ class EntornoPruebas(unittest.TestCase):
         self.assertEqual((cfg["carpeta_audios_nuevos"], cfg["carpeta_informes"]), ("Audios_nuevos", "Informes"))
         self.assertTrue((d / "Audios_nuevos").is_dir() and (d / "Informes").is_dir())
         self.assertTrue((d / "conocimiento" / "plantilla.md").exists())
-        for privado in ("acceso_remoto.json", "voces", "registros", "resultados"):
+        for privado in ("voces", "registros", "resultados"):
             self.assertFalse((d / privado).exists(), privado)
+        self.assertNotIn("secreto", (d / "acceso_remoto.json").read_text(encoding="utf-8"))
         self.assertEqual(r["copiados"], ["conocimiento"])
         bat = (d / "iniciar_pruebas.bat").read_text(encoding="utf-8")
         self.assertIn("PUERTO_INTERFAZ=8865", bat)
         self.assertIn("SIMULAR_IA=1", bat)
+        self.assertIn(f"USUARIO_PRUEBAS={E.CLAVE_USUARIO}", bat)
         self.assertNotIn("--tunel", bat + (d / "iniciar_pruebas.sh").read_text(encoding="utf-8"))
         self.assertTrue((d / E.MARCA).exists())
         self.assertEqual(git("status", "--porcelain", cwd=d), "", "los archivos propios del entorno no se versionan")
@@ -112,6 +118,35 @@ class EntornoPruebas(unittest.TestCase):
         self.assertTrue((d / E.PERFIL_APP).exists())
         with self.assertRaises(E.ErrorEntorno):
             E.origen_del_entorno(self.prod)
+
+    def test_usuario_y_app_listos(self):
+        r = self.crear(puerto=8870)
+        d = self.destino
+        u = json.loads((d / "usuarios.json").read_text(encoding="utf-8"))["usuarios"][E.CLAVE_USUARIO]
+        self.assertEqual((u["nombre"], u["activo"], u["cambiar"]), (E.USUARIO_PRUEBA, True, False))
+        huella = hashlib.pbkdf2_hmac("sha256", E.CONTRASENA_PRUEBA.encode(), bytes.fromhex(u["sal"]), 200_000).hex()
+        self.assertEqual(u["huella"], huella)
+        cfg = json.loads((self.app / "config.json").read_text(encoding="utf-8"))
+        self.assertEqual((cfg["pc"], cfg["url"]), (E.PC_APP, "http://127.0.0.1:8870"))
+        llave = cfg["llave"].removeprefix("cifrada:")
+        acc = json.loads((d / "acceso_remoto.json").read_text(encoding="utf-8"))
+        self.assertEqual(acc["clientes"][hashlib.sha256(llave.encode()).hexdigest()]["pc"], E.PC_APP)
+        self.assertEqual(r["vinculada"], self.app)
+        self.assertEqual(E.puerto_del_entorno(d), 8870)
+        # volver a prepararlo: otro usuario no se toca, la llave vieja se reemplaza y se conserva el resto de la app
+        u2 = json.loads((d / "usuarios.json").read_text(encoding="utf-8"))
+        u2["usuarios"]["otra"] = {"nombre": "Otra"}
+        u2["usuarios"][E.CLAVE_USUARIO]["cambiar"] = True
+        (d / "usuarios.json").write_text(json.dumps(u2), encoding="utf-8")
+        cfg["oscuro"] = True
+        (self.app / "config.json").write_text("\ufeff" + json.dumps(cfg), encoding="utf-8")
+        E.preparar_usuario(d)
+        E.vincular_app(d, 8870, carpeta_app=self.app, cifrar=lambda t: "cifrada:" + t)
+        u3 = json.loads((d / "usuarios.json").read_text(encoding="utf-8"))["usuarios"]
+        self.assertIn("otra", u3)
+        self.assertFalse(u3[E.CLAVE_USUARIO]["cambiar"])
+        self.assertEqual(len(json.loads((d / "acceso_remoto.json").read_text(encoding="utf-8"))["clientes"]), 1)
+        self.assertTrue(json.loads((self.app / "config.json").read_text(encoding="utf-8"))["oscuro"])
 
     def test_rama_nueva_sale_de_main(self):
         self.crear(rama="exp/idea", copiar=False)
